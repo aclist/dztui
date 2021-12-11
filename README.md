@@ -110,12 +110,15 @@ Lastly, the launch options and mod list will be concatenated and used to launch 
 ## Q&A
 
 Q. Why not use a custom server query API?
+
 A. It is technically feasible using A2S, but is complicated and offers little benefit other than further automation (no API registration) and slightly more granular control over the server info returned. Still, I would like to include that at some point through a helper file.
 
 Q. Why not allow browsing all servers in real time?
+
 A. It greatly complicates the scope. There are 10K+ servers that would have to be queried and some kind of manifest created, to say nothing of sorting, searching, pagination, etc. Having a simple heads-up list of your servers of interest should suffice for most use cases. I am thinking of rewriting this in curses as a fully-featured browser at some point, but we would have to see what improvements are made to the in-game browser and launcher to see if this is maintainable or even necessary in the first place.
 
 Q. What about adding the field «insert some field name here»?
+
 A. See above. "Number of players in queue" could be added to help decide whether to join a full server, but this requires a custom API.
 
 
