@@ -3,7 +3,7 @@
 A TUI pseudo-browser for listing heads-up information on DayZ community servers, fetching and synchronizing mods, and connecting to these servers automatically without manually setting launch 
 parameters.
 
-[!Alt text](example.png)
+![Alt text](example.png)
 
 ## Dependencies:
 
