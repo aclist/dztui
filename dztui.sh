@@ -159,8 +159,8 @@ move_files(){
 	rm -r "$staging_dir"/steamapps
 }
 auto_mod_download(){
-	sudo -u $steamcmd_user steamcmd "steamcmd +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit" 
-	[[ "$(ls -A $staging_dir/steamapps)" ]] &&  move_files || return 1
+	sudo -u $steamcmd_user steamcmd "steamcmd +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit"
+	[[ "$(ls -A $staging_dir/steamapps)" ]] && move_files || return 1
 }
 auto_mod_install(){
 	printf "[ERROR] Missing mods. Invoking steamcmd for user $steamcmd_user\n"
@@ -170,6 +170,10 @@ auto_mod_install(){
 		id $steamcmd_user &>/dev/null
 		[[ $? -eq 1 ]]; then
 		err "Invalid steamcmd user. Reverting to manual mode"
+	elif
+		command -v steamcmd &>/dev/null
+		[[ $? -eq 1 ]]; then
+		err "steamcmd not installed. See: https://developer.valvesoftware.com/wiki/SteamCMD"
 	else
 		printf "[INFO] Found steamcmd user. Downloading mods\n"
 		revert_msg="Something went wrong. Reverting to manual mode"
