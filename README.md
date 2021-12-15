@@ -44,6 +44,8 @@ Ensure that you preserve quotation marks around key values.
 
 ## Advanced configuration: automation with steamcmd
 
+NOTE: This feature is experimental and is still being improved upon.
+
 The advanced configuration is used in conjunction with the basic configuration settings above, but modifies mod downloading behavior. Note: requires installation of `steamcmd`. This is found in the "STEAMCMD Config" section of the file.
 
 See https://developer.valvesoftware.com/wiki/SteamCMD for additional details.
