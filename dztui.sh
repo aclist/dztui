@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.1.0
+version=0.2.0
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id=%s"
@@ -71,10 +71,12 @@ parse_json(){
 }
 symlinks(){
 	for d in "$workshop_dir"/*; do
-		mod=$(awk -F\" '/name/ {print $2}' "$d"/meta.cpp)
-		[[ -h "$game_dir/@$mod" ]] && : || 
+		id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
+		mod=$(awk -F\" '/name/ {print $2}' "$d"/meta.cpp | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
+		link="@$id-$mod"
+		[[ -h "$game_dir/$link" ]] && : || 
 			printf "[INFO] Creating symlink for $mod\n"
-			ln -fs "$d" "$game_dir/@$mod"
+			ln -fs "$d" "$game_dir/$link"
 	done
 }
 installed_mods(){
@@ -116,18 +118,19 @@ table(){
 concat_mods(){
 	readarray -t serv <<< "$remote_mods"
 	for i in "${serv[@]}"; do
-		awk -F\" '/name/ {print "@"$2";"}' "$workshop_dir"/$i/meta.cpp 
-	done | tr -d '\n'
+		id=$(awk -F"= " '/publishedid/ {print $2}' "$workshop_dir"/$i/meta.cpp | awk -F\; '{print $1}')
+		mod=$(awk -F\" '/name/ {print $2}' "$workshop_dir"/$i/meta.cpp | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
+		link="@$id-$mod;"
+		echo -e "$link"
+	done | tr -d '\n' | perl -ple 'chop'
 }
 launch(){
-	#args="-nolauncher -nosplash -skipintro -world=empty -name=$name"
 	mods=$(concat_mods)
 	ip=$(echo -e "${tabled[$sel]}" | awk -F'\t' '{print $2}')
 	printf "[INFO] Connecting to: $connecting_to\n"
 	if [[ $debug -eq 1 ]]; then
-		printf "[DEBUG] steam -applaunch $aid $args -connect=$ip \"-mod=$mods\"\n"
+		printf "[DEBUG] steam -applaunch $aid -nolauncher -nosplash -skipintro -world=empty $args -connect=$ip \"-mod=$mods\"\n"
 	else
-		#steam -applaunch $aid "$args" -connect=$ip \"-mod=$mods\"
 		steam -applaunch $aid -nolauncher -nosplash -skipintro -world=empty -name=$name -connect=$ip \"-mod=$mods\"
 		printf "Good luck out there. DZTUI $version\n"
 		exit
