@@ -129,7 +129,7 @@ launch(){
 	ip=$(echo -e "${tabled[$sel]}" | awk -F'\t' '{print $2}')
 	printf "[INFO] Connecting to: $connecting_to\n"
 	if [[ $debug -eq 1 ]]; then
-		printf "[DEBUG] steam -applaunch $aid -nolauncher -nosplash -skipintro -world=empty $args -connect=$ip \"-mod=$mods\"\n"
+		printf "[DEBUG] steam -applaunch $aid -nolauncher -nosplash -skipintro -world=empty -connect=$ip \"-mod=$mods\"\n"
 	else
 		steam -applaunch $aid -nolauncher -nosplash -skipintro -world=empty -name=$name -connect=$ip \"-mod=$mods\"
 		printf "Good luck out there. DZTUI $version\n"
