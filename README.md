@@ -107,7 +107,7 @@ Lastly, the launch options and mod list will be concatenated and used to launch 
 - The server protocol enforces a maximum length of 64 characters, so server names should never exceed the acceptable width of the table, making truncation unneccessary.
 - This was not tested with Flatpak steam or Steam native runtime. If there is a particular method of invocation for those, submit an issue.
 - Official servers do not get indexed by server trackers in the usual manner, so this works only with custom servers. It might be possible to include a manifest of official servers in a future revision, however.
-- In testing, at least one server behaved strangely despite the correct launch parameters being given and refused to start. (Investigating)
+- ~~In testing, at least one server behaved strangely despite the correct launch parameters being given and refused to start. (Investigating)~~ **Thanks to the user scandalouss for help in resolving this issue**
 - You may still encounter weird bugs from DayZ itself due to the unstable nature of the client. (E.g., "User is not connected to Steam" when loading into a map.)
 - Wasn't tested on esoteric terminal emulators or fancy configs. (Tested against urxvt)
 
