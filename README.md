@@ -17,7 +17,7 @@ parameters.
 
 1. Update the sysctl `vm.max_map_count` value (see https://www.protondb.com/app/221100)
 2. Enable the Steam Beta branch (Steam > Settings > Account > Beta participation)
-3. Enable as your compatibility tool for the game Proton Experimental, 6.3-8, or later-- or repacks based on these
+3. Enable as your compatibility tool for the game Proton Experimental, 6.3-8, or later--or repacks based on these
 
 ## Configuration
 
