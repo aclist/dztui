@@ -1,9 +1,9 @@
 #!/bin/bash
 set -eo pipefail
-version=0.2.1
+version=0.2.2
 aid=221100
 game="dayz"
-workshop="https://steamcommunity.com/sharedfiles/filedetails/?id=%s"
+workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
 api="https://api.battlemetrics.com/servers"
 
 #BEGIN CONFIG================
