@@ -173,7 +173,7 @@ auto_mod_install(){
 	elif
 		command -v steamcmd &>/dev/null
 		[[ $? -eq 1 ]]; then
-		err "steamcmd not installed. See: https://developer.valvesoftware.com/wiki/SteamCMD"
+		err "steamcmd not found. See: https://developer.valvesoftware.com/wiki/SteamCMD"
 	else
 		printf "[INFO] Found steamcmd user. Downloading mods\n"
 		revert_msg="Something went wrong. Reverting to manual mode"
