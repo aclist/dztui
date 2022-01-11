@@ -100,7 +100,7 @@ Lastly, the launch options and mod list will be concatenated and used to launch 
 ## Known Issues/Possible Pitfalls:
 
 - Ubuntu's `column` package may be too old to support setting field separators correctly.
-- The ping attempt is only made once as a fast check with no retries. If the server ping times out, you may get a blank entry for the ping column on that server.
+- The ping attempt is only made once as a fast check with no retries.
 - It goes without saying, but you need to have a sufficiently wide enough terminal window to justify the text correctly.
 - There is no pagination, so if there are more servers than lines in your terminal, you are going to have to scroll up.
 - Servers don't verbosely report the version of mods they are running, so other than checking that the mod exists, we can't easily compare version differences. This means you may get booted on connect if your mod is not up to date. (Shouldn't happen due to Steam updates, but it's theoretically possible if a server is pegged to some older version). If that happens, you could manually install the desired version and reconnect.
