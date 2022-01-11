@@ -57,6 +57,7 @@ check_ping(){
 	if [[ $ping -eq 1 ]]; then
 		ping_ip=$(echo -e "$i" | awk -F'\t' '{print $2}' | awk -F: '{print $1}')
 		ms=$(ping -c 1 "$ping_ip" | awk -Ftime= '/time=/ {print $2}')
+		[[ -z $ms ]] && ms="Timeout" || :
 		printf "%s\t%s\n" "$i" "$ms"
 	else
 		printf "%s\n" "$i"
