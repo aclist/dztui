@@ -247,7 +247,7 @@ main(){
 	checks
 	init_table
 	while true; do
-		printf "\n"
+		menu
 		read -p "Selection: " sel
 		if [[ $sel =~ ^[0-9]+$ ]]; then
 			if [[ $sel -gt $max_range ]]; then
@@ -261,7 +261,7 @@ main(){
 				r) init_table ;;
 				f) launch_fav ;;
 				l) list_mods ;;
-				q) exit ;;
+				q) exit_msg ;;
 				*) : ;;
 			esac
 		fi
