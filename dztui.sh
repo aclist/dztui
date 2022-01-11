@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.2.2
+version=0.2.3
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -173,7 +173,7 @@ auto_mod_install(){
 	elif
 		command -v steamcmd &>/dev/null
 		[[ $? -eq 1 ]]; then
-		err "steamcmd not found. See: https://developer.valvesoftware.com/wiki/SteamCMD"
+		err "steamcmd not installed. See: https://developer.valvesoftware.com/wiki/SteamCMD"
 	else
 		printf "[INFO] Found steamcmd user. Downloading mods\n"
 		revert_msg="Something went wrong. Reverting to manual mode"
@@ -192,9 +192,27 @@ passed_mod_check(){
 	launch
 
 }
+check_workshop(){
+	curl -Ls "$url${modlist[$i]}" | grep data-appid | awk -F\" '{print $8}'
+}
+validate_mods(){
+	url="https://steamcommunity.com/sharedfiles/filedetails/?id="
+	aid=221100
+	tput civis
+	newlist=()
+	readarray -t modlist <<< $remote_mods
+	for ((i=0;i<=${#modlist[@]};i++)); do
+		printf "[INFO] Verifying integrity of server modlist manifest [$i/${#modlist[@]}]\r"
+		[[ $(check_workshop) -eq $aid ]] && newlist+=("${modlist[$i]}") || :
+		sleep 2s
+	done
+	tput cnorm
+	printf "\n"
+}
 compare(){
 	fetch_mods
-	diff=$(comm -23 <(echo -e "$remote_mods" | sort) <(installed_mods | sort))
+	validate_mods
+	diff=$(comm -23 <(echo -e "${newlist[@]}" | sort) <(installed_mods | sort))
 }
 connect(){
 	compare
