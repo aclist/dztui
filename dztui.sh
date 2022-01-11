@@ -94,10 +94,6 @@ list_mods(){
 
 columnize(){
        	column -t -s$'\t' -o$" $separator "
-	printf "f$separator Launch favorite\n"
-	printf "l$separator List installed mods\n"
-	printf "r$separator Refresh\n"
-	printf "q$separator Quit\n"
 }
 test_fav(){
 	if [[ -n $fav ]]; then
@@ -234,6 +230,18 @@ init_table(){
 }
 get_sorted_id(){
 	sorted_id=$(echo -e "${tabled[$sel]}" | awk -F'\t' '{print $5}')
+}
+menu(){
+	printf "\n"
+	printf "f$separator Launch favorite\n"
+	printf "l$separator List installed mods\n"
+	printf "r$separator Refresh\n"
+	printf "q$separator Quit\n"
+	printf "\n"
+}
+exit_msg(){
+	printf "DZTUI $version\n"
+	exit
 }
 main(){
 	checks
