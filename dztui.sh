@@ -57,6 +57,8 @@ depcheck(){
 		command -v $dep 2>&1>/dev/null || (printf "[ERROR] Requires %s >= %s\n" $dep ${deps[$dep]} ; exit 1)
 	done
 }
+column_check(){
+	echo foo | column -o$'\t' &>/dev/null || err "column version >= 2.37.2 required"
 }
 varcheck(){
 	[[ -z $key ]] && (err "Missing API key")
@@ -70,6 +72,8 @@ varcheck(){
 }
 checks() {
 	depcheck
+	column_check
+	version_check
 	varcheck
 }
 check_ping(){
