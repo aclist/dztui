@@ -1,6 +1,7 @@
 #!/bin/bash
 set -eo pipefail
 version=0.2.3
+release_url="https://raw.githubusercontent.com/aclist/dztui/main/dztui.sh"
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -30,14 +31,32 @@ declare -A deps
 deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [column]="2.37.2" [tr]="9.0" [comm]="9.0")
 max_range=$(awk -F, '{print NF}' <<< $whitelist)
 
+err(){
+	printf "[ERROR] %s\n" "$1"
+	return 1
+}
+version_check(){
+	upstream=$(curl -Ls "$release_url" | awk -F= 'NR==3 {print $2}')
+	printf "[INFO] Checking for new version\n"
+	if [[ ! $upstream == "$version" ]]; then
+		printf "[INFO] A newer version of DZTUI is available at:\n$release_url.\n" 
+		while true; do 
+			read -p "Continue anyway? [Y/n] " response
+			if [[ $response == "Y" ]]; then 
+			       break
+			elif [[ $response == "n" ]]; then
+			       exit_msg
+			else 
+			       :
+			fi
+		done
+	fi
+}
 depcheck(){
 	for dep in "${!deps[@]}"; do
 		command -v $dep 2>&1>/dev/null || (printf "[ERROR] Requires %s >= %s\n" $dep ${deps[$dep]} ; exit 1)
 	done
 }
-err(){
-	printf "[ERROR] %s\n" "$1"
-	return 1
 }
 varcheck(){
 	[[ -z $key ]] && (err "Missing API key")
