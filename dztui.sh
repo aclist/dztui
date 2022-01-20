@@ -291,6 +291,11 @@ exit_msg(){
 	printf "DZTUI $version\n"
 	exit
 }
+forced_exit(){
+	tput cnorm
+	printf "\n"
+	exit_msg
+}
 main(){
 	checks
 	init_table
@@ -315,4 +320,5 @@ main(){
 		fi
 	done
 }
+trap forced_exit INT
 main
