@@ -232,10 +232,15 @@ validate_mods(){
 	tput cnorm
 	printf "\n"
 }
+server_modlist(){
+	for i in "${newlist[@]}"; do
+		printf "$i\n"
+	done
+}
 compare(){
 	fetch_mods
 	validate_mods
-	diff=$(comm -23 <(echo -e "${newlist[@]}" | sort) <(installed_mods | sort))
+	diff=$(comm -23 <(server_modlist | sort) <(installed_mods | sort))
 }
 connect(){
 	compare
