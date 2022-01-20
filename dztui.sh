@@ -178,7 +178,7 @@ steamcmd_modlist(){
 }
 move_files(){
 	sudo chown -R $USER:$gid "$staging_dir"/steamapps
-	mv "$staging_dir"/steamapps/workshop/content/$aid/* "$workshop_dir"
+	cp -R "$staging_dir"/steamapps/workshop/content/$aid/* "$workshop_dir"
 	rm -r "$staging_dir"/steamapps
 }
 auto_mod_download(){
