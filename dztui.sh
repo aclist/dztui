@@ -267,9 +267,11 @@ query_api(){
 	fi
 }
 init_table(){
-	printf "\n[INFO] Polling servers. Please wait.\n"
+	tput civis
+	printf "[INFO] Polling servers. Please wait.\r"
 	query_api
 	readarray -t tabled <<< $(parse_json <<< $response)
+	tput cnorm
 	tput cuu1
 	tput el
 	table | columnize
