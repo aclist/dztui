@@ -38,7 +38,7 @@ Ensure that you preserve quotation marks around key values.
 |name|Some servers require a profile name; this can be any name of your choice. By default, it is set for you as "player". This value is optional and can be left blank.|
 |separator|Used to separate fields in the table; can be a single character of your choice. This value is optional and can be left blank if you prefer simple tab justification.|
 |ping|If set to 1, each of the servers is pinged once before showing the results and a time column is added; if you do not need this option, you can set it to 0 to greatly speed up load time.|
-|debug|If set to 1, performs a "dry-run" connection and prints the launch parameters that would have been used instead of actually connecting to a server. Doesn't quit, so can be used to perform multiple dry-runs in sequence.|
+|debug|If set to 1, performs a "dry-run" connection and prints the launch parameters that would have been used instead of actually connecting to a server, provided no critical errors occur with mod setup. Doesn't quit, so can be used to perform multiple dry-runs in sequence.|
 
 ## Advanced configuration: automation with steamcmd
 
@@ -72,7 +72,7 @@ Eventually, I chose something more streamlined:
 1. We use `sudo` to perform a one-time invocation of `steamcmd` as the `steam` user (`sudo -u $steamcmd_user ...`)
 2. steamcmd fetches the mods as a concatenated list in one go, and writes them to `/tmp` (`+force_install_dir $staging_dir`). `/tmp` seemed like the ideal choice because, by design, all users can see this directory, and it uses the sticky bit, so it's painless to change ownership of the incoming files to the real user and move them out. Lastly, `/tmp` is the de facto place for ephemeral files, so there is no worry about destructively changing files if the write operation is malformed for some reason--although it is unlikely to be. Note that `steamcmd` does not have great error handling or provide correct return codes even if the wrong credentials are supplied, and likes to write a `steamapps`directory (albeit empty) into the destination directory when failing. Taking this into account, `/tmp` seemed like a good place.
 3. `sudo` is used to change ownership of the incoming files back to the real user and its effective group id (`sudo chown -R $USER:$gid $staging_dir/steamapps`)
-4. The individual mod ID directories are moved out of `/tmp` to the real mod path.
+4. The individual mod ID directories are copied out of `/tmp` to the real mod path.
 4. Once finished, the directory leftovers are removed from `/tmp` (`rm -r $staging_dir/steamapps`). The `steamapps` root may contain some files we don't want to conflict with the real workshop path, so we just take the mods, not the whole directory stack. Later invocations of `steamcmd` may fail if there is some detritus in `steamapps`, so it needs to be removed.
 
 There are other ways of solving this, but in terms of skipping group and user management and keeping things fast and simple, this seems reasonable. At most, the user will be asked to input their Stream credentials once and never again until the hash is revoked, and their password (sudo) once. In addition, mod downloading stops becoming a recurring need once it's been done for a few servers.
