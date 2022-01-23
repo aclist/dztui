@@ -8,10 +8,8 @@ parameters.
 ## Dependencies:
 
 - `jq`
-- `column` (part of `util-linux`)
+- `column` version with support for the `-o` flag  (part of `util-linux`)
 - `steam` 
-
-* Note: Ubuntu may have an older version of `column` that is missing some features; see Known Issues below.
 
 ## Preparation
 
@@ -99,7 +97,7 @@ Lastly, the launch options and mod list will be concatenated and used to launch 
 
 ## Known Issues/Possible Pitfalls:
 
-- Ubuntu's `column` package may be too old to support setting field separators correctly.
+- Ubuntu's `column` package may be too old to support setting field separators correctly. (TODO: add separate section detailing how to install and compile package)
 - The ping attempt is only made once as a fast check with no retries.
 - It goes without saying, but you need to have a sufficiently wide enough terminal window to justify the text correctly.
 - There is no pagination, so if there are more servers than lines in your terminal, you are going to have to scroll up.
