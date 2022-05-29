@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -eo pipefail
-version=1.0.0
+version=1.0.1
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
