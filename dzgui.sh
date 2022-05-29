@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -eo pipefail
-version=1.0.1
+version=1.0.2
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -37,24 +37,24 @@ warn(){
 info(){
 	zenity --info --title="DZGUI" --text="$1" --icon-name="network-wireless" 2>/dev/null
 }
-launch_in_bg(){
-	info "$msg" &
-	#TODO: use less brittle method
-	msg_pid=$(pgrep zenity)
-	${1} &
-	pid=$!  
-	while kill -0 $pid; do
-		:
-	done
-	#TODO: suppress output
-	#TODO: pid could be released to other process
-	if [[ -n $msd_pid ]]; then
-		kill -9 $msg_pid 1 >/dev/null 2>&1
-	else
-		:
-	fi
-
-}
+#launch_in_bg(){
+#	info "$msg" &
+#	#TODO: use less brittle method
+#	msg_pid=$(pgrep zenity)
+#	${1} &
+#	pid=$!  
+#	while kill -0 $pid; do
+#		:
+#	done
+#	#TODO: suppress output
+#	#TODO: pid could be released to other process
+#	if [[ -n $msd_pid ]]; then
+#		kill -9 $msg_pid 1 >/dev/null 2>&1
+#	else
+#		:
+#	fi
+#
+#}
 query_api(){
 	response=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "sort=-players" \
 		-d "filter[game]=$game" -d "filter[ids][whitelist]=$whitelist")
@@ -197,7 +197,7 @@ main_menu(){
 		query_api
 		parse_json <<< "$response"
 		msg="Retrieving server list. This may take some time.\nThis window will close automatically if left open."
-		launch_in_bg "create_array"
+		create_array | zenity --progress
 		populate
 		return
 	elif [[ $sel == "Open mod page (TEST)" ]]; then
@@ -226,7 +226,7 @@ populate(){
 	while true; do
 		#TODO: add boolean statement for ping flag; affects all column ordinal output
 		cols="--column="Server" --column="IP" --column="Players" --column="Status" --column="ID" --column="Ping""
-		sel=$(cat $tmp | zenity $sd_res --list $cols --separator=$separator --print-column=2,5 2>/dev/null)
+		sel=$(cat $tmp | zenity $sd_res --list $cols --separator="$separator" --print-column=2,5 2>/dev/null)
 		if [[ $? -eq 1 ]]; then 
 			echo "should return to main menu"
 			#TODO: drop back to main menu
@@ -242,6 +242,7 @@ populate(){
 create_array(){
 	list=$(cat $tmp) 
 	#TODO: improve error handling for null values
+	lc=1
 	while read line; do
 		name=$(echo "$line" | awk -F'\t' '{print $1}')
 		#truncate names
@@ -257,10 +258,16 @@ create_array(){
 		#[[ $stat == "online" ]] && stat="<span color='#77ff33'>online</span>" || :
 		#TODO: probe offline return codes
 		id=$(echo "$line" | awk -F'\t' '{print $5}')
+		tc=$(awk 'END{print NR}' $tmp)
+		echo "$lc/$tc"
+		echo "# Checking ping: $lc/$tc"
 		ping=$(check_ping "$line")
 		declare -g -a rows=("${rows[@]}" "$name" "$ip" "$players" "$stat" "$id" "$ping")
-	done <<< "$list"
-	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp
+		let lc++
+	done <<< "$list" 
+
+	echo "# Server list ready"
+	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp 
 }
 main(){
 	#TODO: check for upstream version and prompt to download
