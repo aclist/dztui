@@ -71,7 +71,7 @@ write_config(){
 cat	<<-'END'
 
 #Path to DayZ installation (change if using multiple SD cards)
-steam_path=""
+steam_path="/home/deck/.local/share/Steam"
 workshop_dir="$steam_path/steamapps/workshop/content/$aid"
 game_dir="$steam_path/steamapps/common/DayZ"
 
@@ -175,7 +175,8 @@ test_mod_page(){
 	steam steam://url/CommunityFilePage/498101407
 }
 test_browser(){
-	echo $BROWSER | zenity --text-info $sd_res
+	#echo $BROWSER | zenity --text-info $sd_res
+	steam://openurl/https://github.com/aclist/dztui/issues/9
 }
 set_mode(){
 	if [[ $debug -eq 1 ]]; then
