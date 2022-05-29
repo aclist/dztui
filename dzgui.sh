@@ -197,7 +197,7 @@ main_menu(){
 		query_api
 		parse_json <<< "$response"
 		msg="Retrieving server list. This may take some time.\nThis window will close automatically if left open."
-		create_array | zenity --progress
+		create_array | zenity --progress --auto-close
 		populate
 		return
 	elif [[ $sel == "Open mod page (TEST)" ]]; then
