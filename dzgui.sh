@@ -197,7 +197,7 @@ main_menu(){
 		query_api
 		parse_json <<< "$response"
 		msg="Retrieving server list. This may take some time.\nThis window will close automatically if left open."
-		create_array | zenity --progress --auto-close
+		create_array | zenity --progress --title="DZGUI" --auto-close
 		populate
 		return
 	elif [[ $sel == "Open mod page (TEST)" ]]; then
@@ -226,7 +226,7 @@ populate(){
 	while true; do
 		#TODO: add boolean statement for ping flag; affects all column ordinal output
 		cols="--column="Server" --column="IP" --column="Players" --column="Status" --column="ID" --column="Ping""
-		sel=$(cat $tmp | zenity $sd_res --list $cols --separator="$separator" --print-column=2,5 2>/dev/null)
+		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Fav: (not implemented)"  --separator="$separator" --print-column=2,5 2>/dev/null)
 		if [[ $? -eq 1 ]]; then 
 			echo "should return to main menu"
 			#TODO: drop back to main menu
@@ -266,7 +266,6 @@ create_array(){
 		let lc++
 	done <<< "$list" 
 
-	echo "# Server list ready"
 	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp 
 }
 main(){
