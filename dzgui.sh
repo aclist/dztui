@@ -188,7 +188,7 @@ set_mode(){
 main_menu(){
 	while true; do
 	set_mode
-	sel=$(zenity --width=1280 --height=800 --list --title="DZGUI" --text="DZGUI $version" --cancel-label="Exit" --ok-label="Select" --column="Select launch option" "${items[@]}" 2>/dev/null)
+	sel=$(zenity --width=1280 --height=800 --list --title="DZGUI" --text="DZGUI $version | Mode: $mode | Fav: (not implemented)" --cancel-label="Exit" --ok-label="Select" --column="Select launch option" "${items[@]}" 2>/dev/null)
 	if [[ $? -eq 1 ]]; then
 		exit
 	elif [[ -z $sel ]]; then
