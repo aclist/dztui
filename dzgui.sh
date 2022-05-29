@@ -10,7 +10,7 @@ sd_res="--width=1280 --height=800"
 config_path="$HOME/.config/dztui/"
 config_file="${config_path}dztuirc"
 tmp=/tmp/dztui.tmp
-separator="│"
+separator="%%"
 
 
 declare -A deps
