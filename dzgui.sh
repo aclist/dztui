@@ -176,7 +176,7 @@ test_mod_page(){
 }
 test_browser(){
 	#echo $BROWSER | zenity --text-info $sd_res
-	steam://openurl/https://github.com/aclist/dztui/issues/9
+	steam steam://openurl/https://github.com/aclist/dztui/issues/9
 }
 set_mode(){
 	if [[ $debug -eq 1 ]]; then
