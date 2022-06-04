@@ -375,6 +375,7 @@ download_new_version(){
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
 		echo "[DZGUI] Wrote $upstream to $source_dir/dzgui.sh"
+		chmod +x $source_dir/dzgui.sh
 		zenity --info --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nExit and restart to use the new version." 2>/dev/null
 		exit
 	else
@@ -385,7 +386,7 @@ download_new_version(){
 
 }
 check_version(){
-	upstream=$(curl -Ls "$version_url" | awk -F= '/version=/ {print $2}')
+	upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
 	if [[ $version == $upstream ]]; then
 		:
 	else
