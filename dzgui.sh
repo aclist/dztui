@@ -1,7 +1,7 @@
 #!/bin/bash
 
-set -eo pipefail
-version=1.0.2
+set -o pipefail
+version=1.1.0
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -11,6 +11,8 @@ config_path="$HOME/.config/dztui/"
 config_file="${config_path}dztuirc"
 tmp=/tmp/dztui.tmp
 separator="%%"
+git_url="https://github.com/aclist/dztui/issues"
+version_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/dzgui.sh"
 
 
 declare -A deps
@@ -24,53 +26,35 @@ depcheck(){
 
 items=(
 	"Launch server list"
-	"Connect to favorite server (not implemented)"
-	"Add server from ID (not implemented)"
-	"List mods (not implemented)"
-	"Open mod page (TEST)"
-	"List system browser (TEST)"
+	"Quick connect to favorite server"
+	"Add server by ID"
+	"List mods"
+	"Report bug"
 	)
 
+warn_and_exit(){
+	zenity --info --title="DZGUI" --text="$1" --icon-name="dialog-warning" 2>/dev/null
+	exit
+}
 warn(){
 	zenity --info --title="DZGUI" --text="$1" --icon-name="dialog-warning" 2>/dev/null
 }
 info(){
 	zenity --info --title="DZGUI" --text="$1" --icon-name="network-wireless" 2>/dev/null
 }
-#launch_in_bg(){
-#	info "$msg" &
-#	#TODO: use less brittle method
-#	msg_pid=$(pgrep zenity)
-#	${1} &
-#	pid=$!  
-#	while kill -0 $pid; do
-#		:
-#	done
-#	#TODO: suppress output
-#	#TODO: pid could be released to other process
-#	if [[ -n $msd_pid ]]; then
-#		kill -9 $msg_pid 1 >/dev/null 2>&1
-#	else
-#		:
-#	fi
-#
-#}
 query_api(){
 	response=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "sort=-players" \
 		-d "filter[game]=$game" -d "filter[ids][whitelist]=$whitelist")
 	if [[ "$(jq -r 'keys[]' <<< "$response")" == "errors" ]]; then
 		code=$(jq -r '.errors[] .status' <<< $response)
 		#TODO: fix granular api codes
-		#TODO: put into copiable text info box
-		warn "Error $code: malformed API key"
+		warn_and_exit "Error $code: malformed API key"
 	fi
 }
-
-#TODO: find default SD path
 write_config(){
 cat	<<-'END'
 
-#Path to DayZ installation (change if using multiple SD cards)
+#Path to DayZ installation (change if using multiple SD cards/drives)
 steam_path="/home/deck/.local/share/Steam"
 workshop_dir="$steam_path/steamapps/workshop/content/$aid"
 game_dir="$steam_path/steamapps/common/DayZ"
@@ -88,10 +72,10 @@ fav=""
 name="player"
 
 #Set to 1 to perform dry-run and print launch options
-debug=0
+debug="0"
 
 #(Not implemented) Set to 0 to suppress ping attempt
-ping=1
+ping="1"
 
 	END
 }
@@ -118,17 +102,19 @@ checks() {
 	if [[ -z $(depcheck) ]]; then 
 		:
 	else	
-		zenity $sd_res --text-info --cancel-label="Exit" <<< $(depcheck)
+		zenity --warning --ok-label="Exit" --text="$(depcheck)"
+		exit
 	fi
 	if [[ -z $(varcheck) ]]; then 
 		:
 	else	
-		zenity $sd_res --text-info --cancel-label="Exit" <<< $(varcheck)
+		zenity --warning --ok-label="Exit" --text="$(varcheck)"
+		exit
 	fi
 }
 config(){
 	if [[ ! -f $config_file ]]; then
-		zenity --question --cancel-label="Exit" --text="Config file not found. Should DZGUI create one for you?"
+		zenity --question --cancel-label="Exit" --text="Config file not found. Should DZGUI create one for you?" 2>/dev/null
 		code=$?
 		if [[ $code -eq 1 ]]; then
 			exit
@@ -140,18 +126,94 @@ config(){
 	fi
 
 }
-connect(){
-		#TODO: sanitize/validate input, return if failing
-		ip=$(echo "$1" | awk -F"$separator" '{print $1}')
-		bid=$(echo "$1" | awk -F"$separator" '{print $2}')
-		fetch_mods "$bid"
-		launch
-
-		#TODO: symlink validation, mod validation
+manual_mod_install(){
+	l=0
+	until [[ -z $diff ]]; do
+		next=$(echo -e "$diff" | head -n1)
+		zenity --question --ok-label="Open" --cancel-label="Cancel" --title="DZGUI" --text="Missing mods. Click [Open] to open mod $next in Steam Workshop and subscribe to it by clicking the green Subscribe button. After the mod is downloaded, return to this menu to continue validation." 2>/dev/null
+		rc=$?
+		if [[ $rc -eq 0 ]]; then
+			echo "[DZGUI] Opening ${workshop}$next"
+			steam steam://url/CommunityFilePage/$next 2>/dev/null &
+			zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." 2>/dev/null
+		else
+			return
+		fi
+		compare
+	done
+	passed_mod_check
 }
+symlinks(){
+	for d in "$workshop_dir"/*; do
+		id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
+		mod=$(awk -F\" '/name/ {print $2}' "$d"/meta.cpp | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
+		link="@$id-$mod"
+		if [[ -h "$game_dir/$link" ]]; then
+		       :
+	       else
+			printf "[DZGUI] Creating symlink for $mod\n" 
+			ln -fs "$d" "$game_dir/$link"
+		fi 
+	done 
+}
+passed_mod_check(){
+	echo "[DZGUI] Passed mod check"
+	symlinks
+	launch
+
+}
+connect(){
+	#TODO: sanitize/validate input
+	ip=$(echo "$1" | awk -F"$separator" '{print $1}')
+	bid=$(echo "$1" | awk -F"$separator" '{print $2}')
+	fetch_mods "$bid"
+	validate_mods
+	rc=$?
+	[[ $rc -eq 1 ]] && return
+	compare
+	if [[ -n $diff ]]; then
+		manual_mod_install
+	else
+		passed_mod_check
+	fi
+}
+
 fetch_mods(){
 	remote_mods=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d filter[ids][whitelist]="$1" -d "sort=-players" \
 	| jq -r '.data[] .attributes .details .modIds[]')
+}
+check_workshop(){
+	curl -Ls "$url${modlist[$i]}" | grep data-appid | awk -F\" '{print $8}'
+}
+validate_mods(){
+	url="https://steamcommunity.com/sharedfiles/filedetails/?id="
+	newlist=()
+	readarray -t modlist <<< $remote_mods
+	l=1
+	tc=$((${#modlist[@]} + 1))
+	echo "[DZGUI] Verifying server modlist integrity"
+	for ((i=0;i<=${#modlist[@]};i++)); do
+		echo "$l"
+		echo "# Verifying mod $l/$tc"
+		if [[ $(check_workshop) -eq $aid ]]; then
+			newlist+=("${modlist[$i]}")
+		fi
+		sleep 2s
+		let l++
+		#array gets lost in pipe without process substitution
+	done > >(zenity --progress --auto-close --pulsate --title="DZGUI" 2>/dev/null)
+}
+server_modlist(){
+	for i in "${newlist[@]}"; do
+		printf "$i\n"
+	done
+}
+compare(){
+	diff=$(comm -23 <(server_modlist | sort) <(installed_mods | sort))
+}
+
+installed_mods(){
+	ls -1 "$workshop_dir"
 }
 concat_mods(){
 	readarray -t serv <<< "$remote_mods"
@@ -165,47 +227,90 @@ concat_mods(){
 launch(){
 	mods=$(concat_mods)
 	if [[ $debug -eq 1 ]]; then
-		printf "[DEBUG] steam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro \"-mod=$mods\"\n" | zenity --text-info $sd_res --title="DZGUI debug output"
+		zenity --warning --title="DZGUI" \
+			--text="$(printf "[DEBUG] This is a dry run. These options would have been used to launch the game:\n\nsteam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro \"-mod=$mods\"\n")" 2>/dev/null
 	else
 		steam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro -name=$name \"-mod=$mods\"
 		exit
 	fi
 }
-test_mod_page(){
-	steam steam://url/CommunityFilePage/498101407
-}
-test_browser(){
-	#echo $BROWSER | zenity --text-info $sd_res
-	steam steam://openurl/https://github.com/aclist/dztui/issues/9
+report_bug(){
+	echo "[DZGUI] Opening issues page"
+	steam steam://openurl/$git_url 2>/dev/null
 }
 set_mode(){
 	if [[ $debug -eq 1 ]]; then
-		mode=DEBUG
+		mode=debug
 	else
 		mode=normal
 	fi
 }
-main_menu(){
+populate(){
 	while true; do
+		#TODO: add boolean statement for ping flag; affects all column ordinal output
+		cols="--column="Server" --column="IP" --column="Players" --column="Status" --column="ID" --column="Ping""
+		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Fav: $fav_label"  \
+			--separator="$separator" --print-column=2,5 2>/dev/null)
+		rc=$?
+		if [[ $rc -eq 0 ]]; then if [[ -z $sel ]]; then
+				warn "No item was selected."
+			else
+				connect $sel
+			fi
+		else
+			return
+		fi
+	done
+}
+list_mods(){
+	for d in $(installed_mods); do
+		awk -F\" '/name/ {print $2}' "$workshop_dir"/$d/meta.cpp
+	done | sort | awk 'NR > 1 { printf(", ") } {printf("%s",$0)}'
+}
+connect_to_fav(){
+	whitelist=$fav
+	query_api
+	sel=$(jq -r '.data[] .attributes | "\(.ip):\(.port)%%\(.id)"' <<< $response)
+	echo "[DZGUI] Attempting connection to $fav_label"
+	connect "$sel"
+
+}
+main_menu(){
 	set_mode
-	sel=$(zenity --width=1280 --height=800 --list --title="DZGUI" --text="DZGUI $version | Mode: $mode | Fav: (not implemented)" --cancel-label="Exit" --ok-label="Select" --column="Select launch option" "${items[@]}" 2>/dev/null)
-	if [[ $? -eq 1 ]]; then
-		exit
-	elif [[ -z $sel ]]; then
-		warn "No item was selected."
-	elif [[ $sel == "Launch server list" ]]; then
-		query_api
-		parse_json <<< "$response"
-		msg="Retrieving server list. This may take some time.\nThis window will close automatically if left open."
-		create_array | zenity --progress --title="DZGUI" --auto-close
-		populate
-		return
-	elif [[ $sel == "Open mod page (TEST)" ]]; then
-		test_mod_page
-	elif [[ $sel == "List system browser (TEST)" ]]; then
-		test_browser
+	set_fav
+	while true; do
+	sel=$(zenity --width=1280 --height=800 --list --title="DZGUI" --text="DZGUI $version | Mode: $mode | Fav: $fav_label" \
+		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" "${items[@]}" 2>/dev/null)
+	rc=$?
+	if [[ $rc -eq 0 ]]; then
+		if [[ -z $sel ]]; then
+			warn "No item was selected."
+		elif [[ $sel == "Launch server list" ]]; then
+			query_api
+			parse_json <<< "$response"
+			#TODO: create logger function
+			echo "[DZGUI] Checking response time of servers"
+			create_array | zenity --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
+			rc=$?
+			if [[ $rc -eq 1 ]]; then
+				:
+			else
+				populate
+			fi
+		elif [[ $sel == "Report bug" ]]; then
+			report_bug
+		elif [[ $sel == "List mods" ]]; then
+			echo "[DZGUI] Listing installed mods"
+			zenity --info --icon-name="" --title="DZGUI" --text="$(list_mods)" 2>/dev/null
+		elif [[ $sel == "Add server by ID" ]]; then
+			add_by_id
+		elif [[ $sel == "Quick connect to favorite server" ]]; then
+			connect_to_fav
+		else
+			warn "This feature is not yet implemented."
+		fi
 	else
-		warn "This feature is not yet implemented."
+		return
 	fi
 	done
 }
@@ -215,29 +320,12 @@ parse_json(){
 }
 check_ping(){
 		ping_ip=$(echo "$1" | awk -F'\t' '{print $2}' | awk -F: '{print $1}')
-		ms=$(ping -c 1 "$ping_ip" | awk -Ftime= '/time=/ {print $2}')
+		ms=$(ping -c 1 -W 1 "$ping_ip" | awk -Ftime= '/time=/ {print $2}')
 		if [[ -z $ms ]]; then
 			echo "Timeout"
 		else	
 			echo "$ms"
 		fi
-}
-populate(){
-	while true; do
-		#TODO: add boolean statement for ping flag; affects all column ordinal output
-		cols="--column="Server" --column="IP" --column="Players" --column="Status" --column="ID" --column="Ping""
-		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Fav: (not implemented)"  --separator="$separator" --print-column=2,5 2>/dev/null)
-		if [[ $? -eq 1 ]]; then 
-			echo "should return to main menu"
-			#TODO: drop back to main menu
-			:
-		elif [[ -z $sel ]]; then
-			warn "No item was selected."
-		else
-			connect $sel
-			return
-		fi
-	done
 }
 create_array(){
 	list=$(cat $tmp) 
@@ -254,8 +342,10 @@ create_array(){
 		ip=$(echo "$line" | awk -F'\t' '{print $2}')
 		players=$(echo "$line" | awk -F'\t' '{print $3}')
 		stat=$(echo "$line" | awk -F'\t' '{print $4}')
+
 		#yad only
 		#[[ $stat == "online" ]] && stat="<span color='#77ff33'>online</span>" || :
+
 		#TODO: probe offline return codes
 		id=$(echo "$line" | awk -F'\t' '{print $5}')
 		tc=$(awk 'END{print NR}' $tmp)
@@ -268,8 +358,71 @@ create_array(){
 
 	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp 
 }
+set_fav(){
+	#whitelist=$fav
+	#TODO: this is redundant; merge these functions
+	query_api
+	echo "[DZGUI] Setting favorite server"
+	[[ $(awk -F\" '/fav=/ {print $2}' $config_file) ]] &&
+	#TODO: test API key here and return errors
+	fav_label=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "filter[game]=$game" -d "filter[ids][whitelist]=$fav" \
+	| jq -r '.data[] .attributes .name')
+}
+download_new_version(){
+	source_dir=$(dirname -- "$(readlink -f -- "$0";)")
+	mv $source_dir/dzgui.sh $source_dir/dzgui.old
+	curl -Ls "$version_url" > $source_dir/dzgui.sh
+	rc=$?
+	if [[ $rc -eq 0 ]]; then
+		echo "[DZGUI] Wrote $upstream to $source_dir/dzgui.sh"
+		zenity --info --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nExit and restart to use the new version." 2>/dev/null
+		exit
+	else
+		mv $source_dir/dzgui.old $source_dir/dzgui.sh
+		zenity --info --title="DZGUI" --text "Failed to download new version." 2>/dev/null
+		return
+	fi
+
+}
+check_version(){
+	upstream=$(curl -Ls "$version_url" | awk -F= '/version=/ {print $2}')
+	if [[ $version == $upstream ]]; then
+		:
+	else
+		echo "[DZGUI] Upstream ($upstream) is > local ($version)"
+		zenity --question --title="DZGUI" --text "Newer version available.\n\nYour version:\t\t\t$version\nUpstream version:\t\t$upstream\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
+		rc=$?
+		if [[ $rc -eq 1 ]]; then
+			return
+		else
+			download_new_version
+		fi
+	fi
+}
+add_by_id(){
+while true; do
+	id=$(zenity --entry --text="Enter server ID" --title="DZGUI" 2>/dev/null)
+	rc=$?
+	if [[ $rc -eq 1 ]]; then
+		return
+	else
+		if [[ ! $id =~ ^[0-9]+$ ]]; then
+			zenity --warning --title="DZGUI" --text="Invalid ID"
+		else
+			new_whitelist="whitelist=\"$whitelist,$id\""
+			mv $config_file ${config_path}dztuirc.old
+			nr=$(awk '/whitelist=/ {print NR}' ${config_path}dztuirc.old)
+			awk -v "var=$new_whitelist" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
+			echo "[DZGUI] Added $id to key 'whitelist'"
+			zenity --info --title="DZGUI" --text="Added "$id" to:\n${config_path}dztuirc\nIf errors occurred, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
+			source $config_file
+			return
+		fi
+	fi
+done
+}
 main(){
-	#TODO: check for upstream version and prompt to download
+	check_version
 	config
 	checks
 	main_menu
