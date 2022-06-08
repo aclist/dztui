@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Server metadata caching
 - Detect Steam Deck dynamically and set window resolution instead of hardcoding
 
+## [1.1.2] 2022-06-08
+### Fix array used for mod concatenation; fetch post-sanitized list of mods
+
 ## [1.1.1] 2022-06-05
 ### Fixed
 - Stricter regex to parse upstream version number
