@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.3.0
+version=0.3.1
 release_url="https://raw.githubusercontent.com/aclist/dztui/main/dztui.sh"
 aid=221100
 game="dayz"
@@ -136,7 +136,7 @@ table(){
 	done 
 }
 concat_mods(){
-	readarray -t serv <<< "$remote_mods"
+	readarray -t serv <<< "$(server_modlist)"
 	for i in "${serv[@]}"; do
 		id=$(awk -F"= " '/publishedid/ {print $2}' "$workshop_dir"/$i/meta.cpp | awk -F\; '{print $1}')
 		mod=$(awk -F\" '/name/ {print $2}' "$workshop_dir"/$i/meta.cpp | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
