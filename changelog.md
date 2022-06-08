@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clean up logging
 - Server metadata caching
 - Detect Steam Deck dynamically and set window resolution instead of hardcoding
+- Toggle debug mode in-app
+- Attempt to find DayZ path and write to config on first boot
+- Check if mod dir is sane before allowing List Mods option
 
 ## [1.1.2] 2022-06-08
 - Fix array used for mod concatenation; fetch post-sanitized list of mods
