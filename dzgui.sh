@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=1.1.1
+version=1.1.2
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -216,7 +216,7 @@ installed_mods(){
 	ls -1 "$workshop_dir"
 }
 concat_mods(){
-	readarray -t serv <<< "$remote_mods"
+	readarray -t serv <<< "$(server_modlist)"
 	for i in "${serv[@]}"; do
 		id=$(awk -F"= " '/publishedid/ {print $2}' "$workshop_dir"/$i/meta.cpp | awk -F\; '{print $1}')
 		mod=$(awk -F\" '/name/ {print $2}' "$workshop_dir"/$i/meta.cpp | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
