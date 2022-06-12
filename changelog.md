@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Check if mod dir is sane before allowing List Mods option
 
 ## [1.2.0] 2022-06-12
-### Fixed
+### Changed
 - Mod validation process now uses faster, single-pass API query
 - Improved logger output when setting fav server
 
