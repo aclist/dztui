@@ -6,11 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Clean up logging
-- Server metadata caching
-- Detect Steam Deck dynamically and set window resolution instead of hardcoding
+- Detect Steam Deck dynamically
 - Toggle debug mode in-app
+- Add fav server in-app
 - Attempt to find DayZ path and write to config on first boot
 - Check if mod dir is sane before allowing List Mods option
+- One-shot mode to open mod links in browser
+- Source and recreate local config file values in the event of non-backwards compatible changes
 
 ## [1.2.0] 2022-06-12
 ### Changed
