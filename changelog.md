@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - One-shot mode to open mod links in browser
 - Source and recreate local config file values in the event of non-backwards compatible changes
 
+## [1.2.1] 2022-06-12
+### Fixed
+- Print the entire changelog
+
 ## [1.2.0] 2022-06-12
 ### Changed
 - Mod validation process now uses faster, single-pass API query
