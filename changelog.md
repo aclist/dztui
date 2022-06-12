@@ -12,7 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Attempt to find DayZ path and write to config on first boot
 - Check if mod dir is sane before allowing List Mods option
 
+## [1.1.3] 2022-06-12
+### Fixed
+- Mod validation process now uses faster, single-pass API query
+- Improved logger output when setting fav server
+
+### Added
+- In-app changelog
+
 ## [1.1.2] 2022-06-08
+### Fixed
 - Fix array used for mod concatenation; fetch post-sanitized list of mods
 
 ## [1.1.1] 2022-06-05
