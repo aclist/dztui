@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=1.1.2
+version=1.1.3
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -13,10 +13,18 @@ tmp=/tmp/dztui.tmp
 separator="%%"
 git_url="https://github.com/aclist/dztui/issues"
 version_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/dzgui.sh"
+upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
 
 
 declare -A deps
 deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [zenity]="3.42.1")
+changelog(){
+	md="https://raw.githubusercontent.com/aclist/dztui/dzgui/changelog.md"
+	prefix="This window can be scrolled."
+	echo $prefix
+	echo ""
+	curl -Ls "$md" | awk -v upstream=$upstream -v version=$version '$0 ~ upstream {flag=1}$0 ~ version {flag=0}flag'
+}
 
 depcheck(){
 	for dep in "${!deps[@]}"; do
@@ -185,23 +193,26 @@ fetch_mods(){
 check_workshop(){
 	curl -Ls "$url${modlist[$i]}" | grep data-appid | awk -F\" '{print $8}'
 }
+query_defunct(){
+	max=${#modlist[@]}
+	concat(){
+	for ((i=0;i<$max;i++)); do
+	   echo "publishedfileids[$i]=${modlist[$i]}&"
+	done | awk '{print}' ORS=''
+	}
+	payload(){
+		echo -e "itemcount=${max}&$(concat)"
+	}
+	post(){
+		curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded" -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
+	}
+	readarray -t newlist <<< $(post | jq -r '.[].publishedfiledetails[] | select(.result==1) .publishedfileid')
+}
 validate_mods(){
 	url="https://steamcommunity.com/sharedfiles/filedetails/?id="
 	newlist=()
 	readarray -t modlist <<< $remote_mods
-	l=1
-	tc=$((${#modlist[@]} + 1))
-	echo "[DZGUI] Verifying server modlist integrity"
-	for ((i=0;i<=${#modlist[@]};i++)); do
-		echo "$l"
-		echo "# Verifying mod $l/$tc"
-		if [[ $(check_workshop) -eq $aid ]]; then
-			newlist+=("${modlist[$i]}")
-		fi
-		sleep 2s
-		let l++
-		#array gets lost in pipe without process substitution
-	done > >(zenity --progress --auto-close --pulsate --title="DZGUI" 2>/dev/null)
+	query_defunct
 }
 server_modlist(){
 	for i in "${newlist[@]}"; do
@@ -359,14 +370,15 @@ create_array(){
 	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp 
 }
 set_fav(){
-	#whitelist=$fav
-	#TODO: this is redundant; merge these functions
-	query_api
-	echo "[DZGUI] Setting favorite server"
-	[[ $(awk -F\" '/fav=/ {print $2}' $config_file) ]] &&
 	#TODO: test API key here and return errors
+	query_api
+	if [[ -z $fav ]]; then
+		fav_label=null
+	else
 	fav_label=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "filter[game]=$game" -d "filter[ids][whitelist]=$fav" \
 	| jq -r '.data[] .attributes .name')
+	fi
+	echo "[DZGUI] Setting favorite server to '$fav_label'"
 }
 download_new_version(){
 	source_dir=$(dirname -- "$(readlink -f -- "$0";)")
@@ -376,8 +388,14 @@ download_new_version(){
 	if [[ $rc -eq 0 ]]; then
 		echo "[DZGUI] Wrote $upstream to $source_dir/dzgui.sh"
 		chmod +x $source_dir/dzgui.sh
-		zenity --info --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nExit and restart to use the new version." 2>/dev/null
-		exit
+		zenity --question --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
+		code=$?
+		if [[ $code -eq 0 ]]; then
+			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
+			exit
+		elif [[ $code -eq 1 ]]; then
+			exit
+		fi
 	else
 		mv $source_dir/dzgui.old $source_dir/dzgui.sh
 		zenity --info --title="DZGUI" --text "Failed to download new version." 2>/dev/null
@@ -386,7 +404,6 @@ download_new_version(){
 
 }
 check_version(){
-	upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
 	if [[ $version == $upstream ]]; then
 		:
 	else
