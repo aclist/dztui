@@ -23,7 +23,7 @@ changelog(){
 	prefix="This window can be scrolled."
 	echo $prefix
 	echo ""
-	curl -Ls "$md" | awk -v upstream=$upstream -v version=$version '$0 ~ upstream {flag=1}$0 ~ version {flag=0}flag'
+	curl -Ls "$md" | awk '/Unreleased/ {flag=1}flag'
 }
 
 depcheck(){
