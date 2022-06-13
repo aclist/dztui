@@ -241,6 +241,8 @@ launch(){
 		zenity --warning --title="DZGUI" \
 			--text="$(printf "[DEBUG] This is a dry run. These options would have been used to launch the game:\n\nsteam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro \"-mod=$mods\"\n")" 2>/dev/null
 	else
+		echo "[DZGUI] All OK. Launching DayZ"
+		zenity --title="DZGUI" --info --text="Launch conditions satisfied.\nDayZ will launch after clicking [OK]." 2>/dev/null
 		steam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro -name=$name \"-mod=$mods\"
 		exit
 	fi
