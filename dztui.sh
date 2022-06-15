@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.3.1
+version=0.3.2
 release_url="https://raw.githubusercontent.com/aclist/dztui/main/dztui.sh"
 aid=221100
 game="dayz"
@@ -12,8 +12,8 @@ steam_path="/path/to/steam"
 workshop_dir="$steam_path/steamapps/workshop/content/$aid"
 game_dir="$steam_path/steamapps/common/DayZ"
 key="APIKEY"
-whitelist="8039514,8789747,4363928,8199330,11359652,12862329"
-fav="8789747"
+whitelist=""
+fav=""
 name="player"
 separator="│"
 ping=1
@@ -21,7 +21,7 @@ debug=0
 #END CONFIG================
 
 #STEAMCMD CONFIG===========
-auto_install_mods=0
+auto_install_mods=1
 steamcmd_user="steam"
 steam_username="STEAMUSER"
 staging_dir="/tmp"
@@ -79,7 +79,7 @@ checks() {
 check_ping(){
 	if [[ $ping -eq 1 ]]; then
 		ping_ip=$(echo -e "$i" | awk -F'\t' '{print $2}' | awk -F: '{print $1}')
-		ms=$(ping -c 1 "$ping_ip" | awk -Ftime= '/time=/ {print $2}')
+		ms=$(ping -c 1 -W 1 "$ping_ip" | awk -Ftime= '/time=/ {print $2}')
 		[[ -z $ms ]] && ms="Timeout" || :
 		printf "%s\t%s\n" "$i" "$ms"
 	else
@@ -185,23 +185,41 @@ auto_mod_download(){
 	sudo su -c "steamcmd +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit" $steamcmd_user
 	[[ "$(ls -A $staging_dir/steamapps)" ]] && move_files || return 1
 }
+find_steam_cmd(){
+	for i in  "/home/steam" "/usr/share" "/usr/bin" "/"; do
+		steamcmd_path=$(sudo find "$i" -name steamcmd.sh 2>/dev/null | grep -v linux32 | head -n1)
+		if [[ -n "$steamcmd_path" ]]; then
+			printf "[INFO] Found steamcmd at '$steamcmd_path'"
+			return 0
+		else
+			return 1
+		fi
+	done 
+}
 auto_mod_install(){
-	printf "[ERROR] Missing mods. Invoking steamcmd for user $steamcmd_user\n"
+	printf "[ERROR] Missing mods. Checking for steamcmd user '$steamcmd_user'\n"
 	if [[ -z $steamcmd_user ]]; then 
 		err "steamcmd user value was empty. Reverting to manual mode"
 	elif
 		id $steamcmd_user &>/dev/null
 		[[ $? -eq 1 ]]; then
 		err "Invalid steamcmd user. Reverting to manual mode"
-	elif
-		command -v steamcmd &>/dev/null
-		[[ $? -eq 1 ]]; then
-		err "steamcmd not installed. See: https://developer.valvesoftware.com/wiki/SteamCMD"
 	else
-		printf "[INFO] Found steamcmd user. Downloading mods\n"
+		printf "[INFO] Found steamcmd user '$steamcmd_user'\n"
+	fi
+	find_steam_cmd
+	if [[ $? -eq 1 ]]; then
+		err "steamcmd not found. See: https://developer.valvesoftware.com/wiki/SteamCMD"
+	else
+		printf "[INFO] Found steamcmd. Downloading mods\n"
 		revert_msg="Something went wrong. Reverting to manual mode"
 		auto_mod_download
-		[[ $? -eq 0 ]] && printf "\n"; init_table || err "$revert_msg"
+		if [[ $? -eq 0 ]]; then 
+			printf "\n"
+			init_table
+		else
+			err "$revert_msg"
+		fi
 	fi
 
 }
@@ -215,8 +233,23 @@ passed_mod_check(){
 	launch
 
 }
-check_workshop(){
-	curl -Ls "$url${modlist[$i]}" | grep data-appid | awk -F\" '{print $8}'
+query_defunct(){
+	max=${#modlist[@]}
+	printf "[INFO] Verifying integrity of server modlist manifest\n"
+	tput cnorm
+	#printf "\n"
+	concat(){
+	for ((i=0;i<$max;i++)); do
+	   echo "publishedfileids[$i]=${modlist[$i]}&"
+	done | awk '{print}' ORS=''
+	}
+	payload(){
+		echo -e "itemcount=${max}&$(concat)"
+	}
+	post(){
+		curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded" -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
+	}
+	readarray -t newlist <<< $(post | jq -r '.[].publishedfiledetails[] | select(.result==1) .publishedfileid')
 }
 validate_mods(){
 	url="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -224,13 +257,7 @@ validate_mods(){
 	tput civis
 	newlist=()
 	readarray -t modlist <<< $remote_mods
-	for ((i=0;i<=${#modlist[@]};i++)); do
-		printf "[INFO] Verifying integrity of server modlist manifest [$i/${#modlist[@]}]\r"
-		[[ $(check_workshop) -eq $aid ]] && newlist+=("${modlist[$i]}") || :
-		sleep 2s
-	done
-	tput cnorm
-	printf "\n"
+	query_defunct
 }
 server_modlist(){
 	for i in "${newlist[@]}"; do
