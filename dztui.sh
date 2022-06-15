@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.3.2
+version=0.3.3
 release_url="https://raw.githubusercontent.com/aclist/dztui/main/dztui.sh"
 aid=221100
 game="dayz"
@@ -16,12 +16,12 @@ whitelist=""
 fav=""
 name="player"
 separator="│"
-ping="1"
-debug="0"
+ping=1
+debug=0
 #END CONFIG================
 
 #STEAMCMD CONFIG===========
-auto_install_mods="0"
+auto_install_mods=1
 steamcmd_user="steam"
 steam_username="STEAMUSER"
 staging_dir="/tmp"
@@ -121,7 +121,7 @@ columnize(){
 test_fav(){
 	if [[ -n $fav ]]; then
 		if [[ $(echo -e "${tabled[$i]}" | awk -F'\t' -v fav=$fav '$5 == fav') ]] ; then
-			printf "%s│%s\n" "$i" "${tabled[$i]}"
+			printf "%s│▶%s\n" "$i" "${tabled[$i]}"
 		else
 			printf "%s│ %s\n" "$i" "${tabled[$i]}"
 		fi
@@ -182,14 +182,14 @@ move_files(){
 	rm -r "$staging_dir"/steamapps
 }
 auto_mod_download(){
-	sudo su -c "steamcmd +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit" $steamcmd_user
+	sudo -iu steam bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit" $steamcmd_user
 	[[ "$(ls -A $staging_dir/steamapps)" ]] && move_files || return 1
 }
 find_steam_cmd(){
 	for i in  "/home/steam" "/usr/share" "/usr/bin" "/"; do
 		steamcmd_path=$(sudo find "$i" -name steamcmd.sh 2>/dev/null | grep -v linux32 | head -n1)
 		if [[ -n "$steamcmd_path" ]]; then
-			printf "[INFO] Found steamcmd at '$steamcmd_path'"
+			printf "[INFO] Found steamcmd at '$steamcmd_path'\n"
 			return 0
 		else
 			return 1
@@ -211,7 +211,7 @@ auto_mod_install(){
 	if [[ $? -eq 1 ]]; then
 		err "steamcmd not found. See: https://developer.valvesoftware.com/wiki/SteamCMD"
 	else
-		printf "[INFO] Found steamcmd. Downloading mods\n"
+		printf "[INFO] Downloading mods\n"
 		revert_msg="Something went wrong. Reverting to manual mode"
 		auto_mod_download
 		if [[ $? -eq 0 ]]; then 
