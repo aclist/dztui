@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.3.4
+version=0.4.0
 release_url="https://raw.githubusercontent.com/aclist/dztui/main/dztui.sh"
 aid=221100
 game="dayz"
