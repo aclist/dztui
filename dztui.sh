@@ -16,12 +16,12 @@ whitelist=""
 fav=""
 name="player"
 separator="│"
-ping=1
-debug=0
+ping="1"
+debug="0"
 #END CONFIG================
 
 #STEAMCMD CONFIG===========
-auto_install_mods=1
+auto_install_mods="0"
 steamcmd_user="steam"
 steam_username="STEAMUSER"
 staging_dir="/tmp"
@@ -121,7 +121,7 @@ columnize(){
 test_fav(){
 	if [[ -n $fav ]]; then
 		if [[ $(echo -e "${tabled[$i]}" | awk -F'\t' -v fav=$fav '$5 == fav') ]] ; then
-			printf "%s│▶%s\n" "$i" "${tabled[$i]}"
+			printf "%s│%s\n" "$i" "${tabled[$i]}"
 		else
 			printf "%s│ %s\n" "$i" "${tabled[$i]}"
 		fi
