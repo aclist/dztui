@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.3.3
+version=0.3.4
 release_url="https://raw.githubusercontent.com/aclist/dztui/main/dztui.sh"
 aid=221100
 game="dayz"
@@ -93,11 +93,15 @@ parse_json(){
 		check_ping
 	done
 }
+encode(){
+	echo "$1" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g'
+}
 symlinks(){
 	for d in "$workshop_dir"/*; do
 		id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
+		encoded_id=$(encode "$id")
 		mod=$(awk -F\" '/name/ {print $2}' "$d"/meta.cpp | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
-		link="@$id-$mod"
+		link="@$encoded_id"
 		[[ -h "$game_dir/$link" ]] && : || 
 			printf "[INFO] Creating symlink for $mod\n"
 			ln -fs "$d" "$game_dir/$link"
@@ -139,8 +143,8 @@ concat_mods(){
 	readarray -t serv <<< "$(server_modlist)"
 	for i in "${serv[@]}"; do
 		id=$(awk -F"= " '/publishedid/ {print $2}' "$workshop_dir"/$i/meta.cpp | awk -F\; '{print $1}')
-		mod=$(awk -F\" '/name/ {print $2}' "$workshop_dir"/$i/meta.cpp | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
-		link="@$id-$mod;"
+		encoded_id=$(encode $id)
+		link="@$encoded_id;"
 		echo -e "$link"
 	done | tr -d '\n' | perl -ple 'chop'
 }
