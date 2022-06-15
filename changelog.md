@@ -6,13 +6,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Clean up logging
-- Detect Steam Deck dynamically
 - Toggle debug mode in-app
-- Add fav server in-app
-- Attempt to find DayZ path and write to config on first boot
-- Check if mod dir is sane before allowing List Mods option
-- One-shot mode to open mod links in browser
-- Source and recreate local config file values in the event of non-backwards compatible changes
+
+## [2.0.0] 2022-06-15
+### Added
+- Attempt to find DayZ path and write to config on first launch
+- Merge existing config values into new config format when upgrading version
+- Dynamically detect Steam Deck and set launch parameters
+- Add "gametime" column to server list
+- One-shot mode to open mod links in browser if using desktop
+- Add favorite server from main menu
+- Update favorite server changes in real time
+- Add link to help pages from main menu
+- Add link to changelog from main menu
+
+### Changed
+- Don't require duplication of fav server in whitelist
+- More permissive truncation of long server names (50 char limit)
+- Render mod list as a scrollable menu
+- Reword errors for greater verbosity
+- Initial support of granular error handling for API response codes
+- Move extended path variables out of user config
+
+### Fixed
+- Check if mod dir is sane before listing mods
+- Prevent favorite server launch if none set
+- Reset server list to entire whitelist if canceling out of fav connect
+- Do not load table on empty API response and warn user
+- Suppress stderr cruft in logs and use logger instead
 
 ## [1.2.1] 2022-06-12
 ### Fixed
