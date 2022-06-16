@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.4.0
+version=0.3.4
 release_url="https://raw.githubusercontent.com/aclist/dztui/main/dztui.sh"
 aid=221100
 game="dayz"
@@ -23,6 +23,7 @@ debug=0
 #STEAMCMD CONFIG===========
 auto_install_mods=1
 steamcmd_user="steam"
+steam_username="STEAMUSER"
 staging_dir="/tmp"
 #END STEAMCMD CONFIG=======
 
@@ -185,7 +186,7 @@ move_files(){
 	rm -r "$staging_dir"/steamapps
 }
 auto_mod_download(){
-	sudo -iu steam bash -c "$steamcmd_path +force_install_dir $staging_dir +login anonymous $(steamcmd_modlist) +quit" $steamcmd_user
+	sudo -iu steam bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit" $steamcmd_user
 	[[ "$(ls -A $staging_dir/steamapps)" ]] && move_files || return 1
 }
 find_steam_cmd(){
