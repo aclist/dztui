@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.0.0
+version=2.0.1
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -213,6 +213,7 @@ manual_mod_install(){
 			rc=$?
 			if [[ $rc -eq 0 ]]; then
 			compare
+			open_mod_links
 		else
 			return
 			fi
@@ -330,7 +331,6 @@ launch(){
 		steam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro -name=$name \"-mod=$mods\"
 		exit
 	fi
-		#reset whitelist if canceling connect
 		one_shot_launch=0
 }
 browser(){
@@ -396,6 +396,7 @@ connect_to_fav(){
 		sel=$(jq -r '.data[] .attributes | "\(.ip):\(.port)%%\(.id)"' <<< $response)
 		echo "[DZGUI] Attempting connection to $fav_label"
 		connect "$sel"
+		one_shot_launch=0
 	else
 		warn "No fav server configured"
 	fi
