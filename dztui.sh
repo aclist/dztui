@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.4.1
+version=0.5.0
 release_url="https://raw.githubusercontent.com/aclist/dztui/main/dztui.sh"
 aid=221100
 game="dayz"
@@ -35,17 +35,34 @@ err(){
 	printf "[ERROR] %s\n" "$1"
 	return 1
 }
+download_new_version(){
+	source_script=$(realpath "$0")
+	source_dir=$(dirname "$source_script")
+	mv $source_script $source_script.old
+	curl -Ls "$release_url" > $source_script
+	rc=$?
+	if [[ $rc -eq 0 ]]; then
+		printf "[INFO] Wrote %s to %s\n" $upstream "$source_script"
+		printf "[INFO] Restart app to use new version\n"
+		chmod +x $source_script
+		exit
+	else
+		mv $source_script.old $source_script
+		err "Failed to download new version. Reverting to prior version and quitting."
+		exit
+	fi
+}
 version_check(){
 	upstream=$(curl -Ls "$release_url" | awk -F= 'NR==3 {print $2}')
 	printf "[INFO] Checking for new version\n"
 	if [[ ! $upstream == "$version" ]]; then
-		printf "[INFO] A newer version of DZTUI is available at:\n$release_url.\n" 
+		printf "[INFO] A newer version of DZTUI is available (%s)\n" $upstream
 		while true; do 
-			read -p "Continue anyway? [Y/n] " response
+			read -p "Attempt to download new version? [Y/n] " response
 			if [[ $response == "Y" ]]; then 
-			       break
+				download_new_version
 			elif [[ $response == "n" ]]; then
-			       exit_msg
+				break
 			else 
 			       :
 			fi
