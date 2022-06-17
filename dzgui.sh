@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.0.2
+version=2.0.3
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -153,7 +153,6 @@ err(){
 varcheck(){
 	[[ -z $api_key ]] && (err "Error in key: 'api_key'")
 	[[ -z $whitelist ]] && (err "Error in key: 'whitelist'")
-	[[ ! -d $workshop_dir ]] && (err "Malformed workshop path")
 	[[ ! -d $game_dir ]] && (err "Malformed game path")
 	[[ $whitelist =~ [[:space:]] ]] && (err "Separate whitelist values with commas")
 }
