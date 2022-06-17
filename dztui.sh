@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.3.4
+version=0.4.0
 release_url="https://raw.githubusercontent.com/aclist/dztui/main/dztui.sh"
 aid=221100
 game="dayz"
@@ -171,13 +171,13 @@ launch_fav(){
 }
 manual_mod_install(){
 	printf "[ERROR] Missing mods. Open these links and subscribe to each one, then reconnect\n"
-	for i in $diff; do
+	for i in $(diff); do
 		printf "%s%s\n" "$workshop" $i
 	done
 }
 steamcmd_modlist(){
-	for i in $diff; do
-	printf "+workshop_download_item %s %s " $aid $i
+	for i in $(diff); do
+	printf "+workshop_download_item %s %s validate " $aid $i
 	done
 }
 move_files(){
@@ -186,8 +186,14 @@ move_files(){
 	rm -r "$staging_dir"/steamapps
 }
 auto_mod_download(){
+	sudo chown -R $USER:$gid "$staging_dir"/steamapps
+	rm -r "$staging_dir"/steamapps
+	until [[ -z $(diff) ]]; do
+	printf "[INFO] Downloading missing mods\n"
 	sudo -iu steam bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit" $steamcmd_user
+	printf "\n"
 	[[ "$(ls -A $staging_dir/steamapps)" ]] && move_files || return 1
+	done
 }
 find_steam_cmd(){
 	for i in  "/home/steam" "/usr/share" "/usr/bin" "/"; do
@@ -215,12 +221,11 @@ auto_mod_install(){
 	if [[ $? -eq 1 ]]; then
 		err "steamcmd not found. See: https://developer.valvesoftware.com/wiki/SteamCMD"
 	else
-		printf "[INFO] Downloading mods\n"
 		revert_msg="Something went wrong. Reverting to manual mode"
 		auto_mod_download
 		if [[ $? -eq 0 ]]; then 
 			printf "\n"
-			init_table
+			passed_mod_check
 		else
 			err "$revert_msg"
 		fi
@@ -228,6 +233,13 @@ auto_mod_install(){
 
 }
 failed_mod_check(){
+	disksize=$(df $staging_dir --output=avail | tail -n1)
+	bytewise=$((disksize * 1024))
+	hr=$(echo $(numfmt --to=iec --format "%8.1f" $bytewise $totalmodsize) | sed 's/ /\//')
+	if [[ $totalmodsize -gt $bytewise ]]; then 
+		printf "[ERROR] Not enough space to install mods: %s\n" $hr
+		return
+	fi
 	[[ $auto_install_mods -eq 1 ]] && auto_mod_install || manual_mod_install
 }
 passed_mod_check(){
@@ -253,7 +265,9 @@ query_defunct(){
 	post(){
 		curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded" -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
 	}
-	readarray -t newlist <<< $(post | jq -r '.[].publishedfiledetails[] | select(.result==1) .publishedfileid')
+	result=$(post | jq -r '.[].publishedfiledetails[] | select(.result==1) | "\(.file_size) \(.publishedfileid)"')
+	readarray -t newlist <<< $(echo -e "$result" | awk '{print $2}')
+	totalmodsize=$(echo -e "$result" | awk '{s+=$1}END{print s}')
 }
 validate_mods(){
 	url="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -268,14 +282,16 @@ server_modlist(){
 		printf "$i\n"
 	done
 }
+diff(){
+	comm -23 <(server_modlist | sort) <(installed_mods | sort)
+}
 compare(){
 	fetch_mods
 	validate_mods
-	diff=$(comm -23 <(server_modlist | sort) <(installed_mods | sort))
 }
 connect(){
 	compare
-	if [[ -n $diff ]]; then
+	if [[ -n $(diff) ]]; then
 		failed_mod_check
 	else
 		passed_mod_check
