@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.0.1
+version=2.0.2
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -119,7 +119,7 @@ guess_path(){
 		echo "# Checking for default DayZ path"
 		path=$(find $HOME -path "*.local/share/Steam/steamapps/common/DayZ" | wc -c)
 		if [[ ! $path -eq 0 ]]; then
-			steam_path="$HOME/.local/share/Steam/steamapps/common/DayZ"
+			steam_path="$HOME/.local/share/Steam"
 		else
 			echo "# Searching for alternate DayZ path"
 			path=$(find / -path "*/steamapps/common/DayZ" 2>/dev/null)
