@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.4.0
+version=0.4.1
 release_url="https://raw.githubusercontent.com/aclist/dztui/main/dztui.sh"
 aid=221100
 game="dayz"
@@ -236,11 +236,15 @@ failed_mod_check(){
 	disksize=$(df $staging_dir --output=avail | tail -n1)
 	bytewise=$((disksize * 1024))
 	hr=$(echo $(numfmt --to=iec --format "%8.1f" $bytewise $totalmodsize) | sed 's/ /\//')
-	if [[ $totalmodsize -gt $bytewise ]]; then 
-		printf "[ERROR] Not enough space to install mods: %s\n" $hr
-		return
+	if [[ $auto_install_mods -eq 1 ]]; then
+		if [[ $totalmodsize -gt $bytewise ]]; then 
+			printf "[ERROR] Not enough space in /tmp to automatically stage mods: %s\n" $hr
+			manual_mod_install
+		else
+			auto_mod_install
+		fi
 	fi
-	[[ $auto_install_mods -eq 1 ]] && auto_mod_install || manual_mod_install
+	
 }
 passed_mod_check(){
 	printf "[INFO] Mod check passed\n"
