@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clean up logging
 - Toggle debug mode in-app
 
+## [2.0.4] 2022-06-17
+### Fixed
+- Safer expansion of originating script path
+
+## [2.0.3] 2022-06-17
+### Changed
+- Remove runtime workshop path check
+
 ## [2.0.2] 2022-06-16
 ### Fixed
 - Remove enforced runtime check of workshop path
