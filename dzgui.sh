@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.0.3
+version=2.0.4
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -519,13 +519,14 @@ merge_config(){
 
 }
 download_new_version(){
-	source_dir=$(dirname -- "$(readlink -f -- "$0";)")
-	mv $source_dir/dzgui.sh $source_dir/dzgui.old
-	curl -Ls "$version_url" > $source_dir/dzgui.sh
+	source_script=$(realpath "$0")
+	source_dir=$(dirname "$source_script")
+	mv $source_script $source_script.old
+	curl -Ls "$version_url" > $source_script
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
-		echo "[DZGUI] Wrote $upstream to $source_dir/dzgui.sh"
-		chmod +x $source_dir/dzgui.sh
+		echo "[DZGUI] Wrote $upstream to $source_script"
+		chmod +x $source_script
 		touch ${config_path}.unmerged
 		zenity --question --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
 		code=$?
@@ -536,7 +537,7 @@ download_new_version(){
 			exit
 		fi
 	else
-		mv $source_dir/dzgui.old $source_dir/dzgui.sh
+		mv $source_script.old $source_script
 		zenity --info --title="DZGUI" --text "Failed to download new version." 2>/dev/null
 		return
 	fi
