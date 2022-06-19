@@ -1,0 +1,172 @@
+= DZGUI documentation
+DayZ community server graphical launcher for Linux
+:nofooter:
+:toc: left
+
+== What this is
+A GUI version of https://github.com/aclist/dztui[DZTUI] for Linux. Used to list community server details and quick connect to preferred servers by staging mods and concatenating launch options automatically. 
+
+DZGUI contains some expanded functionality that will eventually be backported to DZTUI. It is intended to be more of a user-friendly, turnkey solution for graphical desktop environments, and could also be used on the Steam Deck or similar devices.
+
+
+
+== Setup
+=== Dependencies
+If not already installed, the below can be found in your system's package manager.
+
+- `curl` 
+- `jq`
+- `zenity`
+- `steam`
+
+
+=== Preparation
+. Download DZGUI and make it executable:
+```
+chmod +x dzgui.sh
+```
+. Update the `vm.max_map_count` value (see https://www.protondb.com/app/221100)
+
+Ephemeral method:
+```
+sudo sysctl -w vm.max_map_count=1048576
+```
+
+Persistent method:
+```
+echo 'vm.max_map_count=1048576' | sudo tee /etc/sysctl.d/dayz.conf
+```
+[start=2]
+. Steam account with DayZ license
+. Enable a Proton version ≥ `6.8` (or use Experimental) in the **Compatibility** field of the game's right-click options. 
+
+
+=== API key & server IDs
+1. Register for an API key at https://www.battlemetrics.com/account/register?after=%2Fdevelopers[BattleMetrics] (free)
+2. From the **Personal Access Tokens** area, Select **New Token**
+3. Give the token any name in the field at the top
+4. Leave all options **unchecked** and scroll to the bottom, select **Create Token**
+5. Copy the access token for later use (see below). This is the unique token you will use to query servers.
+6. Use the https://www.battlemetrics.com/servers/dayz[DayZ server browser] to find servers of interest (proximity, player count, rules, etc.)
+7. Each server has a unique ID. This is the string of numbers at the end of the URL. Copy these IDs. For example, in the URL https://www.battlemetrics.com/servers/dayz/8039514, the ID is `8039514`.
+
+[NOTE]
+You will be prompted to enter these IDs when starting the app, so you could refer to them in another window while you complete setup. More IDs can be added later.
+
+
+=== First-time launch
+Follow the menu prompts provided by the app. You will be asked to provide:
+
+- API key (see above)
+- Player name (a generic handle, required by some servers)
+- At least one server ID
+
+DZGUI will then attempt to locate your default Steam installation and DayZ path. If it detects multiple paths, you will be given a list to choose from.
+
+[NOTE]
+If the path was not detected correctly, you can manually edit the config file at `$HOME/.config/dztui/dztuirc`.
+
+=== Updating the app
+If DZGUI detects a new upstream version, it will prompt you to download it automatically. It backs up the original version before fetching the new one, then updates your config file with your existing values. Once finished, it will ask you to relaunch the app.
+
+If you decline to upgrade to the new version, DZGUI will continue to the main menu with the current version.
+
+[NOTE]
+New versions may include changes to bugs that could prevent you from playing on certain servers. Upgrading is always advised.
+
+If you experience a problem or need to restore the prior version of DZGUI and/or your configs, it is enough to simply replace the new version with the old one and relaunch the app. The files can be found at:
+
+Script:
+```
+<path to script><script name>.old
+```
+E.g., if DZGUI is named `dzgui`, in the path `$HOME/bin`, it will be located at
+```
+$HOME/bin/dzgui.old
+```
+Config:
+```
+$HOME/.config/dztui/dztuirc.old
+
+```
+== Usage
+Select <<Launch server list>> to fetch details for the server IDs you provided. Select the server you wish to connect to and click OK. 
+
+DZGUI will check the server's modset against your local mods. If you are missing any, it will prompt you to download them through the Steam Workshop and open a window in the background in the system browser.
+
+Open each link and click Subscribe to schedule these for download. 
+[NOTE]
+You must be logged into Steam for mod change to take effect. It can take some time for the subscribed mods to download and update. You can continue clicking Next to regenerate the list, or wait for all of them to complete.
+
+Once all of the mods are downloaded and staged, DZGUI will notify you that it is ready to connect. The app hands the launch parameters to Steam and exits.
+
+== Menu options
+
+==== Launch server list
+Fetches detailed server information on the list of servers saved in the config file. This is the main place you interact with DZGUI when choosing a server from your list. These details are:
+
+- **Server**: name of the server, truncated to 50 chars
+- **IP/port**: IP address and port in the format `ip:port`
+- **Players**: online players, in the format `current/max`
+- **Gametime**: in-game time on the 24-hour clock
+- **Status**: whether the server is online or not
+- **ID**: numerical ID from BattleMetrics, used as a reference when troubleshooting or sharing servers
+- **Ping**: round-trip response time from the server
+
+==== Quick connect to favorite server
+Bypasses the server list and quick-connects to a single favorite server specified in advance using the <<Add favorite server>> option.
+
+==== Add server by ID
+Prompts you to add servers to the config file by ID. An indefinite number of servers can be added. These will be listed when using the <<Launch server list>> option.
+
+==== Add favorite server
+Prompts you to add a favorite server to the config file by ID. The name of the server will be updated in the header of the app. This server is used when selecting the <<Quick connect to favorite server>> option.
+
+==== List installed mods
+Prints a scrollable dialog containing all locally-installed mods.
+
+==== Report bug
+Using the system browser, opens the project's GitHub issues page to submit a report.
+
+==== Help file
+Using the system browser, opens this document.
+
+==== View changelog
+Prints the entire changelog up to the current version (and unreleased changes) in-app.
+
+== Config file key/value pairs
+Under normal usage, these values are populated automatically in-app. In the future, this config file will also be compatible with DZTUI.
+
+[%autowidth]
+|===
+|key|value
+
+|`api_key`|the API key generated at BattleMetrics. See <<Setup>>
+|`whitelist`|comma-separated list of server IDs from BattleMetrics; integer-values only
+|`fav`|server to display in the `Fav` field and to quick-connect to (must be one only); integer-values only
+|`name`|an arbitrary "handle" name used to identify the player on a server (required by some servers)
+|`debug`|by default, set to 0; set to `1` to print launch options that would have been run, instead of actually connecting (used for troubleshooting and submitting bug reports)
+|===
+
+== Troubleshooting/FAQ
+
+.Mods take a long time to synchronize when subscribing from Workshop
+Steam schedules the downloads in the background and processes them as they are subscribed to. This process is not instantaneous and can take some time. Check the **Downloads** pane of Steam to see live progress.
+
+.Game does not launch through Steam
+Check the logs emitted by Steam in the terminal, or in `<steam path>/error.log`.
+
+.Game launches, but throws a "mod missing/check PBO file" error when connecting
+You are missing mods or mods did not download correctly. Re-run the app to verify and link missing mods.
+
+.Game and server launches, but when joining the game world, an error occurs
+A mod is corrupted or the issue lies with the server. Replace the mods in question and reconnect.
+
+== Testers wanted
+If any of the below apply to you, your https://github.com/aclist/dztui/issues[reports] are encouraged:
+
+- Using a high resolution (4K) monitor
+- Own a Steam Deck
+- Seeking DZTUI functionality in DZGUI, or vice versa
+- Playing on a server with an enormous amount of mods
+- Playing on a server with non-English mod names (?)
