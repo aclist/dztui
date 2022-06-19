@@ -1,3 +1,3 @@
-# DZGUI
+A GUI version of [DZTUI](https://github.com/aclist/dztui) for Linux. Used to list community server details and quick connect to preferred servers by staging mods and concatenating launch options automatically. 
 
-In-development GUI mode for DZTUI. For use on Steam Deck, desktop, etc. 
+[Documentation](https://aclist.github.io/dzgui/dzgui.html)
