@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.6.0
+version=0.7.0
 release_url="https://raw.githubusercontent.com/aclist/dztui/main/dztui.sh"
 aid=221100
 game="dayz"
@@ -359,6 +359,9 @@ menu(){
 	printf "f$separator Launch favorite\n"
 	printf "l$separator List installed mods\n"
 	printf "r$separator Refresh\n"
+	if [[ $debug -eq 1 ]]; then
+	printf "d$separator Debug options\n"
+	fi
 	printf "q$separator Quit\n"
 	printf "\n"
 }
@@ -369,6 +372,33 @@ forced_exit(){
 	tput cnorm
 	printf "\n"
 	exit_msg
+}
+list_mod_names(){
+	cd $game_dir
+	for i in $(find * -maxdepth 1 -type l); do
+		awk -F"[=;]" -v var="$i" '{OFS="\t"}/name/ {a=$2}END{print var,a}' "$i"/meta.cpp \
+			| sed 's/;$//g' 
+	done | column -t -s$'\t' -o$'\t' | less
+}
+debug_options(){
+	if [[ $debug -eq 1 ]]; then
+		while true; do
+			printf "\n"
+			printf "1$separator List human readable mod paths\n"
+			printf "q$separator Back\n"
+			printf "\n"
+			read -p "Selection: " option
+			if [[ $option == 1 ]]; then
+				list_mod_names
+			elif [[ $option == q ]]; then
+				return
+			else
+				:
+			fi
+		done
+	else
+		:
+	fi
 }
 main(){
 	checks
@@ -389,6 +419,7 @@ main(){
 				r) init_table ;;
 				f) launch_fav ;;
 				l) list_mods ;;
+				d) debug_options;;
 				q) exit_msg ;;
 				*) : ;;
 			esac
