@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.5.0
+version=0.6.0
 release_url="https://raw.githubusercontent.com/aclist/dztui/main/dztui.sh"
 aid=221100
 game="dayz"
@@ -30,6 +30,7 @@ staging_dir="/tmp"
 declare -A deps
 deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [column]="2.37.2" [tr]="9.0" [comm]="9.0")
 max_range=$(awk -F, '{print NF}' <<< $whitelist)
+[[ $debug -eq 0 ]] && mode=Normal || mode=Debug
 
 err(){
 	printf "[ERROR] %s\n" "$1"
@@ -111,7 +112,7 @@ parse_json(){
 	done
 }
 encode(){
-	echo "$1" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g'
+	echo "$1" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g'
 }
 symlinks(){
 	for d in "$workshop_dir"/*; do
@@ -203,8 +204,10 @@ move_files(){
 	rm -r "$staging_dir"/steamapps
 }
 auto_mod_download(){
-	sudo chown -R $USER:$gid "$staging_dir"/steamapps
-	rm -r "$staging_dir"/steamapps
+	if [[ -d "$staging_dir/steamapps" ]]; then
+		sudo chown -R $USER:$gid "$staging_dir"/steamapps
+		rm -r "$staging_dir"/steamapps
+	fi
 	until [[ -z $(diff) ]]; do
 	printf "[INFO] Downloading missing mods\n"
 	sudo -iu steam bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit" $steamcmd_user
@@ -326,22 +329,26 @@ query_api(){
 	response=$(curl -s "$api" -H "Authorization: Bearer "$key"" -G -d "sort=-players" \
 		-d "filter[game]=$game" -d "filter[ids][whitelist]=$whitelist")
 	if [[ "$(jq -r 'keys[]' <<< $response)" == "errors" ]]; then
+		printf "\n"
 		printf "[ERROR] %s: check API key\n" "$(jq -r '.errors[] .status' <<< $response)"
+		tput cnorm
 		return 1
 	elif 
 		[[ -z "$(jq -r '.data[]' <<< $response)" ]]; then
 		printf "[ERROR] Check server ID\n"
+		tput cnorm
 		return 1
 	fi
 }
 init_table(){
 	tput civis
-	printf "[INFO] Polling servers. Please wait.\r"
+	printf "[INFO] Polling servers. Please wait.\n"
 	query_api
 	readarray -t tabled <<< $(parse_json <<< $response)
 	tput cnorm
 	tput cuu1
 	tput el
+	printf "\n"
 	table | columnize
 }
 get_sorted_id(){
@@ -356,7 +363,6 @@ menu(){
 	printf "\n"
 }
 exit_msg(){
-	printf "DZTUI $version\n"
 	exit
 }
 forced_exit(){
@@ -369,6 +375,7 @@ main(){
 	init_table
 	while true; do
 		menu
+		printf "[DZTUI $version/$mode]\n"
 		read -p "Selection: " sel
 		if [[ $sel =~ ^[0-9]+$ ]]; then
 			if [[ $sel -gt $max_range ]]; then
