@@ -1,5 +1,7 @@
 # DZTUI
 
+**Note:** this project is currently superseded by [DZGUI](https://github.com/aclist/dztui/tree/dzgui), which brings added features. Those features are currently being backported to the TUI client and the documentation for both is undergoing a rewrite in order to reach feature parity between the terminal and GUI versions.
+
 A TUI pseudo-browser for listing heads-up information on DayZ community servers, fetching and synchronizing mods, and connecting to these servers automatically without manually setting launch 
 parameters.
 
