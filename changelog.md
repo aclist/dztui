@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clean up logging
 - Toggle debug mode in-app
 
+## [2.1.0] 2022-06-19
+### Changed
+- Updated link to new documentation
+
 ## [2.0.3] 2022-06-17
 ### Fixed
 - Safer expansion of originating script path
