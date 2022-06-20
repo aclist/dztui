@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.0.3
+version=2.1.3
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -13,7 +13,7 @@ tmp=/tmp/dztui.tmp
 separator="%%"
 git_url="https://github.com/aclist/dztui/issues"
 version_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/dzgui.sh"
-help_url="https://github.com/aclist/dztui/blob/dzgui/README.md"
+help_url="https://aclist.github.io/dzgui/dzgui"
 upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
 check_config_msg="Check config values and restart."
 
