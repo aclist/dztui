@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.1.0
+version=2.2.0
 aid=221100
 game="dayz"
 workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -33,19 +33,19 @@ depcheck(){
 		command -v $dep 2>&1>/dev/null || (printf "[ERROR] Requires %s >= %s\nCheck your system package manager." $dep ${deps[$dep]}; exit 1)
 	done
 }
-
+init_items(){
 items=(
 	"Launch server list"
 	"Quick connect to favorite server"
 	"Add server by ID"
 	"Add favorite server"
 	"List installed mods"
-	#"Toggle debug mode"
+	"Toggle debug mode"
 	"Report bug (opens in browser)"
 	"Help file (opens in browser)"
 	"View changelog"
 	)
-
+}
 #exit_and_cleanup(){
 #rm $tmp
 #rm $link_file
@@ -402,9 +402,11 @@ connect_to_fav(){
 
 }
 main_menu(){
+	if [[ $debug -eq 1 ]]; then
+		items+=("Debug options")
+	fi
 	set_mode
 	if [[ -n $fav ]]; then
-		set_fav
 		items[3]="Change favorite server"
 	fi
 	while true; do
@@ -435,10 +437,14 @@ main_menu(){
 		elif [[ $sel == "${items[4]}" ]]; then
 			list_mods
 		elif [[ $sel == "${items[5]}" ]]; then
-			report_bug
+			toggle_debug
+			main_menu
+			return
 		elif [[ $sel == "${items[6]}" ]]; then
-			help_file
+			report_bug
 		elif [[ $sel == "${items[7]}" ]]; then
+			help_file
+		elif [[ $sel == "${items[8]}" ]]; then
 			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
 		else
 			warn "This feature is not yet implemented."
@@ -558,7 +564,7 @@ check_version(){
 	fi
 }
 check_architecture(){
-	os_release=$(awk '/steamdeck/' "/etc/os-release")
+	os_release=$(awk '/SteamOS/' "/etc/os-release")
 	if [[ -f "/etc/os-release" ]] && [[ -n $os_releasec ]]; then
 		is_steam_deck=1
 		echo "[DZGUI] Setting architecture to 'Steam Deck'"
@@ -590,6 +596,28 @@ add_by_id(){
 		fi
 	done
 }
+toggle_debug(){
+	mv $config_file ${config_path}dztuirc.old
+	nr=$(awk '/debug=/ {print NR}' ${config_path}dztuirc.old)
+	if [[ $debug -eq 1 ]]; then
+		debug=0
+		items=()
+		init_items
+	else
+		debug=1
+	fi
+	flip_debug="debug=\"$debug\""
+	awk -v "var=$flip_debug" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
+	printf "[DZGUI] Toggled debug flag to '$debug'\n"
+	source $config_file
+
+}
+setup(){
+	if [[ -n $fav ]]; then
+		set_fav
+		items[3]="Change favorite server"
+	fi
+}
 add_by_fav(){
 while true; do
 	fav_id=$(zenity --entry --text="Enter server ID" --title="DZGUI" 2>/dev/null)
@@ -620,6 +648,8 @@ main(){
 	check_architecture
 	config
 	run_varcheck
+	init_items
+	setup
 	main_menu
 }
 
