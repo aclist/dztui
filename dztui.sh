@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eo pipefail
-version=0.7.0
+version=0.7.1
 release_url="https://raw.githubusercontent.com/aclist/dztui/main/dztui.sh"
 aid=221100
 game="dayz"
@@ -113,6 +113,13 @@ parse_json(){
 }
 encode(){
 	echo "$1" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g'
+}
+legacy_symlinks(){
+	for d in "$game_dir"/*; do
+		if [[ $d =~ @[0-9]+-.+ ]]; then
+			unlink "$d"
+		fi
+	done
 }
 symlinks(){
 	for d in "$workshop_dir"/*; do
@@ -269,6 +276,7 @@ failed_mod_check(){
 passed_mod_check(){
 	printf "[INFO] Mod check passed\n"
 	connecting_to=$(echo -e "${tabled[$sel]}" | awk -F'\t' '{print $1,$2}')
+	legacy_symlinks
 	symlinks
 	launch
 
