@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 - Clean up logging
+- Port DZTUI symlink logic to DZGUI
+- Add method of handling legacy symlinks
 
 ## [2.2.0] 2022-06-22
 ### Added
