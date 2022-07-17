@@ -1,6 +1,6 @@
 # DZTUI
 
-**Note:** this project is currently superseded by [DZGUI](https://github.com/aclist/dztui/tree/dzgui), which brings added features. Those features are currently being backported to the TUI client and the documentation for both is undergoing a rewrite in order to reach feature parity between the terminal and GUI versions.
+**NOTE:** this project is currently superseded by [DZGUI](https://github.com/aclist/dztui/tree/dzgui), which brings numerous hotfixes and quality of life features. Those features are gradually being backported to the TUI client and the documentation for both is undergoing a rewrite in order to reach feature parity between the terminal and GUI versions. For the most extensive server support, use DZGUI.
 
 ## What this is:
 
