@@ -5,6 +5,13 @@
 - Port DZTUI symlink logic to DZGUI
 - Add method of handling legacy symlinks
 
+## [2.2.1] 2022-07-17
+### Fixed
+- Hotfix for upstream API returning malformed modlists
+- Handle servers with no mods
+- Fix dialog window depending on browser exit
+- Remove stray newlines in config file
+
 ## [2.2.0] 2022-06-22
 ### Added
 - Toggle debug mode in-app
