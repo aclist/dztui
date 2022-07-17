@@ -1,10 +1,10 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.2.0
+version=2.2.1
 aid=221100
 game="dayz"
-workshop="https://steamcommunity.com/sharedfiles/filedetails/?id="
+workshop="steam://url/CommunityFilePage/"
 api="https://api.battlemetrics.com/servers"
 sd_res="--width=1280 --height=800"
 config_path="$HOME/.config/dztui/"
@@ -17,6 +17,12 @@ help_url="https://aclist.github.io/dzgui/dzgui"
 upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
 check_config_msg="Check config values and restart."
 
+#TODO: prevent connecting to offline servers
+#TODO: concat large mod links
+#TODO: check map count and warn
+	#sysctl -q vm.max_map_count
+	#prompt password
+#TODO: abstract zenity title params
 
 declare -A deps
 deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [zenity]="3.42.1")
@@ -34,6 +40,7 @@ depcheck(){
 	done
 }
 init_items(){
+	#array order determines menu selector; this is destructive
 items=(
 	"Launch server list"
 	"Quick connect to favorite server"
@@ -46,10 +53,11 @@ items=(
 	"View changelog"
 	)
 }
-#exit_and_cleanup(){
-#rm $tmp
-#rm $link_file
-#}
+exit_and_cleanup(){
+	#TODO: this is currently unused
+	rm $tmp
+	rm $link_file
+}
 warn_and_exit(){
 	zenity --info --title="DZGUI" --text="$1" --icon-name="dialog-warning" 2>/dev/null
 	printf "[DZGUI] %s\n" "$check_config_msg"
@@ -91,7 +99,6 @@ query_api(){
 }
 write_config(){
 cat	<<-END
-
 #Path to DayZ installation
 steam_path="$steam_path"
 
@@ -109,7 +116,6 @@ name="$name"
 
 #Set to 1 to perform dry-run and print launch options
 debug="0"
-
 	END
 }
 guess_path(){
@@ -200,7 +206,7 @@ open_mod_links(){
 		echo "<a href=\"${workshop}$i\">${workshop}$i</a><br>"
 	done >> $link_file
 	echo "</html>" >> $link_file
-	browser "$link_file" 
+	browser "$link_file" &
 
 }
 manual_mod_install(){
@@ -246,7 +252,7 @@ symlinks(){
 			printf "[DZGUI] Creating symlink for $mod\n" 
 			ln -fs "$d" "$game_dir/$link"
 		fi 
-	done 
+	done
 }
 passed_mod_check(){
 	echo "[DZGUI] Passed mod check"
@@ -258,7 +264,7 @@ connect(){
 	#TODO: sanitize/validate input
 	ip=$(echo "$1" | awk -F"$separator" '{print $1}')
 	bid=$(echo "$1" | awk -F"$separator" '{print $2}')
-	fetch_mods "$bid"
+	fetch_mods_sa "$ip"
 	validate_mods
 	rc=$?
 	[[ $rc -eq 1 ]] && return
@@ -270,11 +276,23 @@ connect(){
 	fi
 }
 
+fetch_mods_sa(){
+	sa_ip=$(echo $ip | awk -F: '{print $1}')
+	for i in ${qport_arr[@]}; do
+		if [[ -n $(echo "$i" | awk -v ip=$ip -F: '$0 ~ ip') ]]; then
+			sa_port=$(echo $i | awk -v ip=$ip -F: '$0 ~ ip {print $3}')
+		fi
+	done
+	echo "[DZGUI] Querying modlist on ${sa_ip}:${sa_port}"
+	remote_mods=$(curl -Ls "https://dayzsalauncher.com/api/v1/query/$sa_ip/$sa_port" | jq -r '.result.mods[].steamWorkshopId')
+}
 fetch_mods(){
+	#TODO: broken upstream
 	remote_mods=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d filter[ids][whitelist]="$1" -d "sort=-players" \
 	| jq -r '.data[] .attributes .details .modIds[]')
 }
 check_workshop(){
+	#TODO: legacy method is defunct
 	curl -Ls "$url${modlist[$i]}" | grep data-appid | awk -F\" '{print $8}'
 }
 query_defunct(){
@@ -311,13 +329,17 @@ installed_mods(){
 	ls -1 "$workshop_dir"
 }
 concat_mods(){
-	readarray -t serv <<< "$(server_modlist)"
-	for i in "${serv[@]}"; do
-		id=$(awk -F"= " '/publishedid/ {print $2}' "$workshop_dir"/$i/meta.cpp | awk -F\; '{print $1}')
-		mod=$(awk -F\" '/name/ {print $2}' "$workshop_dir"/$i/meta.cpp | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
-		link="@$id-$mod;"
-		echo -e "$link"
-	done | tr -d '\n' | perl -ple 'chop'
+	if [[ -z ${remote_mods[@]} ]]; then
+		return 1
+	else
+		readarray -t serv <<< "$(server_modlist)"
+		for i in "${serv[@]}"; do
+			id=$(awk -F"= " '/publishedid/ {print $2}' "$workshop_dir"/$i/meta.cpp | awk -F\; '{print $1}')
+			mod=$(awk -F\" '/name/ {print $2}' "$workshop_dir"/$i/meta.cpp | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
+			link="@$id-$mod;"
+			echo -e "$link"
+		done | tr -d '\n' | perl -ple 'chop'
+	fi
 }
 launch(){
 	mods=$(concat_mods)
@@ -456,7 +478,9 @@ main_menu(){
 }
 parse_json(){
 	list=$(jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
+	qport_list=$(echo "$response" | jq -r '.data[] .attributes | "\(.ip):\(.port):\(.portQuery)"')
 	echo -e "$list" > $tmp
+	readarray -t qport_arr <<< "$qport_list"
 }
 check_ping(){
 		ping_ip=$(echo "$1" | awk -F'\t' '{print $2}' | awk -F: '{print $1}')
@@ -574,7 +598,7 @@ check_architecture(){
 	fi
 }
 add_by_id(){
-	#TODO: prevent redundant creation of existent IDs
+	#TODO: prevent redundant creation of existent IDs (for neatness)
 	while true; do
 		id=$(zenity --entry --text="Enter server ID" --title="DZGUI" 2>/dev/null)
 		rc=$?
