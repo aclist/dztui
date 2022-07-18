@@ -2,8 +2,17 @@
 
 ## [Unreleased]
 - Clean up logging
-- Port DZTUI symlink logic to DZGUI
-- Add method of handling legacy symlinks
+- Concatenate long mod launch params
+- Port DZTUI method of handling legacy symlinks
+
+## [2.3.0] 2022-07-18
+### Added
+- Numbered mod links in browser
+- Admonition to upgrade versions for bug fixes
+- Toggle branch between stable/testing
+
+### Fixed
+- Hotfix for fav server select on main menu
 
 ## [2.2.1] 2022-07-17
 ### Fixed
