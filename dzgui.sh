@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.2.1
+version=2.3.0
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -11,10 +11,10 @@ config_path="$HOME/.config/dztui/"
 config_file="${config_path}dztuirc"
 tmp=/tmp/dztui.tmp
 separator="%%"
-git_url="https://github.com/aclist/dztui/issues"
-version_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/dzgui.sh"
+git_url="https://github.com/aclist/dztui/issues/new/choose"
+stable_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/dzgui.sh"
+testing_url="https://raw.githubusercontent.com/aclist/dztui/testing/dzgui.sh"
 help_url="https://aclist.github.io/dzgui/dzgui"
-upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
 check_config_msg="Check config values and restart."
 
 #TODO: prevent connecting to offline servers
@@ -116,6 +116,9 @@ name="$name"
 
 #Set to 1 to perform dry-run and print launch options
 debug="0"
+
+#Toggle stable/testing branch
+branch="stable"
 	END
 }
 guess_path(){
@@ -202,8 +205,10 @@ open_mod_links(){
 	echo "<title>DZGUI</title>" >> $link_file
 	echo "<h1>DZGUI</h1>" >> $link_file
 	echo "<p>Open these links and subscribe to them on the Steam Workshop, then continue with the application prompts.<br><b>Note:</b> it may take some time for mods to synchronize before DZGUI can see them.<br>It can help to have Steam in an adjacent window so that you can see the downloads completing.</p>" >> $link_file
-	for i in $diff; do	
-		echo "<a href=\"${workshop}$i\">${workshop}$i</a><br>"
+	n=1
+	for i in $diff; do
+		echo "$n. <a href=\"${workshop}$i\">${workshop}$i</a><br>"
+		let n++
 	done >> $link_file
 	echo "</html>" >> $link_file
 	browser "$link_file" &
@@ -262,7 +267,13 @@ passed_mod_check(){
 }
 connect(){
 	#TODO: sanitize/validate input
+	readarray -t qport_arr <<< "$qport_list"
+	if [[ -z ${qport_arr[@]} ]]; then
+		err "Failed to process favorite server"
+		return
+	fi
 	ip=$(echo "$1" | awk -F"$separator" '{print $1}')
+	#TODO: deprecated (for now)
 	bid=$(echo "$1" | awk -F"$separator" '{print $2}')
 	fetch_mods_sa "$ip"
 	validate_mods
@@ -279,12 +290,17 @@ connect(){
 fetch_mods_sa(){
 	sa_ip=$(echo $ip | awk -F: '{print $1}')
 	for i in ${qport_arr[@]}; do
-		if [[ -n $(echo "$i" | awk -v ip=$ip -F: '$0 ~ ip') ]]; then
-			sa_port=$(echo $i | awk -v ip=$ip -F: '$0 ~ ip {print $3}')
+		if [[ -n $(echo "$i" | awk -v ip=$ip '$0 ~ ip') ]]; then
+			sa_port=$(echo $i | awk -v ip=$ip -F$separator '$0 ~ ip {print $2}')
 		fi
 	done
 	echo "[DZGUI] Querying modlist on ${sa_ip}:${sa_port}"
 	remote_mods=$(curl -Ls "https://dayzsalauncher.com/api/v1/query/$sa_ip/$sa_port" | jq -r '.result.mods[].steamWorkshopId')
+	rc=$?
+	if [[ $rc -eq 1 ]]; then
+		err "Failed to fetch modlist"
+		return
+	fi
 }
 fetch_mods(){
 	#TODO: broken upstream
@@ -388,10 +404,10 @@ populate(){
 	while true; do
 		#TODO: add boolean statement for ping flag; affects all column ordinal output
 		cols="--column="Server" --column="IP" --column="Players" --column="Gametime" --column="Status" --column="ID" --column="Ping""
-		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Fav: $fav_label"  \
-			--separator="$separator" --print-column=2,6 2>/dev/null)
+		set_header ${FUNCNAME[0]}
 		rc=$?
-		if [[ $rc -eq 0 ]]; then if [[ -z $sel ]]; then
+		if [[ $rc -eq 0 ]]; then 
+			if [[ -z $sel ]]; then
 				warn "No item was selected."
 			else
 				connect $sel
@@ -414,14 +430,46 @@ connect_to_fav(){
 	if [[ -n $fav ]]; then
 		one_shot_launch=1
 		query_api
-		sel=$(jq -r '.data[] .attributes | "\(.ip):\(.port)%%\(.id)"' <<< $response)
+		qport_list=$(echo "$response" | jq -r '.data[] .attributes | "\(.ip):\(.port)%%\(.portQuery)"')
 		echo "[DZGUI] Attempting connection to $fav_label"
-		connect "$sel"
+		connect "$qport_list"
 		one_shot_launch=0
 	else
 		warn "No fav server configured"
 	fi
 
+}
+set_header(){
+	if [[ $1 == "populate" ]]; then
+		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Fav: $fav_label"  \
+			--separator="$separator" --print-column=2,6 2>/dev/null)
+	elif [[ $1 == "main_menu" ]]; then
+		sel=$(zenity --width=1280 --height=800 --list --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Fav: $fav_label" \
+		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" "${items[@]}" 2>/dev/null)
+	fi
+}
+toggle_branch(){
+	mv $config_file ${config_path}dztuirc.old
+	nr=$(awk '/branch=/ {print NR}' ${config_path}dztuirc.old)
+	if [[ $branch == "stable"  ]]; then
+		branch="testing"
+	else
+		branch="stable"
+	fi
+	flip_branch="branch=\"$branch\""
+	awk -v "var=$flip_branch" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
+	printf "[DZGUI] Toggled branch to '$branch'\n"
+	source $config_file
+}
+debug_menu(){
+	debug_list=(
+		"Toggle branch"
+		)
+	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" "${debug_list[@]}" 2>/dev/null)
+	if [[ $debug_sel == "${debug_list[0]}" ]]; then
+		toggle_branch
+		check_version
+	fi
 }
 main_menu(){
 	if [[ $debug -eq 1 ]]; then
@@ -432,8 +480,7 @@ main_menu(){
 		items[3]="Change favorite server"
 	fi
 	while true; do
-	sel=$(zenity --width=1280 --height=800 --list --title="DZGUI" --text="DZGUI $version | Mode: $mode | Fav: $fav_label" \
-		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" "${items[@]}" 2>/dev/null)
+		set_header ${FUNCNAME[0]}
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
 		if [[ -z $sel ]]; then
@@ -468,6 +515,8 @@ main_menu(){
 			help_file
 		elif [[ $sel == "${items[8]}" ]]; then
 			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
+		elif [[ $sel == "${items[9]}" ]]; then
+			debug_menu
 		else
 			warn "This feature is not yet implemented."
 		fi
@@ -478,9 +527,8 @@ main_menu(){
 }
 parse_json(){
 	list=$(jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
-	qport_list=$(echo "$response" | jq -r '.data[] .attributes | "\(.ip):\(.port):\(.portQuery)"')
+	qport_list=$(echo "$response" | jq -r '.data[] .attributes | "\(.ip):\(.port)%%\(.portQuery)"')
 	echo -e "$list" > $tmp
-	readarray -t qport_arr <<< "$qport_list"
 }
 check_ping(){
 		ping_ip=$(echo "$1" | awk -F'\t' '{print $2}' | awk -F: '{print $1}')
@@ -573,12 +621,22 @@ download_new_version(){
 	fi
 
 }
+check_branch(){
+	if [[ $branch == "stable" ]]; then
+		version_url="$stable_url"
+	elif [[ $branch == "testing" ]]; then
+		version_url="$testing_url"
+	fi
+	upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
+}
 check_version(){
+	source $config_file
+	check_branch
 	if [[ $version == $upstream ]]; then
 		check_unmerged
 	else
 		echo "[DZGUI] Upstream ($upstream) is > local ($version)"
-		zenity --question --title="DZGUI" --text "Newer version available.\n\nYour version:\t\t\t$version\nUpstream version:\t\t$upstream\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
+		zenity --question --title="DZGUI" --text "Newer version available.\n\nYour branch:\t\t\t$branch\nYour version:\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
 		rc=$?
 		if [[ $rc -eq 1 ]]; then
 			return
