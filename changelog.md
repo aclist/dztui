@@ -4,7 +4,7 @@
 - Clean up logging
 - Custom query API
 
-## [2.4.0] 2022-07-24
+## [2.4.0-rc.1] 2022-07-24
 ### Added
 - Dependency check for Steam
 - Delete server from list
@@ -23,6 +23,7 @@
 - Couple connect to fav and normal connect to same query function for maintainability
 - Revert to old issues page index
 - Hide header on unneeded pages
+- Better detection of Steam Deck
 
 ## [2.3.0] 2022-07-18
 ### Added
