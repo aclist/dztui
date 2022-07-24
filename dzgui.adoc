@@ -36,6 +36,10 @@ Persistent method:
 ```
 echo 'vm.max_map_count=1048576' | sudo tee /etc/sysctl.d/dayz.conf
 ```
+
+[NOTE]
+If it detects an incorrect map count value, DZGUI will prompt you to permanently update the map count value when starting up.
+
 [start=2]
 . Steam account with DayZ license
 . Enable a Proton version ≥ `6.8` (or use Experimental) in the **Compatibility** field of the game's right-click options. 
@@ -120,10 +124,16 @@ Bypasses the server list and quick-connects to a single favorite server specifie
 Prompts you to add servers to the config file by ID. An indefinite number of servers can be added. These will be listed when using the <<Launch server list>> option.
 
 ==== Add favorite server
-Prompts you to add a favorite server to the config file by ID. The name of the server will be updated in the header of the app. This server is used when selecting the <<Quick connect to favorite server>> option.
+Prompts you to add/change a favorite server to the config file by ID. The name of the server will be updated in the header of the app. This server is used when selecting the <<Quick connect to favorite server>> option. If a favorite server is already enabled, this option switches to "Change favorite server."
+
+==== Delete server
+Prints a list of human-readable servers currently saved, and lets you delete them by selecting one from the list.
 
 ==== List installed mods
-Prints a scrollable dialog containing all locally-installed mods.
+Prints a scrollable dialog containing all locally-installed mods and their corresponding symlinks IDs.
+
+==== Toggle debug mode
+Toggles debug mode, which is used to perform dry-runs and output what parameters would have been used to connect to a server. Enabling debug mode also exposes the <<Debug options>> menu, which contains some settings for advanced use.
 
 ==== Report bug
 Using the system browser, opens the project's GitHub issues page to submit a report.
@@ -134,8 +144,14 @@ Using the system browser, opens this document.
 ==== View changelog
 Prints the entire changelog up to the current version (and unreleased changes) in-app.
 
+==== Debug options
+If enabled, this menu contains a sub-menu with various advanced features, enumerated below.
+
+===== Toggle branch
+Used to toggle the branch to fetch DZGUI from between `stable` and `testing`. The app ships with the stable branch enabled, with the testing branch being used to elaborate various experimental features.
+
 == Config file key/value pairs
-Under normal usage, these values are populated automatically in-app. In the future, this config file will also be compatible with DZTUI.
+Under normal usage, these values are populated and toggled automatically in-app. This config file is partially compatible DZTUI.
 
 [%autowidth]
 |===
@@ -146,6 +162,8 @@ Under normal usage, these values are populated automatically in-app. In the futu
 |`fav`|server to display in the `Fav` field and to quick-connect to (must be one only); integer-values only
 |`name`|an arbitrary "handle" name used to identify the player on a server (required by some servers)
 |`debug`|by default, set to 0; set to `1` to print launch options that would have been run, instead of actually connecting (used for troubleshooting and submitting bug reports)
+|`branch`|by default, set to `stable`; set to `testing` to fetch the testing branch
+|`seen_news`|stores a hash of the news item last seen by the client. This is used to suppress news messages until a new one is posted.
 |===
 
 == Troubleshooting/FAQ
