@@ -1,1 +1,1 @@
-NEWS: test 2
+NEWS: Initial prototype of over-the-air news updates. Once seen, this message will be suppressed on next restart.
