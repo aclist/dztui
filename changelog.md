@@ -2,8 +2,43 @@
 
 ## [Unreleased]
 - Clean up logging
-- Port DZTUI symlink logic to DZGUI
-- Add method of handling legacy symlinks
+- Custom query API
+
+## [2.4.0] 2022-07-24
+### Added
+- Dependency check for Steam
+- Delete server from list
+- News backend for critical updates
+- Prompt to permanently update sysctl map count
+- Clean up stale symlinks if mods were deleted
+- Backported DZTUI mod listing method (includes symlinks)
+- Backported DZTUI method of encoding symlinks when handling large number of mods 
+- Write dry-run launch options to file when in debug mode
+
+### Fixed
+- Prevent garbage in dependency check messages
+- Send browser to background when opening links
+
+### Changed
+- Couple connect to fav and normal connect to same query function for maintainability
+- Revert to old issues page index
+- Hide header on unneeded pages
+
+## [2.3.0] 2022-07-18
+### Added
+- Numbered mod links in browser
+- Admonition to upgrade versions for bug fixes
+- Toggle branch between stable/testing
+
+### Fixed
+- Hotfix for fav server select on main menu
+
+## [2.2.1] 2022-07-17
+### Fixed
+- Hotfix for upstream API returning malformed modlists
+- Handle servers with no mods
+- Fix dialog window depending on browser exit
+- Remove stray newlines in config file
 
 ## [2.2.0] 2022-06-22
 ### Added
