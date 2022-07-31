@@ -4,6 +4,10 @@
 - Clean up logging
 - Custom query API
 
+## [2.4.0-rc.4] 2022-07-31
+### Fixed
+Source seen_news and debug values when writing new config file
+
 ## [2.4.0-rc.3] 2022-07-31
 ### Fixed
 Populate branch value correctly when staging config file
