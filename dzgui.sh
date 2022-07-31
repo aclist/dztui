@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.0-rc.2
+version=2.4.0-rc.3
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -143,7 +143,7 @@ name="$name"
 debug="0"
 
 #Toggle stable/testing branch
-branch="stable"
+branch="$branch"
 
 #Last seen news item
 seen_news=""
@@ -753,6 +753,7 @@ prompt_dl(){
 }
 check_version(){
 	source $config_file
+	[[ -z $branch ]] && branch="stable"
 	check_branch
 	if [[ $version == $upstream ]]; then
 		check_unmerged
