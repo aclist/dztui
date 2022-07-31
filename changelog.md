@@ -4,6 +4,10 @@
 - Clean up logging
 - Custom query API
 
+## [2.4.0-rc.5] 2022-07-31
+### Changed
+Drop download prompt for branch toggle
+
 ## [2.4.0-rc.4] 2022-07-31
 ### Fixed
 Source seen_news and debug values when writing new config file
