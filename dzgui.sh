@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.0-rc.3
+version=2.4.0-rc.4
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -140,13 +140,13 @@ fav="$fav"
 name="$name"
 
 #Set to 1 to perform dry-run and print launch options
-debug="0"
+debug="$debug"
 
 #Toggle stable/testing branch
 branch="$branch"
 
 #Last seen news item
-seen_news=""
+seen_news="$seen_news"
 	END
 }
 guess_path(){
@@ -559,6 +559,7 @@ debug_menu(){
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
 		enforce_dl=1
+		toggle_branch &&
 		check_version
 	fi
 }
@@ -739,7 +740,7 @@ enforce_dl(){
 	if [[ $rc -eq 1 ]]; then
 		exit	
 	else
-		download_new_version && toggle_branch
+		download_new_version
 	fi
 }
 prompt_dl(){    
