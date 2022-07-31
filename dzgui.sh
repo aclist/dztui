@@ -558,7 +558,7 @@ debug_menu(){
 		)
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
-		toggle_branch
+		enforce_dl=1
 		check_version
 	fi
 }
@@ -733,19 +733,35 @@ check_branch(){
 	fi
 	upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
 }
+enforce_dl(){
+	zenity --warning --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version:\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
+	rc=$?
+	if [[ $rc -eq 1 ]]; then
+		exit	
+	else
+		download_new_version && toggle_branch
+	fi
+}
+prompt_dl(){    
+	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version:\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
+	rc=$?
+	if [[ $rc -eq 1 ]]; then
+		return
+	else
+		download_new_version
+	fi
+}
 check_version(){
 	source $config_file
 	check_branch
 	if [[ $version == $upstream ]]; then
 		check_unmerged
 	else
-		echo "[DZGUI] Upstream ($upstream) is > local ($version)"
-		zenity --question --title="DZGUI" --text "Newer version available.\n\nYour branch:\t\t\t$branch\nYour version:\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
-		rc=$?
-		if [[ $rc -eq 1 ]]; then
-			return
+		echo "[DZGUI] Upstream ($upstream) != local ($version)"
+		if [[ $enforce_dl -eq 1 ]]; then
+			enforce_dl
 		else
-			download_new_version
+			prompt_dl
 		fi
 	fi
 }
