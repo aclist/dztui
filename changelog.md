@@ -4,6 +4,10 @@
 - Clean up logging
 - Custom query API
 
+## [2.4.0-rc.3] 2022-07-31
+### Fixed
+Populate branch value correctly when staging config file
+
 ## [2.4.0-rc.2] 2022-07-31
 ### Fixed
 Enforce download when switching branches
