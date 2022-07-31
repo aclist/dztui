@@ -4,6 +4,10 @@
 - Clean up logging
 - Custom query API
 
+## [2.4.0-rc.2] 2022-07-31
+### Fixed
+Enforce download when switching branches
+
 ## [2.4.0-rc.1] 2022-07-24
 ### Added
 - Dependency check for Steam
