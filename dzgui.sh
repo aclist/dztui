@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.0-rc.4
+version=2.4.0-rc.5
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -735,13 +735,7 @@ check_branch(){
 	upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
 }
 enforce_dl(){
-	zenity --warning --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version:\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
-	rc=$?
-	if [[ $rc -eq 1 ]]; then
-		exit	
-	else
 		download_new_version
-	fi
 }
 prompt_dl(){    
 	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version:\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
