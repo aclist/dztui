@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.0-rc.5
+version=2.4.0-rc.7
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -149,8 +149,22 @@ branch="$branch"
 seen_news="$seen_news"
 	END
 }
+write_desktop_file(){
+cat	<<-END
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Exec=/home/deck/Downloads/dzgui.sh
+Name=DZGUI
+Comment=dzgui
+Icon=dzgui.png
+	END
+}
 guess_path(){
 	if [[ $is_steam_deck -eq 1 ]]; then
+		curl -s "https://github.com/aclist/dztui/raw/testing/dzgui.png" > "$HOME/.local/share/applications"
+		write_desktop_file > "$HOME/.local/share/applications"
 		steam_path="/home/deck/.local/share/Steam"
 	else
 		echo "# Checking for default DayZ path"
@@ -175,13 +189,38 @@ guess_path(){
 		echo "[DZGUI] Set Steam path to $steam_path"
 }
 create_config(){
+	while true; do
 	player_input="$(zenity --forms --add-entry="Player name (required for some servers)" --add-entry="API key" --add-entry="Server 1 (you can add more later)" --title=DZGUI --text=DZGUI --add-entry="Server 2" --add-entry="Server 3" --add-entry="Server 4" $sd_res --separator="│")"
-	name=$(echo "$player_input" | awk -F│ '{print $1}')
-	api_key=$(echo "$player_input" | awk -F│ '{print $2}')
-	whitelist=$(echo "$player_input" | awk -F"│" '{OFS=","}{print $3,$4,$5}' | sed 's/,*$//g' | sed 's/^,*//g')
+	#explicitly setting IFS crashes zenity in loop
+	#and mapfile does not support high ascii delimiters
+	#so split fields with newline
+	readarray -t args < <(echo "$player_input" | sed 's/│/\n/g')
+	name="${args[0]}"
+	api_key="${args[1]}"
+	server_1="${args[2]}"
+	server_2="${args[3]}"
+	server_3="${args[4]}"
+	server_4="${args[5]}"
+
+	[[ -z $player_input ]] && exit
+	if [[ -z $api_key ]]; then
+		warn "API key: invalid value"
+	elif [[ ! $server_1 =~ ^[0-9]+$ ]]; then
+		warn "Server 1: invalid server ID"
+	elif [[ -n $server_2 ]] && [[ ! $server_2 =~ ^[0-9]+$ ]]; then
+		warn "Server 2: invalid server ID"
+	elif [[ -n $server_3 ]] && [[ ! $server_3 =~ ^[0-9]+$ ]]; then
+		warn "Server 3: invalid server ID"
+	elif [[ -n $server_4 ]] && [[ ! $server_3 =~ ^[0-9]+$ ]]; then
+		warn "Server 4: invalid server ID"
+	else
+	whitelist=$(echo "$player_input" | awk -F"│" '{OFS=","}{print $3,$4,$5,$6}' | sed 's/,*$//g' | sed 's/^,*//g')
 	guess_path > >(zenity --progress --auto-close --pulsate)
 	mkdir -p $config_path; write_config > $config_file
 	info "Config file created at $config_file."
+	return
+	fi
+	done
 
 }
 err(){
@@ -351,13 +390,8 @@ fetch_mods_sa(){
 	fi
 }
 fetch_mods(){
-	#TODO: broken upstream
 	remote_mods=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d filter[ids][whitelist]="$1" -d "sort=-players" \
 	| jq -r '.data[] .attributes .details .modIds[]')
-}
-check_workshop(){
-	#TODO: legacy method is defunct
-	curl -Ls "$url${modlist[$i]}" | grep data-appid | awk -F\" '{print $8}'
 }
 query_defunct(){
 	max=${#modlist[@]}
@@ -508,7 +542,7 @@ list_mods(){
 		for d in $(find $game_dir/* -maxdepth 1 -type l); do
 			dir=$(basename $d)
 			awk -v d=$dir -F\" '/name/ {printf "%s\t%s\n", $2,d}' "$gamedir"/$d/meta.cpp
-		done | sort | sed 's/\t/\n/g' | zenity --list --column="Mod" --column="Symlink" --title="DZGUI" $sd_res --print-column="" 2>/dev/null
+		done | sort 
 	fi
 }
 fetch_query_ports(){
@@ -552,15 +586,33 @@ toggle_branch(){
 	printf "[DZGUI] Toggled branch to '$branch'\n"
 	source $config_file
 }
+generate_log(){
+	cat <<-DOC
+	Version: $version
+	Branch: $branch
+	Whitelist: $whitelist
+	Path: $steam_path
+	Linux: $(uname -mrs)
+
+	Mods:
+	$(list_mods)
+	DOC
+}
 debug_menu(){
 	debug_list=(
 		"Toggle branch"
+		"Generate debug log"
 		)
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
 		enforce_dl=1
 		toggle_branch &&
 		check_version
+	elif [[ $debug_sel == "${debug_list[1]}" ]]; then
+		source_script=$(realpath "$0")
+		source_dir=$(dirname "$source_script")
+		generate_log > "$source_dir"
+		exit
 	fi
 }
 query_and_connect(){
@@ -604,7 +656,7 @@ main_menu(){
 			delete=1
 			query_and_connect
 		elif [[ $sel == "${items[5]}" ]]; then
-			list_mods
+			list_mods | sed 's/\t/\n/g' | zenity --list --column="Mod" --column="Symlink" --title="DZGUI" $sd_res --print-column="" 2>/dev/null
 		elif [[ $sel == "${items[6]}" ]]; then
 			toggle_debug
 			main_menu
@@ -747,8 +799,11 @@ prompt_dl(){
 	fi
 }
 check_version(){
-	source $config_file
-	[[ -z $branch ]] && branch="stable"
+	if [[ ! -f $config_file ]]; then : ; else source $config_file; fi
+	if [[ -z $branch ]]; then
+		branch="stable"
+		write_config
+	fi
 	check_branch
 	if [[ $version == $upstream ]]; then
 		check_unmerged
@@ -772,7 +827,7 @@ check_architecture(){
 	fi
 }
 add_by_id(){
-	#TODO: prevent redundant creation of existent IDs (for neatness)
+	#FIXME: prevent redundant creation of existent IDs (for neatness)
 	while true; do
 		id=$(zenity --entry --text="Enter server ID" --title="DZGUI" 2>/dev/null)
 		rc=$?
