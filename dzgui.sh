@@ -1,7 +1,8 @@
+
 #!/bin/bash
 
 set -o pipefail
-version=2.3.0
+version=2.3.1
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -15,7 +16,7 @@ git_url="https://github.com/aclist/dztui/issues/new/choose"
 stable_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/dzgui.sh"
 testing_url="https://raw.githubusercontent.com/aclist/dztui/testing/dzgui.sh"
 help_url="https://aclist.github.io/dzgui/dzgui"
-check_config_msg="Check config values and restart."
+check_config_msg="Check config file for errors."
 
 #TODO: prevent connecting to offline servers
 #TODO: concat large mod links
@@ -115,10 +116,10 @@ fav="$fav"
 name="$name"
 
 #Set to 1 to perform dry-run and print launch options
-debug="0"
+debug="$debug"
 
 #Toggle stable/testing branch
-branch="stable"
+branch="$branch"
 	END
 }
 guess_path(){
@@ -147,13 +148,40 @@ guess_path(){
 		echo "[DZGUI] Set Steam path to $steam_path"
 }
 create_config(){
+	while true; do
 	player_input="$(zenity --forms --add-entry="Player name (required for some servers)" --add-entry="API key" --add-entry="Server 1 (you can add more later)" --title=DZGUI --text=DZGUI --add-entry="Server 2" --add-entry="Server 3" --add-entry="Server 4" $sd_res --separator="│")"
-	name=$(echo "$player_input" | awk -F│ '{print $1}')
-	api_key=$(echo "$player_input" | awk -F│ '{print $2}')
-	whitelist=$(echo "$player_input" | awk -F"│" '{OFS=","}{print $3,$4,$5}' | sed 's/,*$//g' | sed 's/^,*//g')
+	#explicitly setting IFS crashes zenity in loop
+	#and mapfile does not support high ascii delimiters
+	#so split fields with newline
+	readarray -t args < <(echo "$player_input" | sed 's/│/\n/g')
+	name="${args[0]}"
+	api_key="${args[1]}"
+	server_1="${args[2]}"
+	server_2="${args[3]}"
+	server_3="${args[4]}"
+	server_4="${args[5]}"
+
+	[[ -z $player_input ]] && exit
+	if [[ -z $api_key ]]; then
+		warn "API key: invalid value"
+	elif [[ -z $server_1 ]]; then
+		warn "Server 1: cannot be empty"
+	elif [[ ! $server_1 =~ ^[0-9]+$ ]]; then
+		warn "Server 1: only numeric IDs"
+	elif [[ -n $server_2 ]] && [[ ! $server_2 =~ ^[0-9]+$ ]]; then
+		warn "Server 2: only numeric IDs"
+	elif [[ -n $server_3 ]] && [[ ! $server_3 =~ ^[0-9]+$ ]]; then
+		warn "Server 3: only numeric IDs"
+	elif [[ -n $server_4 ]] && [[ ! $server_3 =~ ^[0-9]+$ ]]; then
+		warn "Server 4: only numeric IDs"
+	else
+	whitelist=$(echo "$player_input" | awk -F"│" '{OFS=","}{print $3,$4,$5,$6}' | sed 's/,*$//g' | sed 's/^,*//g')
 	guess_path > >(zenity --progress --auto-close --pulsate)
 	mkdir -p $config_path; write_config > $config_file
 	info "Config file created at $config_file."
+	return
+	fi
+	done
 
 }
 err(){
@@ -164,6 +192,7 @@ varcheck(){
 	[[ -z $whitelist ]] && (err "Error in key: 'whitelist'")
 	[[ ! -d $game_dir ]] && (err "Malformed game path")
 	[[ $whitelist =~ [[:space:]] ]] && (err "Separate whitelist values with commas")
+
 }
 run_depcheck() {
 	if [[ -z $(depcheck) ]]; then 
@@ -180,9 +209,15 @@ run_varcheck(){
 	if [[ -z $(varcheck) ]]; then 
 		:
 	else	
-		zenity --warning --ok-label="Exit" --text="$(varcheck)" 2>/dev/null
+		zenity --warning --text="$(varcheck)" 2>/dev/null
 		printf "[DZGUI] %s\n" "$check_config_msg"
-		exit
+		zenity --question --cancel-label="Exit" --text="Malformed config file. This is probably user error.\nStart first-time setup process again?" 2>/dev/null
+		code=$?
+		if [[ $code -eq 1 ]]; then
+			exit
+		else
+			create_config
+		fi
 	fi
 }
 config(){
