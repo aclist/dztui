@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.0-rc.8
+version=2.4.0-rc.9
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -158,12 +158,12 @@ Terminal=false
 Exec=/home/deck/Downloads/dzgui.sh
 Name=DZGUI
 Comment=dzgui
-Icon=dzgui.png
+Icon=dzgui
 	END
 }
 guess_path(){
 	if [[ $is_steam_deck -eq 1 ]]; then
-		curl -s "https://github.com/aclist/dztui/raw/testing/dzgui.png" > "$HOME/.local/share/applications/dzgui.png"
+		curl -s "https://raw.githubusercontent.com/aclist/dztui/testing/dzgui.png" > "$HOME/.local/share/applications/dzgui"
 		write_desktop_file > "$HOME/.local/share/applications/dzgui.desktop"
 		steam_path="/home/deck/.local/share/Steam"
 	else
