@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.0-rc.7
+version=2.4.0-rc.8
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -163,8 +163,8 @@ Icon=dzgui.png
 }
 guess_path(){
 	if [[ $is_steam_deck -eq 1 ]]; then
-		curl -s "https://github.com/aclist/dztui/raw/testing/dzgui.png" > "$HOME/.local/share/applications"
-		write_desktop_file > "$HOME/.local/share/applications"
+		curl -s "https://github.com/aclist/dztui/raw/testing/dzgui.png" > "$HOME/.local/share/applications/dzgui.png"
+		write_desktop_file > "$HOME/.local/share/applications/dzgui.desktop"
 		steam_path="/home/deck/.local/share/Steam"
 	else
 		echo "# Checking for default DayZ path"
@@ -818,7 +818,7 @@ check_version(){
 }
 check_architecture(){
 	cpu=$(cat /proc/cpuinfo | grep "AMD Custom APU 0405")
-	if [[ -n $cpu ]]; then
+	if [[ -n "$cpu" ]]; then
 		is_steam_deck=1
 		echo "[DZGUI] Setting architecture to 'Steam Deck'"
 	else
