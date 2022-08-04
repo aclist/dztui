@@ -4,6 +4,11 @@
 - Clean up logging
 - Custom query API
 
+## [2.4.0-rc.8] 2022-08-04
+### Fixed
+- Prevent word splitting of CPU result
+- Correct path for writing .desktop files
+
 ## [2.4.0-rc.7] 2022-08-04
 ### Fixed
 - Prevent user from entering invalid entries on first-time setup
