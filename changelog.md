@@ -1,9 +1,22 @@
 # Changelog
 
-## [Unreleased]
+## [Unreleased] 
+Fields marked with [Testing] are live in Testing branch
 - Clean up logging
-- Concatenate long mod launch params
-- Port DZTUI method of handling legacy symlinks
+- Concatenate long mod launch params  [Testing]
+- Port DZTUI method of handling legacy symlinks [Testing]
+- Delete server [Testing]
+- Better SD handling [Testing]
+- Write log to file for bug reports [Testing]
+- Prompt to increase map count size [Testing]
+
+## [2.3.1] 2022-08-04
+### Fixed
+- Improved error handling of first-time setup fields
+- Interpolate config file values for debug, branch when writing file
+
+### Changed
+- Prompt user to restart first-time setup if broken config is found
 
 ## [2.3.0] 2022-07-18
 ### Added
