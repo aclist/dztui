@@ -4,6 +4,19 @@
 - Clean up logging
 - Custom query API
 
+## [2.4.0-rc.7] 2022-08-04
+### Fixed
+- Prevent user from entering invalid entries on first-time setup
+- Prompt to re-run first-time setup if config is malformed
+- Better handling of field output from table
+
+### Added
+- Prototype .desktop file for Steam Deck
+- Generate bug report logs summarizing local settings
+
+### Dropped
+- Deprecated functions
+
 ## [2.4.0-rc.5] 2022-07-31
 ### Changed
 Drop download prompt for branch toggle
