@@ -665,7 +665,7 @@ check_branch(){
 	upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
 }
 check_version(){
-	if [[ ! -f $config_file ]]; then : else source $config_file; fi
+	if [[ ! -f $config_file ]]; then : ; else source $config_file; fi
 	if [[ -z $branch ]]; then
 		branch="stable"
 	fi
