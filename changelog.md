@@ -10,6 +10,10 @@ Fields marked with [Testing] are live in Testing branch
 - Write log to file for bug reports [Testing]
 - Prompt to increase map count size [Testing]
 
+## [2.3.2] 2022-08-04
+### Fixed
+Set branch flag to 'stable' if no config file present
+
 ## [2.3.1] 2022-08-04
 ### Fixed
 - Improved error handling of first-time setup fields
