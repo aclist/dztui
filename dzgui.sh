@@ -155,7 +155,7 @@ cat	<<-END
 Version=1.0
 Type=Application
 Terminal=false
-Exec=$freedesktop_path/dzgui.sh
+Exec=/home/deck/Downloads/dzgui.sh
 Name=DZGUI
 Comment=dzgui
 Icon=$HOME/.local/share/dzgui/dzgui
@@ -166,10 +166,8 @@ guess_path(){
 	if [[ $is_steam_deck -eq 1 ]]; then
 		mkdir -p $HOME/.local/share/dzgui
 		mkdir -p "$freedesktop_path"
-		curl -Ls "$version_url" > "$freedesktop_path/dzgui.sh"
-		chmod +x "$freedesktop_path/dzgui.sh"
 		#TODO: update url
-		img_url="https://raw.githubusercontent.com/aclist/dztui/testing"
+		img_url="https://github.com/aclist/dztui/raw/testing/images"
 		for i in dzgui grid.png hero.png logo.png; do
 			curl -s "$img_url/$i" > "$HOME/.local/share/dzgui/$i"
 		done
@@ -768,8 +766,6 @@ download_new_version(){
 	source_dir=$(dirname "$source_script")
 	mv $source_script $source_script.old
 	curl -Ls "$version_url" > $source_script
-	curl -Ls "$version_url" > $freedesktop_path/dzgui.sh
-	chmod +x $freedesktop_path/dzgui.sh
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
 		echo "[DZGUI] Wrote $upstream to $source_script"
