@@ -162,39 +162,39 @@ Icon=$HOME/.local/share/dzgui/dzgui
 Categories=Game
 	END
 }
-guess_path(){
+freedesktop_dirs(){
+	mkdir -p $HOME/.local/share/dzgui
+	mkdir -p "$freedesktop_path"
+	#TODO: update url
+	img_url="https://raw.githubusercontent.com/aclist/dztui/testing/images"
+	for i in dzgui grid.png hero.png logo.png; do
+		curl -s "$img_url/$i" > "$HOME/local/.share/dzgui/$i"
+	done
+	write_desktop_file > "$freedesktop_path/dzgui.desktop"
 	if [[ $is_steam_deck -eq 1 ]]; then
-		mkdir -p $HOME/.local/share/dzgui
-		mkdir -p "$freedesktop_path"
-		#TODO: update url
-		img_url="https://raw.githubusercontent.com/aclist/dztui/testing/images"
-		for i in dzgui grid.png hero.png logo.png; do
-			curl -s "$img_url/$i" > "$HOME/$i"
-		done
-		write_desktop_file > "$freedesktop_path/dzgui.desktop"
 		write_desktop_file > "$HOME/Desktop/dzgui.desktop"
+	fi
+}
+guess_path(){
+	echo "# Checking for default DayZ path"
+	path=$(find $HOME -path "*.local/share/Steam/steamapps/common/DayZ" | wc -c)
+	if [[ ! $path -eq 0 ]]; then
 		steam_path="$HOME/.local/share/Steam"
 	else
-		echo "# Checking for default DayZ path"
-		path=$(find $HOME -path "*.local/share/Steam/steamapps/common/DayZ" | wc -c)
-		if [[ ! $path -eq 0 ]]; then
-			steam_path="$HOME/.local/share/Steam"
+		echo "# Searching for alternate DayZ path"
+		path=$(find / -path "*/steamapps/common/DayZ" 2>/dev/null)
+		if [[ $(echo "$path" | wc -l) -gt 1 ]]; then
+			path_sel=$(echo -e "$path" | zenity --list --title="DZGUI" --text="Multiple paths found. Select correct DayZ path" --column="Paths" --width 1200 --height 800)
+			clean_path=$(echo -e "$path_sel" | awk -F"/steamapps" '{print $1}')
+			steam_path="$clean_path"
+		elif [[ ! $(echo $path | wc -c) -eq 0 ]]; then
+			clean_path=$(echo -e "$path" | awk -F"/steamapps" '{print $1}')
+			steam_path="$clean_path"
 		else
-			echo "# Searching for alternate DayZ path"
-			path=$(find / -path "*/steamapps/common/DayZ" 2>/dev/null)
-			if [[ $(echo "$path" | wc -l) -gt 1 ]]; then
-				path_sel=$(echo -e "$path" | zenity --list --title="DZGUI" --text="Multiple paths found. Select correct DayZ path" --column="Paths" --width 1200 --height 800)
-				clean_path=$(echo -e "$path_sel" | awk -F"/steamapps" '{print $1}')
-				steam_path="$clean_path"
-			elif [[ ! $(echo $path | wc -c) -eq 0 ]]; then
-				clean_path=$(echo -e "$path" | awk -F"/steamapps" '{print $1}')
-				steam_path="$clean_path"
-			else
-				steam_path=""
-			fi
+			steam_path=""
 		fi
 	fi
-		echo "[DZGUI] Set Steam path to $steam_path"
+	echo "[DZGUI] Set Steam path to $steam_path"
 }
 create_config(){
 	while true; do
@@ -262,8 +262,9 @@ run_varcheck(){
 }
 config(){
 	if [[ ! -f $config_file ]]; then
-		zenity --question --cancel-label="Exit" --text="Config file not found. Should DZGUI create one for you?" 2>/dev/null
+		zenity --info --text="Config file not found. DZGUI will create one for you now." 2>/dev/null
 		code=$?
+		#prevent progress if user hits ESC
 		if [[ $code -eq 1 ]]; then
 			exit
 		else
@@ -762,6 +763,7 @@ merge_config(){
 
 }
 download_new_version(){
+	freedesktop_dirs
 	source_script=$(realpath "$0")
 	source_dir=$(dirname "$source_script")
 	mv $source_script $source_script.old
@@ -881,7 +883,7 @@ setup(){
 check_map_count(){
 	count=1048576
 	if [[ $(sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -ne $count ]]; then 
-		map_warning=$(zenity --question --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine. Increase map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null)
+		map_warning=$(zenity --question --width 500 --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine. Increase map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null)
 		if [[ $? -eq 0 ]]; then
 			pass=$(zenity --password)
 			sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=1048576' > /etc/sysctl.d/dayz.conf"
