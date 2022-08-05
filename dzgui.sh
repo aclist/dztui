@@ -619,7 +619,6 @@ debug_menu(){
 		source_script=$(realpath "$0")
 		source_dir=$(dirname "$source_script")
 		generate_log > "$source_dir/log"
-		exit
 	fi
 }
 query_and_connect(){
