@@ -767,7 +767,7 @@ download_new_version(){
 	source_dir=$(dirname "$source_script")
 	mv $source_script $source_script.old
 	curl -Ls "$version_url" > $source_script
-	curl -Ls "$version_url" > $HOME/.local/share/applications
+	curl -Ls "$version_url" > $HOME/.local/share/applications/dzgui.sh
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
 		echo "[DZGUI] Wrote $upstream to $source_script"
