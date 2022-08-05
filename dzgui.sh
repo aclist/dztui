@@ -918,8 +918,8 @@ done
 }
 main(){
 	run_depcheck
-	check_version
 	check_architecture
+	check_version
 	check_map_count
 	config
 	run_varcheck
