@@ -168,7 +168,7 @@ freedesktop_dirs(){
 	#TODO: update url
 	img_url="https://raw.githubusercontent.com/aclist/dztui/testing/images"
 	for i in dzgui grid.png hero.png logo.png; do
-		curl -s "$img_url/$i" > "$HOME/local/.share/dzgui/$i"
+		wget --quiet "$img_url/$i" -P "$HOME/local/.share/dzgui/"
 	done
 	write_desktop_file > "$freedesktop_path/dzgui.desktop"
 	write_desktop_file > "$HOME/Desktop/dzgui.desktop"
