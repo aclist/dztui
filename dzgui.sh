@@ -163,7 +163,7 @@ Categories=Game
 	END
 }
 freedesktop_dirs(){
-	mkdir $HOME/dzgui
+	mkdir -p $HOME/dzgui
 	mkdir -p "$freedesktop_path"
 	#TODO: update url
 	curl -s "$version_url" > $HOME/dzgui/dzgui.sh
@@ -815,6 +815,7 @@ check_version(){
 		branch="stable"
 	fi
 	check_branch
+	[[ ! -d "$HOME/dzgui" ]] && freedesktop_dirs
 	if [[ $version == $upstream ]]; then
 		check_unmerged
 	else
@@ -831,7 +832,6 @@ check_architecture(){
 	if [[ -n "$cpu" ]]; then
 		is_steam_deck=1
 		echo "[DZGUI] Setting architecture to 'Steam Deck'"
-		[[ ! -d "$HOME/dzgui" ]] && freedesktop_dirs
 	else
 		is_steam_deck=0
 		echo "[DZGUI] Setting architecture to 'desktop'"
