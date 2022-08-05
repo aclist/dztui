@@ -260,7 +260,7 @@ run_varcheck(){
 }
 config(){
 	if [[ ! -f $config_file ]]; then
-		zenity --info --text="Config file not found. DZGUI will create one for you now." 2>/dev/null
+		zenity --width 500 --info --text="Config file not found. Click OK to proceed to first-time setup." 2>/dev/null
 		code=$?
 		#prevent progress if user hits ESC
 		if [[ $code -eq 1 ]]; then
@@ -757,11 +757,13 @@ merge_config(){
 	mv $config_file ${config_path}dztuirc.old
 	write_config > $config_file
 	printf "[DZGUI] Wrote new config file to %sdztuirc\n" $config_path
-	zenity --info --title="DZGUI" --text="Wrote new config format to \n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
+	zenity --info --width 500 --title="DZGUI" --text="Wrote new config format to \n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
 
 }
 download_new_version(){
-	[[ $is_steam_deck -eq 1 ]] && freedesktop_dirs
+	if [[ $is_steam_deck -eq 1 ]]; then
+		freedesktop_dirs
+	fi
 	source_script=$(realpath "$0")
 	source_dir=$(dirname "$source_script")
 	mv $source_script $source_script.old
@@ -771,7 +773,7 @@ download_new_version(){
 		echo "[DZGUI] Wrote $upstream to $source_script"
 		chmod +x $source_script
 		touch ${config_path}.unmerged
-		zenity --question --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
+		zenity --question --width 500 --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
 		code=$?
 		if [[ $code -eq 0 ]]; then
 			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
