@@ -155,7 +155,7 @@ cat	<<-END
 Version=1.0
 Type=Application
 Terminal=false
-Exec=$freedesktop_path
+Exec=$freedesktop_path/dzgui.sh
 Name=DZGUI
 Comment=dzgui
 Icon=$HOME/.local/share/dzgui/dzgui
@@ -166,7 +166,7 @@ guess_path(){
 	if [[ $is_steam_deck -eq 1 ]]; then
 		mkdir -p $HOME/.local/share/dzgui
 		mkdir -p "$freedesktop_path"
-		curl -Ls "$stable_url" > "$freedesktop_path/dzgui.sh"
+		curl -Ls "$version_url" > "$freedesktop_path/dzgui.sh"
 		#TODO: update url
 		img_url="https://raw.githubusercontent.com/aclist/dztui/testing"
 		for i in dzgui grid.png hero.png logo.png; do
@@ -263,7 +263,7 @@ run_varcheck(){
 }
 config(){
 	if [[ ! -f $config_file ]]; then
-		zenity $sd_res --question --cancel-label="Exit" --text="Config file not found. Should DZGUI create one for you?" 2>/dev/null
+		zenity --question --cancel-label="Exit" --text="Config file not found. Should DZGUI create one for you?" 2>/dev/null
 		code=$?
 		if [[ $code -eq 1 ]]; then
 			exit
