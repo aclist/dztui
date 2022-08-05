@@ -111,7 +111,6 @@ query_api(){
 		code=$(jq -r '.errors[] .status' <<< $response)
 		#TODO: fix granular api codes
 		if [[ $code -eq 401 ]]; then
-			echo "$code" >> outfile
 			warn_and_exit "Error $code: malformed API key"
 		elif [[ $code -eq 500 ]]; then
 			warn_and_exit "Error $code: malformed server list"
