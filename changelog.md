@@ -4,6 +4,10 @@
 - Clean up logging
 - Custom query API
 
+## [2.4.0-rc.9] 2022-08-05
+### Added
+- Steam Deck artwork
+
 ## [2.4.0-rc.8] 2022-08-04
 ### Fixed
 - Prevent word splitting of CPU result

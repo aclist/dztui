@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.0-rc.9
+version=2.4.0-rc.10
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -155,17 +155,26 @@ cat	<<-END
 Version=1.0
 Type=Application
 Terminal=false
-Exec=/home/deck/Downloads/dzgui.sh
+Exec=$HOME/.local/share/applications/dzgui.sh
 Name=DZGUI
 Comment=dzgui
-Icon=dzgui
+Icon=$HOME/.local/share/dzgui/dzgui.png
+Categories=Game
 	END
 }
 guess_path(){
 	if [[ $is_steam_deck -eq 1 ]]; then
-		curl -s "https://raw.githubusercontent.com/aclist/dztui/testing/dzgui.png" > "$HOME/.local/share/applications/dzgui"
+		mkdir -p $HOME/.local/share/dzgui
+		mkdir -p $HOME/.local/share/applications
+		curl -Ls "$stable_url" > $HOME/.local/share/applications
+		#TODO: update url
+		img_url="https://raw.githubusercontent.com/aclist/dztui/testing"
+		for i in dzgui grid hero logo; do
+			curl -s "$img_url/$i.png" > "$HOME/.local/share/dzgui/$i.png"
+		done
 		write_desktop_file > "$HOME/.local/share/applications/dzgui.desktop"
-		steam_path="/home/deck/.local/share/Steam"
+		write_desktop_file > "$HOME/Desktop/dzgui.desktop"
+		steam_path="$HOME/.local/share/Steam"
 	else
 		echo "# Checking for default DayZ path"
 		path=$(find $HOME -path "*.local/share/Steam/steamapps/common/DayZ" | wc -c)
@@ -247,14 +256,14 @@ run_varcheck(){
 	if [[ -z $(varcheck) ]]; then 
 		:
 	else	
-		zenity --warning --ok-label="Exit" --text="$(varcheck)" 2>/dev/null
+		zenity --warning $sd_res --ok-label="Exit" --text="$(varcheck)" 2>/dev/null
 		printf "[DZGUI] %s\n" "$check_config_msg"
 		exit
 	fi
 }
 config(){
 	if [[ ! -f $config_file ]]; then
-		zenity --question --cancel-label="Exit" --text="Config file not found. Should DZGUI create one for you?" 2>/dev/null
+		zenity $sd_res --question --cancel-label="Exit" --text="Config file not found. Should DZGUI create one for you?" 2>/dev/null
 		code=$?
 		if [[ $code -eq 1 ]]; then
 			exit
@@ -758,6 +767,7 @@ download_new_version(){
 	source_dir=$(dirname "$source_script")
 	mv $source_script $source_script.old
 	curl -Ls "$version_url" > $source_script
+	curl -Ls "$version_url" > $HOME/.local/share/applications
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
 		echo "[DZGUI] Wrote $upstream to $source_script"
@@ -790,7 +800,7 @@ enforce_dl(){
 		download_new_version
 }
 prompt_dl(){    
-	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version:\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
+	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t$branch\nYour version\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		return
@@ -874,7 +884,7 @@ setup(){
 check_map_count(){
 	count=1048576
 	if [[ $(sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -ne $count ]]; then 
-		map_warning=$(zenity --question --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine. Increase map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null)
+		map_warning=$(zenity --question --title="DZGUI" $sd_res --text "System map count must be $count or higher to run DayZ with Wine. Increase map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null)
 		if [[ $? -eq 0 ]]; then
 			pass=$(zenity --password)
 			sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=1048576' > /etc/sysctl.d/dayz.conf"
