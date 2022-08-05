@@ -813,7 +813,6 @@ check_version(){
 	if [[ ! -f $config_file ]]; then : ; else source $config_file; fi
 	if [[ -z $branch ]]; then
 		branch="stable"
-		write_config > $config_file
 	fi
 	check_branch
 	if [[ $version == $upstream ]]; then
