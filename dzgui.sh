@@ -18,6 +18,7 @@ help_url="https://aclist.github.io/dzgui/dzgui"
 check_config_msg="Check config values and restart."
 news_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/news"
 freedesktop_path="$HOME/.local/share/applications"
+sd_install_path="$HOME/.local/share/dzgui"
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
@@ -155,22 +156,22 @@ cat	<<-END
 Version=1.0
 Type=Application
 Terminal=false
-Exec=$HOME/dzgui/dzgui.sh
+Exec=$sd_install_path/dzgui.sh
 Name=DZGUI
 Comment=dzgui
-Icon=$HOME/dzgui/dzgui
+Icon=$sd_install_path/dzgui
 Categories=Game
 	END
 }
 freedesktop_dirs(){
-	mkdir -p $HOME/dzgui
+	mkdir -p "$sd_install_path"
 	mkdir -p "$freedesktop_path"
 	#TODO: update url
-	curl -s "$version_url" > $HOME/dzgui/dzgui.sh
-	chmod +x "$HOME/dzgui/dzgui.sh"
+	curl -s "$version_url" > "$sd_install_path/dzgui.sh"
+	chmod +x "$sd_install_path/dzgui.sh"
 	img_url="https://raw.githubusercontent.com/aclist/dztui/testing/images"
 	for i in dzgui grid.png hero.png logo.png; do
-		curl -s "$img_url/$i" > "$HOME/dzgui/$i"
+		curl -s "$img_url/$i" > "$sd_install_path/$i"
 	done
 	write_desktop_file > "$freedesktop_path/dzgui.desktop"
 	write_desktop_file > "$HOME/Desktop/dzgui.desktop"
