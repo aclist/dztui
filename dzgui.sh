@@ -831,7 +831,7 @@ check_architecture(){
 	if [[ -n "$cpu" ]]; then
 		is_steam_deck=1
 		echo "[DZGUI] Setting architecture to 'Steam Deck'"
-		[[ ! -d "$HOME/.local/share/dzgui" ]] && freedesktop_dirs
+		[[ ! -d "$HOME/dzgui" ]] && freedesktop_dirs
 	else
 		is_steam_deck=0
 		echo "[DZGUI] Setting architecture to 'desktop'"
