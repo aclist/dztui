@@ -17,6 +17,7 @@ testing_url="https://raw.githubusercontent.com/aclist/dztui/testing/dzgui.sh"
 help_url="https://aclist.github.io/dzgui/dzgui"
 check_config_msg="Check config values and restart."
 news_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/news"
+freedesktop_path="$HOME/.local/share/applications"
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
@@ -154,7 +155,7 @@ cat	<<-END
 Version=1.0
 Type=Application
 Terminal=false
-Exec=$HOME/.local/share/applications/dzgui.sh
+Exec=$freedesktop_path
 Name=DZGUI
 Comment=dzgui
 Icon=$HOME/.local/share/dzgui/dzgui
@@ -164,14 +165,14 @@ Categories=Game
 guess_path(){
 	if [[ $is_steam_deck -eq 1 ]]; then
 		mkdir -p $HOME/.local/share/dzgui
-		mkdir -p $HOME/.local/share/applications
-		curl -Ls "$stable_url" > $HOME/.local/share/applications/dzgui.sh
+		mkdir -p "$freedesktop_path"
+		curl -Ls "$stable_url" > "$freedesktop_path/dzgui.sh"
 		#TODO: update url
 		img_url="https://raw.githubusercontent.com/aclist/dztui/testing"
 		for i in dzgui grid.png hero.png logo.png; do
 			curl -s "$img_url/$i" > "$HOME/.local/share/dzgui/$i"
 		done
-		write_desktop_file > "$HOME/.local/share/applications/dzgui.desktop"
+		write_desktop_file > "$freedesktop_path/dzgui.desktop"
 		write_desktop_file > "$HOME/Desktop/dzgui.desktop"
 		steam_path="$HOME/.local/share/Steam"
 	else
@@ -766,7 +767,8 @@ download_new_version(){
 	source_dir=$(dirname "$source_script")
 	mv $source_script $source_script.old
 	curl -Ls "$version_url" > $source_script
-	curl -Ls "$version_url" > $HOME/.local/share/applications/dzgui.sh
+	curl -Ls "$version_url" > $freedesktop_path/dzgui.sh
+	chmod +x $freedesktop_path/dzgui.sh
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
 		echo "[DZGUI] Wrote $upstream to $source_script"
@@ -811,7 +813,7 @@ check_version(){
 	if [[ ! -f $config_file ]]; then : ; else source $config_file; fi
 	if [[ -z $branch ]]; then
 		branch="stable"
-		write_config
+		write_config > $config_file
 	fi
 	check_branch
 	if [[ $version == $upstream ]]; then
