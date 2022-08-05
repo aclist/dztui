@@ -167,6 +167,7 @@ guess_path(){
 		mkdir -p $HOME/.local/share/dzgui
 		mkdir -p "$freedesktop_path"
 		curl -Ls "$version_url" > "$freedesktop_path/dzgui.sh"
+		chmod +x "$freedesktop_path/dzgui.sh"
 		#TODO: update url
 		img_url="https://raw.githubusercontent.com/aclist/dztui/testing"
 		for i in dzgui grid.png hero.png logo.png; do
