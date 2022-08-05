@@ -214,14 +214,16 @@ create_config(){
 	[[ -z $player_input ]] && exit
 	if [[ -z $api_key ]]; then
 		warn "API key: invalid value"
+	elif [[ -z $server_1 ]]; then
+		warn "Server 1: cannot be empty"
 	elif [[ ! $server_1 =~ ^[0-9]+$ ]]; then
-		warn "Server 1: invalid server ID"
+		warn "Server 1: only numeric IDs"
 	elif [[ -n $server_2 ]] && [[ ! $server_2 =~ ^[0-9]+$ ]]; then
-		warn "Server 2: invalid server ID"
+		warn "Server 2: only numeric IDs"
 	elif [[ -n $server_3 ]] && [[ ! $server_3 =~ ^[0-9]+$ ]]; then
-		warn "Server 3: invalid server ID"
+		warn "Server 3: only numeric IDs"
 	elif [[ -n $server_4 ]] && [[ ! $server_3 =~ ^[0-9]+$ ]]; then
-		warn "Server 4: invalid server ID"
+		warn "Server 4: only numeric IDs"
 	else
 	whitelist=$(echo "$player_input" | awk -F"│" '{OFS=","}{print $3,$4,$5,$6}' | sed 's/,*$//g' | sed 's/^,*//g')
 	guess_path > >(zenity --progress --auto-close --pulsate)
@@ -256,9 +258,15 @@ run_varcheck(){
 	if [[ -z $(varcheck) ]]; then 
 		:
 	else	
-		zenity --warning $sd_res --ok-label="Exit" --text="$(varcheck)" 2>/dev/null
+		zenity --warning --width 500 --text="$(varcheck)" 2>/dev/null
 		printf "[DZGUI] %s\n" "$check_config_msg"
-		exit
+		zenity --question --cancel-label="Exit" --text="Malformed config file. This is probably user error.\nStart first-time setup process again?" 2>/dev/null
+		code=$?
+		if [[ $code -eq 1 ]]; then
+			exit
+		else
+			create_config
+		fi
 	fi
 }
 config(){
@@ -689,7 +697,6 @@ main_menu(){
 parse_json(){
 	list=$(jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
 	fetch_query_ports
-	#qport_list=$(echo "$response" | jq -r '.data[] .attributes | "\(.ip):\(.port)%%\(.portQuery)"')
 	echo -e "$list" > $tmp
 }
 check_ping(){
