@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.0-rc.10
+version=2.4.0-rc.9
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -158,7 +158,7 @@ Terminal=false
 Exec=$HOME/.local/share/applications/dzgui.sh
 Name=DZGUI
 Comment=dzgui
-Icon=$HOME/.local/share/dzgui/dzgui.png
+Icon=$HOME/.local/share/dzgui/dzgui
 Categories=Game
 	END
 }
@@ -166,11 +166,11 @@ guess_path(){
 	if [[ $is_steam_deck -eq 1 ]]; then
 		mkdir -p $HOME/.local/share/dzgui
 		mkdir -p $HOME/.local/share/applications
-		curl -Ls "$stable_url" > $HOME/.local/share/applications
+		curl -Ls "$stable_url" > $HOME/.local/share/applications/dzgui.sh
 		#TODO: update url
 		img_url="https://raw.githubusercontent.com/aclist/dztui/testing"
-		for i in dzgui grid hero logo; do
-			curl -s "$img_url/$i.png" > "$HOME/.local/share/dzgui/$i.png"
+		for i in dzgui grid.png hero.png logo.png; do
+			curl -s "$img_url/$i" > "$HOME/.local/share/dzgui/$i"
 		done
 		write_desktop_file > "$HOME/.local/share/applications/dzgui.desktop"
 		write_desktop_file > "$HOME/Desktop/dzgui.desktop"
@@ -884,7 +884,7 @@ setup(){
 check_map_count(){
 	count=1048576
 	if [[ $(sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -ne $count ]]; then 
-		map_warning=$(zenity --question --title="DZGUI" $sd_res --text "System map count must be $count or higher to run DayZ with Wine. Increase map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null)
+		map_warning=$(zenity --question --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine. Increase map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null)
 		if [[ $? -eq 0 ]]; then
 			pass=$(zenity --password)
 			sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=1048576' > /etc/sysctl.d/dayz.conf"
