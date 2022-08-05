@@ -155,7 +155,7 @@ cat	<<-END
 Version=1.0
 Type=Application
 Terminal=false
-Exec=/home/deck/Downloads/dzgui.sh
+Exec=$HOME/.local/share/dzgui/dzgui.sh
 Name=DZGUI
 Comment=dzgui
 Icon=$HOME/.local/share/dzgui/dzgui
@@ -166,6 +166,8 @@ freedesktop_dirs(){
 	mkdir -p $HOME/.local/share/dzgui
 	mkdir -p "$freedesktop_path"
 	#TODO: update url
+	curl -s "$version_url" > $HOME/.local/share/dzgui/dzgui.sh
+	chmod +x "$HOME/.local/share/dzgui/dzgui.sh"
 	img_url="https://raw.githubusercontent.com/aclist/dztui/testing/images"
 	for i in dzgui grid.png hero.png logo.png; do
 		curl -s "$img_url/$i" > "$HOME/.local/share/dzgui/$i"
