@@ -167,9 +167,9 @@ guess_path(){
 		mkdir -p $HOME/.local/share/dzgui
 		mkdir -p "$freedesktop_path"
 		#TODO: update url
-		img_url="https://github.com/aclist/dztui/raw/testing/images"
+		img_url="https://raw.githubusercontent.com/aclist/dztui/testing/images"
 		for i in dzgui grid.png hero.png logo.png; do
-			curl -s "$img_url/$i" > "$HOME/.local/share/dzgui/$i"
+			curl -s "$img_url/$i" > "$HOME/$i"
 		done
 		write_desktop_file > "$freedesktop_path/dzgui.desktop"
 		write_desktop_file > "$HOME/Desktop/dzgui.desktop"
@@ -619,7 +619,7 @@ debug_menu(){
 	elif [[ $debug_sel == "${debug_list[1]}" ]]; then
 		source_script=$(realpath "$0")
 		source_dir=$(dirname "$source_script")
-		generate_log > "$source_dir"
+		generate_log > "$source_dir/log"
 		exit
 	fi
 }
