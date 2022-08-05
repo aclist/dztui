@@ -171,9 +171,7 @@ freedesktop_dirs(){
 		curl -s "$img_url/$i" > "$HOME/local/.share/dzgui/$i"
 	done
 	write_desktop_file > "$freedesktop_path/dzgui.desktop"
-	if [[ $is_steam_deck -eq 1 ]]; then
-		write_desktop_file > "$HOME/Desktop/dzgui.desktop"
-	fi
+	write_desktop_file > "$HOME/Desktop/dzgui.desktop"
 }
 guess_path(){
 	echo "# Checking for default DayZ path"
@@ -763,7 +761,7 @@ merge_config(){
 
 }
 download_new_version(){
-	freedesktop_dirs
+	[[ $is_steam_deck -eq 1 ]] && freedesktop_dirs
 	source_script=$(realpath "$0")
 	source_dir=$(dirname "$source_script")
 	mv $source_script $source_script.old
