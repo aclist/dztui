@@ -4,6 +4,10 @@
 - Clean up logging
 - Custom query API
 
+## [2.4.0-rc.10 - 2.4.0-rc.14] 2022-08-05
+### Fixed
+- Miscellaneous backend changes to test deployment of shortcuts to Steam Deck
+
 ## [2.4.0-rc.9] 2022-08-05
 ### Added
 - Steam Deck artwork
