@@ -1,7 +1,8 @@
 = DZGUI documentation
-DayZ community server graphical launcher for Linux
+DayZ community server graphical launcher for Linux | Last updated: 2022-08-05
 :nofooter:
 :toc: left
+:stylesheet: my.css
 
 == What this is
 A GUI version of https://github.com/aclist/dztui[DZTUI] for Linux. Used to list community server details and quick connect to preferred servers by staging mods and concatenating launch options automatically. 
@@ -22,9 +23,19 @@ If not already installed, the below can be found in your system's package manage
 
 === Preparation
 . Download DZGUI and make it executable:
+
+**Automatic method (skip to 3 below when complete)**
+
+```
+curl -s "" | bash
+```
+
+**Manual method**
+
 ```
 chmod +x dzgui.sh
 ```
+[start=2]
 . Update the `vm.max_map_count` value (see https://www.protondb.com/app/221100)
 
 Ephemeral method:
@@ -40,7 +51,7 @@ echo 'vm.max_map_count=1048576' | sudo tee /etc/sysctl.d/dayz.conf
 [NOTE]
 If it detects an incorrect map count value, DZGUI will prompt you to permanently update the map count value when starting up.
 
-[start=2]
+[start=3]
 . Steam account with DayZ license
 . Enable a Proton version ≥ `6.8` (or use Experimental) in the **Compatibility** field of the game's right-click options. 
 
@@ -59,7 +70,26 @@ You will be prompted to enter these IDs when starting the app, so you could refe
 
 
 === First-time launch
-Follow the menu prompts provided by the app. You will be asked to provide:
+
+1. DZGUI can be launched one of two ways. 
+
+**From the terminal:**
+
+```
+./dzgui.sh
+```
+
+Launching from the terminal gives more verbose information, and can be a good way of troubleshooting problems.
+
+**From the shortcut shipped with the application:**
+
+*If using a desktop environment based on the Freedesktop specification
+
+- Located under the "Games" category of your system's applications list.
+- Via the DZGUI desktop shortcut (Steam Deck only)
+
+[start=2]
+2. Follow the menu prompts given by the app. You will be asked to provide:
 
 - API key (see above)
 - Player name (a generic handle, required by some servers)
@@ -69,6 +99,69 @@ DZGUI will then attempt to locate your default Steam installation and DayZ path.
 
 [NOTE]
 If the path was not detected correctly, you can manually edit the config file at `$HOME/.config/dztui/dztuirc`.
+
+=== Steam integration & artwork 
+
+DZGUI can be added to Steam as a "non-Steam game" in order to facilitate integration with Steam Deck or desktop environments.
+
+1. Launch Steam in the "Large" view. 
+
+[NOTE]
+Steam Deck: you must switch to "Desktop Mode" and launch Steam from the desktop.
+
+[start=2]
+2. Select **Add a Game** > **Add a Non-Steam Game** from the lower left-hand corner.
+
+image::https://github.com/aclist/dztui/raw/testing/images/tutorial/01.png[01,500]
+
+[start=3]
+3. Navigate to `$HOME/.local/share/dzgui` and select `dzgui.sh`
+4. Select **Add Selected Programs**.
+
+The application also ships with Steam cover artwork. It is located under:
+
+```
+$HOME/.local/share/dzgui
+```
+
+The artwork consists of four parts:
+
+1. Grid: a vertical "box art" grid used on library pages
+2. Hero: a large horizontal banner used on the app's details page
+3. Logo: a transparent icon used to remove Steam's default app text
+4. dzgui: used by freedesktop shortcut to generate a desktop icon; not intended for the user
+
+Updating the artwork:
+
+1. Navigate to the app's details page and right-click the blank image header at the top.
+
+image::https://github.com/aclist/dztui/raw/testing/images/tutorial/03.png[03,700]
+
+[start=2]
+2. Select **Set Custom Background**
+3. Navigate to the artwork path described above and select `hero.png`.
+4. Next, right-click the image background and select **Set Custom Logo**. 
+
+image::https://github.com/aclist/dztui/raw/testing/images/tutorial/04.png[04,700]
+
+[start=5]
+5. Navigate to the same path and select `logo.png`. Notice that this removes the redundant app name that occluded the image.
+
+image::https://github.com/aclist/dztui/raw/testing/images/tutorial/05.png[05,700]
+
+[start=6]
+6. Next, navigate to your Library index (looks like a bookshelf of cover art) and find the DZGUI app. 
+
+[start=7]
+7. Right-click its cover and select **Manage** > **Set custom artwork**.
+
+image::https://github.com/aclist/dztui/raw/testing/images/tutorial/06.png[06,700]
+
+[start=8]
+8. Navigate to the same path and select `grid.png`. The final result:
+
+image::https://github.com/aclist/dztui/raw/testing/images/tutorial/07.png[07,700]
+
 
 === Updating the app
 If DZGUI detects a new upstream version, it will prompt you to download it automatically. It backs up the original version before fetching the new one, then updates your config file with your existing values. Once finished, it will ask you to relaunch the app.
@@ -88,11 +181,18 @@ E.g., if DZGUI is named `dzgui`, in the path `$HOME/bin`, it will be located at
 ```
 $HOME/bin/dzgui.old
 ```
-Config:
+If launching DZGUI via its system shortcut, the backup file (similarly for log files) will be located under:
+
+```
+$HOME/.local/share/dzgui
+```
+
+Backup config files:
 ```
 $HOME/.config/dztui/dztuirc.old
 
 ```
+
 == Usage
 Select <<Launch server list>> to fetch details for the server IDs you provided. Select the server you wish to connect to and click OK. 
 
