@@ -174,7 +174,9 @@ freedesktop_dirs(){
 		curl -s "$img_url/$i" > "$sd_install_path/$i"
 	done
 	write_desktop_file > "$freedesktop_path/dzgui.desktop"
-	write_desktop_file > "$HOME/Desktop/dzgui.desktop"
+	if [[ $is_steam_deck -eq 1 ]]; then
+		write_desktop_file > "$HOME/Desktop/dzgui.desktop"
+	fi
 }
 guess_path(){
 	echo "# Checking for default DayZ path"
@@ -182,7 +184,7 @@ guess_path(){
 	if [[ ! $path -eq 0 ]]; then
 		steam_path="$HOME/.local/share/Steam"
 	else
-		echo "# Searching for alternate DayZ path"
+		echo "# Searching for alternate DayZ path (make take some time)"
 		path=$(find / -path "*/steamapps/common/DayZ" 2>/dev/null)
 		if [[ $(echo "$path" | wc -l) -gt 1 ]]; then
 			path_sel=$(echo -e "$path" | zenity --list --title="DZGUI" --text="Multiple paths found. Select correct DayZ path" --column="Paths" --width 1200 --height 800)
@@ -226,7 +228,7 @@ create_config(){
 		warn "Server 4: only numeric IDs"
 	else
 	whitelist=$(echo "$player_input" | awk -F"│" '{OFS=","}{print $3,$4,$5,$6}' | sed 's/,*$//g' | sed 's/^,*//g')
-	guess_path > >(zenity --progress --auto-close --pulsate)
+	guess_path > >(zenity --width 500 --progress --auto-close --pulsate)
 	mkdir -p $config_path; write_config > $config_file
 	info "Config file created at $config_file."
 	return
@@ -630,6 +632,8 @@ debug_menu(){
 		source_script=$(realpath "$0")
 		source_dir=$(dirname "$source_script")
 		generate_log > "$source_dir/log"
+		printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
+		zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
 	fi
 }
 query_and_connect(){
