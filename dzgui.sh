@@ -896,7 +896,7 @@ setup(){
 }
 check_map_count(){
 	count=1048576
-	if [[ $(sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -ne $count ]]; then 
+	if [[ $(sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -lt $count ]]; then 
 		map_warning=$(zenity --question --width 500 --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine. Increase map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null)
 		if [[ $? -eq 0 ]]; then
 			pass=$(zenity --password)
