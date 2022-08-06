@@ -27,7 +27,7 @@ If not already installed, the below can be found in your system's package manage
 **Automatic method (skip to 3 below when complete)**
 
 ```
-curl -s "" | bash
+curl -s "https://raw.githubusercontent.com/aclist/dztui/testing/install.sh" | bash
 ```
 
 **Manual method**
@@ -115,7 +115,7 @@ Steam Deck: you must switch to "Desktop Mode" and launch Steam from the desktop.
 image::https://github.com/aclist/dztui/raw/testing/images/tutorial/01.png[01,500]
 
 [start=3]
-3. Navigate to `$HOME/.local/share/dzgui` and select `dzgui.sh`
+3. Navigate to `$HOME/.local/share/applications/` and select `dzgui.desktop`
 4. Select **Add Selected Programs**.
 
 The application also ships with Steam cover artwork. It is located under:
