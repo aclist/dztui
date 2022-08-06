@@ -2,7 +2,7 @@
 DayZ community server graphical launcher for Linux | Last updated: 2022-08-05
 :nofooter:
 :toc: left
-:stylesheet: my.css
+:stylesheet: custom.css
 
 == What this is
 A GUI version of https://github.com/aclist/dztui[DZTUI] for Linux. Used to list community server details and quick connect to preferred servers by staging mods and concatenating launch options automatically. 
