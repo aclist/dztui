@@ -1,14 +1,31 @@
 # Changelog
 
 ## [Unreleased] 
-Fields marked with [Testing] are live in Testing branch
 - Clean up logging
-- Concatenate long mod launch params  [Testing]
-- Port DZTUI method of handling legacy symlinks [Testing]
-- Delete server [Testing]
-- Better SD handling [Testing]
-- Write log to file for bug reports [Testing]
-- Prompt to increase map count size [Testing]
+- Custom query API
+
+## [2.4.0] 2022-08-07
+### Added
+- Delete server command added to main menu
+- Write log to file for bug reports
+- Prompt to permanently increase map count size
+- Dependency check for Steam
+- Cover artwork
+- News backend for OTA updates
+- Clean up stale symlinks when checking mods
+
+### Fixed
+- Minify long mod launch params for servers with launch params breaking the upper limit
+- Port DZTUI method of handling legacy symlinks
+- Prevent user from entering invalid data on first-time setup
+- Prompt to re-run first-time setup if config is malformed
+- Better handling of field output from table
+- Better Steam Deck detection and handling
+- Prevent garbage in error messages
+- Miscellaneous backend improvements
+
+### Changed
+- Enforce download when switching branches
 
 ## [2.3.2] 2022-08-04
 ### Fixed
