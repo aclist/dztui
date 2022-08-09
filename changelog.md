@@ -4,6 +4,10 @@
 - Clean up logging
 - Custom query API
 
+## [2.4.1] 2022-08-09
+### Fixed
+- Hotfix for progress bar breaking table when >9 servers in list
+
 ## [2.4.0] 2022-08-07
 ### Added
 - Delete server command added to main menu
