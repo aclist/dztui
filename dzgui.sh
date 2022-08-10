@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.0-rc.14
+version=2.4.1-testing
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -641,7 +641,7 @@ query_and_connect(){
 	parse_json <<< "$response"
 	#TODO: create logger function
 	echo "[DZGUI] Checking response time of servers"
-	create_array | zenity --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
+	create_array | zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		:
@@ -720,7 +720,7 @@ create_array(){
 		name=$(echo "$line" | awk -F'\t' '{print $1}')
 		#truncate names
 		if [[ $(echo "$name" | wc -m) -gt 50 ]]; then
-			name="$(echo $name | awk '{print substr($0,1,50) "..."}')"
+			name="$(echo "$name" | awk '{print substr($0,1,50) "..."}')"
 		else
 			:
 		fi
@@ -738,7 +738,6 @@ create_array(){
 		if [[ $delete -eq 1 ]]; then
 			declare -g -a rows=("${rows[@]}" "$name" "$id")
 		else
-			echo "$lc/$tc"
 			echo "# Checking ping: $lc/$tc"
 			ping=$(check_ping "$line")
 			declare -g -a rows=("${rows[@]}" "$name" "$ip" "$players" "$time" "$stat" "$id" "$ping")
