@@ -4,6 +4,10 @@
 - Clean up logging
 - Custom query API
 
+## [2.4.2-rc.1] 2022-08-10
+### Fixed
+- Page though API results to list >10 servers
+
 ## [2.4.1-testing] 2022-08-09
 ### Fixed
 - Hotfix for progress bar breaking table when >9 servers in list

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.1-testing
+version=2.4.2-rc.1
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -80,10 +80,8 @@ items=(
 	"View changelog"
 	)
 }
-exit_and_cleanup(){
-	#TODO: this is currently unused
+cleanup(){
 	rm $tmp
-	rm $link_file
 }
 warn_and_exit(){
 	zenity --info --title="DZGUI" --text="$1" --icon-name="dialog-warning" 2>/dev/null
@@ -96,6 +94,10 @@ warn(){
 info(){
 	zenity --info --title="DZGUI" --text="$1" 2>/dev/null
 }
+set_api_params(){
+	response=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "sort=-players" \
+		-d "filter[game]=$game" -d "filter[ids][whitelist]=$list_of_ids")
+}
 query_api(){
 	#TODO: prevent drawing list if null values returned without API error
 	if [[ $one_shot_launch -eq 1 ]]; then
@@ -107,8 +109,7 @@ query_api(){
 			list_of_ids="$whitelist"
 		fi
 	fi
-	response=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "sort=-players" \
-		-d "filter[game]=$game" -d "filter[ids][whitelist]=$list_of_ids")
+	set_api_params
 	if [[ "$(jq -r 'keys[]' <<< "$response")" == "errors" ]]; then
 		code=$(jq -r '.errors[] .status' <<< $response)
 		#TODO: fix granular api codes
@@ -638,7 +639,7 @@ debug_menu(){
 }
 query_and_connect(){
 	query_api
-	parse_json <<< "$response"
+	parse_json 
 	#TODO: create logger function
 	echo "[DZGUI] Checking response time of servers"
 	create_array | zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
@@ -698,10 +699,24 @@ main_menu(){
 	fi
 	done
 }
+page_through(){
+	response=$(curl -s "$page")
+	list=$(echo "$response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
+	idarr+=("$list")
+	echo "${idarr[@]}" | wc -l
+	parse_json
+}
 parse_json(){
-	list=$(jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
-	fetch_query_ports
-	echo -e "$list" > $tmp
+	page=$(echo "$response" | jq -r '.links.next?')
+	if [[ "$page" != "null" ]]; then
+		list=$(echo "$response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
+		idarr+=("$list")
+		page_through
+	else
+		printf "%s\n" "${idarr[@]}" > $tmp
+		idarr=()
+		fetch_query_ports
+	fi
 }
 check_ping(){
 	ping_ip=$(echo "$1" | awk -F'\t' '{print $2}' | awk -F: '{print $1}')
@@ -942,3 +957,4 @@ main(){
 }
 
 main
+trap cleanup EXIT
