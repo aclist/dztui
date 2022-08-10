@@ -703,7 +703,6 @@ page_through(){
 	response=$(curl -s "$page")
 	list=$(echo "$response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
 	idarr+=("$list")
-	echo "${idarr[@]}" | wc -l
 	parse_json
 }
 parse_json(){
