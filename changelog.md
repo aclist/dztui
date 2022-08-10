@@ -4,6 +4,10 @@
 - Clean up logging
 - Custom query API
 
+## [2.4.1-testing] 2022-08-09
+### Fixed
+- Hotfix for progress bar breaking table when >9 servers in list
+
 ## [2.4.0-rc.10 - 2.4.0-rc.14] 2022-08-05
 ### Fixed
 - Miscellaneous backend changes to test deployment of shortcuts to Steam Deck
