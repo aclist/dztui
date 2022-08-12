@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.2-rc.1
+version=2.4.2-rc.2
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -80,9 +80,6 @@ items=(
 	"View changelog"
 	)
 }
-cleanup(){
-	rm $tmp
-}
 warn_and_exit(){
 	zenity --info --title="DZGUI" --text="$1" --icon-name="dialog-warning" 2>/dev/null
 	printf "[DZGUI] %s\n" "$check_config_msg"
@@ -97,6 +94,7 @@ info(){
 set_api_params(){
 	response=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "sort=-players" \
 		-d "filter[game]=$game" -d "filter[ids][whitelist]=$list_of_ids")
+	list_response=$response
 }
 query_api(){
 	#TODO: prevent drawing list if null values returned without API error
@@ -377,7 +375,7 @@ connect(){
 	#TODO: sanitize/validate input
 	readarray -t qport_arr <<< "$qport_list"
 	if [[ -z ${qport_arr[@]} ]]; then
-		err "Failed to process favorite server"
+		err "Failed to obtain query ports"
 		return
 	fi
 	ip=$(echo "$1" | awk -F"$separator" '{print $1}')
@@ -700,15 +698,15 @@ main_menu(){
 	done
 }
 page_through(){
-	response=$(curl -s "$page")
-	list=$(echo "$response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
+	list_response=$(curl -s "$page")
+	list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
 	idarr+=("$list")
 	parse_json
 }
 parse_json(){
-	page=$(echo "$response" | jq -r '.links.next?')
+	page=$(echo "$list_response" | jq -r '.links.next?')
 	if [[ "$page" != "null" ]]; then
-		list=$(echo "$response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
+		list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
 		idarr+=("$list")
 		page_through
 	else
@@ -763,6 +761,7 @@ create_array(){
 }
 set_fav(){
 	#TODO: test API key here and return errors
+	echo "[DZGUI] Querying favorite server"
 	query_api
 	fav_label=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "filter[game]=$game" -d "filter[ids][whitelist]=$fav" \
 	| jq -r '.data[] .attributes .name')
@@ -956,4 +955,4 @@ main(){
 }
 
 main
-trap cleanup EXIT
+#trap cleanup EXIT

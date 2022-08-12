@@ -4,6 +4,10 @@
 - Clean up logging
 - Custom query API
 
+## [2.4.2-rc.2] 2022-08-10
+### Fixed
+- Pass correct query ports to modlist function
+
 ## [2.4.2-rc.1] 2022-08-10
 ### Fixed
 - Page though API results to list >10 servers
