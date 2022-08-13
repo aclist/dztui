@@ -335,7 +335,7 @@ manual_mod_install(){
 	passed_mod_check
 }
 encode(){
-	echo "$1" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g'
+	echo "$1" | md5sum | cut -c -8
 }
 stale_symlinks(){
 	for l in $(find "$game_dir" -xtype l); do
@@ -942,7 +942,27 @@ while true; do
 	fi
 done
 }
+#cleanup(){
+#	rm $config_path/.lockfile
+#}
+lock(){
+	if [[ ! -f $config_path/.lockfile ]]; then
+		touch $config_path/.lockfile
+	fi
+	pid=$(cat $config_path/.lockfile)
+	ps -p $pid -o pid= >/dev/null 2>&1
+	res=$?
+	if [[ $res -eq 0 ]]; then
+		echo "[DZGUI] Already running ($pid)"
+		exit
+	elif [[ $pid == $$ ]]; then
+		:
+	else
+		echo $$ > $config_path/.lockfile
+	fi
+}
 main(){
+	lock
 	run_depcheck
 	check_architecture
 	check_version
