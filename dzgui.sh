@@ -2,6 +2,7 @@
 
 set -o pipefail
 version=2.4.2-rc.4
+
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -183,7 +184,7 @@ guess_path(){
 	if [[ ! $path -eq 0 ]]; then
 		steam_path="$HOME/.local/share/Steam"
 	else
-		echo "# Searching for alternate DayZ path (make take some time)"
+		echo "# Searching for alternate DayZ path (may take some time)"
 		path=$(find / -path "*/steamapps/common/DayZ" 2>/dev/null)
 		if [[ $(echo "$path" | wc -l) -gt 1 ]]; then
 			path_sel=$(echo -e "$path" | zenity --list --title="DZGUI" --text="Multiple paths found. Select correct DayZ path" --column="Paths" --width 1200 --height 800)
