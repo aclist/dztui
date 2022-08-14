@@ -356,7 +356,6 @@ legacy_symlinks(){
 			unlink "$game_dir/@$encoded_id"
 		fi
 	done
-	exit
 }
 symlinks(){
 	for d in "$workshop_dir"/*; do
@@ -478,7 +477,8 @@ launch(){
 			source_script=$(realpath "$0")
 			source_dir=$(dirname "$source_script")
 			echo "$launch_options" > "$source_dir"/options.log
-			echo "[DZGUI] Wrote 'options.log' to $source_dir"
+			echo "[DZGUI] Wrote launch options ot to $source_dir/options.log"
+			zenity --info --width 500 --title="DZGUI" --text="Wrote launch options to \n$source_dir/options.log" 2>/dev/null
 		fi
 
 	else

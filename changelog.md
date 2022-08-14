@@ -4,8 +4,12 @@
 - Clean up logging
 - Custom query API
 
+## [2.4.2-rc.5] 2022-08-13
+### Fixed
+- Cleaned typos and removed debug code
+
 ## [2.4.2-rc.4] 2022-08-13
-### Changd
+### Changed
 - Clean up legacy symlinks
 
 ## [2.4.2-rc.3] 2022-08-13
