@@ -139,8 +139,9 @@ image::https://github.com/aclist/dztui/raw/testing/images/tutorial/03.png[03,700
 
 [start=2]
 2. Select **Set Custom Background**
-3. Navigate to the artwork path described above and select `hero.png`.
-4. Next, right-click the image background and select **Set Custom Logo**. 
+3. Select to display All Files from the File type dropdown
+4. Navigate to the artwork path described above and select `hero.png`.
+5. Next, right-click the image background and select **Set Custom Logo**. 
 
 image::https://github.com/aclist/dztui/raw/testing/images/tutorial/04.png[04,700]
 
