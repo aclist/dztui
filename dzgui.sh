@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.2-rc.4
+version=2.4.2-rc.6
 
 aid=221100
 game="dayz"
@@ -45,7 +45,7 @@ print_news(){
 	fi
 }
 #TODO: prevent connecting to offline servers
-#TODO: abstract zenity title params
+#TODO: abstract zenity title params and dimensions
 
 declare -A deps
 deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [zenity]="3.42.1" [steam]="1.0.0")
@@ -178,30 +178,35 @@ freedesktop_dirs(){
 		write_desktop_file > "$HOME/Desktop/dzgui.desktop"
 	fi
 }
-guess_path(){
-	echo "# Checking for default DayZ path"
-	path=$(find $HOME -path "*.local/share/Steam/steamapps/common/DayZ" | wc -c)
-	if [[ ! $path -eq 0 ]]; then
-		steam_path="$HOME/.local/share/Steam"
-	else
-		echo "# Searching for alternate DayZ path (may take some time)"
-		path=$(find / -path "*/steamapps/common/DayZ" 2>/dev/null)
-		if [[ $(echo "$path" | wc -l) -gt 1 ]]; then
-			path_sel=$(echo -e "$path" | zenity --list --title="DZGUI" --text="Multiple paths found. Select correct DayZ path" --column="Paths" --width 1200 --height 800)
-			clean_path=$(echo -e "$path_sel" | awk -F"/steamapps" '{print $1}')
-			steam_path="$clean_path"
-		elif [[ ! $(echo $path | wc -c) -eq 0 ]]; then
+file_picker(){
+	#TODO: unimplemented
+	while true; do
+	local path=$(zenity --file-selection --directory 2>/dev/null)
+		if [[ -z "$path" ]] || [[ ! -d "$path" ]] || [[ ! "$path" =~ steamapps/common/DayZ ]]; then
+			continue
+		else
+			echo "[DZGUI]" Set path to $path
 			clean_path=$(echo -e "$path" | awk -F"/steamapps" '{print $1}')
 			steam_path="$clean_path"
-		else
-			steam_path=""
+			return
 		fi
+	done
+}
+guess_path(){
+	echo "# Checking for default DayZ path"
+	path=$(find $HOME -type d -regex ".*/steamapps/common/DayZ$" -print -quit)
+	if [[ -n $path ]]; then
+		steam_path="$path"
+	else
+		echo "# Searching for alternate DayZ path. This may take some time."
+		path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" -o -path "/run" -o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/run" -o -path "/lost+found" \) -prune -o -regex ".*/steamapps/common/DayZ$" -print -quit 2>/dev/null)
+			clean_path=$(echo -e "$path" | awk -F"/steamapps" '{print $1}')
+			steam_path="$clean_path"
 	fi
-	echo "[DZGUI] Set Steam path to $steam_path"
 }
 create_config(){
 	while true; do
-	player_input="$(zenity --forms --add-entry="Player name (required for some servers)" --add-entry="API key" --add-entry="Server 1 (you can add more later)" --title=DZGUI --text=DZGUI --add-entry="Server 2" --add-entry="Server 3" --add-entry="Server 4" $sd_res --separator="│")"
+	player_input="$(zenity --forms --add-entry="Player name (required for some servers)" --add-entry="API key" --add-entry="Server 1 (you can add more later)" --title=DZGUI --text=DZGUI --add-entry="Server 2" --add-entry="Server 3" --add-entry="Server 4" $sd_res --separator="│" 2>/dev/null)"
 	#explicitly setting IFS crashes zenity in loop
 	#and mapfile does not support high ascii delimiters
 	#so split fields with newline
@@ -228,7 +233,9 @@ create_config(){
 		warn "Server 4: only numeric IDs"
 	else
 	whitelist=$(echo "$player_input" | awk -F"│" '{OFS=","}{print $3,$4,$5,$6}' | sed 's/,*$//g' | sed 's/^,*//g')
-	guess_path > >(zenity --width 500 --progress --auto-close --pulsate)
+	guess_path > >(zenity --width 500 --progress --auto-close --pulsate 2>/dev/null) &&
+	echo "[DZGUI] Set path to $steam_path"
+	#FIXME: tech debt: gracefully exit if user cancels search process
 	mkdir -p $config_path; write_config > $config_file
 	info "Config file created at $config_file."
 	return
@@ -483,7 +490,7 @@ launch(){
 
 	else
 		echo "[DZGUI] All OK. Launching DayZ"
-		zenity --title="DZGUI" --info --text="Launch conditions satisfied.\nDayZ will now launch after clicking [OK]." 2>/dev/null
+		zenity --width 500 --title="DZGUI" --info --text="Launch conditions satisfied.\nDayZ will now launch after clicking [OK]." 2>/dev/null
 		steam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro -name=$name \"-mod=$mods\"
 		exit
 	fi

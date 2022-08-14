@@ -3,18 +3,24 @@
 ## [Unreleased]
 - Clean up logging
 - Custom query API
+- Standardize dialogs
+- Query and connect by IP/port
+
+## [2.5.0-rc.1] 2022-08-14
+### Changed
+- More performant path discovery, skip extraneous prompts
 
 ## [2.4.2-rc.5] 2022-08-13
 ### Fixed
 - Cleaned typos and removed debug code
 
 ## [2.4.2-rc.4] 2022-08-13
-### Changed
+### Fixed
 - Clean up legacy symlinks
 
 ## [2.4.2-rc.3] 2022-08-13
 ### Fixed
-- Prevent collisions in symlink IDs
+- Alternate symlink method to prevent collisions in IDs
 
 ## [2.4.2-rc.2] 2022-08-10
 ### Fixed
