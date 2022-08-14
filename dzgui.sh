@@ -17,7 +17,7 @@ stable_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/dzgui.sh"
 testing_url="https://raw.githubusercontent.com/aclist/dztui/testing/dzgui.sh"
 help_url="https://aclist.github.io/dzgui/dzgui"
 check_config_msg="Check config values and restart."
-news_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/news"
+news_url="https://raw.githubusercontent.com/aclist/dztui/testing/news"
 freedesktop_path="$HOME/.local/share/applications"
 sd_install_path="$HOME/.local/share/dzgui"
 
@@ -96,6 +96,7 @@ set_api_params(){
 	response=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "sort=-players" \
 		-d "filter[game]=$game" -d "filter[ids][whitelist]=$list_of_ids")
 	list_response=$response
+	first_entry=1
 }
 query_api(){
 	#TODO: prevent drawing list if null values returned without API error
@@ -721,6 +722,11 @@ page_through(){
 }
 parse_json(){
 	page=$(echo "$list_response" | jq -r '.links.next?')
+	if [[ $first_entry -eq 1 ]]; then
+		list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
+		idarr+=("$list")
+		first_entry=0
+	fi
 	if [[ "$page" != "null" ]]; then
 		list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
 		idarr+=("$list")

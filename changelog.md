@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Query and connect by IP/port
 
+## [2.5.0-rc.2] 2022-08-14
+### Fixed
+- Hotfix for server list responses with no next page cursor breaking table
+
 ## [2.5.0-rc.1] 2022-08-14
 ### Changed
 - More performant path discovery, skip extraneous prompts
