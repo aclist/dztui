@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.2-rc.2
+version=2.4.2-rc.4
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -348,6 +348,14 @@ legacy_symlinks(){
 			unlink "$d"
 		fi
 	done
+	for d in "$workshop_dir"/*; do
+		local id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
+		local encoded_id=$(echo "$id" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g')
+		if [[ -h "$game_dir/@$encoded_id" ]]; then
+			unlink "$game_dir/@$encoded_id"
+		fi
+	done
+	exit
 }
 symlinks(){
 	for d in "$workshop_dir"/*; do

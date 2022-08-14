@@ -4,7 +4,11 @@
 - Clean up logging
 - Custom query API
 
-## [2.4.2-rc.3] 2022-08-10
+## [2.4.2-rc.4] 2022-08-13
+### Changd
+- Clean up legacy symlinks
+
+## [2.4.2-rc.3] 2022-08-13
 ### Fixed
 - Prevent collisions in symlink IDs
 
