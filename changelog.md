@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Query and connect by IP/port
 
+## [2.6.0-rc.1] 2022-08-16
+### Added
+- Connect to server by IP
+
 ## [2.5.0-rc.2] 2022-08-14
 ### Fixed
 - Hotfix for server list responses with no next page cursor breaking table

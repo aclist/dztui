@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.5.0-rc.2
+version=2.6.0-rc.1
 
 aid=221100
 game="dayz"
@@ -71,6 +71,7 @@ init_items(){
 items=(
 	"Launch server list"
 	"Quick connect to favorite server"
+	"Connect by IP"
 	"Add server by ID"
 	"Add favorite server"
 	"Delete server"
@@ -149,6 +150,9 @@ branch="$branch"
 
 #Last seen news item
 seen_news="$seen_news"
+
+#Steam API key
+steam_api=""
 	END
 }
 write_desktop_file(){
@@ -410,7 +414,7 @@ connect(){
 }
 
 fetch_mods_sa(){
-	sa_ip=$(echo $ip | awk -F: '{print $1}')
+	sa_ip=$(echo "$1" | awk -F: '{print $1}')
 	for i in ${qport_arr[@]}; do
 		if [[ -n $(echo "$i" | awk -v ip=$ip '$0 ~ ip') ]]; then
 			sa_port=$(echo $i | awk -v ip=$ip -F$separator '$0 ~ ip {print $2}')
@@ -423,6 +427,102 @@ fetch_mods_sa(){
 		err "Failed to fetch modlist"
 		return
 	fi
+	qport_arr=()
+}
+prepare_ip_list(){
+	ct=$(< "$1" jq '[.response.servers[]]|length')
+	for((i=0;i<$ct;i++));do
+		name=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].name')
+		addr=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].addr')
+		ip=$(echo "$addr" | awk -F: '{print $1}')
+		players=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].players')
+		max_players=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].max_players')
+		gameport=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].gameport')
+		ip_port=$(echo "$ip:$gameport")
+		time=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].gametype' | grep -oP '(?<!\d)\d{2}:\d{2}(?!\d)')
+		echo "$name"
+		echo "$ip_port"
+		echo "$players/$max_players"
+		echo "$time"
+	done
+}
+
+ip_table(){
+	while true; do
+	sel=$(prepare_ip_list "$meta_file" | zenity --width 1200 --height 800 --list --column=Name --column=IP --column=Players --column=Gametime --print-column=2 --separator=%% 2>/dev/null)
+	if [[ $? -eq 1 ]]; then
+		return_from_table=1
+		return
+	fi
+		if [[ -z $sel ]]; then
+			echo "No selection"
+		else
+			local gameport="$(echo "$sel" | awk -F: '{print $2}')"
+			local ip="$(echo "$sel" | awk -F: '{print $1}')"
+			local addr=$(< $json jq -r --arg gameport $gameport '.servers[]|select(.gameport == ($gameport|tonumber)).addr')
+			local qport=$(echo "$addr" | awk -F: '{print $2}')
+			local sa_ip=$(echo "$ip:$gameport%%$qport")
+			qport_list="$sa_ip"
+			connect "$sel"
+		fi
+	done
+}
+fetch_ip_metadata(){
+	local meta_file=$(mktemp)
+	source $config_file
+	url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100\gameaddr\\$ip&key=$steam_api"
+	curl -Ls "$url" > $meta_file
+	json=$(mktemp)
+	< $meta_file jq '.response' > $json
+	res=$(< $meta_file jq -er '.response.servers[]' 2>/dev/null)
+	if [[ ! $? -eq 0 ]]; then
+		warn "Failed to retrieve IP metadata. Check IP or API key and try again."
+		echo "[DZGUI] Failed to retrieve IP metadata"
+
+	else
+		ip_table
+	fi
+}
+
+#TODO: local servers
+#local_ip(){
+#(^127\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)
+#}
+add_steam_api(){
+		mv $config_file ${config_path}dztuirc.old
+		nr=$(awk '/steam_api=/ {print NR}' ${config_path}dztuirc.old)
+		steam_api="steam_api=\"$steam_api\""
+		awk -v "var=$steam_api" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
+		echo "[DZGUI] Added Steam API key"
+		zenity --info --title="DZGUI" --text="Added Steam API key to:\n\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
+		source $config_file
+}
+validate_ip(){
+	echo "$1" | grep -qP '^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$'
+}
+connect_by_ip(){
+	source $config_file
+	if [[ -z $steam_api ]]; then
+		steam_api=$(zenity --entry --text="Key 'steam_api' not present in config file. Enter Steam API key:" --title="DZGUI" 2>/dev/null)
+		if [[ -z $steam_api ]]; then
+			return
+		else
+			add_steam_api
+		fi
+	fi
+	while true; do
+	if [[ $return_from_table -eq 1 ]]; then
+		return_from_table=0
+		return
+	fi
+	ip=$(zenity --entry --text="Enter server IP" --title="DZGUI" 2>/dev/null)
+	[[ $? -eq 1 ]] && return
+	if validate_ip "$ip"; then
+		fetch_ip_metadata
+	else
+		continue
+	fi
+	done
 }
 fetch_mods(){
 	remote_mods=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d filter[ids][whitelist]="$1" -d "sort=-players" \
@@ -673,7 +773,7 @@ main_menu(){
 		items+=("Debug options")
 	fi
 	if [[ -n $fav ]]; then
-		items[3]="Change favorite server"
+		items[4]="Change favorite server"
 	fi
 	while true; do
 		set_header ${FUNCNAME[0]}
@@ -686,25 +786,27 @@ main_menu(){
 		elif [[ $sel == "${items[1]}" ]]; then
 			connect_to_fav
 		elif [[ $sel == "${items[2]}" ]]; then
-			add_by_id
+			connect_by_ip
 		elif [[ $sel == "${items[3]}" ]]; then
-			add_by_fav
+			add_by_id
 		elif [[ $sel == "${items[4]}" ]]; then
+			add_by_fav
+		elif [[ $sel == "${items[5]}" ]]; then
 			delete=1
 			query_and_connect
-		elif [[ $sel == "${items[5]}" ]]; then
-			list_mods | sed 's/\t/\n/g' | zenity --list --column="Mod" --column="Symlink" --title="DZGUI" $sd_res --print-column="" 2>/dev/null
 		elif [[ $sel == "${items[6]}" ]]; then
+			list_mods | sed 's/\t/\n/g' | zenity --list --column="Mod" --column="Symlink" --title="DZGUI" $sd_res --print-column="" 2>/dev/null
+		elif [[ $sel == "${items[7]}" ]]; then
 			toggle_debug
 			main_menu
 			return
-		elif [[ $sel == "${items[7]}" ]]; then
-			report_bug
 		elif [[ $sel == "${items[8]}" ]]; then
-			help_file
+			report_bug
 		elif [[ $sel == "${items[9]}" ]]; then
-			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
+			help_file
 		elif [[ $sel == "${items[10]}" ]]; then
+			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
+		elif [[ $sel == "${items[11]}" ]]; then
 			debug_menu
 		else
 			warn "This feature is not yet implemented."
@@ -925,11 +1027,12 @@ toggle_debug(){
 setup(){
 	if [[ -n $fav ]]; then
 		set_fav
-		items[3]="Change favorite server"
+		items[4]="Change favorite server"
 	fi
 }
 check_map_count(){
 	count=1048576
+	echo "[DZGUI] Checking system map count"
 	if [[ $(sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -lt $count ]]; then 
 		map_warning=$(zenity --question --width 500 --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine. Increase map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null)
 		if [[ $? -eq 0 ]]; then
@@ -958,7 +1061,7 @@ while true; do
 			zenity --info --title="DZGUI" --text="Added "$fav_id" to:\n${config_path}dztuirc\nIf errors occurred, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
 			source $config_file
 			set_fav
-			items[3]="Change favorite server"
+			items[4]="Change favorite server"
 			return
 		fi
 	fi
