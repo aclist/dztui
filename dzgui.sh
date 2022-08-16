@@ -1,7 +1,8 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.4.1
+version=2.5.0
+
 aid=221100
 game="dayz"
 workshop="steam://url/CommunityFilePage/"
@@ -44,7 +45,7 @@ print_news(){
 	fi
 }
 #TODO: prevent connecting to offline servers
-#TODO: abstract zenity title params
+#TODO: abstract zenity title params and dimensions
 
 declare -A deps
 deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [zenity]="3.42.1" [steam]="1.0.0")
@@ -80,11 +81,6 @@ items=(
 	"View changelog"
 	)
 }
-exit_and_cleanup(){
-	#TODO: this is currently unused
-	rm $tmp
-	rm $link_file
-}
 warn_and_exit(){
 	zenity --info --title="DZGUI" --text="$1" --icon-name="dialog-warning" 2>/dev/null
 	printf "[DZGUI] %s\n" "$check_config_msg"
@@ -95,6 +91,12 @@ warn(){
 }
 info(){
 	zenity --info --title="DZGUI" --text="$1" 2>/dev/null
+}
+set_api_params(){
+	response=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "sort=-players" \
+		-d "filter[game]=$game" -d "filter[ids][whitelist]=$list_of_ids")
+	list_response=$response
+	first_entry=1
 }
 query_api(){
 	#TODO: prevent drawing list if null values returned without API error
@@ -107,8 +109,7 @@ query_api(){
 			list_of_ids="$whitelist"
 		fi
 	fi
-	response=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "sort=-players" \
-		-d "filter[game]=$game" -d "filter[ids][whitelist]=$list_of_ids")
+	set_api_params
 	if [[ "$(jq -r 'keys[]' <<< "$response")" == "errors" ]]; then
 		code=$(jq -r '.errors[] .status' <<< $response)
 		#TODO: fix granular api codes
@@ -178,30 +179,35 @@ freedesktop_dirs(){
 		write_desktop_file > "$HOME/Desktop/dzgui.desktop"
 	fi
 }
-guess_path(){
-	echo "# Checking for default DayZ path"
-	path=$(find $HOME -path "*.local/share/Steam/steamapps/common/DayZ" | wc -c)
-	if [[ ! $path -eq 0 ]]; then
-		steam_path="$HOME/.local/share/Steam"
-	else
-		echo "# Searching for alternate DayZ path (make take some time)"
-		path=$(find / -path "*/steamapps/common/DayZ" 2>/dev/null)
-		if [[ $(echo "$path" | wc -l) -gt 1 ]]; then
-			path_sel=$(echo -e "$path" | zenity --list --title="DZGUI" --text="Multiple paths found. Select correct DayZ path" --column="Paths" --width 1200 --height 800)
-			clean_path=$(echo -e "$path_sel" | awk -F"/steamapps" '{print $1}')
-			steam_path="$clean_path"
-		elif [[ ! $(echo $path | wc -c) -eq 0 ]]; then
+file_picker(){
+	#TODO: unimplemented
+	while true; do
+	local path=$(zenity --file-selection --directory 2>/dev/null)
+		if [[ -z "$path" ]] || [[ ! -d "$path" ]] || [[ ! "$path" =~ steamapps/common/DayZ ]]; then
+			continue
+		else
+			echo "[DZGUI]" Set path to $path
 			clean_path=$(echo -e "$path" | awk -F"/steamapps" '{print $1}')
 			steam_path="$clean_path"
-		else
-			steam_path=""
+			return
 		fi
+	done
+}
+guess_path(){
+	echo "# Checking for default DayZ path"
+	path=$(find $HOME -type d -regex ".*/steamapps/common/DayZ$" -print -quit)
+	if [[ -n $path ]]; then
+		steam_path="$path"
+	else
+		echo "# Searching for alternate DayZ path. This may take some time."
+		path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" -o -path "/run" -o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/run" -o -path "/lost+found" \) -prune -o -regex ".*/steamapps/common/DayZ$" -print -quit 2>/dev/null)
+			clean_path=$(echo -e "$path" | awk -F"/steamapps" '{print $1}')
+			steam_path="$clean_path"
 	fi
-	echo "[DZGUI] Set Steam path to $steam_path"
 }
 create_config(){
 	while true; do
-	player_input="$(zenity --forms --add-entry="Player name (required for some servers)" --add-entry="API key" --add-entry="Server 1 (you can add more later)" --title=DZGUI --text=DZGUI --add-entry="Server 2" --add-entry="Server 3" --add-entry="Server 4" $sd_res --separator="│")"
+	player_input="$(zenity --forms --add-entry="Player name (required for some servers)" --add-entry="API key" --add-entry="Server 1 (you can add more later)" --title=DZGUI --text=DZGUI --add-entry="Server 2" --add-entry="Server 3" --add-entry="Server 4" $sd_res --separator="│" 2>/dev/null)"
 	#explicitly setting IFS crashes zenity in loop
 	#and mapfile does not support high ascii delimiters
 	#so split fields with newline
@@ -228,7 +234,9 @@ create_config(){
 		warn "Server 4: only numeric IDs"
 	else
 	whitelist=$(echo "$player_input" | awk -F"│" '{OFS=","}{print $3,$4,$5,$6}' | sed 's/,*$//g' | sed 's/^,*//g')
-	guess_path > >(zenity --width 500 --progress --auto-close --pulsate)
+	guess_path > >(zenity --width 500 --progress --auto-close --pulsate 2>/dev/null) &&
+	echo "[DZGUI] Set path to $steam_path"
+	#FIXME: tech debt: gracefully exit if user cancels search process
 	mkdir -p $config_path; write_config > $config_file
 	info "Config file created at $config_file."
 	return
@@ -336,7 +344,7 @@ manual_mod_install(){
 	passed_mod_check
 }
 encode(){
-	echo "$1" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g'
+	echo "$1" | md5sum | cut -c -8
 }
 stale_symlinks(){
 	for l in $(find "$game_dir" -xtype l); do
@@ -347,6 +355,13 @@ legacy_symlinks(){
 	for d in "$game_dir"/*; do
 		if [[ $d =~ @[0-9]+-.+ ]]; then
 			unlink "$d"
+		fi
+	done
+	for d in "$workshop_dir"/*; do
+		local id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
+		local encoded_id=$(echo "$id" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g')
+		if [[ -h "$game_dir/@$encoded_id" ]]; then
+			unlink "$game_dir/@$encoded_id"
 		fi
 	done
 }
@@ -376,7 +391,7 @@ connect(){
 	#TODO: sanitize/validate input
 	readarray -t qport_arr <<< "$qport_list"
 	if [[ -z ${qport_arr[@]} ]]; then
-		err "Failed to process favorite server"
+		err "Failed to obtain query ports"
 		return
 	fi
 	ip=$(echo "$1" | awk -F"$separator" '{print $1}')
@@ -470,12 +485,13 @@ launch(){
 			source_script=$(realpath "$0")
 			source_dir=$(dirname "$source_script")
 			echo "$launch_options" > "$source_dir"/options.log
-			echo "[DZGUI] Wrote 'options.log' to $source_dir"
+			echo "[DZGUI] Wrote launch options to $source_dir/options.log"
+			zenity --info --width 500 --title="DZGUI" --text="Wrote launch options to \n$source_dir/options.log" 2>/dev/null
 		fi
 
 	else
 		echo "[DZGUI] All OK. Launching DayZ"
-		zenity --title="DZGUI" --info --text="Launch conditions satisfied.\nDayZ will now launch after clicking [OK]." 2>/dev/null
+		zenity --width 500 --title="DZGUI" --info --text="Launch conditions satisfied.\nDayZ will now launch after clicking [OK]." 2>/dev/null
 		steam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro -name=$name \"-mod=$mods\"
 		exit
 	fi
@@ -638,7 +654,7 @@ debug_menu(){
 }
 query_and_connect(){
 	query_api
-	parse_json <<< "$response"
+	parse_json 
 	#TODO: create logger function
 	echo "[DZGUI] Checking response time of servers"
 	create_array | zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
@@ -698,10 +714,28 @@ main_menu(){
 	fi
 	done
 }
+page_through(){
+	list_response=$(curl -s "$page")
+	list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
+	idarr+=("$list")
+	parse_json
+}
 parse_json(){
-	list=$(jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
-	fetch_query_ports
-	echo -e "$list" > $tmp
+	page=$(echo "$list_response" | jq -r '.links.next?')
+	if [[ $first_entry -eq 1 ]]; then
+		list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
+		idarr+=("$list")
+		first_entry=0
+	fi
+	if [[ "$page" != "null" ]]; then
+		list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
+		idarr+=("$list")
+		page_through
+	else
+		printf "%s\n" "${idarr[@]}" > $tmp
+		idarr=()
+		fetch_query_ports
+	fi
 }
 check_ping(){
 	ping_ip=$(echo "$1" | awk -F'\t' '{print $2}' | awk -F: '{print $1}')
@@ -749,6 +783,7 @@ create_array(){
 }
 set_fav(){
 	#TODO: test API key here and return errors
+	echo "[DZGUI] Querying favorite server"
 	query_api
 	fav_label=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "filter[game]=$game" -d "filter[ids][whitelist]=$fav" \
 	| jq -r '.data[] .attributes .name')
@@ -929,7 +964,27 @@ while true; do
 	fi
 done
 }
+#cleanup(){
+#	rm $config_path/.lockfile
+#}
+lock(){
+	if [[ ! -f $config_path/.lockfile ]]; then
+		touch $config_path/.lockfile
+	fi
+	pid=$(cat $config_path/.lockfile)
+	ps -p $pid -o pid= >/dev/null 2>&1
+	res=$?
+	if [[ $res -eq 0 ]]; then
+		echo "[DZGUI] Already running ($pid)"
+		exit
+	elif [[ $pid == $$ ]]; then
+		:
+	else
+		echo $$ > $config_path/.lockfile
+	fi
+}
 main(){
+	lock
 	run_depcheck
 	check_architecture
 	check_version
@@ -942,3 +997,4 @@ main(){
 }
 
 main
+#trap cleanup EXIT
