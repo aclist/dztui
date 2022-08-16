@@ -3,6 +3,19 @@
 ## [Unreleased] 
 - Clean up logging
 - Custom query API
+- Standardize dialogs
+- Connect by IP
+
+## [2.5.0] 2022-08-16
+### Added
+- Lockfile: prevent concurrent instances of DZGUI from being opened
+
+### Changed
+- Faster path discovery on first-time setup
+
+### Fixed
+- Symlink collision on servers with many mods
+- API response pagination for large server lists
 
 ## [2.4.1] 2022-08-09
 ### Fixed
