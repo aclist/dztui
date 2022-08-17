@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.5.0
+version=2.5.1
 
 aid=221100
 game="dayz"
@@ -196,8 +196,9 @@ file_picker(){
 guess_path(){
 	echo "# Checking for default DayZ path"
 	path=$(find $HOME -type d -regex ".*/steamapps/common/DayZ$" -print -quit)
-	if [[ -n $path ]]; then
-		steam_path="$path"
+	if [[ -n "$path" ]]; then
+		clean_path=$(echo -e "$path" | awk -F"/steamapps" '{print $1}')
+		steam_path="$clean_path"
 	else
 		echo "# Searching for alternate DayZ path. This may take some time."
 		path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" -o -path "/run" -o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/run" -o -path "/lost+found" \) -prune -o -regex ".*/steamapps/common/DayZ$" -print -quit 2>/dev/null)
@@ -250,7 +251,7 @@ err(){
 varcheck(){
 	[[ -z $api_key ]] && (err "Error in key: 'api_key'")
 	[[ -z $whitelist ]] && (err "Error in key: 'whitelist'")
-	[[ ! -d $game_dir ]] && (err "Malformed game path")
+	[[ ! -d "$game_dir" ]] && (err "Malformed game path")
 	[[ $whitelist =~ [[:space:]] ]] && (err "Separate whitelist values with commas")
 }
 run_depcheck() {
