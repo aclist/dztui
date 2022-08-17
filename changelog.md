@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Connect by IP
 
+## [2.5.1] 2022-08-17
+### Fixed
+- Hotfix for malformed paths during first-time setup
+
 ## [2.5.0] 2022-08-16
 ### Added
 - Lockfile: prevent concurrent instances of DZGUI from being opened
