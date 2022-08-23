@@ -1,6 +1,6 @@
 # DZTUI
 
-**NOTE:** this project is currently superseded by [DZGUI](https://github.com/aclist/dztui/tree/dzgui), which brings numerous hotfixes and quality of life features. Those features are gradually being backported to the TUI client and the documentation for both is undergoing a rewrite in order to reach feature parity between the terminal and GUI versions. For the most extensive server support, use DZGUI.
+**NOTE:** this project is currently superseded by [DZGUI](https://github.com/aclist/dztui/tree/dzgui), which brings numerous hotfixes and quality of life features. Those features are gradually being backported to the TUI client and the documentation for both is undergoing a rewrite in order to reach feature parity between the terminal and GUI versions. For the most extensive server support, use DZGUI. Most of the DZGUI documentation applies to DZTUI as far as configuration parameters are concerned.
 
 ## What this is:
 
@@ -67,21 +67,7 @@ Valve recommends creating an isolated user called `steam` that is used to invoke
 
 You must create the `steam` user (or some other user of your choice) on the local system, and install `steamcmd` from your repositories or download the upstream binary.
 
-For our purposes, isolating the user still seems like a good idea, but this introduces a challenge: how to fetch the content as the user `steam` and then make it available to the real user in the least kludgy manner possible? Obviously, if the users are isolated from each other, the `steam` user shouldn't be allowed to wantonly write files to the real user's space, and vice versa, the real user shouldn't be able to go into the `steam` user's space.
-
-I initially thought making use of a common/shared directory that both users have group permissions to would be good: the `steam` user could fetch the mods, then move them to this common directory, which is set to recursively inherit permissions. The real user then grabs the content out of there and puts it in their real mod path. This seemed overengineered, though, and you have to mess about with group permissions  and umasks, and would a user create a totally clean directory for this purpose, as I did, or just set their `$HOME`? It seemed rife with problems. Another alternative here would be to use access control lists (ACL), but, again,  this just seemed like overkill, and I didn't like the idea of users wantonly moving files in and out of some unspecified directory, especially if someone chose to set this as an important directory path.
-
-Eventually, I chose something more streamlined: 
-
-1. We use `sudo` to perform a one-time invocation of `steamcmd` as the `steam` user (`sudo -u $steamcmd_user ...`)
-2. steamcmd fetches the mods as a concatenated list in one go, and writes them to `/tmp` (`+force_install_dir $staging_dir`). `/tmp` seemed like the ideal choice because, by design, all users can see this directory, and it uses the sticky bit, so it's painless to change ownership of the incoming files to the real user and move them out. Lastly, `/tmp` is the de facto place for ephemeral files, so there is no worry about destructively changing files if the write operation is malformed for some reason--although it is unlikely to be. Note that `steamcmd` does not have great error handling or provide correct return codes even if the wrong credentials are supplied, and likes to write a `steamapps`directory (albeit empty) into the destination directory when failing. Taking this into account, `/tmp` seemed like a good place.
-3. `sudo` is used to change ownership of the incoming files back to the real user and its effective group id (`sudo chown -R $USER:$gid $staging_dir/steamapps`)
-4. The individual mod ID directories are copied out of `/tmp` to the real mod path.
-4. Once finished, the directory leftovers are removed from `/tmp` (`rm -r $staging_dir/steamapps`). The `steamapps` root may contain some files we don't want to conflict with the real workshop path, so we just take the mods, not the whole directory stack. Later invocations of `steamcmd` may fail if there is some detritus in `steamapps`, so it needs to be removed.
-
-There are other ways of solving this, but in terms of skipping group and user management and keeping things fast and simple, this seems reasonable. At most, the user will be asked to input their Stream credentials once and never again until the hash is revoked, and their password (sudo) once. In addition, mod downloading stops becoming a recurring need once it's been done for a few servers.
-
-Obviously, those credentials go through `steamcmd` directly to Valve and not through this script. See the function `auto_mod_download()` to see the exact command being used.
+Credentials go through `steamcmd` directly to Valve and not through this script. See the function `auto_mod_download()` to see the exact command being used.
 
 ## Usage:
 
