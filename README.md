@@ -57,15 +57,15 @@ See https://developer.valvesoftware.com/wiki/SteamCMD for additional details.
 |auto_install_mods|if set to 1, uses steamcmd to automatically stage mods without manual subscription necessary|
 |steam_cmd_user|the name of the local system user that invokes steamcmd (recommended user is `steam`)|
 |steam_username|the login handle of the real steam account that owns DayZ (this is required for mods; you cannot anonymously download mods without a license)|
-|staging_dir|the intermediate path to stage downloaded mods to before moving them to the real user's `workshop_dir`. `/tmp` is used by default (see explanation below). 
+|staging_dir|the intermediate path to stage downloaded mods to before moving them to the real user's `workshop_dir`. `/tmp` is used by default. This must be a writable directory. 
 
 ### Some explanation of how steamcmd works follows:
 
 `steamcmd` is chiefly designed for updating content on game servers. As such, it is shipped as a command-line application and is designed to be run by a user isolated from the rest of the system. It allows for programmatic login to a Steam account and fetching/updating content in a headless fashion. While this can be done anonymously for downloading game server content, to download mods tied to an actual game, you need the game license (i.e. own the game). This means you must log in to retrieve mods.
 
-Valve recommends creating an isolated user called `steam` that is used to invoke `steamcmd` and fetch content. This is a reasonable suggestion and makes sense for a server context in particular. Once logged in, `steamcmd` by design stores and hashes the login credentials to uniquely identify the user and obviate further manual password entry from the same account. After prompting for a password (and 2FA code, where applicable), it won't ask for them again unless the hash is removed or the login user is changed.
+Valve recommends creating an isolated user called `steam` that is used to invoke `steamcmd` and fetch content. Once logged in, `steamcmd` by design stores and hashes the login credentials to uniquely identify the user and obviate further manual password entry from the same account. After prompting for a password (and 2FA code, where applicable), it won't ask for them again until the hash expires or the login user is changed.
 
-You must create the `steam` user (or some other user of your choice) on the local system, and install `steamcmd` from your repositories or download the upstream binary.
+You must create the `steam` user (or some other user of your choice; default configuration assumes a user named `steam`) on the local system, and install `steamcmd` from your repositories or download the upstream binary.
 
 Credentials go through `steamcmd` directly to Valve and not through this script. See the function `auto_mod_download()` to see the exact command being used.
 
@@ -95,7 +95,6 @@ Lastly, the launch options and mod list will be concatenated and used to launch 
 - The server protocol enforces a maximum length of 64 characters, so server names should never exceed the acceptable width of the table, making truncation unneccessary.
 - This was not tested with Flatpak steam or Steam native runtime. If there is a particular method of invocation for those, submit an issue.
 - Official servers do not get indexed by server trackers in the usual manner, so this works only with custom servers. It might be possible to include a manifest of official servers in a future revision, however.
-- ~~In testing, at least one server behaved strangely despite the correct launch parameters being given and refused to start. (Investigating)~~ **Thanks to the user scandalouss for help in resolving this issue**
 - You may still encounter weird bugs from DayZ itself due to the unstable nature of the client. (E.g., "User is not connected to Steam" when loading into a map.)
 - Wasn't tested on esoteric terminal emulators or fancy configs. (Tested against urxvt)
 
