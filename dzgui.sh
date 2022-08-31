@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.6.0-rc.1
+version=2.6.0-rc.2
 
 aid=221100
 game="dayz"
@@ -152,7 +152,7 @@ branch="$branch"
 seen_news="$seen_news"
 
 #Steam API key
-steam_api=""
+steam_api="$steam_api"
 	END
 }
 write_desktop_file(){
@@ -200,8 +200,9 @@ file_picker(){
 guess_path(){
 	echo "# Checking for default DayZ path"
 	path=$(find $HOME -type d -regex ".*/steamapps/common/DayZ$" -print -quit)
-	if [[ -n $path ]]; then
-		steam_path="$path"
+	if [[ -n "$path" ]]; then
+		clean_path=$(echo -e "$path" | awk -F"/steamapps" '{print $1}')
+		steam_path="$clean_path"
 	else
 		echo "# Searching for alternate DayZ path. This may take some time."
 		path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" -o -path "/run" -o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/run" -o -path "/lost+found" \) -prune -o -regex ".*/steamapps/common/DayZ$" -print -quit 2>/dev/null)
@@ -254,7 +255,7 @@ err(){
 varcheck(){
 	[[ -z $api_key ]] && (err "Error in key: 'api_key'")
 	[[ -z $whitelist ]] && (err "Error in key: 'whitelist'")
-	[[ ! -d $game_dir ]] && (err "Malformed game path")
+	[[ ! -d "$game_dir" ]] && (err "Malformed game path")
 	[[ $whitelist =~ [[:space:]] ]] && (err "Separate whitelist values with commas")
 }
 run_depcheck() {
@@ -504,24 +505,27 @@ connect_by_ip(){
 	source $config_file
 	if [[ -z $steam_api ]]; then
 		steam_api=$(zenity --entry --text="Key 'steam_api' not present in config file. Enter Steam API key:" --title="DZGUI" 2>/dev/null)
-		if [[ -z $steam_api ]]; then
+		if [[ $? -eq 1 ]] ; then
+			return
+		elif [[ $steam_api -lt 32 ]]; then
+			zenity --warning --title="DZGUI" --text="Check API key and try again."
 			return
 		else
 			add_steam_api
 		fi
 	fi
 	while true; do
-	if [[ $return_from_table -eq 1 ]]; then
-		return_from_table=0
-		return
-	fi
-	ip=$(zenity --entry --text="Enter server IP" --title="DZGUI" 2>/dev/null)
-	[[ $? -eq 1 ]] && return
-	if validate_ip "$ip"; then
-		fetch_ip_metadata
-	else
-		continue
-	fi
+		if [[ $return_from_table -eq 1 ]]; then
+			return_from_table=0
+			return
+		fi
+		ip=$(zenity --entry --text="Enter server IP" --title="DZGUI" 2>/dev/null)
+		[[ $? -eq 1 ]] && return
+		if validate_ip "$ip"; then
+			fetch_ip_metadata
+		else
+			continue
+		fi
 	done
 }
 fetch_mods(){
