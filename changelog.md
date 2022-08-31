@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Query and connect by IP/port
 
+## [2.6.0-rc.2] 2022-08-31
+### Added
+- Validate Steam API key
+
 ## [2.6.0-rc.1] 2022-08-16
 ### Added
 - Connect to server by IP
