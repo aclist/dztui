@@ -400,9 +400,10 @@ connect(){
 		return
 	fi
 	ip=$(echo "$1" | awk -F"$separator" '{print $1}')
-	#TODO: deprecated (for now)
 	bid=$(echo "$1" | awk -F"$separator" '{print $2}')
-	fetch_mods_sa "$ip"
+	#TODO: deprecated (for now)
+	#fetch_mods_sa "$ip"
+	fetch_mods "$bid"
 	validate_mods
 	rc=$?
 	[[ $rc -eq 1 ]] && return
@@ -413,7 +414,11 @@ connect(){
 		passed_mod_check
 	fi
 }
-
+fetch_mods(){
+	remote_mods=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d filter[ids][whitelist]="$1" -d "sort=-players" \
+	| jq -r '.data[] .attributes .details .modIds[]')
+}
+#TODO: deprecated (for now)
 fetch_mods_sa(){
 	sa_ip=$(echo "$1" | awk -F: '{print $1}')
 	for i in ${qport_arr[@]}; do
