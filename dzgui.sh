@@ -401,9 +401,11 @@ connect(){
 	fi
 	ip=$(echo "$1" | awk -F"$separator" '{print $1}')
 	bid=$(echo "$1" | awk -F"$separator" '{print $2}')
-	#TODO: deprecated (for now)
-	#fetch_mods_sa "$ip"
-	fetch_mods "$bid"
+	if [[ $2 == "ip" ]]; then
+		fetch_mods_sa "$ip"
+	else
+		fetch_mods "$bid"
+	fi
 	validate_mods
 	rc=$?
 	[[ $rc -eq 1 ]] && return
@@ -464,12 +466,12 @@ ip_table(){
 			echo "No selection"
 		else
 			local gameport="$(echo "$sel" | awk -F: '{print $2}')"
-			local ip="$(echo "$sel" | awk -F: '{print $1}')"
+			ip="$(echo "$sel" | awk -F: '{print $1}')"
 			local addr=$(< $json jq -r --arg gameport $gameport '.servers[]|select(.gameport == ($gameport|tonumber)).addr')
 			local qport=$(echo "$addr" | awk -F: '{print $2}')
 			local sa_ip=$(echo "$ip:$gameport%%$qport")
 			qport_list="$sa_ip"
-			connect "$sel"
+			connect "$sel" "ip"
 		fi
 	done
 }
