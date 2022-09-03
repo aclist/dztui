@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Query and connect by IP/port
 
+## [2.6.0-rc.5] 2022-09-03
+### Fixed
+- Make variable local
+
 ## [2.6.0-rc.4] 2022-09-03
 ### Fixed
 - Use alternate API for direct IP queries

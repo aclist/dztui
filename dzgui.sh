@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.6.0-rc.4
+version=2.6.0-rc.5
 
 aid=221100
 game="dayz"
@@ -466,7 +466,7 @@ ip_table(){
 			echo "No selection"
 		else
 			local gameport="$(echo "$sel" | awk -F: '{print $2}')"
-			ip="$(echo "$sel" | awk -F: '{print $1}')"
+			local ip="$(echo "$sel" | awk -F: '{print $1}')"
 			local addr=$(< $json jq -r --arg gameport $gameport '.servers[]|select(.gameport == ($gameport|tonumber)).addr')
 			local qport=$(echo "$addr" | awk -F: '{print $2}')
 			local sa_ip=$(echo "$ip:$gameport%%$qport")
