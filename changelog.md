@@ -4,7 +4,6 @@
 - Clean up logging
 - Custom query API
 - Standardize dialogs
-- Connect by IP
 
 ## [2.6.0] 2022-09-05
 ### Added
