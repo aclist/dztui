@@ -27,7 +27,7 @@ If not already installed, the below can be found in your system's package manage
 **Automatic method (skip to 3 below when complete)**
 
 ```
-curl -s "https://raw.githubusercontent.com/aclist/dztui/dzgui/install.sh" | bash
+curl -s "https://raw.githubusercontent.com/aclist/dztui/testing/install.sh" | bash
 ```
 
 **Manual method**
@@ -139,8 +139,9 @@ image::https://github.com/aclist/dztui/raw/testing/images/tutorial/03.png[03,700
 
 [start=2]
 2. Select **Set Custom Background**
-3. Navigate to the artwork path described above and select `hero.png`.
-4. Next, right-click the image background and select **Set Custom Logo**. 
+3. Select to display All Files from the File type dropdown
+4. Navigate to the artwork path described above and select `hero.png`.
+5. Next, right-click the image background and select **Set Custom Logo**. 
 
 image::https://github.com/aclist/dztui/raw/testing/images/tutorial/04.png[04,700]
 
@@ -220,6 +221,18 @@ Fetches detailed server information on the list of servers saved in the config f
 ==== Quick connect to favorite server
 Bypasses the server list and quick-connects to a single favorite server specified in advance using the <<Add favorite server>> option.
 
+
+==== Connect by IP
+
+Instead of relying on server IDs, returns the list of servers behind a given IP. Provide only the IP; no port is necessary. This returns the server metadata for you to verify before connecting.
+
+If there are multiple maps hosted behind an IP (e.g. different maps on varying ports), the application will list all of them.
+
+In order to use this feature, you must have a https://steamcommunity.com/dev/apikey[Steam API key]. You will be asked for a unique URL for your app when registering. 
+Since this key is for a personal use application and does not actually call back anywhere, set a generic local identifier here like "127.0.0.1".
+
+Once configured, you can insert this key in the app when launching the "Connect by IP" feature for the first time.
+
 ==== Add server by ID
 Prompts you to add servers to the config file by ID. An indefinite number of servers can be added. These will be listed when using the <<Launch server list>> option.
 
@@ -275,7 +288,7 @@ Steam schedules the downloads in the background and processes them as they are s
 Check the logs emitted by Steam in the terminal, or in `<steam path>/error.log`.
 
 .Game launches, but throws a "mod missing/check PBO file" error when connecting
-You are missing mods or mods did not download correctly. Re-run the app to verify and link missing mods.
+In rare cases, the server may be using misconfigured, malformed, or obsolete mods. This is out of our control and depends on server operators checking their mods for integrity. If you believe the mods are correct and this is a bug, please report it.
 
 .Game and server launches, but when joining the game world, an error occurs
 A mod is corrupted or the issue lies with the server. Replace the mods in question and reconnect.
