@@ -1,1 +1,1 @@
-NEWS: Backend fixes for very large/small server lists, servers with numerous mods.
+NEWS: Connect by IP added. Requires Steam API key. See documentation
