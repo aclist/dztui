@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Connect by IP
 
+## [2.6.0] 2022-09-05
+### Added
+- Connect by IP method
+
 ## [2.5.1] 2022-08-17
 ### Fixed
 - Hotfix for malformed paths during first-time setup
