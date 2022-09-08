@@ -1,5 +1,5 @@
 = DZGUI documentation
-DayZ community server graphical launcher for Linux | Last updated: 2022-08-05
+DayZ community server graphical launcher for Linux | Last updated: 2022-09-08
 :nofooter:
 :toc: left
 :stylesheet: custom.css
