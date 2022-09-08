@@ -27,7 +27,7 @@ If not already installed, the below can be found in your system's package manage
 **Automatic method (skip to 3 below when complete)**
 
 ```
-curl -s "https://raw.githubusercontent.com/aclist/dztui/testing/install.sh" | bash
+curl -s "https://raw.githubusercontent.com/aclist/dztui/dzgui/install.sh" | bash
 ```
 
 **Manual method**
