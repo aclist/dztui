@@ -102,6 +102,8 @@ If the path was not detected correctly, you can manually edit the config file at
 
 === Steam integration & artwork 
 
+==== Adding to steam
+
 DZGUI can be added to Steam as a "non-Steam game" in order to facilitate integration with Steam Deck or desktop environments.
 
 1. Launch Steam in the "Large" view. 
@@ -117,6 +119,12 @@ image::https://github.com/aclist/dztui/raw/testing/images/tutorial/01.png[01,500
 [start=3]
 3. Navigate to `$HOME/.local/share/applications/` and select `dzgui.desktop`
 4. Select **Add Selected Programs**.
+
+==== Controller layout
+
+An official controller layout for Steam Deck is available in the Steam community layouts section. Search for "DZGUI Official Config" to download it. Long-press the View button and Select button (☰) to toggle D-pad navigation. You can navigate through menus using the D-pad and use A/B to respectively confirm selections and go back.
+
+==== Artwork
 
 The application also ships with Steam cover artwork. It is located under:
 
