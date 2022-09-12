@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.6.0-rc.5
+version=2.7.0-rc.1
 
 aid=221100
 game="dayz"
@@ -20,6 +20,10 @@ check_config_msg="Check config values and restart."
 news_url="https://raw.githubusercontent.com/aclist/dztui/testing/news"
 freedesktop_path="$HOME/.local/share/applications"
 sd_install_path="$HOME/.local/share/dzgui"
+helpers_path="$sd_install_path/helpers"
+geo_file="$HOME/.local/share/dzgui/helpers/ips.csv"
+km_helper="$HOME/.local/share/dzgui/helpers/lat.py"
+km_helper_url="https://raw.githubusercontent.com/aclist/dztui/testing/helpers/lat.py"
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
@@ -75,6 +79,7 @@ items=(
 	"Add server by ID"
 	"Add favorite server"
 	"Delete server"
+	"[NEW] Server browser"
 	"List installed mods"
 	"Toggle debug mode"
 	"Report bug (opens in browser)"
@@ -776,6 +781,197 @@ query_and_connect(){
 		populate
 	fi
 }
+exclude_full(){
+	response=$(echo "$response" | jq '[.[]|select(.players!=.max_players)]')
+}
+exclude_empty(){
+	response=$(echo "$response" | jq '[.[]|select(.players!=0)]')
+}
+filter_maps(){
+	echo "# Filtering maps"
+	[[ $ret -eq 98 ]] && return
+	local maps=$(echo "$response" | jq -r '.[].map//empty|ascii_downcase' | sort -u) 
+	local map_sel=$(echo "$maps" | zenity --list --column="Check" --width=1200 --height=800 2>/dev/null --title=DZGUI --text="Select map")
+	echo "[DZGUI] Selected '$map_sel'"
+	if [[ -z $map_sel ]]; then
+		ret=97
+		return
+	fi
+	echo "100"
+	response=$(echo "$response" | jq --arg map "$map_sel" '[.[]|select(.map)//empty|select(.map|ascii_downcase == $map)]')
+}
+exclude_daytime(){
+	response=$(echo "$response" | jq '[.[]|select(.gametype|test(",[0][6-9]:|,[1][0-6]:")|not)]')
+}
+exclude_nighttime(){
+	response=$(echo "$response" | jq '[.[]|select(.gametype|test(",[1][7-9]:|,[2][0-4]:|[0][0-5]:")|not)]')
+}
+keyword_filter(){
+	response=$(echo "$response" | jq --arg search "$search" '[.[]|select(.name|ascii_downcase | contains($search))]')
+}
+exclude_lowpop(){
+	response=$(echo "$response" | jq '[.[]|select(.players > 9)]')
+}
+exclude_nonascii(){
+	response=$(echo "$response" | jq -r '[.[]|select(.name|test("^([[:ascii:]])*$"))]')
+}
+strip_null(){
+	response=$(echo "$response" | jq -r '[.[]|select(.map//empty)]')
+}
+local_latlon(){
+	local local_ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+	local url="http://ip-api.com/json/$local_ip" 
+	local res=$(curl -Ls "$url" | jq -r '"\(.lat),\(.lon)"')
+	local_lat=$(echo "$res" | awk -F, '{print $1}')
+	local_lon=$(echo "$res" | awk -F, '{print $2}')
+}
+disabled(){
+	if [[ -z ${disabled[@]} ]]; then
+		printf "%s" "-"
+	else
+		for((i=0;i<${#disabled[@]};i++)); do
+			if [[ $i < $((${#disabled[@]}-1)) ]]; then
+				printf "%s, " "${disabled[$i]}"
+			else
+				printf "%s" "${disabled[$i]}"
+			fi
+
+		done
+	fi
+}
+pagination(){
+	if [[ ${#qport[@]} -eq 1 ]]; then
+		entry=server
+	else
+		entry=servers
+	fi
+	printf "[Included]  %s\n" "$filters"
+	printf "[Excluded] %s\n" "$(disabled)"
+	if [[ -n $search ]]; then
+		printf "[Keyword]  %s\n" "$search"
+	fi
+	printf "Returned %s %s" "${#qport[@]}" "$entry"
+}
+check_geo_file(){
+	local db_file="https://github.com/aclist/dztui/releases/download/browser/ips.csv.gz"
+	local gzip="$helpers_path/ips.csv.gz"
+	if [[ ! -f $geo_file ]]; then
+		run(){
+		mkdir -p "$helpers_path"
+		echo "# Fetching geolocation DB"
+		curl -Ls "$db_file" > "$gzip"
+		echo "# Extracting coordinates"
+		gunzip "$gzip"
+		echo "# Preparing helper file"
+		curl -Ls "$km_helper_url" > "$km_helper"
+		echo "100"
+		}
+		run > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+	fi 
+}
+choose_filters(){
+	sels=$(zenity --title=DZGUI --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" False "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" --width 1200 --height 800 2>/dev/null)
+	if [[ $sels =~ Keyword ]]; then
+		search=$(zenity --entry --text="Search (case insensitive)" --width=500 --title=DZGUI 2>/dev/null | awk '{print tolower($0)}')
+		[[ -z $search ]] && { ret=97; return; }
+	fi	
+	[[ -z $sels ]] && return
+	filters=$(echo "$sels" | sed 's/|/, /g')
+	echo "[DZGUI] Filters: $filters"
+}
+get_dist(){
+	local given_ip="$1"
+	local subnet="$(echo "$given_ip" | awk -F. '{OFS="."}{print $1,$2,$3}')"
+	local host="$(echo "$given_ip" | awk -F. '{print $4}')"
+	local remote=$(grep -E "^$subnet\." "$geo_file" | awk -F[.,] -v var=$host '$4 < var {print $0}' \
+		| tail -n1 | awk -F, '{print $7,$8}')
+	local remote_lat=$(echo "$remote" | awk '{print $1}')
+	local remote_lon=$(echo "$remote" | awk '{print $2}')
+	if [[ -z $remote_lat ]]; then
+		local dist="Unknown"
+		echo "$dist"
+	else
+		local dist=$(python "$km_helper" "$local_lat" "$local_lon" "$remote_lat" "$remote_lon")
+		printf "%05d %s" "$dist" "km"
+	fi
+}
+prepare_filters(){
+	echo "# Preparing list"
+	[[ ! "$sels" =~ "Full" ]] && { exclude_full; disabled+=("Full") ; }
+	[[ ! "$sels" =~ "Empty" ]] && { exclude_empty; disabled+=("Empty") ; }
+	[[ ! "$sels" =~ "Daytime" ]] && { exclude_daytime; disabled+=("Daytime") ; }
+	[[ ! "$sels" =~ "Nighttime" ]] && { exclude_nighttime; disabled+=("Nighttime") ; }
+	[[ ! "$sels" =~ "Low population" ]] && { exclude_lowpop; disabled+=("Low-pop") ; }
+	[[ ! "$sels" =~ "Non-ASCII titles" ]] && { exclude_nonascii; disabled+=("Non-ASCII") ; }
+	[[ -n "$search" ]] && keyword_filter
+	strip_null
+	echo "100"
+}
+munge_servers(){
+	if [[ ! "$sels" =~ "All maps" ]]; then
+		filter_maps > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+		disabled+=("All maps")
+	fi
+	[[ $ret -eq 97 ]] && return
+	prepare_filters > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+	if [[ $(echo "$response" | jq 'length') -eq 0 ]]; then
+		zenity --error --text="No matching servers" 2>/dev/null
+		return
+	fi
+	local addr=$(echo "$response" | jq -r '.[].addr' | awk -F: '{print $1}')
+	local gameport=$(echo "$response" | jq -r '.[].gameport')
+	local qport=$(echo "$response" | jq -r '.[].addr' | awk -F: '{print $2}')
+	local name=$(echo "$response" | jq -r '.[].name')
+	local players=$(echo "$response" | jq -r '.[].players')
+	local max=$(echo "$response" | jq -r '.[].max_players')
+	local map=$(echo "$response" | jq -r '.[].map|ascii_downcase')
+	local gametime=$(echo "$response" | jq -r '.[].gametype' | grep -oE '[0-9]{2}:[0-9]{2}$')
+	readarray -t qport <<< $qport
+	readarray -t gameport <<< $gameport
+	readarray -t addr <<< $addr
+	readarray -t name <<< $name
+	readarray -t players <<< $players
+	readarray -t map <<< $map
+	readarray -t max <<< $max
+	readarray -t gametime <<< $gametime
+	if [[ $is_steam_deck -eq 0 ]]; then
+		sd_res="--width=1920 --height=1080"
+	fi
+
+	for((i=0;i<${#qport[@]};i++)); do
+		printf  "%s\n%s\n%s\n%03d\n%03d\n%s\n%s:%s\n%s\n" "${map[$i]}" "${name[$i]}" "${gametime[$i]}" \
+		"${players[$i]}" "${max[$i]}" "$(get_dist ${addr[$i]})" "${addr[$i]}" "${gameport[$i]}" "${qport[$i]}"
+		done | zenity --text="$(pagination)" --title=DZGUI --list --column=Map --column=Name --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=7,8 --separator=%% 2>/dev/null
+}
+server_browser(){
+	unset ret
+	file=$(mktemp)
+	local limit=20000
+	local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=$limit&key=$steam_api"
+	check_geo_file #> >(zenity --pulsate --progress --auto-close 2>/dev/null)
+	local_latlon
+	choose_filters
+	[[ -z $sels ]] && return
+	[[ $ret -eq 97 ]] && return
+	#TODO: some error handling here
+	curl -Ls "$url" > $file
+	response=$(< $file jq -r '.response.servers')
+		local sel=$(munge_servers)
+		if [[ -z $sel ]]; then
+			unset filters
+			unset search
+			ret=98
+			return
+		fi
+		local sel_ip=$(echo "$sel" | awk -F%% '{print $1}')
+		local sel_port=$(echo "$sel" | awk -F%% '{print $2}')
+		qport_list="$sel_ip%%$sel_port"
+		if [[ -n "$sel_ip" ]]; then
+			connect "$sel_ip" "ip"
+		else
+			return
+		fi
+}
 
 main_menu(){
 	print_news
@@ -806,18 +1002,20 @@ main_menu(){
 			delete=1
 			query_and_connect
 		elif [[ $sel == "${items[6]}" ]]; then
-			list_mods | sed 's/\t/\n/g' | zenity --list --column="Mod" --column="Symlink" --title="DZGUI" $sd_res --print-column="" 2>/dev/null
+			server_browser 
 		elif [[ $sel == "${items[7]}" ]]; then
+			list_mods | sed 's/\t/\n/g' | zenity --list --column="Mod" --column="Symlink" --title="DZGUI" $sd_res --print-column="" 2>/dev/null
+		elif [[ $sel == "${items[8]}" ]]; then
 			toggle_debug
 			main_menu
 			return
-		elif [[ $sel == "${items[8]}" ]]; then
-			report_bug
 		elif [[ $sel == "${items[9]}" ]]; then
-			help_file
+			report_bug
 		elif [[ $sel == "${items[10]}" ]]; then
-			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
+			help_file
 		elif [[ $sel == "${items[11]}" ]]; then
+			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
+		elif [[ $sel == "${items[12]}" ]]; then
 			debug_menu
 		else
 			warn "This feature is not yet implemented."

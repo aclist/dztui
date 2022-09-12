@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Query and connect by IP/port
 
+## [2.7.0-rc.1] 2022-09-12
+### Added
+- Initial server browser prototype
+
 ## [2.6.0-rc.5] 2022-09-03
 ### Fixed
 - Make variable local
