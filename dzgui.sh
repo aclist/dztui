@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.1
+version=2.7.0-rc.2
 
 aid=221100
 game="dayz"
@@ -845,12 +845,15 @@ pagination(){
 	else
 		entry=servers
 	fi
-	printf "[Included]  %s\n" "$filters"
-	printf "[Excluded] %s\n" "$(disabled)"
+	printf "DZGUI $version │ "
+	printf "Mode: $mode │"
+	printf "Fav: $fav \n"
+	printf "Included:  %s │ " "$filters"
+	printf "Excluded: %s │ " "$(disabled)"
 	if [[ -n $search ]]; then
-		printf "[Keyword]  %s\n" "$search"
+		printf "Keyword:  %s │ " "$search"
 	fi
-	printf "Returned %s %s" "${#qport[@]}" "$entry"
+	printf "Returned: %s %s" "${#qport[@]}" "$entry"
 }
 check_geo_file(){
 	local db_file="https://github.com/aclist/dztui/releases/download/browser/ips.csv.gz"
@@ -949,6 +952,7 @@ server_browser(){
 	local limit=20000
 	local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=$limit&key=$steam_api"
 	check_geo_file #> >(zenity --pulsate --progress --auto-close 2>/dev/null)
+	command -v python 2>&1>/dev/null || { zenity --error --width=500 --text="Requires python" 2>/dev/null ; return ; }
 	local_latlon
 	choose_filters
 	[[ -z $sels ]] && return
