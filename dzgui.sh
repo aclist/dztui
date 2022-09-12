@@ -847,7 +847,7 @@ pagination(){
 	fi
 	printf "DZGUI $version │ "
 	printf "Mode: $mode │"
-	printf "Fav: $fav \n"
+	printf "Fav: $fav_label \n"
 	printf "Included:  %s │ " "$filters"
 	printf "Excluded: %s │ " "$(disabled)"
 	if [[ -n $search ]]; then
