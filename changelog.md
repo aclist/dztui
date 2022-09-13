@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Query and connect by IP/port
 
+## [2.7.0-rc.5] 2022-09-13
+### Changed
+- Improve server distance algorithm
+
 ## [2.7.0-rc.2 to 4] 2022-09-13
 ### Changed
 - Retooling data in header
