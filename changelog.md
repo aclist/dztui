@@ -6,6 +6,13 @@
 - Standardize dialogs
 - Query and connect by IP/port
 
+## [2.7.0-rc.6] 2022-09-13
+### Added
+- Add number of maps found to map select menu
+
+### Fixed
+- Strip Unicode spaces in server titles
+
 ## [2.7.0-rc.5] 2022-09-13
 ### Changed
 - Improve server distance algorithm

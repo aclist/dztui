@@ -794,7 +794,8 @@ filter_maps(){
 	echo "# Filtering maps"
 	[[ $ret -eq 98 ]] && return
 	local maps=$(echo "$response" | jq -r '.[].map//empty|ascii_downcase' | sort -u) 
-	local map_sel=$(echo "$maps" | zenity --list --column="Check" --width=1200 --height=800 2>/dev/null --title=DZGUI --text="Select map")
+	local map_ct=$(echo "$maps" | wc -l)
+	local map_sel=$(echo "$maps" | zenity --list --column="Check" --width=1200 --height=800 2>/dev/null --title=DZGUI --text="Found $map_ct map types")
 	echo "[DZGUI] Selected '$map_sel'"
 	if [[ -z $map_sel ]]; then
 		ret=97
