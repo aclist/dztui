@@ -10,6 +10,9 @@
 ### Changed
 - Improve server distance algorithm
 
+### Fixed
+- Strip Unicode spaces in server titles
+
 ## [2.7.0-rc.2 to 4] 2022-09-13
 ### Changed
 - Retooling data in header
