@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.3
+version=2.7.0-rc.4
 
 aid=221100
 game="dayz"
@@ -510,22 +510,25 @@ add_steam_api(){
 		zenity --info --title="DZGUI" --text="Added Steam API key to:\n\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
 		source $config_file
 }
-validate_ip(){
-	echo "$1" | grep -qP '^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$'
-}
-connect_by_ip(){
-	source $config_file
+check_steam_api(){
 	if [[ -z $steam_api ]]; then
 		steam_api=$(zenity --entry --text="Key 'steam_api' not present in config file. Enter Steam API key:" --title="DZGUI" 2>/dev/null)
 		if [[ $? -eq 1 ]] ; then
 			return
 		elif [[ $steam_api -lt 32 ]]; then
-			zenity --warning --title="DZGUI" --text="Check API key and try again."
+			zenity --warning --title="DZGUI" --text="Check API key and try again." 2>/dev/null
 			return
 		else
 			add_steam_api
 		fi
 	fi
+}
+validate_ip(){
+	echo "$1" | grep -qP '^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$'
+}
+connect_by_ip(){
+	source $config_file
+	check_steam_api
 	while true; do
 		if [[ $return_from_table -eq 1 ]]; then
 			return_from_table=0
@@ -847,13 +850,14 @@ pagination(){
 	fi
 	printf "DZGUI $version │ "
 	printf "Mode: $mode │"
-	printf "Fav: $fav_label \n"
-	printf "Included:  %s │ " "$filters"
-	printf "Excluded: %s │ " "$(disabled)"
+	printf "Fav: $fav_label "
+	printf "\nIncluded:  %s │ " "$filters"
+	printf "Excluded: %s " "$(disabled)"
 	if [[ -n $search ]]; then
-		printf "Keyword:  %s │ " "$search"
+		printf "│ Keyword:  %s " "$search"
 	fi
-	printf "Returned: %s %s" "${#qport[@]}" "$entry"
+	printf "\nReturned: %s %s of %s │ " "${#qport[@]}" "$entry" "$total_servers"
+	printf "Players online: %s" "$players_online"
 }
 check_geo_file(){
 	local db_file="https://github.com/aclist/dztui/releases/download/browser/ips.csv.gz"
@@ -916,6 +920,8 @@ munge_servers(){
 		disabled+=("All maps")
 	fi
 	[[ $ret -eq 97 ]] && return
+	total_servers=$(echo "$response" | jq 'length')
+	players_online=$(echo "$response" | jq '.[].players' | awk '{s+=$1}END{print s}')
 	prepare_filters > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	if [[ $(echo "$response" | jq 'length') -eq 0 ]]; then
 		zenity --error --text="No matching servers" 2>/dev/null
@@ -947,6 +953,7 @@ munge_servers(){
 		done | zenity --text="$(pagination)" --title=DZGUI --list --column=Map --column=Name --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=7,8 --separator=%% 2>/dev/null
 }
 server_browser(){
+	check_steam_api
 	unset ret
 	file=$(mktemp)
 	local limit=20000
