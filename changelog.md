@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Query and connect by IP/port
 
+## [2.7.0-rc.2 to 4] 2022-09-13
+### Changed
+- Retooling data in header
+
 ## [2.7.0-rc.1] 2022-09-12
 ### Added
 - Initial server browser prototype
