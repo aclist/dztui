@@ -888,12 +888,13 @@ choose_filters(){
 }
 get_dist(){
 	local given_ip="$1"
-	local subnet="$(echo "$given_ip" | awk -F. '{OFS="."}{print $1,$2,$3}')"
-	local host="$(echo "$given_ip" | awk -F. '{print $4}')"
-	local remote=$(grep -E "^$subnet\." "$geo_file" | awk -F[.,] -v var=$host '$4 < var {print $0}' \
-		| tail -n1 | awk -F, '{print $7,$8}')
-	local remote_lat=$(echo "$remote" | awk '{print $1}')
-	local remote_lon=$(echo "$remote" | awk '{print $2}')
+	local network="$(echo "$given_ip" | awk -F. '{OFS="."}{print $1"."$2}')"
+	local binary=$(grep -E "^$network\." $geo_file)
+	local three=$(echo $given_ip | awk -F. '{print $3}')
+	local host=$(echo $given_ip | awk -F. '{print $4}')
+	local res=$(echo "$binary" | awk -F[.,] -v three=$three -v host=$host '$3 <=three && $7 >= three{if($3>three || ($3==three && $4 > host) || $7 < three || ($7==three && $8 < host)){next}{print}}' | awk -F, '{print $7,$8}')
+	local remote_lat=$(echo "$res" | awk '{print $1}')
+	local remote_lon=$(echo "$res" | awk '{print $2}')
 	if [[ -z $remote_lat ]]; then
 		local dist="Unknown"
 		echo "$dist"
@@ -930,7 +931,8 @@ munge_servers(){
 	local addr=$(echo "$response" | jq -r '.[].addr' | awk -F: '{print $1}')
 	local gameport=$(echo "$response" | jq -r '.[].gameport')
 	local qport=$(echo "$response" | jq -r '.[].addr' | awk -F: '{print $2}')
-	local name=$(echo "$response" | jq -r '.[].name')
+	#jq bug #1788, raw output cannot be used with ASCII
+	local name=$(echo "$response" | jq -a '.[].name' | sed 's/\\u[0-9]\{4\}//g;s/^"//;s/"$//')
 	local players=$(echo "$response" | jq -r '.[].players')
 	local max=$(echo "$response" | jq -r '.[].max_players')
 	local map=$(echo "$response" | jq -r '.[].map|ascii_downcase')
