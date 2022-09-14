@@ -21,9 +21,12 @@ news_url="https://raw.githubusercontent.com/aclist/dztui/testing/news"
 freedesktop_path="$HOME/.local/share/applications"
 sd_install_path="$HOME/.local/share/dzgui"
 helpers_path="$sd_install_path/helpers"
-geo_file="$HOME/.local/share/dzgui/helpers/ips.csv"
-km_helper="$HOME/.local/share/dzgui/helpers/lat.py"
-km_helper_url="https://raw.githubusercontent.com/aclist/dztui/testing/helpers/lat.py"
+geo_file="$sd_install_path/ips.csv"
+km_helper="$sd_install_path/latlon"
+sums_path="$sd_install_path/sums.md5"
+km_helper_url="https://github.com/aclist/dztui/releases/download/browser/latlon"
+db_file="https://github.com/aclist/dztui/releases/download/browser/ips.csv.gz"
+sums_url=""
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
@@ -861,17 +864,20 @@ pagination(){
 	printf "Players online: %s" "$players_online"
 }
 check_geo_file(){
-	local db_file="https://github.com/aclist/dztui/releases/download/browser/ips.csv.gz"
 	local gzip="$helpers_path/ips.csv.gz"
-	if [[ ! -f $geo_file ]]; then
+	curl -Ls "$sums_url" > "$sums_path"
+	md5sum -c sums.md5 2>/dev/null 1>&2
+	local res=$?
+	if [[ $res -eq 1 ]]; then
 		run(){
 		mkdir -p "$helpers_path"
-		echo "# Fetching geolocation DB"
+		echo "# Fetching new geolocation DB"
 		curl -Ls "$db_file" > "$gzip"
 		echo "# Extracting coordinates"
 		gunzip "$gzip"
 		echo "# Preparing helper file"
 		curl -Ls "$km_helper_url" > "$km_helper"
+		chmod +x $km_helper
 		echo "100"
 		}
 		run > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
@@ -900,12 +906,12 @@ get_dist(){
 		local dist="Unknown"
 		echo "$dist"
 	else
-		local dist=$(python "$km_helper" "$local_lat" "$local_lon" "$remote_lat" "$remote_lon")
-		printf "%05d %s" "$dist" "km"
+		local dist=$($km_helper "$local_lat" "$local_lon" "$remote_lat" "$remote_lon")
+		printf "%05.0f %s" "$dist" "km"
 	fi
 }
 prepare_filters(){
-	echo "# Preparing list"
+	echo "# Filtering list"
 	[[ ! "$sels" =~ "Full" ]] && { exclude_full; disabled+=("Full") ; }
 	[[ ! "$sels" =~ "Empty" ]] && { exclude_empty; disabled+=("Empty") ; }
 	[[ ! "$sels" =~ "Daytime" ]] && { exclude_daytime; disabled+=("Daytime") ; }
@@ -968,7 +974,11 @@ server_browser(){
 	[[ -z $sels ]] && return
 	[[ $ret -eq 97 ]] && return
 	#TODO: some error handling here
-	curl -Ls "$url" > $file
+	fetch(){
+		echo "# Getting server list"
+		curl -Ls "$url" > $file
+	}
+	fetch > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	response=$(< $file jq -r '.response.servers')
 		local sel=$(munge_servers)
 		if [[ -z $sel ]]; then
