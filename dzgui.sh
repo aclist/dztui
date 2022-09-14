@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.6
+version=2.7.0-rc.7
 
 aid=221100
 game="dayz"

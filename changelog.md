@@ -6,6 +6,16 @@
 - Standardize dialogs
 - Query and connect by IP/port
 
+## [2.7.0-rc.7] 2022-09-14
+### Added
+- Verify IP table checksums when starting
+
+### Changed
+- Switch to C for helper logic
+
+### Fixed
+- Error handling for obscure servers returning no modlist
+
 ## [2.7.0-rc.6] 2022-09-13
 ### Added
 - Add number of maps found to map select menu
