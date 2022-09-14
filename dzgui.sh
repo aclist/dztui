@@ -949,7 +949,7 @@ munge_servers(){
 	local gameport=$(echo "$response" | jq -r '.[].gameport')
 	local qport=$(echo "$response" | jq -r '.[].addr' | awk -F: '{print $2}')
 	#jq bug #1788, raw output cannot be used with ASCII
-	local name=$(echo "$response" | jq -a '.[].name' | sed 's/\\u[0-9]\{4\}//g;s/^"//;s/"$//')
+	local name=$(echo "$response" | jq -a '.[].name' | sed 's/\\u[0-9a-z]\{4\}//g;s/^"//;s/"$//')
 	local players=$(echo "$response" | jq -r '.[].players')
 	local max=$(echo "$response" | jq -r '.[].max_players')
 	local map=$(echo "$response" | jq -r '.[].map|ascii_downcase')
