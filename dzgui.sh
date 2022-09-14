@@ -12,21 +12,23 @@ config_path="$HOME/.config/dztui/"
 config_file="${config_path}dztuirc"
 tmp=/tmp/dztui.tmp
 separator="%%"
-git_url="https://github.com/aclist/dztui/issues"
-stable_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/dzgui.sh"
-testing_url="https://raw.githubusercontent.com/aclist/dztui/testing/dzgui.sh"
-help_url="https://aclist.github.io/dzgui/dzgui"
 check_config_msg="Check config values and restart."
-news_url="https://raw.githubusercontent.com/aclist/dztui/testing/news"
+issues_url="https://github.com/aclist/dztui/issues"
+url_prefix="https://raw.githubusercontent.com/aclist/dztui"
+stable_url="$url_prefix/dzgui"
+testing_url="$url_prefix/testing"
+releases_url="https://github.com/aclist/dztui/releases/download/browser"
+help_url="https://aclist.github.io/dzgui/dzgui"
+news_url="$testing_url/news"
 freedesktop_path="$HOME/.local/share/applications"
 sd_install_path="$HOME/.local/share/dzgui"
 helpers_path="$sd_install_path/helpers"
-geo_file="$sd_install_path/ips.csv"
-km_helper="$sd_install_path/latlon"
-sums_path="$sd_install_path/sums.md5"
-km_helper_url="https://github.com/aclist/dztui/releases/download/browser/latlon"
-db_file="https://github.com/aclist/dztui/releases/download/browser/ips.csv.gz"
-sums_url=""
+geo_file="$helpers_path/ips.csv"
+km_helper="$helpers_path/latlon"
+sums_path="$helpers_path/sums.md5"
+km_helper_url="$releases_url/latlon"
+db_file="$releases_url/ips.csv.gz"
+sums_url="$testing_url/helpers/sums.md5"
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
@@ -319,7 +321,7 @@ open_mod_links(){
 		let n++
 	done >> $link_file
 	echo "</html>" >> $link_file
-	browser "$link_file" &
+	browser "$link_file" 2>/dev/null &
 
 }
 steam_deck_mods(){	
@@ -414,6 +416,10 @@ connect(){
 	else
 		fetch_mods "$bid"
 	fi
+	if [[ $ret -eq 96 ]]; then
+	       unset ret
+	       return
+	fi
 	validate_mods
 	rc=$?
 	[[ $rc -eq 1 ]] && return
@@ -428,7 +434,6 @@ fetch_mods(){
 	remote_mods=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d filter[ids][whitelist]="$1" -d "sort=-players" \
 	| jq -r '.data[] .attributes .details .modIds[]')
 }
-#TODO: deprecated (for now)
 fetch_mods_sa(){
 	sa_ip=$(echo "$1" | awk -F: '{print $1}')
 	for i in ${qport_arr[@]}; do
@@ -437,12 +442,15 @@ fetch_mods_sa(){
 		fi
 	done
 	echo "[DZGUI] Querying modlist on ${sa_ip}:${sa_port}"
-	remote_mods=$(curl -Ls "https://dayzsalauncher.com/api/v1/query/$sa_ip/$sa_port" | jq -r '.result.mods[].steamWorkshopId')
-	rc=$?
-	if [[ $rc -eq 1 ]]; then
+	local response=$(curl -Ls "https://dayzsalauncher.com/api/v1/query/$sa_ip/$sa_port")
+	local status=$(echo "$response" | jq '.status')
+	if [[ $status -eq 1 ]]; then
 		err "Failed to fetch modlist"
+		zenity --error --title=DZGUI --width=500 --text="Failed to fetch modlist" 2>/dev/null &&
+		ret=96
 		return
 	fi
+	remote_mods=$(echo "$response" | jq -r '.result.mods[].steamWorkshopId')
 	qport_arr=()
 }
 prepare_ip_list(){
@@ -629,9 +637,9 @@ browser(){
 report_bug(){
 	echo "[DZGUI] Opening issues page in browser"
 	if [[ $is_steam_deck -eq 1 ]]; then
-		steam steam://openurl/"$git_url" 2>/dev/null
+		steam steam://openurl/"$issues_url" 2>/dev/null
 	elif [[ $is_steam_deck -eq 0 ]]; then
-		browser "$git_url" 2>/dev/null &
+		browser "$issues_url" 2>/dev/null &
 	fi
 }
 help_file(){
@@ -866,7 +874,8 @@ pagination(){
 check_geo_file(){
 	local gzip="$helpers_path/ips.csv.gz"
 	curl -Ls "$sums_url" > "$sums_path"
-	md5sum -c sums.md5 2>/dev/null 1>&2
+	cd "$helpers_path"
+	md5sum -c "$sums_path" 2>/dev/null 1>&2
 	local res=$?
 	if [[ $res -eq 1 ]]; then
 		run(){
@@ -874,7 +883,8 @@ check_geo_file(){
 		echo "# Fetching new geolocation DB"
 		curl -Ls "$db_file" > "$gzip"
 		echo "# Extracting coordinates"
-		gunzip "$gzip"
+		#force overwrite
+		gunzip -f "$gzip"
 		echo "# Preparing helper file"
 		curl -Ls "$km_helper_url" > "$km_helper"
 		chmod +x $km_helper
@@ -1172,9 +1182,9 @@ download_new_version(){
 }
 check_branch(){
 	if [[ $branch == "stable" ]]; then
-		version_url="$stable_url"
+		version_url="$stable_url/dzgui.sh"
 	elif [[ $branch == "testing" ]]; then
-		version_url="$testing_url"
+		version_url="$testing_url/dzgui.sh"
 	fi
 	upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
 }
