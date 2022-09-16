@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.7
+version=2.7.0-rc.8
 
 aid=221100
 game="dayz"
@@ -978,7 +978,6 @@ server_browser(){
 	local limit=20000
 	local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=$limit&key=$steam_api"
 	check_geo_file #> >(zenity --pulsate --progress --auto-close 2>/dev/null)
-	command -v python 2>&1>/dev/null || { zenity --error --width=500 --text="Requires python" 2>/dev/null ; return ; }
 	local_latlon
 	choose_filters
 	[[ -z $sels ]] && return
