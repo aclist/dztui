@@ -29,11 +29,6 @@ int main(int argc, const char * argv[])
 		coords[i] = atof(argv[i]);
 	}
 	
-	float coord1 = atof(argv[1]);
-	float coord2 = atof(argv[2]);
-	float coord3 = atof(argv[3]);
-	float coord4 = atof(argv[4]);
-
 	double d = dist(coords[1], coords[2], coords[3], coords[4]);
 	printf("%.1f\n", d);
 
