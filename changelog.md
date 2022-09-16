@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Query and connect by IP/port
 
+## [2.7.0-rc.8] 2022-09-15
+### Fixed
+- Drop Python dependency
+
 ## [2.7.0-rc.7] 2022-09-14
 ### Added
 - Verify IP table checksums when starting
