@@ -4,7 +4,6 @@
 - Clean up logging
 - Custom query API
 - Standardize dialogs
-- Query and connect by IP/port
  
  ## [2.7.0-rc.9] 2022-09-22
 ### Added
