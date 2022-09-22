@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.8
+version=2.7.0-rc.9
 
 aid=221100
 game="dayz"
@@ -10,7 +10,7 @@ api="https://api.battlemetrics.com/servers"
 sd_res="--width=1280 --height=800"
 config_path="$HOME/.config/dztui/"
 config_file="${config_path}dztuirc"
-tmp=/tmp/dztui.tmp
+tmp=/tmp/dzgui.tmp
 separator="%%"
 check_config_msg="Check config values and restart."
 issues_url="https://github.com/aclist/dztui/issues"
@@ -268,7 +268,7 @@ varcheck(){
 	[[ ! -d "$game_dir" ]] && (err "Malformed game path")
 	[[ $whitelist =~ [[:space:]] ]] && (err "Separate whitelist values with commas")
 }
-run_depcheck() {
+run_depcheck(){
 	if [[ -z $(depcheck) ]]; then 
 		:
 	else	
@@ -834,7 +834,11 @@ strip_null(){
 	response=$(echo "$response" | jq -r '[.[]|select(.map//empty)]')
 }
 local_latlon(){
-	local local_ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+	if [[ -z $(command -v dig) ]]; then
+		local local_ip=$(curl -Ls "https://ipecho.net/plain")
+	else
+		local local_ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+	fi
 	local url="http://ip-api.com/json/$local_ip" 
 	local res=$(curl -Ls "$url" | jq -r '"\(.lat),\(.lon)"')
 	local_lat=$(echo "$res" | awk -F, '{print $1}')
