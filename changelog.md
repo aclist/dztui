@@ -5,7 +5,11 @@
 - Custom query API
 - Standardize dialogs
 - Query and connect by IP/port
-
+ 
+ ## [2.7.0-rc.9] 2022-09-22
+### Added
+- Add alternative IP query method
+ 
 ## [2.7.0-rc.8] 2022-09-15
 ### Fixed
 - Drop Python dependency
