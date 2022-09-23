@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.9
+version=2.7.0-rc.10
 
 aid=221100
 game="dayz"
@@ -864,15 +864,15 @@ pagination(){
 	else
 		entry=servers
 	fi
-	printf "DZGUI $version │ "
-	printf "Mode: $mode │"
-	printf "Fav: $fav_label "
-	printf "\nIncluded:  %s │ " "$filters"
+	printf "DZGUI | " "$version"
+	printf "Mode: |" "$mode"
+	printf "Fav: " "$fav_label"
+	printf "\nIncluded:  %s | " "$filters"
 	printf "Excluded: %s " "$(disabled)"
 	if [[ -n $search ]]; then
-		printf "│ Keyword:  %s " "$search"
+		printf "| Keyword:  %s " "$search"
 	fi
-	printf "\nReturned: %s %s of %s │ " "${#qport[@]}" "$entry" "$total_servers"
+	printf "\nReturned: %s %s of %s | " "${#qport[@]}" "$entry" "$total_servers"
 	printf "Players online: %s" "$players_online"
 }
 check_geo_file(){
@@ -936,6 +936,13 @@ prepare_filters(){
 	strip_null
 	echo "100"
 }
+write_fifo(){
+	mkfifo /tmp/table.tmp
+	for((i=0;i<${#qport[@]};i++)); do
+		printf  "%s\n%s\n%s\n%03d\n%03d\n%s\n%s:%s\n%s\n" "${map[$i]}" "${name[$i]}" "${gametime[$i]}" \
+		"${players[$i]}" "${max[$i]}" "$(get_dist ${addr[$i]})" "${addr[$i]}" "${gameport[$i]}" "${qport[$i]}" >> /tmp/table.tmp
+		done 
+}
 munge_servers(){
 	if [[ ! "$sels" =~ "All maps" ]]; then
 		filter_maps > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
@@ -969,11 +976,15 @@ munge_servers(){
 	if [[ $is_steam_deck -eq 0 ]]; then
 		sd_res="--width=1920 --height=1080"
 	fi
-
-	for((i=0;i<${#qport[@]};i++)); do
-		printf  "%s\n%s\n%s\n%03d\n%03d\n%s\n%s:%s\n%s\n" "${map[$i]}" "${name[$i]}" "${gametime[$i]}" \
-		"${players[$i]}" "${max[$i]}" "$(get_dist ${addr[$i]})" "${addr[$i]}" "${gameport[$i]}" "${qport[$i]}"
-		done | zenity --text="$(pagination)" --title=DZGUI --list --column=Map --column=Name --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=7,8 --separator=%% 2>/dev/null
+	
+	write_fifo &
+	pid=$!
+	local sel=$(zenity --text="$(pagination)" --title=DZGUI --list --column=Map --column=Name --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=7,8 --separator=%% 2>/dev/null < <(while true; do cat /tmp/table.tmp; done))
+	if [[ -z $sel ]]; then
+		rm /tmp/table.tmp
+		kill -9 $pid
+		return
+	fi
 }
 server_browser(){
 	check_steam_api
@@ -1343,6 +1354,8 @@ main(){
 	init_items
 	setup
 	main_menu
+	#cruddy handling for steam forking
+	[[ $? -eq 1 ]] && pkill -f dzgui.sh
 }
 
 main
