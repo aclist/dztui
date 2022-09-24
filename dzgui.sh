@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.11
+version=2.7.0-rc.12
 
 aid=221100
 game="dayz"
@@ -132,7 +132,7 @@ query_api(){
 
 	fi
 	if [[ -z $(echo $response | jq '.data[]') ]]; then
-		warn_and_exit "API returned empty response. Check config file."
+		warn_and_exit "95: API returned empty response. Check config file."
 	fi
 }
 write_config(){
@@ -406,7 +406,7 @@ connect(){
 	#TODO: sanitize/validate input
 	readarray -t qport_arr <<< "$qport_list"
 	if [[ -z ${qport_arr[@]} ]]; then
-		err "Failed to obtain query ports"
+		err "98: Failed to obtain query ports"
 		return
 	fi
 	ip=$(echo "$1" | awk -F"$separator" '{print $1}')
@@ -445,8 +445,8 @@ fetch_mods_sa(){
 	local response=$(curl -Ls "https://dayzsalauncher.com/api/v1/query/$sa_ip/$sa_port")
 	local status=$(echo "$response" | jq '.status')
 	if [[ $status -eq 1 ]]; then
-		err "Failed to fetch modlist"
-		zenity --error --title=DZGUI --width=500 --text="Failed to fetch modlist" 2>/dev/null &&
+		err "97: Failed to fetch modlist"
+		zenity --error --title=DZGUI --width=500 --text="[ERROR] 97: Failed to fetch modlist" 2>/dev/null &&
 		ret=96
 		return
 	fi
@@ -500,8 +500,8 @@ fetch_ip_metadata(){
 	< $meta_file jq '.response' > $json
 	res=$(< $meta_file jq -er '.response.servers[]' 2>/dev/null)
 	if [[ ! $? -eq 0 ]]; then
-		warn "Failed to retrieve IP metadata. Check IP or API key and try again."
-		echo "[DZGUI] Failed to retrieve IP metadata"
+		warn "[ERROR] 96: Failed to retrieve IP metadata. Check IP or API key and try again."
+		echo "[DZGUI] 96: Failed to retrieve IP metadata"
 
 	else
 		ip_table
@@ -703,7 +703,7 @@ populate(){
 }
 list_mods(){
 	if [[ -z $(installed_mods) || -z $(find $workshop_dir -maxdepth 2 -name "*.cpp" | grep .cpp) ]]; then
-		zenity --info --text="No mods currently installed or incorrect path given" $sd_res 2>/dev/null
+		zenity --info --text="94: No mods currently installed or incorrect path given" $sd_res 2>/dev/null
 	else
 		for d in $(find $game_dir/* -maxdepth 1 -type l); do
 			dir=$(basename $d)
@@ -723,7 +723,7 @@ connect_to_fav(){
 		connect "$qport_list"
 		one_shot_launch=0
 	else
-		warn "No fav server configured"
+		warn "93: No fav server configured"
 	fi
 
 }
@@ -1006,6 +1006,7 @@ server_browser(){
 	response=$(< $file jq -r '.response.servers')
 	#DEBUG
 	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
+	rm $debug_log
 	echo "======START DEBUG======" >> $debug_log
 	echo "======Test key length======" >> $debug_log
 	echo -n "$steam_api" | wc -m >> $debug_log
@@ -1014,10 +1015,11 @@ server_browser(){
 	debug_len=$(echo "$debug_res" | jq '[.response.servers[]]|length')
 	echo "Expected 10 servers, found $debug_len servers" >> $debug_log
 	echo "Response follows---->" >> $debug_log
-	echo "$debug_res" | jq >> $debug_log
+	echo "$debug_res" >> $debug_log
 	#echo "======Long query======" >> $debug_log
 	#debug_res=$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=20000&key=$steam_api")
 	#echo "$debug_res" | jq >> $HOME/.local/share/dzgui/DEBUG.log
+	#END DEBUG
 	echo "======END DEBUG======" >> $debug_log
 		local sel=$(munge_servers)
 		if [[ -z $sel ]]; then
@@ -1204,7 +1206,7 @@ download_new_version(){
 		fi
 	else
 		mv $source_script.old $source_script
-		zenity --info --title="DZGUI" --text "Failed to download new version." 2>/dev/null
+		zenity --info --title="DZGUI" --text "[ERROR] 99: Failed to download new version." 2>/dev/null
 		return
 	fi
 

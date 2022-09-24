@@ -4,6 +4,10 @@
 - Clean up logging
 - Custom query API
 - Standardize dialogs
+
+ ## [2.7.0-rc.12] 2022-09-24
+### Changed
+- More verbose logging, error codes
  
  ## [2.7.0-rc.11] 2022-09-24
 ### Added
