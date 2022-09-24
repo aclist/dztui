@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.10
+version=2.7.0-rc.11
 
 aid=221100
 game="dayz"
@@ -1004,6 +1004,21 @@ server_browser(){
 	}
 	fetch > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	response=$(< $file jq -r '.response.servers')
+	#DEBUG
+	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
+	echo "======START DEBUG======" >> $debug_log
+	echo "======Test key length======" >> $debug_log
+	echo -n "$steam_api" | wc -m >> $debug_log
+	echo "======Short query======" >> $debug_log
+	debug_res=$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api")
+	debug_len=$(echo "$debug_res" | jq '[.response.servers[]]|length')
+	echo "Expected 10 servers, found $debug_len servers" >> $debug_log
+	echo "Response follows---->" >> $debug_log
+	echo "$debug_res" | jq >> $debug_log
+	#echo "======Long query======" >> $debug_log
+	#debug_res=$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=20000&key=$steam_api")
+	#echo "$debug_res" | jq >> $HOME/.local/share/dzgui/DEBUG.log
+	echo "======END DEBUG======" >> $debug_log
 		local sel=$(munge_servers)
 		if [[ -z $sel ]]; then
 			unset filters
@@ -1343,7 +1358,8 @@ lock(){
 		echo $$ > $config_path/.lockfile
 	fi
 }
-main(){
+initial_setup(){
+	echo "# Initial setup"
 	lock
 	run_depcheck
 	check_architecture
@@ -1353,6 +1369,10 @@ main(){
 	run_varcheck
 	init_items
 	setup
+	echo "100"
+}
+main(){
+	initial_setup > >(zenity --pulsate --progress --auto-close --title=DZGUI --width=500)
 	main_menu
 	#cruddy handling for steam forking
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh

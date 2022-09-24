@@ -5,6 +5,14 @@
 - Custom query API
 - Standardize dialogs
  
+ ## [2.7.0-rc.11] 2022-09-24
+### Added
+- Add debug code to troubleshoot API responses
+
+ ## [2.7.0-rc.10] 2022-09-23
+### Fixed
+- Server list not appearing when launching script through Steam
+
  ## [2.7.0-rc.9] 2022-09-22
 ### Added
 - Add alternative IP query method
