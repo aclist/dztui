@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.12
+version=2.7.0-rc.13
 
 aid=221100
 game="dayz"
@@ -864,9 +864,9 @@ pagination(){
 	else
 		entry=servers
 	fi
-	printf "DZGUI | " "$version"
-	printf "Mode: |" "$mode"
-	printf "Fav: " "$fav_label"
+	printf "DZGUI %s | " "$version"
+	printf "Mode: %s |" "$mode"
+	printf "Fav: %s " "$fav_label"
 	printf "\nIncluded:  %s | " "$filters"
 	printf "Excluded: %s " "$(disabled)"
 	if [[ -n $search ]]; then
@@ -1008,14 +1008,28 @@ server_browser(){
 	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
 	rm $debug_log
 	echo "======START DEBUG======" >> $debug_log
-	echo "======Test key length======" >> $debug_log
-	echo -n "$steam_api" | wc -m >> $debug_log
+	if [[ -n $steam_api ]]; then
+		exists=true
+	else
+		exists=false
+	fi
+	echo "Key exists: $exists" >> $debug_log
+	key_len=$(echo -n "$steam_api" | wc -m)
+	first_char=$(echo -n ${steam_api:0:1})
+	last_char=$(echo -n ${steam_api:0-1})
+	echo "First char: $first_char" >> $debug_log
+	echo "Last char: $last_char" >> $debug_log
+	echo "Key length: $key_len" >> $debug_log
 	echo "======Short query======" >> $debug_log
 	debug_res=$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api")
 	debug_len=$(echo "$debug_res" | jq '[.response.servers[]]|length')
-	echo "Expected 10 servers, found $debug_len servers" >> $debug_log
+	[[ -z $debug_len ]] && debug_len=0
+	echo "Expected: 10" >> $debug_log
+	echo "Found: $debug_len" >> $debug_log
 	echo "Response follows---->" >> $debug_log
 	echo "$debug_res" >> $debug_log
+	echo "Long response follows---->" >> $debug_log
+	echo "$response" >> $debug_log
 	#echo "======Long query======" >> $debug_log
 	#debug_res=$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=20000&key=$steam_api")
 	#echo "$debug_res" | jq >> $HOME/.local/share/dzgui/DEBUG.log

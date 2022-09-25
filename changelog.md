@@ -5,6 +5,12 @@
 - Custom query API
 - Standardize dialogs
 
+ ## [2.7.0-rc.13] 2022-09-25
+### Fixed
+- Restore broken headers
+### Added
+- More verbose logging
+
  ## [2.7.0-rc.12] 2022-09-24
 ### Changed
 - More verbose logging, error codes
