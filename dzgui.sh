@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.15
+version=2.7.0-rc.16
 
 aid=221100
 game="dayz"
@@ -328,12 +328,12 @@ open_mod_links(){
 steam_deck_mods(){	
 	until [[ -z $diff ]]; do
 		next=$(echo -e "$diff" | head -n1)
-		zenity --question --ok-label="Open" --cancel-label="Cancel" --title="DZGUI" --text="Missing mods. Click [Open] to open mod $next in Steam Workshop and subscribe to it by clicking the green Subscribe button. After the mod is downloaded, return to this menu to continue validation." 2>/dev/null
+		zenity --question --ok-label="Open" --cancel-label="Cancel" --title="DZGUI" --text="Missing mods. Click [Open] to open mod $next in Steam Workshop and subscribe to it by clicking the green Subscribe button. After the mod is downloaded, return to this menu to continue validation." --width=500 2>/dev/null
 		rc=$?
 		if [[ $rc -eq 0 ]]; then
 			echo "[DZGUI] Opening ${workshop}$next"
 			steam steam://url/CommunityFilePage/$next 2>/dev/null &
-			zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." 2>/dev/null
+			zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." --width=500 2>/dev/null
 		else
 			return
 		fi
@@ -345,7 +345,7 @@ manual_mod_install(){
 	if [[ $is_steam_deck -eq 0 ]]; then
 		open_mod_links
 		until [[ -z $diff ]]; do
-			zenity --question --title="DZGUI" --ok-label="Next" --cancel-label="Cancel" --text="Opened mod links in browser. Click [Next] when all mods have been subscribed to. This dialog may reappear if clicking [Next] too soon before mods are synchronized in the background." 2>/dev/null
+			zenity --question --title="DZGUI" --ok-label="Next" --cancel-label="Cancel" --text="Opened mod links in browser. Click [Next] when all mods have been subscribed to. This dialog may reappear if clicking [Next] too soon before mods are synchronized in the background." --width=500 2>/dev/null
 			rc=$?
 			if [[ $rc -eq 0 ]]; then
 			compare
@@ -769,6 +769,7 @@ debug_menu(){
 	debug_list=(
 		"Toggle branch"
 		"Generate debug log"
+		"Test option"
 		)
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
@@ -781,6 +782,8 @@ debug_menu(){
 		generate_log > "$source_dir/log"
 		printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
 		zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
+	elif [[ $debug_sel == "${debug_list[2]}" ]]; then
+		konsole -e man ls
 	fi
 }
 query_and_connect(){
@@ -899,7 +902,10 @@ check_geo_file(){
 	fi 
 }
 choose_filters(){
-	sels=$(zenity --title=DZGUI --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" False "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" --width 1200 --height 800 2>/dev/null)
+	if [[ $is_steam_deck -eq 0 ]]; then
+		sd_res="--width=1920 --height=1080"
+	fi
+	sels=$(zenity --title=DZGUI --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" False "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
 	if [[ $sels =~ Keyword ]]; then
 		search=$(zenity --entry --text="Search (case insensitive)" --width=500 --title=DZGUI 2>/dev/null | awk '{print tolower($0)}')
 		[[ -z $search ]] && { ret=97; return; }
