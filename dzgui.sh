@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.14
+version=2.7.0-rc.15
 
 aid=221100
 game="dayz"
@@ -11,6 +11,7 @@ sd_res="--width=1280 --height=800"
 config_path="$HOME/.config/dztui/"
 config_file="${config_path}dztuirc"
 tmp=/tmp/dzgui.tmp
+fifo=/tmp/table.tmp
 separator="%%"
 check_config_msg="Check config values and restart."
 issues_url="https://github.com/aclist/dztui/issues"
@@ -937,10 +938,11 @@ prepare_filters(){
 	echo "100"
 }
 write_fifo(){
-	mkfifo /tmp/table.tmp
+	[[ -p $fifo ]] && rm $fifo
+	mkfifo $fifo
 	for((i=0;i<${#qport[@]};i++)); do
 		printf  "%s\n%s\n%s\n%03d\n%03d\n%s\n%s:%s\n%s\n" "${map[$i]}" "${name[$i]}" "${gametime[$i]}" \
-		"${players[$i]}" "${max[$i]}" "$(get_dist ${addr[$i]})" "${addr[$i]}" "${gameport[$i]}" "${qport[$i]}" >> /tmp/table.tmp
+		"${players[$i]}" "${max[$i]}" "$(get_dist ${addr[$i]})" "${addr[$i]}" "${gameport[$i]}" "${qport[$i]}" >> $fifo
 		done 
 }
 munge_servers(){
@@ -979,11 +981,14 @@ munge_servers(){
 	
 	write_fifo &
 	pid=$!
-	local sel=$(zenity --text="$(pagination)" --title=DZGUI --list --column=Map --column=Name --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=7,8 --separator=%% 2>/dev/null < <(while true; do cat /tmp/table.tmp; done))
+	local sel=$(zenity --text="$(pagination)" --title=DZGUI --list --column=Map --column=Name --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=7,8 --separator=%% 2>/dev/null < <(while true; do cat $fifo; done))
 	if [[ -z $sel ]]; then
-		rm /tmp/table.tmp
+		rm $fifo
 		kill -9 $pid
-		return
+	else
+		rm $fifo
+		kill -9 $pid
+		echo $sel
 	fi
 }
 server_browser(){
@@ -1030,10 +1035,6 @@ server_browser(){
 	echo "$debug_res" >> $debug_log
 	echo "Long response follows---->" >> $debug_log
 	echo "$response" >> $debug_log
-	#echo "======Long query======" >> $debug_log
-	#debug_res=$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=20000&key=$steam_api")
-	#echo "$debug_res" | jq >> $HOME/.local/share/dzgui/DEBUG.log
-	#END DEBUG
 	echo "======END DEBUG======" >> $debug_log
 		local sel=$(munge_servers)
 		if [[ -z $sel ]]; then
@@ -1389,7 +1390,7 @@ initial_setup(){
 	echo "100"
 }
 main(){
-	initial_setup > >(zenity --pulsate --progress --auto-close --title=DZGUI --width=500)
+	initial_setup > >(zenity --pulsate --progress --auto-close --title=DZGUI --width=500 2>/dev/null)
 	main_menu
 	#cruddy handling for steam forking
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh

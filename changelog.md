@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.7.0-rc.15] 2022-09-25
+### Fixed
+- Return selection from server function
+
 ## [2.7.0-rc.14] 2022-09-25
 ### Fixed
 - Suppress progress dialog when new version available
