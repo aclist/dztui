@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.6.1] 2022-09-25
+### Fixed
+- Freedesktop shortcut errors
+
 ## [2.6.0] 2022-09-05
 ### Added
 - Connect by IP method
