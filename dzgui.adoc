@@ -1,5 +1,5 @@
 = DZGUI documentation
-DayZ community server graphical launcher for Linux | Last updated: 2022-08-05
+DayZ community server graphical launcher for Linux | Last updated: 2022-09-08
 :nofooter:
 :toc: left
 :stylesheet: custom.css
@@ -27,7 +27,7 @@ If not already installed, the below can be found in your system's package manage
 **Automatic method (skip to 3 below when complete)**
 
 ```
-curl -s "https://raw.githubusercontent.com/aclist/dztui/testing/install.sh" | bash
+curl -s "https://raw.githubusercontent.com/aclist/dztui/dzgui/install.sh" | bash
 ```
 
 **Manual method**
@@ -102,6 +102,8 @@ If the path was not detected correctly, you can manually edit the config file at
 
 === Steam integration & artwork 
 
+==== Adding to steam
+
 DZGUI can be added to Steam as a "non-Steam game" in order to facilitate integration with Steam Deck or desktop environments.
 
 1. Launch Steam in the "Large" view. 
@@ -117,6 +119,12 @@ image::https://github.com/aclist/dztui/raw/testing/images/tutorial/01.png[01,500
 [start=3]
 3. Navigate to `$HOME/.local/share/applications/` and select `dzgui.desktop`
 4. Select **Add Selected Programs**.
+
+==== Controller layout
+
+An official controller layout for Steam Deck is available in the Steam community layouts section. Search for "DZGUI Official Config" to download it. Long-press the View button and Select button (☰) to toggle D-pad navigation. This creates an additional layer that lets you navigate through menus using the D-pad and A/B to respectively confirm selections and go back. Remember to toggle this layer off again after launching your game to revert back to the master layer.
+
+==== Artwork
 
 The application also ships with Steam cover artwork. It is located under:
 
@@ -221,6 +229,18 @@ Fetches detailed server information on the list of servers saved in the config f
 ==== Quick connect to favorite server
 Bypasses the server list and quick-connects to a single favorite server specified in advance using the <<Add favorite server>> option.
 
+
+==== Connect by IP
+
+Instead of relying on server IDs, returns the list of servers behind a given IP. Provide only the IP; no port is necessary. This returns the server metadata for you to verify before connecting.
+
+If there are multiple maps hosted behind an IP (e.g. different maps on varying ports), the application will list all of them.
+
+In order to use this feature, you must have a https://steamcommunity.com/dev/apikey[Steam API key]. You will be asked for a unique URL for your app when registering. 
+Since this key is for a personal use application and does not actually call back anywhere, set a generic local identifier here like "127.0.0.1".
+
+Once configured, you can insert this key in the app when launching the "Connect by IP" feature for the first time.
+
 ==== Add server by ID
 Prompts you to add servers to the config file by ID. An indefinite number of servers can be added. These will be listed when using the <<Launch server list>> option.
 
@@ -251,6 +271,9 @@ If enabled, this menu contains a sub-menu with various advanced features, enumer
 ===== Toggle branch
 Used to toggle the branch to fetch DZGUI from between `stable` and `testing`. The app ships with the stable branch enabled, with the testing branch being used to elaborate various experimental features.
 
+===== Generate debug log
+Writes a list of your current settings to a local file that can be pasted into bug reports.
+
 == Config file key/value pairs
 Under normal usage, these values are populated and toggled automatically in-app. This config file is partially compatible DZTUI.
 
@@ -276,7 +299,7 @@ Steam schedules the downloads in the background and processes them as they are s
 Check the logs emitted by Steam in the terminal, or in `<steam path>/error.log`.
 
 .Game launches, but throws a "mod missing/check PBO file" error when connecting
-You are missing mods or mods did not download correctly. Re-run the app to verify and link missing mods.
+In rare cases, the server may be using misconfigured, malformed, or obsolete mods. This is out of our control and depends on server operators checking their mods for integrity. If you believe the mods are correct and this is a bug, please report it.
 
 .Game and server launches, but when joining the game world, an error occurs
 A mod is corrupted or the issue lies with the server. Replace the mods in question and reconnect.
