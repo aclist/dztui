@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.7.0-rc.16-17] 2022-09-26
+### Changed
+- Clean up error logging and progress bars
+
 ## [2.7.0-rc.15] 2022-09-25
 ### Fixed
 - Return selection from server function

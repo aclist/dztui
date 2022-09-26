@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.16
+version=2.7.0-rc.17
 
 aid=221100
 game="dayz"
@@ -126,14 +126,17 @@ query_api(){
 		code=$(jq -r '.errors[] .status' <<< $response)
 		#TODO: fix granular api codes
 		if [[ $code -eq 401 ]]; then
-			warn_and_exit "Error $code: malformed API key"
+			warn "Error $code: malformed API key"
+			return
 		elif [[ $code -eq 500 ]]; then
-			warn_and_exit "Error $code: malformed server list"
+			warn "Error $code: malformed server list"
+			return
 		fi
 
 	fi
 	if [[ -z $(echo $response | jq '.data[]') ]]; then
-		warn_and_exit "95: API returned empty response. Check config file."
+		warn "95: API returned empty response. Check config file."
+		return
 	fi
 }
 write_config(){
@@ -345,7 +348,7 @@ manual_mod_install(){
 	if [[ $is_steam_deck -eq 0 ]]; then
 		open_mod_links
 		until [[ -z $diff ]]; do
-			zenity --question --title="DZGUI" --ok-label="Next" --cancel-label="Cancel" --text="Opened mod links in browser. Click [Next] when all mods have been subscribed to. This dialog may reappear if clicking [Next] too soon before mods are synchronized in the background." --width=500 2>/dev/null
+			zenity --question --title="DZGUI" --ok-label="Next" --cancel-label="Cancel" --text="Opened mod links in browser.\nClick [Next] when all mods have been subscribed to.\nThis dialog may reappear if clicking [Next] too soon\nbefore mods are synchronized in the background." --width=500 2>/dev/null
 			rc=$?
 			if [[ $rc -eq 0 ]]; then
 			compare
@@ -357,7 +360,7 @@ manual_mod_install(){
 	else
 		steam_deck_mods
 	fi
-	passed_mod_check
+	passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 }
 encode(){
 	echo "$1" | md5sum | cut -c -8
@@ -397,9 +400,11 @@ symlinks(){
 }
 passed_mod_check(){
 	echo "[DZGUI] Passed mod check"
+	echo "# Preparing symlinks"
 	stale_symlinks
 	legacy_symlinks
 	symlinks
+	echo "100"
 	launch
 
 }
@@ -413,7 +418,7 @@ connect(){
 	ip=$(echo "$1" | awk -F"$separator" '{print $1}')
 	bid=$(echo "$1" | awk -F"$separator" '{print $2}')
 	if [[ $2 == "ip" ]]; then
-		fetch_mods_sa "$ip"
+		fetch_mods_sa "$ip" > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	else
 		fetch_mods "$bid"
 	fi
@@ -428,7 +433,7 @@ connect(){
 	if [[ -n $diff ]]; then
 		manual_mod_install
 	else
-		passed_mod_check
+		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	fi
 }
 fetch_mods(){
@@ -443,9 +448,11 @@ fetch_mods_sa(){
 		fi
 	done
 	echo "[DZGUI] Querying modlist on ${sa_ip}:${sa_port}"
+	echo "# Querying modlist on ${sa_ip}:${sa_port}"
 	local response=$(curl -Ls "https://dayzsalauncher.com/api/v1/query/$sa_ip/$sa_port")
 	local status=$(echo "$response" | jq '.status')
 	if [[ $status -eq 1 ]]; then
+		echo "100"
 		err "97: Failed to fetch modlist"
 		zenity --error --title=DZGUI --width=500 --text="[ERROR] 97: Failed to fetch modlist" 2>/dev/null &&
 		ret=96
@@ -609,7 +616,7 @@ launch(){
 	mods=$(concat_mods)
 	if [[ $debug -eq 1 ]]; then
 		launch_options="steam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro \"-mod=$mods\""
-		print_launch_options="$(printf "[DEBUG] This is a dry run. These options would have been used to launch the game:\n\n$launch_options\n" | fold -w 60)"
+		print_launch_options="$(printf "This is a dry run.\nThese options would have been used to launch the game:\n\n$launch_options\n" | fold -w 60)"
 		zenity --question --title="DZGUI" --ok-label="Write to file" --cancel-label="Back"\
 			--text="$print_launch_options" 2>/dev/null
 		if [[ $? -eq 0 ]]; then
@@ -1262,7 +1269,6 @@ check_version(){
 	if [[ $version == $upstream ]]; then
 		check_unmerged
 	else
-		echo "100"
 		echo "[DZGUI] Upstream ($upstream) != local ($version)"
 		if [[ $enforce_dl -eq 1 ]]; then
 			enforce_dl
