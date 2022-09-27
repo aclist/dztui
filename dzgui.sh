@@ -1046,8 +1046,6 @@ server_browser(){
 	echo "Found: $debug_len" >> $debug_log
 	echo "Response follows---->" >> $debug_log
 	echo "$debug_res" >> $debug_log
-	echo "Long response follows---->" >> $debug_log
-	echo "$response" >> $debug_log
 	echo "======END DEBUG======" >> $debug_log
 		local sel=$(munge_servers)
 		if [[ -z $sel ]]; then
