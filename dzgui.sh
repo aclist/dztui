@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.18
+version=2.7.0-rc.19
 
 aid=221100
 game="dayz"
@@ -790,7 +790,7 @@ debug_menu(){
 		printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
 		zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
 	elif [[ $debug_sel == "${debug_list[2]}" ]]; then
-		konsole -e man ls
+		konsole -hold -e echo "test"
 	fi
 }
 query_and_connect(){
@@ -918,7 +918,7 @@ choose_filters(){
 		[[ -z $search ]] && { ret=97; return; }
 	fi	
 	[[ -z $sels ]] && return
-	filters=$(echo "$sels" | sed 's/|/, /g')
+	filters=$(echo "$sels" | sed 's/|/, /g;s/ (untick to select from map list)//')
 	echo "[DZGUI] Filters: $filters"
 }
 get_dist(){

@@ -5,6 +5,11 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.7.0-rc.19] 2022-09-26
+### Fixed
+- Strip text from "all maps" option in header
+
+
 ## [2.7.0-rc.18] 2022-09-26
 ### Changed
 - Move lockfile check earlier in pipeline
