@@ -5,6 +5,14 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.7.0-rc.18] 2022-09-26
+### Changed
+- Move lockfile check earlier in pipeline
+- Reword "All maps" filter option
+
+### Fixed
+- Store player and server count sooner
+
 ## [2.7.0-rc.16-17] 2022-09-26
 ### Changed
 - Clean up error logging and progress bars

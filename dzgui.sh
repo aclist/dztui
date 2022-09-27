@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.17
+version=2.7.0-rc.18
 
 aid=221100
 game="dayz"
@@ -912,7 +912,7 @@ choose_filters(){
 	if [[ $is_steam_deck -eq 0 ]]; then
 		sd_res="--width=1920 --height=1080"
 	fi
-	sels=$(zenity --title=DZGUI --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" False "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
+	sels=$(zenity --title=DZGUI --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" False "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
 	if [[ $sels =~ Keyword ]]; then
 		search=$(zenity --entry --text="Search (case insensitive)" --width=500 --title=DZGUI 2>/dev/null | awk '{print tolower($0)}')
 		[[ -z $search ]] && { ret=97; return; }
@@ -964,8 +964,6 @@ munge_servers(){
 		disabled+=("All maps")
 	fi
 	[[ $ret -eq 97 ]] && return
-	total_servers=$(echo "$response" | jq 'length')
-	players_online=$(echo "$response" | jq '.[].players' | awk '{s+=$1}END{print s}')
 	prepare_filters > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	if [[ $(echo "$response" | jq 'length') -eq 0 ]]; then
 		zenity --error --text="No matching servers" 2>/dev/null
@@ -1022,6 +1020,8 @@ server_browser(){
 	}
 	fetch > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	response=$(< $file jq -r '.response.servers')
+	total_servers=$(echo "$response" | jq 'length')
+	players_online=$(echo "$response" | jq '.[].players' | awk '{s+=$1}END{print s}')
 	#DEBUG
 	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
 	rm $debug_log
@@ -1381,6 +1381,7 @@ lock(){
 	res=$?
 	if [[ $res -eq 0 ]]; then
 		echo "[DZGUI] Already running ($pid)"
+		zenity --info --text="DZGUI already running (pid $pid)" --title=DZGUI 2>/dev/null
 		exit
 	elif [[ $pid == $$ ]]; then
 		:
@@ -1390,7 +1391,6 @@ lock(){
 }
 initial_setup(){
 	echo "# Initial setup"
-	lock
 	run_depcheck
 	check_architecture
 	check_version
@@ -1402,6 +1402,7 @@ initial_setup(){
 	echo "100"
 }
 main(){
+	lock
 	initial_setup > >(zenity --pulsate --progress --auto-close --title=DZGUI --width=500 2>/dev/null)
 	main_menu
 	#cruddy handling for steam forking
