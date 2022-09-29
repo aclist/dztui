@@ -5,16 +5,18 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.7.0-rc.20] 2022-09-29
+### Added
+- List total disk size used on mods list
+
 ## [2.7.0-rc.19] 2022-09-26
 ### Fixed
 - Strip text from "all maps" option in header
-
 
 ## [2.7.0-rc.18] 2022-09-26
 ### Changed
 - Move lockfile check earlier in pipeline
 - Reword "All maps" filter option
-
 ### Fixed
 - Store player and server count sooner
 
@@ -53,30 +55,26 @@
 - Add alternative IP query method
  
 ## [2.7.0-rc.8] 2022-09-15
-### Fixed
+### Dropped
 - Drop Python dependency
 
 ## [2.7.0-rc.7] 2022-09-14
 ### Added
 - Verify IP table checksums when starting
-
 ### Changed
 - Switch to C for helper logic
-
 ### Fixed
 - Error handling for obscure servers returning no modlist
 
 ## [2.7.0-rc.6] 2022-09-13
 ### Added
 - Add number of maps found to map select menu
-
 ### Fixed
 - Strip Unicode spaces in server titles
 
 ## [2.7.0-rc.5] 2022-09-13
 ### Changed
 - Improve server distance algorithm
-
 ### Fixed
 - Strip Unicode spaces in server titles
 
@@ -158,16 +156,14 @@
 - Prevent user from entering invalid entries on first-time setup
 - Prompt to re-run first-time setup if config is malformed
 - Better handling of field output from table
-
 ### Added
 - Prototype .desktop file for Steam Deck
 - Generate bug report logs summarizing local settings
-
 ### Dropped
 - Deprecated functions
 
 ## [2.4.0-rc.5] 2022-07-31
-### Changed
+### Dropped
 - Drop download prompt for branch toggle
 
 ## [2.4.0-rc.4] 2022-07-31
@@ -192,11 +188,9 @@
 - Backported DZTUI mod listing method (includes symlinks)
 - Backported DZTUI method of encoding symlinks when handling large number of mods 
 - Write dry-run launch options to file when in debug mode
-
 ### Fixed
 - Prevent garbage in dependency check messages
 - Send browser to background when opening links
-
 ### Changed
 - Couple connect to fav and normal connect to same query function for maintainability
 - Revert to old issues page index
@@ -255,7 +249,6 @@
 - Update favorite server changes in real time
 - Add link to help pages from main menu
 - Add link to changelog from main menu
-
 ### Changed
 - Don't require duplication of fav server in whitelist
 - More permissive truncation of long server names (50 char limit)
@@ -263,7 +256,6 @@
 - Reword errors for greater verbosity
 - Initial support of granular error handling for API response codes
 - Move extended path variables out of user config
-
 ### Fixed
 - Check if mod dir is sane before listing mods
 - Prevent favorite server launch if none set
@@ -303,9 +295,7 @@
 - Connect: mod auto symlinks
 - New version download prompt
 - Additional visualization of progress/menus
-
 ### Fixed
 - Menu recursion when navigating backwards
-
 ### Changed
 - Reduced ping timeout interval

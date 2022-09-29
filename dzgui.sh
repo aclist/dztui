@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.19
+version=2.7.0-rc.20
 
 aid=221100
 game="dayz"
@@ -710,7 +710,7 @@ populate(){
 	done
 }
 list_mods(){
-	if [[ -z $(installed_mods) || -z $(find $workshop_dir -maxdepth 2 -name "*.cpp" | grep .cpp) ]]; then
+	if [[ -z $(installed_mods) ]] || [[ -z $(find $workshop_dir -maxdepth 2 -name "*.cpp" | grep .cpp) ]]; then
 		zenity --info --text="94: No mods currently installed or incorrect path given" $sd_res 2>/dev/null
 	else
 		for d in $(find $game_dir/* -maxdepth 1 -type l); do
@@ -776,7 +776,7 @@ debug_menu(){
 	debug_list=(
 		"Toggle branch"
 		"Generate debug log"
-		"Test option"
+		"Placeholder"
 		)
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
@@ -790,7 +790,7 @@ debug_menu(){
 		printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
 		zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
 	elif [[ $debug_sel == "${debug_list[2]}" ]]; then
-		konsole -hold -e echo "test"
+		:
 	fi
 }
 query_and_connect(){
@@ -1064,6 +1064,10 @@ server_browser(){
 		fi
 }
 
+mods_disk_size(){
+	printf "Total size on disk: %s" $(du -sh "$game_dir" | awk '{print $1}')
+}
+
 main_menu(){
 	print_news
 	set_mode
@@ -1095,7 +1099,9 @@ main_menu(){
 		elif [[ $sel == "${items[6]}" ]]; then
 			server_browser 
 		elif [[ $sel == "${items[7]}" ]]; then
-			list_mods | sed 's/\t/\n/g' | zenity --list --column="Mod" --column="Symlink" --title="DZGUI" $sd_res --print-column="" 2>/dev/null
+			list_mods | sed 's/\t/\n/g' | zenity --list --column="Mod" --column="Symlink" \
+				--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
+				--print-column="" 2>/dev/null
 		elif [[ $sel == "${items[8]}" ]]; then
 			toggle_debug
 			main_menu
