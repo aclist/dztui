@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.20
+version=2.7.0-rc.21
 
 aid=221100
 game="dayz"
@@ -294,6 +294,7 @@ run_varcheck(){
 		if [[ $code -eq 1 ]]; then
 			exit
 		else
+			echo "100"
 			create_config
 		fi
 	fi
@@ -553,7 +554,7 @@ connect_by_ip(){
 			return_from_table=0
 			return
 		fi
-		ip=$(zenity --entry --text="Enter server IP" --title="DZGUI" 2>/dev/null)
+		ip=$(zenity --entry --text="Enter server IP (omit port)" --title="DZGUI" 2>/dev/null)
 		[[ $? -eq 1 ]] && return
 		if validate_ip "$ip"; then
 			fetch_ip_metadata

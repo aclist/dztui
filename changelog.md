@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.7.0-rc.21] 2022-10-01
+### Fixed
+- Clarify some menu messages and behavior
+
 ## [2.7.0-rc.20] 2022-09-29
 ### Added
 - List total disk size used on mods list
