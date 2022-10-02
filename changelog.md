@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.7.0-rc.22] 2022-10-02
+### Fixed
+- Merge stable branch hotfixes
+
 ## [2.7.0-rc.21] 2022-10-01
 ### Fixed
 - Clarify some menu messages and behavior

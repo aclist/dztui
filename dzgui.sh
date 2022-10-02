@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.21
+version=2.7.0-rc.22
 
 aid=221100
 game="dayz"
@@ -684,7 +684,13 @@ delete_or_connect(){
 				delete_by_id $server_id
 			fi
 		else
-			connect $sel
+			#hotfix for bug #36
+			local lookup_ip=$(echo "$sel" | awk -F%% '{print $1}')
+			local lookup_id="$(echo "$sel" | awk -F%% '{print $2}')"
+			local qport=$(echo "$response" | jq --arg id $lookup_id '.data[]|select(.id==$id).attributes.portQuery')
+			qport_list="$lookup_ip%%$qport"
+			connect "$sel" "ip"
+			
 		fi
 }
 populate(){
@@ -729,7 +735,7 @@ connect_to_fav(){
 		query_api
 		fetch_query_ports
 		echo "[DZGUI] Attempting connection to $fav_label"
-		connect "$qport_list"
+		connect "$qport_list" "ip"
 		one_shot_launch=0
 	else
 		warn "93: No fav server configured"
@@ -1003,13 +1009,40 @@ munge_servers(){
 		echo $sel
 	fi
 }
+debug_servers(){
+	[[ -f $debug_log ]] && rm $debug_log
+	if [[ -n $steam_api ]]; then
+		exists=true
+	else
+		exists=false
+	fi
+	key_len=${#steam_api}
+	first_char=${steam_api:0:1}
+	last_char=${steam_api:0-1}
+	debug_res=$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api")
+	debug_len=$(echo "$debug_res" | jq '[.response.servers[]]|length')
+	[[ -z $debug_len ]] && debug_len=0
+	cat <<-DOC > $debug_log
+	======START DEBUG======
+	Key exists: $exists
+	First char: $first_char
+	Last char: $last_char
+	Key length: $key_len
+	======Short query======
+	Expected: 10
+	Found: $debug_len 
+	Response follows---->
+	$debug_res
+	======END DEBUG=======
+	DOC
+}
 server_browser(){
 	check_steam_api
 	unset ret
 	file=$(mktemp)
 	local limit=20000
 	local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=$limit&key=$steam_api"
-	check_geo_file #> >(zenity --pulsate --progress --auto-close 2>/dev/null)
+	check_geo_file 
 	local_latlon
 	choose_filters
 	[[ -z $sels ]] && return
@@ -1023,46 +1056,23 @@ server_browser(){
 	response=$(< $file jq -r '.response.servers')
 	total_servers=$(echo "$response" | jq 'length')
 	players_online=$(echo "$response" | jq '.[].players' | awk '{s+=$1}END{print s}')
-	#DEBUG
 	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
-	rm $debug_log
-	echo "======START DEBUG======" >> $debug_log
-	if [[ -n $steam_api ]]; then
-		exists=true
-	else
-		exists=false
+	debug_servers
+	local sel=$(munge_servers)
+	if [[ -z $sel ]]; then
+		unset filters
+		unset search
+		ret=98
+		return
 	fi
-	echo "Key exists: $exists" >> $debug_log
-	key_len=$(echo -n "$steam_api" | wc -m)
-	first_char=$(echo -n ${steam_api:0:1})
-	last_char=$(echo -n ${steam_api:0-1})
-	echo "First char: $first_char" >> $debug_log
-	echo "Last char: $last_char" >> $debug_log
-	echo "Key length: $key_len" >> $debug_log
-	echo "======Short query======" >> $debug_log
-	debug_res=$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api")
-	debug_len=$(echo "$debug_res" | jq '[.response.servers[]]|length')
-	[[ -z $debug_len ]] && debug_len=0
-	echo "Expected: 10" >> $debug_log
-	echo "Found: $debug_len" >> $debug_log
-	echo "Response follows---->" >> $debug_log
-	echo "$debug_res" >> $debug_log
-	echo "======END DEBUG======" >> $debug_log
-		local sel=$(munge_servers)
-		if [[ -z $sel ]]; then
-			unset filters
-			unset search
-			ret=98
-			return
-		fi
-		local sel_ip=$(echo "$sel" | awk -F%% '{print $1}')
-		local sel_port=$(echo "$sel" | awk -F%% '{print $2}')
-		qport_list="$sel_ip%%$sel_port"
-		if [[ -n "$sel_ip" ]]; then
-			connect "$sel_ip" "ip"
-		else
-			return
-		fi
+	local sel_ip=$(echo "$sel" | awk -F%% '{print $1}')
+	local sel_port=$(echo "$sel" | awk -F%% '{print $2}')
+	qport_list="$sel_ip%%$sel_port"
+	if [[ -n "$sel_ip" ]]; then
+		connect "$sel_ip" "ip"
+	else
+		return
+	fi
 }
 
 mods_disk_size(){
