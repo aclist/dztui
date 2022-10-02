@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.6.3] 2022-10-02
+### Fixed
+- Hotfix for connect-to-fav not getting modlist
+
 ## [2.6.2] 2022-10-02
 ### Fixed
 - Hotfix for BM API returning malformed publishedfileids
