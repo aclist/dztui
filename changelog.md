@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.6.2] 2022-10-02
+### Fixed
+- Hotfix for BM API returning malformed publishedfileids
+
 ## [2.6.1] 2022-09-25
 ### Fixed
 - Freedesktop shortcut errors
