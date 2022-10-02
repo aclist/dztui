@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.6.2
+version=2.6.3
 
 aid=221100
 game="dayz"
@@ -707,7 +707,7 @@ connect_to_fav(){
 		query_api
 		fetch_query_ports
 		echo "[DZGUI] Attempting connection to $fav_label"
-		connect "$qport_list"
+		connect "$qport_list" "ip"
 		one_shot_launch=0
 	else
 		warn "No fav server configured"
