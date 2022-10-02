@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.6.1
+version=2.6.2
 
 aid=221100
 game="dayz"
@@ -10,7 +10,7 @@ api="https://api.battlemetrics.com/servers"
 sd_res="--width=1280 --height=800"
 config_path="$HOME/.config/dztui/"
 config_file="${config_path}dztuirc"
-tmp=/tmp/dztui.tmp
+tmp=/tmp/dzgui.tmp
 separator="%%"
 git_url="https://github.com/aclist/dztui/issues"
 stable_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/dzgui.sh"
@@ -311,18 +311,18 @@ open_mod_links(){
 		let n++
 	done >> $link_file
 	echo "</html>" >> $link_file
-	browser "$link_file" &
+	browser "$link_file" 2>/dev/null &
 
 }
 steam_deck_mods(){	
 	until [[ -z $diff ]]; do
 		next=$(echo -e "$diff" | head -n1)
-		zenity --question --ok-label="Open" --cancel-label="Cancel" --title="DZGUI" --text="Missing mods. Click [Open] to open mod $next in Steam Workshop and subscribe to it by clicking the green Subscribe button. After the mod is downloaded, return to this menu to continue validation." 2>/dev/null
+		zenity --question --ok-label="Open" --cancel-label="Cancel" --title="DZGUI" --text="Missing mods. Click [Open] to open mod $next in Steam Workshop and subscribe to it by clicking the green Subscribe button. After the mod is downloaded, return to this menu to continue validation." --width=500 2>/dev/null
 		rc=$?
 		if [[ $rc -eq 0 ]]; then
 			echo "[DZGUI] Opening ${workshop}$next"
 			steam steam://url/CommunityFilePage/$next 2>/dev/null &
-			zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." 2>/dev/null
+			zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." --width=500 2>/dev/null
 		else
 			return
 		fi
@@ -656,7 +656,13 @@ delete_or_connect(){
 				delete_by_id $server_id
 			fi
 		else
-			connect $sel
+			#hotfix for bug #36
+			local lookup_ip=$(echo "$sel" | awk -F%% '{print $1}')
+			local lookup_id="$(echo "$sel" | awk -F%% '{print $2}')"
+			local qport=$(echo "$response" | jq --arg id $lookup_id '.data[]|select(.id==$id).attributes.portQuery')
+			qport_list="$lookup_ip%%$qport"
+			connect "$sel" "ip"
+			
 		fi
 }
 populate(){
