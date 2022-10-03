@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.7.0-rc.23] 2022-10-03
+### Fixed
+- More robust error handling for API keys
+
 ## [2.7.0-rc.22] 2022-10-02
 ### Fixed
 - Merge stable branch hotfixes

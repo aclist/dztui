@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.22
+version=2.7.0-rc.23
 
 aid=221100
 game="dayz"
@@ -79,13 +79,13 @@ depcheck(){
 init_items(){
 	#array order determines menu selector; this is destructive
 items=(
+	"[NEW] Server browser"
 	"Launch server list"
 	"Quick connect to favorite server"
 	"Connect by IP"
 	"Add server by ID"
 	"Add favorite server"
 	"Delete server"
-	"[NEW] Server browser"
 	"List installed mods"
 	"Toggle debug mode"
 	"Report bug (opens in browser)"
@@ -419,7 +419,7 @@ connect(){
 	ip=$(echo "$1" | awk -F"$separator" '{print $1}')
 	bid=$(echo "$1" | awk -F"$separator" '{print $2}')
 	if [[ $2 == "ip" ]]; then
-		fetch_mods_sa "$ip" > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+		fetch_mods_sa "$ip" > >(zenity --pulsate --progress --auto-close --no-cancel --width=500 2>/dev/null)
 	else
 		fetch_mods "$bid"
 	fi
@@ -521,7 +521,13 @@ fetch_ip_metadata(){
 #local_ip(){
 #(^127\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)
 #}
+test_steam_api(){
+	local code=$(curl -ILs "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api" \
+		| grep -E "^HTTP")
+	[[ $code =~ 403 ]] && { echo 403 >> logs; return 1; }
+}
 add_steam_api(){
+		[[ ! $(test_steam_api) ]] && return 1
 		mv $config_file ${config_path}dztuirc.old
 		nr=$(awk '/steam_api=/ {print NR}' ${config_path}dztuirc.old)
 		steam_api="steam_api=\"$steam_api\""
@@ -535,9 +541,9 @@ check_steam_api(){
 		steam_api=$(zenity --entry --text="Key 'steam_api' not present in config file. Enter Steam API key:" --title="DZGUI" 2>/dev/null)
 		if [[ $? -eq 1 ]] ; then
 			return
-		elif [[ $steam_api -lt 32 ]]; then
+		elif [[ ${#steam_api} -lt 32 ]] || [[ ! $(test_steam_api) ]]; then
 			zenity --warning --title="DZGUI" --text="Check API key and try again." 2>/dev/null
-			return
+			return 1
 		else
 			add_steam_api
 		fi
@@ -549,6 +555,7 @@ validate_ip(){
 connect_by_ip(){
 	source $config_file
 	check_steam_api
+	[[ $? -eq 1 ]] && return
 	while true; do
 		if [[ $return_from_table -eq 1 ]]; then
 			return_from_table=0
@@ -804,8 +811,12 @@ query_and_connect(){
 	query_api
 	parse_json 
 	#TODO: create logger function
-	echo "[DZGUI] Checking response time of servers"
-	create_array | zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
+	if [[ ! $delete -eq 1 ]]; then
+		echo "[DZGUI] Checking response time of servers"
+		create_array | zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
+	else
+		create_array
+	fi
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		:
@@ -1038,6 +1049,8 @@ debug_servers(){
 }
 server_browser(){
 	check_steam_api
+	[[ $? -eq 1 ]] && return
+
 	unset ret
 	file=$(mktemp)
 	local limit=20000
@@ -1086,7 +1099,7 @@ main_menu(){
 		items+=("Debug options")
 	fi
 	if [[ -n $fav ]]; then
-		items[4]="Change favorite server"
+		items[5]="Change favorite server"
 	fi
 	while true; do
 		set_header ${FUNCNAME[0]}
@@ -1095,20 +1108,20 @@ main_menu(){
 		if [[ -z $sel ]]; then
 			warn "No item was selected."
 		elif [[ $sel == "${items[0]}" ]]; then
-			query_and_connect
+			server_browser
 		elif [[ $sel == "${items[1]}" ]]; then
-			connect_to_fav
+			query_and_connect
 		elif [[ $sel == "${items[2]}" ]]; then
-			connect_by_ip
+			connect_to_fav
 		elif [[ $sel == "${items[3]}" ]]; then
-			add_by_id
+			connect_by_ip
 		elif [[ $sel == "${items[4]}" ]]; then
-			add_by_fav
+			add_by_id
 		elif [[ $sel == "${items[5]}" ]]; then
+			add_by_fav
+		elif [[ $sel == "${items[6]}" ]]; then
 			delete=1
 			query_and_connect
-		elif [[ $sel == "${items[6]}" ]]; then
-			server_browser 
 		elif [[ $sel == "${items[7]}" ]]; then
 			list_mods | sed 's/\t/\n/g' | zenity --list --column="Mod" --column="Symlink" \
 				--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
@@ -1344,7 +1357,7 @@ toggle_debug(){
 setup(){
 	if [[ -n $fav ]]; then
 		set_fav
-		items[4]="Change favorite server"
+		items[5]="Change favorite server"
 	fi
 }
 check_map_count(){
@@ -1378,7 +1391,7 @@ while true; do
 			zenity --info --title="DZGUI" --text="Added "$fav_id" to:\n${config_path}dztuirc\nIf errors occurred, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
 			source $config_file
 			set_fav
-			items[4]="Change favorite server"
+			items[5]="Change favorite server"
 			return
 		fi
 	fi
