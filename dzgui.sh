@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.23
+version=2.7.0-rc.24
 
 aid=221100
 game="dayz"
@@ -79,18 +79,21 @@ depcheck(){
 init_items(){
 	#array order determines menu selector; this is destructive
 items=(
-	"[NEW] Server browser"
-	"Launch server list"
-	"Quick connect to favorite server"
-	"Connect by IP"
-	"Add server by ID"
-	"Add favorite server"
-	"Delete server"
-	"List installed mods"
-	"Toggle debug mode"
-	"Report bug (opens in browser)"
-	"Help file (opens in browser)"
-	"View changelog"
+	"[Connect]"
+	"	NEW: Server browser"
+	"	My servers"
+	"	Quick connect to favorite server"
+	"[Manage servers]"
+	"	Connect by IP"
+	"	Add server by ID"
+	"	Add favorite server"
+	"	Delete server"
+	"[Options]"
+	"	List installed mods"
+	"	Toggle debug mode"
+	"	Report bug (opens in browser)"
+	"	Help file (opens in browser)"
+	"	View changelog"
 	)
 }
 warn_and_exit(){
@@ -226,7 +229,7 @@ guess_path(){
 }
 create_config(){
 	while true; do
-	player_input="$(zenity --forms --add-entry="Player name (required for some servers)" --add-entry="API key" --add-entry="Server 1 (you can add more later)" --title=DZGUI --text=DZGUI --add-entry="Server 2" --add-entry="Server 3" --add-entry="Server 4" $sd_res --separator="│" 2>/dev/null)"
+	player_input="$(zenity --forms --add-entry="Player name (required for some servers)" --add-entry="API key" --add-entry="Server 1 (you can add more later)" --title="DZGUI" --text="DZGUI" --add-entry="Server 2" --add-entry="Server 3" --add-entry="Server 4" $sd_res --separator="│" 2>/dev/null)"
 	#explicitly setting IFS crashes zenity in loop
 	#and mapfile does not support high ascii delimiters
 	#so split fields with newline
@@ -455,7 +458,7 @@ fetch_mods_sa(){
 	if [[ $status -eq 1 ]]; then
 		echo "100"
 		err "97: Failed to fetch modlist"
-		zenity --error --title=DZGUI --width=500 --text="[ERROR] 97: Failed to fetch modlist" 2>/dev/null &&
+		zenity --error --title="DZGUI" --width=500 --text="[ERROR] 97: Failed to fetch modlist" 2>/dev/null &&
 		ret=96
 		return
 	fi
@@ -790,7 +793,6 @@ debug_menu(){
 	debug_list=(
 		"Toggle branch"
 		"Generate debug log"
-		"Placeholder"
 		)
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
@@ -803,8 +805,6 @@ debug_menu(){
 		generate_log > "$source_dir/log"
 		printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
 		zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
-	elif [[ $debug_sel == "${debug_list[2]}" ]]; then
-		:
 	fi
 }
 query_and_connect(){
@@ -835,7 +835,7 @@ filter_maps(){
 	[[ $ret -eq 98 ]] && return
 	local maps=$(echo "$response" | jq -r '.[].map//empty|ascii_downcase' | sort -u) 
 	local map_ct=$(echo "$maps" | wc -l)
-	local map_sel=$(echo "$maps" | zenity --list --column="Check" --width=1200 --height=800 2>/dev/null --title=DZGUI --text="Found $map_ct map types")
+	local map_sel=$(echo "$maps" | zenity --list --column="Check" --width=1200 --height=800 2>/dev/null --title="DZGUI" --text="Found $map_ct map types")
 	echo "[DZGUI] Selected '$map_sel'"
 	if [[ -z $map_sel ]]; then
 		ret=97
@@ -930,9 +930,9 @@ choose_filters(){
 	if [[ $is_steam_deck -eq 0 ]]; then
 		sd_res="--width=1920 --height=1080"
 	fi
-	sels=$(zenity --title=DZGUI --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" False "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
+	sels=$(zenity --title="DZGUI" --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" False "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
 	if [[ $sels =~ Keyword ]]; then
-		search=$(zenity --entry --text="Search (case insensitive)" --width=500 --title=DZGUI 2>/dev/null | awk '{print tolower($0)}')
+		search=$(zenity --entry --text="Search (case insensitive)" --width=500 --title="DZGUI" 2>/dev/null | awk '{print tolower($0)}')
 		[[ -z $search ]] && { ret=97; return; }
 	fi	
 	[[ -z $sels ]] && return
@@ -1010,7 +1010,7 @@ munge_servers(){
 	
 	write_fifo &
 	pid=$!
-	local sel=$(zenity --text="$(pagination)" --title=DZGUI --list --column=Map --column=Name --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=7,8 --separator=%% 2>/dev/null < <(while true; do cat $fifo; done))
+	local sel=$(zenity --text="$(pagination)" --title="DZGUI" --list --column=Map --column=Name --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=7,8 --separator=%% 2>/dev/null < <(while true; do cat $fifo; done))
 	if [[ -z $sel ]]; then
 		rm $fifo
 		kill -9 $pid
@@ -1096,10 +1096,10 @@ main_menu(){
 	print_news
 	set_mode
 	if [[ $debug -eq 1 ]]; then
-		items+=("Debug options")
+		items+=("	Debug options")
 	fi
 	if [[ -n $fav ]]; then
-		items[5]="Change favorite server"
+		items[7]="	Change favorite server"
 	fi
 	while true; do
 		set_header ${FUNCNAME[0]}
@@ -1108,35 +1108,41 @@ main_menu(){
 		if [[ -z $sel ]]; then
 			warn "No item was selected."
 		elif [[ $sel == "${items[0]}" ]]; then
-			server_browser
+			:
 		elif [[ $sel == "${items[1]}" ]]; then
-			query_and_connect
+			server_browser
 		elif [[ $sel == "${items[2]}" ]]; then
-			connect_to_fav
+			query_and_connect
 		elif [[ $sel == "${items[3]}" ]]; then
-			connect_by_ip
+			connect_to_fav
 		elif [[ $sel == "${items[4]}" ]]; then
-			add_by_id
+			:
 		elif [[ $sel == "${items[5]}" ]]; then
-			add_by_fav
+			connect_by_ip
 		elif [[ $sel == "${items[6]}" ]]; then
+			add_by_id
+		elif [[ $sel == "${items[7]}" ]]; then
+			add_by_fav
+		elif [[ $sel == "${items[8]}" ]]; then
 			delete=1
 			query_and_connect
-		elif [[ $sel == "${items[7]}" ]]; then
+		elif [[ $sel == "${items[9]}" ]]; then
+			:
+		elif [[ $sel == "${items[10]}" ]]; then
 			list_mods | sed 's/\t/\n/g' | zenity --list --column="Mod" --column="Symlink" \
 				--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
 				--print-column="" 2>/dev/null
-		elif [[ $sel == "${items[8]}" ]]; then
+		elif [[ $sel == "${items[11]}" ]]; then
 			toggle_debug
 			main_menu
 			return
-		elif [[ $sel == "${items[9]}" ]]; then
-			report_bug
-		elif [[ $sel == "${items[10]}" ]]; then
-			help_file
-		elif [[ $sel == "${items[11]}" ]]; then
-			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
 		elif [[ $sel == "${items[12]}" ]]; then
+			report_bug
+		elif [[ $sel == "${items[13]}" ]]; then
+			help_file
+		elif [[ $sel == "${items[14]}" ]]; then
+			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
+		elif [[ $sel == "${items[15]}" ]]; then
 			debug_menu
 		else
 			warn "This feature is not yet implemented."
@@ -1246,12 +1252,14 @@ download_new_version(){
 	source_script=$(realpath "$0")
 	source_dir=$(dirname "$source_script")
 	mv $source_script $source_script.old
+	echo "# Downloading version $upstream"
 	curl -Ls "$version_url" > $source_script
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
 		echo "[DZGUI] Wrote $upstream to $source_script"
 		chmod +x $source_script
 		touch ${config_path}.unmerged
+		echo "100"
 		zenity --question --width 500 --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
 		code=$?
 		if [[ $code -eq 0 ]]; then
@@ -1261,6 +1269,7 @@ download_new_version(){
 			exit
 		fi
 	else
+		echo "100"
 		mv $source_script.old $source_script
 		zenity --info --title="DZGUI" --text "[ERROR] 99: Failed to download new version." 2>/dev/null
 		return
@@ -1276,22 +1285,21 @@ check_branch(){
 	upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
 }
 enforce_dl(){
-		download_new_version
+	download_new_version > >(zenity --progress --pulsate --auto-close --no-cancel --width=500)
 }
-prompt_dl(){    
+prompt_dl(){
 	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t$branch\nYour version\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		return
 	else
-		download_new_version
+		echo "100"
+		download_new_version > >(zenity --progress --pulsate --auto-close --no-cancel --width=500)
 	fi
 }
 check_version(){
-	if [[ ! -f $config_file ]]; then : ; else source $config_file; fi
-	if [[ -z $branch ]]; then
-		branch="stable"
-	fi
+	[[ -f $config_file ]] && source $config_file
+	[[ -z $branch ]] && branch="stable"
 	check_branch
 	[[ ! -d "$HOME/dzgui" ]] && freedesktop_dirs
 	if [[ $version == $upstream ]]; then
@@ -1357,7 +1365,7 @@ toggle_debug(){
 setup(){
 	if [[ -n $fav ]]; then
 		set_fav
-		items[5]="Change favorite server"
+		items[7]="	Change favorite server"
 	fi
 }
 check_map_count(){
@@ -1391,7 +1399,7 @@ while true; do
 			zenity --info --title="DZGUI" --text="Added "$fav_id" to:\n${config_path}dztuirc\nIf errors occurred, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
 			source $config_file
 			set_fav
-			items[5]="Change favorite server"
+			items[7]="	Change favorite server"
 			return
 		fi
 	fi
@@ -1409,7 +1417,7 @@ lock(){
 	res=$?
 	if [[ $res -eq 0 ]]; then
 		echo "[DZGUI] Already running ($pid)"
-		zenity --info --text="DZGUI already running (pid $pid)" --title=DZGUI 2>/dev/null
+		zenity --info --text="DZGUI already running (pid $pid)" --width=500 --title="DZGUI" 2>/dev/null
 		exit
 	elif [[ $pid == $$ ]]; then
 		:
@@ -1431,7 +1439,7 @@ initial_setup(){
 }
 main(){
 	lock
-	initial_setup > >(zenity --pulsate --progress --auto-close --title=DZGUI --width=500 2>/dev/null)
+	initial_setup > >(zenity --pulsate --progress --auto-close --title="DZGUI" --width=500 2>/dev/null)
 	main_menu
 	#cruddy handling for steam forking
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh

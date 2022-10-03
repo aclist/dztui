@@ -5,6 +5,14 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.7.0-rc.24] 2022-10-03
+### Added
+- Progress bars when downloading updates
+### Changed
+- Group main menu categories
+### Fixed
+- Encapsulate window strings to prevent arguments leaking into title
+
 ## [2.7.0-rc.23] 2022-10-03
 ### Fixed
 - More robust error handling for API keys
