@@ -1301,7 +1301,7 @@ check_version(){
 	[[ -f $config_file ]] && source $config_file
 	[[ -z $branch ]] && branch="stable"
 	check_branch
-	[[ ! -d "$HOME/dzgui" ]] && freedesktop_dirs
+	[[ ! -d "$freedesktop_path" ]] && freedesktop_dirs
 	if [[ $version == $upstream ]]; then
 		check_unmerged
 	else

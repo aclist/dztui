@@ -12,6 +12,7 @@
 - Group main menu categories
 ### Fixed
 - Encapsulate window strings to prevent arguments leaking into title
+- Remove extraneous download process that was slowing down startup
 
 ## [2.7.0-rc.23] 2022-10-03
 ### Fixed
