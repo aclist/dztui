@@ -5,6 +5,21 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.7.0] 2022-10-04
+### Added
+- Server browser and geolocation algorithm
+- More verbose error codes
+- Additional progress bar setup and destruction throughout the application
+- Additional API response validation
+### Fixed
+- Encapsulate title strings to prevent leaky arguments in title bars
+- Remove erroneous slow boot process if first-time setup was already complete
+- Delete server list not emptying when returning to main menu
+### Changed
+- Group main menu entries in advance of future functionality
+- Better abstraction of paths
+- Clarification of certain options and errors
+
 ## [2.6.3] 2022-10-02
 ### Fixed
 - Hotfix for connect-to-fav not getting modlist
