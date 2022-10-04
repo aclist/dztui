@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.6.3
+version=2.7.0
 
 aid=221100
 game="dayz"
@@ -11,15 +11,25 @@ sd_res="--width=1280 --height=800"
 config_path="$HOME/.config/dztui/"
 config_file="${config_path}dztuirc"
 tmp=/tmp/dzgui.tmp
+fifo=/tmp/table.tmp
 separator="%%"
-git_url="https://github.com/aclist/dztui/issues"
-stable_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/dzgui.sh"
-testing_url="https://raw.githubusercontent.com/aclist/dztui/testing/dzgui.sh"
-help_url="https://aclist.github.io/dzgui/dzgui"
 check_config_msg="Check config values and restart."
-news_url="https://raw.githubusercontent.com/aclist/dztui/dzgui/news"
+issues_url="https://github.com/aclist/dztui/issues"
+url_prefix="https://raw.githubusercontent.com/aclist/dztui"
+stable_url="$url_prefix/dzgui"
+testing_url="$url_prefix/testing"
+releases_url="https://github.com/aclist/dztui/releases/download/browser"
+help_url="https://aclist.github.io/dzgui/dzgui"
+news_url="$stable_url/news"
 freedesktop_path="$HOME/.local/share/applications"
 sd_install_path="$HOME/.local/share/dzgui"
+helpers_path="$sd_install_path/helpers"
+geo_file="$helpers_path/ips.csv"
+km_helper="$helpers_path/latlon"
+sums_path="$helpers_path/sums.md5"
+km_helper_url="$releases_url/latlon"
+db_file="$releases_url/ips.csv.gz"
+sums_url="$testing_url/helpers/sums.md5"
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
@@ -69,17 +79,21 @@ depcheck(){
 init_items(){
 	#array order determines menu selector; this is destructive
 items=(
-	"Launch server list"
-	"Quick connect to favorite server"
-	"Connect by IP"
-	"Add server by ID"
-	"Add favorite server"
-	"Delete server"
-	"List installed mods"
-	"Toggle debug mode"
-	"Report bug (opens in browser)"
-	"Help file (opens in browser)"
-	"View changelog"
+	"[Connect]"
+	"	NEW: Server browser"
+	"	My servers"
+	"	Quick connect to favorite server"
+	"[Manage servers]"
+	"	Connect by IP"
+	"	Add server by ID"
+	"	Add favorite server"
+	"	Delete server"
+	"[Options]"
+	"	List installed mods"
+	"	Toggle debug mode"
+	"	Report bug (opens in browser)"
+	"	Help file (opens in browser)"
+	"	View changelog"
 	)
 }
 warn_and_exit(){
@@ -115,14 +129,17 @@ query_api(){
 		code=$(jq -r '.errors[] .status' <<< $response)
 		#TODO: fix granular api codes
 		if [[ $code -eq 401 ]]; then
-			warn_and_exit "Error $code: malformed API key"
+			warn "Error $code: malformed API key"
+			return
 		elif [[ $code -eq 500 ]]; then
-			warn_and_exit "Error $code: malformed server list"
+			warn "Error $code: malformed server list"
+			return
 		fi
 
 	fi
 	if [[ -z $(echo $response | jq '.data[]') ]]; then
-		warn_and_exit "API returned empty response. Check config file."
+		warn "95: API returned empty response. Check config file."
+		return
 	fi
 }
 write_config(){
@@ -212,7 +229,7 @@ guess_path(){
 }
 create_config(){
 	while true; do
-	player_input="$(zenity --forms --add-entry="Player name (required for some servers)" --add-entry="API key" --add-entry="Server 1 (you can add more later)" --title=DZGUI --text=DZGUI --add-entry="Server 2" --add-entry="Server 3" --add-entry="Server 4" $sd_res --separator="│" 2>/dev/null)"
+	player_input="$(zenity --forms --add-entry="Player name (required for some servers)" --add-entry="API key" --add-entry="Server 1 (you can add more later)" --title="DZGUI" --text="DZGUI" --add-entry="Server 2" --add-entry="Server 3" --add-entry="Server 4" $sd_res --separator="│" 2>/dev/null)"
 	#explicitly setting IFS crashes zenity in loop
 	#and mapfile does not support high ascii delimiters
 	#so split fields with newline
@@ -258,7 +275,7 @@ varcheck(){
 	[[ ! -d "$game_dir" ]] && (err "Malformed game path")
 	[[ $whitelist =~ [[:space:]] ]] && (err "Separate whitelist values with commas")
 }
-run_depcheck() {
+run_depcheck(){
 	if [[ -z $(depcheck) ]]; then 
 		:
 	else	
@@ -280,6 +297,7 @@ run_varcheck(){
 		if [[ $code -eq 1 ]]; then
 			exit
 		else
+			echo "100"
 			create_config
 		fi
 	fi
@@ -334,7 +352,7 @@ manual_mod_install(){
 	if [[ $is_steam_deck -eq 0 ]]; then
 		open_mod_links
 		until [[ -z $diff ]]; do
-			zenity --question --title="DZGUI" --ok-label="Next" --cancel-label="Cancel" --text="Opened mod links in browser. Click [Next] when all mods have been subscribed to. This dialog may reappear if clicking [Next] too soon before mods are synchronized in the background." 2>/dev/null
+			zenity --question --title="DZGUI" --ok-label="Next" --cancel-label="Cancel" --text="Opened mod links in browser.\nClick [Next] when all mods have been subscribed to.\nThis dialog may reappear if clicking [Next] too soon\nbefore mods are synchronized in the background." --width=500 2>/dev/null
 			rc=$?
 			if [[ $rc -eq 0 ]]; then
 			compare
@@ -346,7 +364,7 @@ manual_mod_install(){
 	else
 		steam_deck_mods
 	fi
-	passed_mod_check
+	passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 }
 encode(){
 	echo "$1" | md5sum | cut -c -8
@@ -386,9 +404,11 @@ symlinks(){
 }
 passed_mod_check(){
 	echo "[DZGUI] Passed mod check"
+	echo "# Preparing symlinks"
 	stale_symlinks
 	legacy_symlinks
 	symlinks
+	echo "100"
 	launch
 
 }
@@ -396,15 +416,19 @@ connect(){
 	#TODO: sanitize/validate input
 	readarray -t qport_arr <<< "$qport_list"
 	if [[ -z ${qport_arr[@]} ]]; then
-		err "Failed to obtain query ports"
+		err "98: Failed to obtain query ports"
 		return
 	fi
 	ip=$(echo "$1" | awk -F"$separator" '{print $1}')
 	bid=$(echo "$1" | awk -F"$separator" '{print $2}')
 	if [[ $2 == "ip" ]]; then
-		fetch_mods_sa "$ip"
+		fetch_mods_sa "$ip" > >(zenity --pulsate --progress --auto-close --no-cancel --width=500 2>/dev/null)
 	else
 		fetch_mods "$bid"
+	fi
+	if [[ $ret -eq 96 ]]; then
+	       unset ret
+	       return
 	fi
 	validate_mods
 	rc=$?
@@ -413,14 +437,13 @@ connect(){
 	if [[ -n $diff ]]; then
 		manual_mod_install
 	else
-		passed_mod_check
+		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	fi
 }
 fetch_mods(){
 	remote_mods=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d filter[ids][whitelist]="$1" -d "sort=-players" \
 	| jq -r '.data[] .attributes .details .modIds[]')
 }
-#TODO: deprecated (for now)
 fetch_mods_sa(){
 	sa_ip=$(echo "$1" | awk -F: '{print $1}')
 	for i in ${qport_arr[@]}; do
@@ -429,12 +452,17 @@ fetch_mods_sa(){
 		fi
 	done
 	echo "[DZGUI] Querying modlist on ${sa_ip}:${sa_port}"
-	remote_mods=$(curl -Ls "https://dayzsalauncher.com/api/v1/query/$sa_ip/$sa_port" | jq -r '.result.mods[].steamWorkshopId')
-	rc=$?
-	if [[ $rc -eq 1 ]]; then
-		err "Failed to fetch modlist"
+	echo "# Querying modlist on ${sa_ip}:${sa_port}"
+	local response=$(curl -Ls "https://dayzsalauncher.com/api/v1/query/$sa_ip/$sa_port")
+	local status=$(echo "$response" | jq '.status')
+	if [[ $status -eq 1 ]]; then
+		echo "100"
+		err "97: Failed to fetch modlist"
+		zenity --error --title="DZGUI" --width=500 --text="[ERROR] 97: Failed to fetch modlist" 2>/dev/null &&
+		ret=96
 		return
 	fi
+	remote_mods=$(echo "$response" | jq -r '.result.mods[].steamWorkshopId')
 	qport_arr=()
 }
 prepare_ip_list(){
@@ -484,8 +512,8 @@ fetch_ip_metadata(){
 	< $meta_file jq '.response' > $json
 	res=$(< $meta_file jq -er '.response.servers[]' 2>/dev/null)
 	if [[ ! $? -eq 0 ]]; then
-		warn "Failed to retrieve IP metadata. Check IP or API key and try again."
-		echo "[DZGUI] Failed to retrieve IP metadata"
+		warn "[ERROR] 96: Failed to retrieve IP metadata. Check IP or API key and try again."
+		echo "[DZGUI] 96: Failed to retrieve IP metadata"
 
 	else
 		ip_table
@@ -496,7 +524,13 @@ fetch_ip_metadata(){
 #local_ip(){
 #(^127\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)
 #}
+test_steam_api(){
+	local code=$(curl -ILs "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api" \
+		| grep -E "^HTTP")
+	[[ $code =~ 403 ]] && return 1
+}
 add_steam_api(){
+		[[ ! $(test_steam_api) ]] && return 1
 		mv $config_file ${config_path}dztuirc.old
 		nr=$(awk '/steam_api=/ {print NR}' ${config_path}dztuirc.old)
 		steam_api="steam_api=\"$steam_api\""
@@ -505,28 +539,32 @@ add_steam_api(){
 		zenity --info --title="DZGUI" --text="Added Steam API key to:\n\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
 		source $config_file
 }
+check_steam_api(){
+	if [[ -z $steam_api ]]; then
+		steam_api=$(zenity --entry --text="Key 'steam_api' not present in config file. Enter Steam API key:" --title="DZGUI" 2>/dev/null)
+		if [[ $? -eq 1 ]] ; then
+			return
+		elif [[ ${#steam_api} -lt 32 ]] || [[ ! $(test_steam_api) ]]; then
+			zenity --warning --title="DZGUI" --text="Check API key and try again." 2>/dev/null
+			return 1
+		else
+			add_steam_api
+		fi
+	fi
+}
 validate_ip(){
 	echo "$1" | grep -qP '^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$'
 }
 connect_by_ip(){
 	source $config_file
-	if [[ -z $steam_api ]]; then
-		steam_api=$(zenity --entry --text="Key 'steam_api' not present in config file. Enter Steam API key:" --title="DZGUI" 2>/dev/null)
-		if [[ $? -eq 1 ]] ; then
-			return
-		elif [[ $steam_api -lt 32 ]]; then
-			zenity --warning --title="DZGUI" --text="Check API key and try again."
-			return
-		else
-			add_steam_api
-		fi
-	fi
+	check_steam_api
+	[[ $? -eq 1 ]] && return
 	while true; do
 		if [[ $return_from_table -eq 1 ]]; then
 			return_from_table=0
 			return
 		fi
-		ip=$(zenity --entry --text="Enter server IP" --title="DZGUI" 2>/dev/null)
+		ip=$(zenity --entry --text="Enter server IP (omit port)" --title="DZGUI" 2>/dev/null)
 		[[ $? -eq 1 ]] && return
 		if validate_ip "$ip"; then
 			fetch_ip_metadata
@@ -589,7 +627,7 @@ launch(){
 	mods=$(concat_mods)
 	if [[ $debug -eq 1 ]]; then
 		launch_options="steam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro \"-mod=$mods\""
-		print_launch_options="$(printf "[DEBUG] This is a dry run. These options would have been used to launch the game:\n\n$launch_options\n" | fold -w 60)"
+		print_launch_options="$(printf "This is a dry run.\nThese options would have been used to launch the game:\n\n$launch_options\n" | fold -w 60)"
 		zenity --question --title="DZGUI" --ok-label="Write to file" --cancel-label="Back"\
 			--text="$print_launch_options" 2>/dev/null
 		if [[ $? -eq 0 ]]; then
@@ -618,9 +656,9 @@ browser(){
 report_bug(){
 	echo "[DZGUI] Opening issues page in browser"
 	if [[ $is_steam_deck -eq 1 ]]; then
-		steam steam://openurl/"$git_url" 2>/dev/null
+		steam steam://openurl/"$issues_url" 2>/dev/null
 	elif [[ $is_steam_deck -eq 0 ]]; then
-		browser "$git_url" 2>/dev/null &
+		browser "$issues_url" 2>/dev/null &
 	fi
 }
 help_file(){
@@ -675,7 +713,7 @@ populate(){
 			set_header ${FUNCNAME[0]}
 		fi
 		rc=$?
-		if [[ $rc -eq 0 ]]; then 
+		if [[ $rc -eq 0 ]]; then
 			if [[ -z $sel ]]; then
 				warn "No item was selected."
 			else
@@ -689,8 +727,8 @@ populate(){
 	done
 }
 list_mods(){
-	if [[ -z $(installed_mods) || -z $(find $workshop_dir -maxdepth 2 -name "*.cpp" | grep .cpp) ]]; then
-		zenity --info --text="No mods currently installed or incorrect path given" $sd_res 2>/dev/null
+	if [[ -z $(installed_mods) ]] || [[ -z $(find $workshop_dir -maxdepth 2 -name "*.cpp" | grep .cpp) ]]; then
+		zenity --info --text="94: No mods currently installed or incorrect path given" $sd_res 2>/dev/null
 	else
 		for d in $(find $game_dir/* -maxdepth 1 -type l); do
 			dir=$(basename $d)
@@ -710,7 +748,7 @@ connect_to_fav(){
 		connect "$qport_list" "ip"
 		one_shot_launch=0
 	else
-		warn "No fav server configured"
+		warn "93: No fav server configured"
 	fi
 
 }
@@ -771,10 +809,14 @@ debug_menu(){
 }
 query_and_connect(){
 	query_api
-	parse_json 
+	parse_json
 	#TODO: create logger function
-	echo "[DZGUI] Checking response time of servers"
-	create_array | zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
+	if [[ ! $delete -eq 1 ]]; then
+		echo "[DZGUI] Checking response time of servers"
+		create_array | zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
+	else
+		create_array
+	fi
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		:
@@ -782,15 +824,282 @@ query_and_connect(){
 		populate
 	fi
 }
+exclude_full(){
+	response=$(echo "$response" | jq '[.[]|select(.players!=.max_players)]')
+}
+exclude_empty(){
+	response=$(echo "$response" | jq '[.[]|select(.players!=0)]')
+}
+filter_maps(){
+	echo "# Filtering maps"
+	[[ $ret -eq 98 ]] && return
+	local maps=$(echo "$response" | jq -r '.[].map//empty|ascii_downcase' | sort -u) 
+	local map_ct=$(echo "$maps" | wc -l)
+	local map_sel=$(echo "$maps" | zenity --list --column="Check" --width=1200 --height=800 2>/dev/null --title="DZGUI" --text="Found $map_ct map types")
+	echo "[DZGUI] Selected '$map_sel'"
+	if [[ -z $map_sel ]]; then
+		ret=97
+		return
+	fi
+	echo "100"
+	response=$(echo "$response" | jq --arg map "$map_sel" '[.[]|select(.map)//empty|select(.map|ascii_downcase == $map)]')
+}
+exclude_daytime(){
+	response=$(echo "$response" | jq '[.[]|select(.gametype|test(",[0][6-9]:|,[1][0-6]:")|not)]')
+}
+exclude_nighttime(){
+	response=$(echo "$response" | jq '[.[]|select(.gametype|test(",[1][7-9]:|,[2][0-4]:|[0][0-5]:")|not)]')
+}
+keyword_filter(){
+	response=$(echo "$response" | jq --arg search "$search" '[.[]|select(.name|ascii_downcase | contains($search))]')
+}
+exclude_lowpop(){
+	response=$(echo "$response" | jq '[.[]|select(.players > 9)]')
+}
+exclude_nonascii(){
+	response=$(echo "$response" | jq -r '[.[]|select(.name|test("^([[:ascii:]])*$"))]')
+}
+strip_null(){
+	response=$(echo "$response" | jq -r '[.[]|select(.map//empty)]')
+}
+local_latlon(){
+	if [[ -z $(command -v dig) ]]; then
+		local local_ip=$(curl -Ls "https://ipecho.net/plain")
+	else
+		local local_ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+	fi
+	local url="http://ip-api.com/json/$local_ip" 
+	local res=$(curl -Ls "$url" | jq -r '"\(.lat),\(.lon)"')
+	local_lat=$(echo "$res" | awk -F, '{print $1}')
+	local_lon=$(echo "$res" | awk -F, '{print $2}')
+}
+disabled(){
+	if [[ -z ${disabled[@]} ]]; then
+		printf "%s" "-"
+	else
+		for((i=0;i<${#disabled[@]};i++)); do
+			if [[ $i < $((${#disabled[@]}-1)) ]]; then
+				printf "%s, " "${disabled[$i]}"
+			else
+				printf "%s" "${disabled[$i]}"
+			fi
+
+		done
+	fi
+}
+pagination(){
+	if [[ ${#qport[@]} -eq 1 ]]; then
+		entry=server
+	else
+		entry=servers
+	fi
+	printf "DZGUI %s | " "$version"
+	printf "Mode: %s |" "$mode"
+	printf "Fav: %s " "$fav_label"
+	printf "\nIncluded:  %s | " "$filters"
+	printf "Excluded: %s " "$(disabled)"
+	if [[ -n $search ]]; then
+		printf "| Keyword:  %s " "$search"
+	fi
+	printf "\nReturned: %s %s of %s | " "${#qport[@]}" "$entry" "$total_servers"
+	printf "Players online: %s" "$players_online"
+}
+check_geo_file(){
+	local gzip="$helpers_path/ips.csv.gz"
+	curl -Ls "$sums_url" > "$sums_path"
+	cd "$helpers_path"
+	md5sum -c "$sums_path" 2>/dev/null 1>&2
+	local res=$?
+	if [[ $res -eq 1 ]]; then
+		run(){
+		mkdir -p "$helpers_path"
+		echo "# Fetching new geolocation DB"
+		curl -Ls "$db_file" > "$gzip"
+		echo "# Extracting coordinates"
+		#force overwrite
+		gunzip -f "$gzip"
+		echo "# Preparing helper file"
+		curl -Ls "$km_helper_url" > "$km_helper"
+		chmod +x $km_helper
+		echo "100"
+		}
+		run > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+	fi 
+}
+choose_filters(){
+	if [[ $is_steam_deck -eq 0 ]]; then
+		sd_res="--width=1920 --height=1080"
+	fi
+	sels=$(zenity --title="DZGUI" --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" False "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
+	if [[ $sels =~ Keyword ]]; then
+		search=$(zenity --entry --text="Search (case insensitive)" --width=500 --title="DZGUI" 2>/dev/null | awk '{print tolower($0)}')
+		[[ -z $search ]] && { ret=97; return; }
+	fi	
+	[[ -z $sels ]] && return
+	filters=$(echo "$sels" | sed 's/|/, /g;s/ (untick to select from map list)//')
+	echo "[DZGUI] Filters: $filters"
+}
+get_dist(){
+	local given_ip="$1"
+	local network="$(echo "$given_ip" | awk -F. '{OFS="."}{print $1"."$2}')"
+	local binary=$(grep -E "^$network\." $geo_file)
+	local three=$(echo $given_ip | awk -F. '{print $3}')
+	local host=$(echo $given_ip | awk -F. '{print $4}')
+	local res=$(echo "$binary" | awk -F[.,] -v three=$three -v host=$host '$3 <=three && $7 >= three{if($3>three || ($3==three && $4 > host) || $7 < three || ($7==three && $8 < host)){next}{print}}' | awk -F, '{print $7,$8}')
+	local remote_lat=$(echo "$res" | awk '{print $1}')
+	local remote_lon=$(echo "$res" | awk '{print $2}')
+	if [[ -z $remote_lat ]]; then
+		local dist="Unknown"
+		echo "$dist"
+	else
+		local dist=$($km_helper "$local_lat" "$local_lon" "$remote_lat" "$remote_lon")
+		printf "%05.0f %s" "$dist" "km"
+	fi
+}
+prepare_filters(){
+	echo "# Filtering list"
+	[[ ! "$sels" =~ "Full" ]] && { exclude_full; disabled+=("Full") ; }
+	[[ ! "$sels" =~ "Empty" ]] && { exclude_empty; disabled+=("Empty") ; }
+	[[ ! "$sels" =~ "Daytime" ]] && { exclude_daytime; disabled+=("Daytime") ; }
+	[[ ! "$sels" =~ "Nighttime" ]] && { exclude_nighttime; disabled+=("Nighttime") ; }
+	[[ ! "$sels" =~ "Low population" ]] && { exclude_lowpop; disabled+=("Low-pop") ; }
+	[[ ! "$sels" =~ "Non-ASCII titles" ]] && { exclude_nonascii; disabled+=("Non-ASCII") ; }
+	[[ -n "$search" ]] && keyword_filter
+	strip_null
+	echo "100"
+}
+write_fifo(){
+	[[ -p $fifo ]] && rm $fifo
+	mkfifo $fifo
+	for((i=0;i<${#qport[@]};i++)); do
+		printf  "%s\n%s\n%s\n%03d\n%03d\n%s\n%s:%s\n%s\n" "${map[$i]}" "${name[$i]}" "${gametime[$i]}" \
+		"${players[$i]}" "${max[$i]}" "$(get_dist ${addr[$i]})" "${addr[$i]}" "${gameport[$i]}" "${qport[$i]}" >> $fifo
+		done 
+}
+munge_servers(){
+	if [[ ! "$sels" =~ "All maps" ]]; then
+		filter_maps > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+		disabled+=("All maps")
+	fi
+	[[ $ret -eq 97 ]] && return
+	prepare_filters > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+	if [[ $(echo "$response" | jq 'length') -eq 0 ]]; then
+		zenity --error --text="No matching servers" 2>/dev/null
+		return
+	fi
+	local addr=$(echo "$response" | jq -r '.[].addr' | awk -F: '{print $1}')
+	local gameport=$(echo "$response" | jq -r '.[].gameport')
+	local qport=$(echo "$response" | jq -r '.[].addr' | awk -F: '{print $2}')
+	#jq bug #1788, raw output cannot be used with ASCII
+	local name=$(echo "$response" | jq -a '.[].name' | sed 's/\\u[0-9a-z]\{4\}//g;s/^"//;s/"$//')
+	local players=$(echo "$response" | jq -r '.[].players')
+	local max=$(echo "$response" | jq -r '.[].max_players')
+	local map=$(echo "$response" | jq -r '.[].map|ascii_downcase')
+	local gametime=$(echo "$response" | jq -r '.[].gametype' | grep -oE '[0-9]{2}:[0-9]{2}$')
+	readarray -t qport <<< $qport
+	readarray -t gameport <<< $gameport
+	readarray -t addr <<< $addr
+	readarray -t name <<< $name
+	readarray -t players <<< $players
+	readarray -t map <<< $map
+	readarray -t max <<< $max
+	readarray -t gametime <<< $gametime
+	if [[ $is_steam_deck -eq 0 ]]; then
+		sd_res="--width=1920 --height=1080"
+	fi
+	
+	write_fifo &
+	pid=$!
+	local sel=$(zenity --text="$(pagination)" --title="DZGUI" --list --column=Map --column=Name --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=7,8 --separator=%% 2>/dev/null < <(while true; do cat $fifo; done))
+	if [[ -z $sel ]]; then
+		rm $fifo
+		kill -9 $pid
+	else
+		rm $fifo
+		kill -9 $pid
+		echo $sel
+	fi
+}
+debug_servers(){
+	[[ -f $debug_log ]] && rm $debug_log
+	if [[ -n $steam_api ]]; then
+		exists=true
+	else
+		exists=false
+	fi
+	key_len=${#steam_api}
+	first_char=${steam_api:0:1}
+	last_char=${steam_api:0-1}
+	debug_res=$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api")
+	debug_len=$(echo "$debug_res" | jq '[.response.servers[]]|length')
+	[[ -z $debug_len ]] && debug_len=0
+	cat <<-DOC > $debug_log
+	======START DEBUG======
+	Key exists: $exists
+	First char: $first_char
+	Last char: $last_char
+	Key length: $key_len
+	======Short query======
+	Expected: 10
+	Found: $debug_len 
+	Response follows---->
+	$debug_res
+	======END DEBUG=======
+	DOC
+}
+server_browser(){
+	check_steam_api
+	[[ $? -eq 1 ]] && return
+
+	unset ret
+	file=$(mktemp)
+	local limit=20000
+	local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=$limit&key=$steam_api"
+	check_geo_file 
+	local_latlon
+	choose_filters
+	[[ -z $sels ]] && return
+	[[ $ret -eq 97 ]] && return
+	#TODO: some error handling here
+	fetch(){
+		echo "# Getting server list"
+		curl -Ls "$url" > $file
+	}
+	fetch > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+	response=$(< $file jq -r '.response.servers')
+	total_servers=$(echo "$response" | jq 'length')
+	players_online=$(echo "$response" | jq '.[].players' | awk '{s+=$1}END{print s}')
+	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
+	debug_servers
+	local sel=$(munge_servers)
+	if [[ -z $sel ]]; then
+		unset filters
+		unset search
+		ret=98
+		return
+	fi
+	local sel_ip=$(echo "$sel" | awk -F%% '{print $1}')
+	local sel_port=$(echo "$sel" | awk -F%% '{print $2}')
+	qport_list="$sel_ip%%$sel_port"
+	if [[ -n "$sel_ip" ]]; then
+		connect "$sel_ip" "ip"
+	else
+		return
+	fi
+}
+
+mods_disk_size(){
+	printf "Total size on disk: %s" $(du -sh "$game_dir" | awk '{print $1}')
+}
 
 main_menu(){
 	print_news
 	set_mode
 	if [[ $debug -eq 1 ]]; then
-		items+=("Debug options")
+		items+=("	Debug options")
 	fi
 	if [[ -n $fav ]]; then
-		items[4]="Change favorite server"
+		items[7]="	Change favorite server"
 	fi
 	while true; do
 		set_header ${FUNCNAME[0]}
@@ -799,31 +1108,41 @@ main_menu(){
 		if [[ -z $sel ]]; then
 			warn "No item was selected."
 		elif [[ $sel == "${items[0]}" ]]; then
-			query_and_connect
+			:
 		elif [[ $sel == "${items[1]}" ]]; then
-			connect_to_fav
+			server_browser
 		elif [[ $sel == "${items[2]}" ]]; then
-			connect_by_ip
+			query_and_connect
 		elif [[ $sel == "${items[3]}" ]]; then
-			add_by_id
+			connect_to_fav
 		elif [[ $sel == "${items[4]}" ]]; then
-			add_by_fav
+			:
 		elif [[ $sel == "${items[5]}" ]]; then
+			connect_by_ip
+		elif [[ $sel == "${items[6]}" ]]; then
+			add_by_id
+		elif [[ $sel == "${items[7]}" ]]; then
+			add_by_fav
+		elif [[ $sel == "${items[8]}" ]]; then
 			delete=1
 			query_and_connect
-		elif [[ $sel == "${items[6]}" ]]; then
-			list_mods | sed 's/\t/\n/g' | zenity --list --column="Mod" --column="Symlink" --title="DZGUI" $sd_res --print-column="" 2>/dev/null
-		elif [[ $sel == "${items[7]}" ]]; then
+		elif [[ $sel == "${items[9]}" ]]; then
+			:
+		elif [[ $sel == "${items[10]}" ]]; then
+			list_mods | sed 's/\t/\n/g' | zenity --list --column="Mod" --column="Symlink" \
+				--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
+				--print-column="" 2>/dev/null
+		elif [[ $sel == "${items[11]}" ]]; then
 			toggle_debug
 			main_menu
 			return
-		elif [[ $sel == "${items[8]}" ]]; then
+		elif [[ $sel == "${items[12]}" ]]; then
 			report_bug
-		elif [[ $sel == "${items[9]}" ]]; then
+		elif [[ $sel == "${items[13]}" ]]; then
 			help_file
-		elif [[ $sel == "${items[10]}" ]]; then
+		elif [[ $sel == "${items[14]}" ]]; then
 			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
-		elif [[ $sel == "${items[11]}" ]]; then
+		elif [[ $sel == "${items[15]}" ]]; then
 			debug_menu
 		else
 			warn "This feature is not yet implemented."
@@ -842,12 +1161,12 @@ page_through(){
 parse_json(){
 	page=$(echo "$list_response" | jq -r '.links.next?')
 	if [[ $first_entry -eq 1 ]]; then
-		list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
+		local list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
 		idarr+=("$list")
 		first_entry=0
 	fi
 	if [[ "$page" != "null" ]]; then
-		list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
+		local list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
 		idarr+=("$list")
 		page_through
 	else
@@ -866,6 +1185,7 @@ check_ping(){
 	fi
 }
 create_array(){
+	rows=()
 	list=$(cat $tmp) 
 	#TODO: improve error handling for null values
 	lc=1
@@ -896,9 +1216,9 @@ create_array(){
 			declare -g -a rows=("${rows[@]}" "$name" "$ip" "$players" "$time" "$stat" "$id" "$ping")
 		fi
 		let lc++
-	done <<< "$list" 
+	done <<< "$list"
 
-	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp 
+	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp
 }
 set_fav(){
 	#TODO: test API key here and return errors
@@ -933,12 +1253,14 @@ download_new_version(){
 	source_script=$(realpath "$0")
 	source_dir=$(dirname "$source_script")
 	mv $source_script $source_script.old
+	echo "# Downloading version $upstream"
 	curl -Ls "$version_url" > $source_script
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
 		echo "[DZGUI] Wrote $upstream to $source_script"
 		chmod +x $source_script
 		touch ${config_path}.unmerged
+		echo "100"
 		zenity --question --width 500 --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
 		code=$?
 		if [[ $code -eq 0 ]]; then
@@ -948,39 +1270,39 @@ download_new_version(){
 			exit
 		fi
 	else
+		echo "100"
 		mv $source_script.old $source_script
-		zenity --info --title="DZGUI" --text "Failed to download new version." 2>/dev/null
+		zenity --info --title="DZGUI" --text "[ERROR] 99: Failed to download new version." 2>/dev/null
 		return
 	fi
 
 }
 check_branch(){
 	if [[ $branch == "stable" ]]; then
-		version_url="$stable_url"
+		version_url="$stable_url/dzgui.sh"
 	elif [[ $branch == "testing" ]]; then
-		version_url="$testing_url"
+		version_url="$testing_url/dzgui.sh"
 	fi
 	upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
 }
 enforce_dl(){
-		download_new_version
+	download_new_version > >(zenity --progress --pulsate --auto-close --no-cancel --width=500)
 }
-prompt_dl(){    
-	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t$branch\nYour version\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
+prompt_dl(){
+	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		return
 	else
-		download_new_version
+		echo "100"
+		download_new_version > >(zenity --progress --pulsate --auto-close --no-cancel --width=500)
 	fi
 }
 check_version(){
-	if [[ ! -f $config_file ]]; then : ; else source $config_file; fi
-	if [[ -z $branch ]]; then
-		branch="stable"
-	fi
+	[[ -f $config_file ]] && source $config_file
+	[[ -z $branch ]] && branch="stable"
 	check_branch
-	[[ ! -d "$HOME/dzgui" ]] && freedesktop_dirs
+	[[ ! -d "$freedesktop_path" ]] && freedesktop_dirs
 	if [[ $version == $upstream ]]; then
 		check_unmerged
 	else
@@ -1044,7 +1366,7 @@ toggle_debug(){
 setup(){
 	if [[ -n $fav ]]; then
 		set_fav
-		items[4]="Change favorite server"
+		items[7]="	Change favorite server"
 	fi
 }
 check_map_count(){
@@ -1078,7 +1400,7 @@ while true; do
 			zenity --info --title="DZGUI" --text="Added "$fav_id" to:\n${config_path}dztuirc\nIf errors occurred, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
 			source $config_file
 			set_fav
-			items[4]="Change favorite server"
+			items[7]="	Change favorite server"
 			return
 		fi
 	fi
@@ -1096,6 +1418,7 @@ lock(){
 	res=$?
 	if [[ $res -eq 0 ]]; then
 		echo "[DZGUI] Already running ($pid)"
+		zenity --info --text="DZGUI already running (pid $pid)" --width=500 --title="DZGUI" 2>/dev/null
 		exit
 	elif [[ $pid == $$ ]]; then
 		:
@@ -1103,8 +1426,8 @@ lock(){
 		echo $$ > $config_path/.lockfile
 	fi
 }
-main(){
-	lock
+initial_setup(){
+	echo "# Initial setup"
 	run_depcheck
 	check_architecture
 	check_version
@@ -1113,7 +1436,14 @@ main(){
 	run_varcheck
 	init_items
 	setup
+	echo "100"
+}
+main(){
+	lock
+	initial_setup > >(zenity --pulsate --progress --auto-close --title="DZGUI" --width=500 2>/dev/null)
 	main_menu
+	#cruddy handling for steam forking
+	[[ $? -eq 1 ]] && pkill -f dzgui.sh
 }
 
 main
