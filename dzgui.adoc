@@ -1,5 +1,5 @@
 = DZGUI documentation
-DayZ community server graphical launcher for Linux | Last updated: 2022-09-17
+DayZ community server graphical launcher for Linux | Last updated: 2022-09-08
 :nofooter:
 :toc: left
 :stylesheet: custom.css
@@ -13,13 +13,16 @@ DZGUI contains some expanded functionality that will eventually be backported to
 
 == Setup
 === Dependencies
-If not already installed, the below can be found in your system's package manager.
+If not already installed, the below can be found in your system's package manager. 
+With the exception of Steam (which presumably you already have), in 99% of cases, 
+the other utilities should ship out of the box with mainstream distributions. They are provided here merely as a reference.
+
+If any dependencies are missing when the application starts, it will warn you, so you need not take any preemptive measures here.
 
 - `curl` 
 - `jq`
 - `zenity`
 - `steam`
-
 
 === Preparation
 . Download DZGUI and make it executable:
@@ -36,7 +39,8 @@ curl -s "https://raw.githubusercontent.com/aclist/dztui/dzgui/install.sh" | bash
 chmod +x dzgui.sh
 ```
 [start=2]
-. Update the `vm.max_map_count` value (see https://www.protondb.com/app/221100)
+. Update the `vm.max_map_count` value (see https://www.protondb.com/app/221100). 
+This is handled automatically by DZGUI if you just choose to run the application out of the box.
 
 Ephemeral method:
 ```
@@ -122,7 +126,7 @@ image::https://github.com/aclist/dztui/raw/testing/images/tutorial/01.png[01,500
 
 ==== Controller layout
 
-An official controller layout for Steam Deck is available in the Steam community layouts section. Search for "DZGUI Official Config" to download it. Long-press the View button and Select button (☰) to toggle D-pad navigation. You can navigate through menus using the D-pad and use A/B to respectively confirm selections and go back.
+An official controller layout for Steam Deck is available in the Steam community layouts section. Search for "DZGUI Official Config" to download it. Long-press the View button and Select button (☰) to toggle D-pad navigation. This creates an additional layer that lets you navigate through menus using the D-pad and A/B to respectively confirm selections and go back. Remember to toggle this layer off again after launching your game to revert back to the master layer.
 
 ==== Artwork
 
@@ -203,7 +207,7 @@ $HOME/.config/dztui/dztuirc.old
 ```
 
 == Usage
-Select <<Launch server list>> to fetch details for the server IDs you provided. Select the server you wish to connect to and click OK. 
+Select <<My servers>> to fetch details for the server IDs you provided. Select the server you wish to connect to and click OK. 
 
 DZGUI will check the server's modset against your local mods. If you are missing any, it will prompt you to download them through the Steam Workshop and open a window in the background in the system browser.
 
@@ -215,7 +219,60 @@ Once all of the mods are downloaded and staged, DZGUI will notify you that it is
 
 == Menu options
 
-==== Launch server list
+==== Server browser
+The server browser retrieves and lists all publicly broadcasting servers (including official ones) in a table.
+These servers can be filtered by various parameters in order to display a more granular result.
+
+After a server is selected from the list, the application continues to the mod validation step.
+
+In order to use this feature, you must have a https://steamcommunity.com/dev/apikey[Steam API key]. You will be asked for a unique URL for your app when registering. 
+Since this key is for a personal use application and does not actually call back anywhere, set a generic local identifier here like "127.0.0.1".
+
+You will be prompted to insert this key into the app when launching the server browser for the first time.
+
+[NOTE]
+It is not currently possible to save servers from the full server browser.
+
+===== Filters
+
+[%autowidth]
+The server browser exposes the following filters. These options can be combined.
+
+Untick filters to exclude those matches from the returned results. The "All maps" and "Keyword search" filters have special behavior (see below).
+You must have a minimum of one filter active to return any results.
+
+|===
+|Filter|Usage
+
+|All maps|Return all available map types being served. 
+Note: disabling this option will present a list from which you can select one specific map type (e.g., namalsk)
+|Daytime|Include servers with gametime between 0600 and 1659
+|Nighttime|Include servers with gametime between 1700 and 0559
+|Empty|Include servers with 0 current players
+|Full|Include servers at maximum capacity
+|Low population|Include servers with fewer than 10 players online
+|Non-ASCII titles|Include servers with special symbols, Unicode, or text in the title. 
+Note: disabling this filter will also exclude CJK languages, Cyrillic, and other special character sets.
+|Keyword|Select this option to filter by server titles matching a specific word or phrase (case insensitive)
+|===
+
+===== Table details
+After retrieval, the browser presents a table of results with the following parameters.
+Due to the density of information, the table will try to render at a minimum of 1920x1080 on a desktop or at fullscreen on a Steam Deck.
+
+- Total matches/total servers queried
+- Total players online on all servers
+- Map name
+- Server title
+- Gametime: the in-game time
+- Players: this is zero-padded for sorting purposes
+- Max players: this is zero-padded for sorting purposes
+- Distance: the physical distance to the server in kilometers is calculated by geolocation
+- IP: the IP address and port
+- Qport: the query port used to retrieve metadata and rules
+
+
+==== My servers
 Fetches detailed server information on the list of servers saved in the config file. This is the main place you interact with DZGUI when choosing a server from your list. These details are:
 
 - **Server**: name of the server, truncated to 50 chars
@@ -232,14 +289,14 @@ Bypasses the server list and quick-connects to a single favorite server specifie
 
 ==== Connect by IP
 
-Instead of relying on server IDs, returns the list of servers behind a given IP. Provide only the IP; no port is necessary. This returns the server metadata for you to verify before connecting.
+Instead of relying on server IDs, returns the list of maps behind a given IP. Provide only the IP; no port is necessary. This returns the server metadata for you to verify before connecting.
 
 If there are multiple maps hosted behind an IP (e.g. different maps on varying ports), the application will list all of them.
 
 In order to use this feature, you must have a https://steamcommunity.com/dev/apikey[Steam API key]. You will be asked for a unique URL for your app when registering. 
 Since this key is for a personal use application and does not actually call back anywhere, set a generic local identifier here like "127.0.0.1".
 
-Once configured, you can insert this key in the app when launching the "Connect by IP" feature for the first time.
+You will be prompted to insert this key into the app when launching the "Connect by IP" feature for the first time.
 
 ==== Add server by ID
 Prompts you to add servers to the config file by ID. An indefinite number of servers can be added. These will be listed when using the <<Launch server list>> option.
@@ -271,12 +328,15 @@ If enabled, this menu contains a sub-menu with various advanced features, enumer
 ===== Toggle branch
 Used to toggle the branch to fetch DZGUI from between `stable` and `testing`. The app ships with the stable branch enabled, with the testing branch being used to elaborate various experimental features.
 
+===== Generate debug log
+Writes a list of your current settings to a local file that can be pasted into bug reports.
+
 == Config file key/value pairs
 Under normal usage, these values are populated and toggled automatically in-app. This config file is partially compatible DZTUI.
 
 [%autowidth]
 |===
-|key|value
+|Key|Value
 
 |`api_key`|the API key generated at BattleMetrics. See <<Setup>>
 |`whitelist`|comma-separated list of server IDs from BattleMetrics; integer-values only
