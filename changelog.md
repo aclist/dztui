@@ -5,7 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
-## [2.7.0-rc.24] 2022-10-03
+## [2.7.0-rc.26] 2022-10-04
+### Fixed
+- Delete server list array not being emptied when going back to main menu
+
 ### Added
 - Progress bars when downloading updates
 ### Changed

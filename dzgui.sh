@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.25
+version=2.7.0-rc.26
 
 aid=221100
 game="dayz"
@@ -527,7 +527,7 @@ fetch_ip_metadata(){
 test_steam_api(){
 	local code=$(curl -ILs "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api" \
 		| grep -E "^HTTP")
-	[[ $code =~ 403 ]] && { echo 403 >> logs; return 1; }
+	[[ $code =~ 403 ]] && return 1
 }
 add_steam_api(){
 		[[ ! $(test_steam_api) ]] && return 1
@@ -713,7 +713,7 @@ populate(){
 			set_header ${FUNCNAME[0]}
 		fi
 		rc=$?
-		if [[ $rc -eq 0 ]]; then 
+		if [[ $rc -eq 0 ]]; then
 			if [[ -z $sel ]]; then
 				warn "No item was selected."
 			else
@@ -809,7 +809,7 @@ debug_menu(){
 }
 query_and_connect(){
 	query_api
-	parse_json 
+	parse_json
 	#TODO: create logger function
 	if [[ ! $delete -eq 1 ]]; then
 		echo "[DZGUI] Checking response time of servers"
@@ -1161,12 +1161,12 @@ page_through(){
 parse_json(){
 	page=$(echo "$list_response" | jq -r '.links.next?')
 	if [[ $first_entry -eq 1 ]]; then
-		list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
+		local list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
 		idarr+=("$list")
 		first_entry=0
 	fi
 	if [[ "$page" != "null" ]]; then
-		list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
+		local list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
 		idarr+=("$list")
 		page_through
 	else
@@ -1185,6 +1185,7 @@ check_ping(){
 	fi
 }
 create_array(){
+	rows=()
 	list=$(cat $tmp) 
 	#TODO: improve error handling for null values
 	lc=1
@@ -1215,9 +1216,9 @@ create_array(){
 			declare -g -a rows=("${rows[@]}" "$name" "$ip" "$players" "$time" "$stat" "$id" "$ping")
 		fi
 		let lc++
-	done <<< "$list" 
+	done <<< "$list"
 
-	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp 
+	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp
 }
 set_fav(){
 	#TODO: test API key here and return errors
