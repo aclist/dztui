@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0-rc.26
+version=2.8.0-rc.1
 
 aid=221100
 game="dayz"
@@ -409,7 +409,6 @@ passed_mod_check(){
 	legacy_symlinks
 	symlinks
 	echo "100"
-	launch
 
 }
 connect(){
@@ -438,6 +437,7 @@ connect(){
 		manual_mod_install
 	else
 		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+		launch
 	fi
 }
 fetch_mods(){
