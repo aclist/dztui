@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.0
+version=2.7.1
 
 aid=221100
 game="dayz"
@@ -409,7 +409,6 @@ passed_mod_check(){
 	legacy_symlinks
 	symlinks
 	echo "100"
-	launch
 
 }
 connect(){
@@ -438,6 +437,7 @@ connect(){
 		manual_mod_install
 	else
 		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+		launch
 	fi
 }
 fetch_mods(){
@@ -626,7 +626,7 @@ concat_mods(){
 launch(){
 	mods=$(concat_mods)
 	if [[ $debug -eq 1 ]]; then
-		launch_options="steam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro \"-mod=$mods\""
+		launch_options="steam -applaunch $aid -connect=$ip -nolauncher -nosplash -name=$name -skipintro \"-mod=$mods\""
 		print_launch_options="$(printf "This is a dry run.\nThese options would have been used to launch the game:\n\n$launch_options\n" | fold -w 60)"
 		zenity --question --title="DZGUI" --ok-label="Write to file" --cancel-label="Back"\
 			--text="$print_launch_options" 2>/dev/null
