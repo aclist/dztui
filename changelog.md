@@ -7,7 +7,7 @@
 
 ## [2.7.1] 2022-10-05
 ### Fixed
-- Server launch not kicking off after symlink creation
+- Game launch not kicking off after symlink creation
 
 ## [2.7.0] 2022-10-04
 ### Added
