@@ -170,6 +170,9 @@ seen_news="$seen_news"
 
 #Steam API key
 steam_api="$steam_api"
+
+#Terminal emulator
+term="$term"
 	END
 }
 write_desktop_file(){
@@ -347,6 +350,47 @@ steam_deck_mods(){
 		compare
 	done
 }
+set_term(){
+	local term="$1"
+	local tterm="term=\"$term\""
+	mv $config_file ${config_path}dztuirc.old
+	nr=$(awk '/term=/ {print NR}' ${config_path}dztuirc.old)
+	awk -v "var=$tterm" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
+	printf "[DZGUI] Set term to '$term'\n"
+	source $config_file
+}
+sel_term(){
+	#only terminals known to support -e flag
+	if [[ $is_steam_deck -eq 1 ]]; then
+		set_term konsole
+		return 0
+	fi
+	for i in "$TERMINAL" urxvt alacritty konsole gnome-terminal terminator xfce4-terminal xterm st tilix; do
+		[[ $(command -v $i) ]] && terms+=($i)
+	done
+	#FIXME: if no terms, error
+	local terms=$(printf "%s\n" "${terms[@]}" | sort -u)
+	term=$(echo "$terms" | zenity --list --column=Terminal --height=800 --width=1200 --text="Select your preferred terminal emulator to run steamcmd (setting will be saved)" --title=DZGUI)
+}
+auto_mod_install(){
+#	disksize=$(df $staging_dir --output=avail | tail -n1)
+#	bytewise=$((disksize * 1024))
+#	hr=$(echo $(numfmt --to=iec --format "%8.1f" $bytewise $totalmodsize) | sed 's/ /\//')
+#	if [[ $totalmodsize -gt $bytewise ]]; then printf "[ERROR] Not enough space in /tmp to automatically stage mods: %s\n" $hr
+	cmd=$(printf "%q " "$@")
+	if [[ -z "$term" ]]; then
+		sel_term && set_term "$term"
+	fi
+	echo "[DZGUI] Kicking off auto mod script"
+	$term -e bash -c "/$helpers_path/scmd.sh $cmd"
+	compare
+	if [[ -z $diff ]]; then
+		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+	else
+		warn "Auto mod installation failed or some mods missing.\nReverting to manual mode."
+		return 1
+	fi
+}
 manual_mod_install(){
 	l=0
 	if [[ $is_steam_deck -eq 0 ]]; then
@@ -435,7 +479,9 @@ connect(){
 	[[ $rc -eq 1 ]] && return
 	compare
 	if [[ -n $diff ]]; then
-		manual_mod_install
+		auto_mod_install "$diff"
+		rc=$?
+		[[ $rc -eq 1 ]] && manual_mod_install
 	else
 		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	fi
@@ -591,6 +637,11 @@ query_defunct(){
 		curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded" -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
 	}
 	readarray -t newlist <<< $(post | jq -r '.[].publishedfiledetails[] | select(.result==1) .publishedfileid')
+	#FIXME:
+	#result=$(post | jq -r '.[].publishedfiledetails[] | select(.result==1) | "\(.file_size) \(.publishedfileid)"')
+	#readarray -t newlist <<< $(echo -e "$result" | awk '{print $2}')
+	#totalmodsize=$(echo -e "$result" | awk '{s+=$1}END{print s}')
+	#prompt to proceed anyway
 }
 validate_mods(){
 	url="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -1289,7 +1340,7 @@ enforce_dl(){
 	download_new_version > >(zenity --progress --pulsate --auto-close --no-cancel --width=500)
 }
 prompt_dl(){
-	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t$branch\nYour version\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
+	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		return
