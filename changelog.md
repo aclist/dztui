@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.7.1] 2022-10-05
+### Fixed
+- Server launch not kicking off after symlink creation
+
 ## [2.7.0] 2022-10-04
 ### Added
 - Server browser and geolocation algorithm
