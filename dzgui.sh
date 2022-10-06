@@ -1348,7 +1348,7 @@ enforce_dl(){
 	download_new_version > >(zenity --progress --pulsate --auto-close --no-cancel --width=500)
 }
 prompt_dl(){
-	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t$branch\nYour version\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
+	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		return
