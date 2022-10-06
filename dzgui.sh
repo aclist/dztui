@@ -173,6 +173,15 @@ steam_api="$steam_api"
 
 #Terminal emulator
 term="$term"
+<<<<<<< Updated upstream
+=======
+
+#Auto-install mods
+auto_install="$auto_install"
+
+#Automod staging directory
+staging_dir="/tmp"
+>>>>>>> Stashed changes
 	END
 }
 write_desktop_file(){
@@ -360,11 +369,18 @@ set_term(){
 	source $config_file
 }
 sel_term(){
+<<<<<<< Updated upstream
 	#only terminals known to support -e flag
+=======
+>>>>>>> Stashed changes
 	if [[ $is_steam_deck -eq 1 ]]; then
 		set_term konsole
 		return 0
 	fi
+<<<<<<< Updated upstream
+=======
+	#only terminals known to support -e flag
+>>>>>>> Stashed changes
 	for i in "$TERMINAL" urxvt alacritty konsole gnome-terminal terminator xfce4-terminal xterm st tilix; do
 		[[ $(command -v $i) ]] && terms+=($i)
 	done
@@ -373,16 +389,24 @@ sel_term(){
 	term=$(echo "$terms" | zenity --list --column=Terminal --height=800 --width=1200 --text="Select your preferred terminal emulator to run steamcmd (setting will be saved)" --title=DZGUI)
 }
 auto_mod_install(){
+<<<<<<< Updated upstream
 #	disksize=$(df $staging_dir --output=avail | tail -n1)
 #	bytewise=$((disksize * 1024))
 #	hr=$(echo $(numfmt --to=iec --format "%8.1f" $bytewise $totalmodsize) | sed 's/ /\//')
 #	if [[ $totalmodsize -gt $bytewise ]]; then printf "[ERROR] Not enough space in /tmp to automatically stage mods: %s\n" $hr
+=======
+	[[ ! $auto_install -eq 1 ]] && return 1
+>>>>>>> Stashed changes
 	cmd=$(printf "%q " "$@")
 	if [[ -z "$term" ]]; then
 		sel_term && set_term "$term"
 	fi
 	echo "[DZGUI] Kicking off auto mod script"
+<<<<<<< Updated upstream
 	$term -e bash -c "/$helpers_path/scmd.sh $cmd"
+=======
+	$term -e bash -c "/$helpers_path/scmd.sh $totalmodsize $cmd"
+>>>>>>> Stashed changes
 	compare
 	if [[ -z $diff ]]; then
 		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
@@ -636,12 +660,19 @@ query_defunct(){
 	post(){
 		curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded" -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
 	}
+<<<<<<< Updated upstream
 	readarray -t newlist <<< $(post | jq -r '.[].publishedfiledetails[] | select(.result==1) .publishedfileid')
 	#FIXME:
 	#result=$(post | jq -r '.[].publishedfiledetails[] | select(.result==1) | "\(.file_size) \(.publishedfileid)"')
 	#readarray -t newlist <<< $(echo -e "$result" | awk '{print $2}')
 	#totalmodsize=$(echo -e "$result" | awk '{s+=$1}END{print s}')
 	#prompt to proceed anyway
+=======
+	result=$(post | jq -r '.[].publishedfiledetails[] | select(.result==1) | "\(.file_size) \(.publishedfileid)"')
+	totalmodsize=$(echo -e "$result" | awk '{s+=$1}END{print s}')
+	readarray -t newlist <<< $(echo -e "$result" | awk '{print $2}')
+	#readarray -t newlist <<< $(post | jq -r '.[].publishedfiledetails[] | select(.result==1) .publishedfileid')
+>>>>>>> Stashed changes
 }
 validate_mods(){
 	url="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -840,10 +871,15 @@ generate_log(){
 	$(list_mods)
 	DOC
 }
+toggle_automods(){
+	[[ $auto_install -eq 1 ]] && #print warning message about credentials etc.
+	:
+}
 debug_menu(){
 	debug_list=(
 		"Toggle branch"
 		"Generate debug log"
+		"Toggle auto-mod install"
 		)
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
@@ -856,6 +892,8 @@ debug_menu(){
 		generate_log > "$source_dir/log"
 		printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
 		zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
+	elif [[ $debug_sel == "${debug_list[2]}" ]]; then
+		toggle_automods
 	fi
 }
 query_and_connect(){
