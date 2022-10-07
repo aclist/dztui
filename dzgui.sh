@@ -180,7 +180,7 @@ term="$term"
 auto_install="$auto_install"
 
 #Automod staging directory
-staging_dir="/tmp"
+staging_dir="$staging_dir"
 	END
 }
 write_desktop_file(){
@@ -378,19 +378,20 @@ sel_term(){
 	done
 	#FIXME: if no terms, error
 	local terms=$(printf "%s\n" "${terms[@]}" | sort -u)
-	term=$(echo "$terms" | zenity --list --column=Terminal --height=800 --width=1200 --text="Select your preferred terminal emulator to run steamcmd (setting will be saved)" --title=DZGUI)
+	term=$(echo "$terms" | zenity --list --column=Terminal --height=800 --width=1200 --text="Select your preferred terminal emulator to run steamcmd (setting will be saved)" --title=DZGUI 2>/dev/null)
 }
 auto_mod_install(){
-	[[ ! $auto_install -eq 1 ]] && return 1
 	cmd=$(printf "%q " "$@")
 	if [[ -z "$term" ]]; then
 		sel_term && set_term "$term"
 	fi
+	[[ -z "$term" ]] && return 1
 	echo "[DZGUI] Kicking off auto mod script"
 	$term -e bash -c "/$helpers_path/scmd.sh $totalmodsize $cmd"
 	compare
 	if [[ -z $diff ]]; then
 		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+		launch
 	else
 		warn "Auto mod installation failed or some mods missing.\nReverting to manual mode."
 		return 1
@@ -648,7 +649,6 @@ query_defunct(){
 	result=$(post | jq -r '.[].publishedfiledetails[] | select(.result==1) | "\(.file_size) \(.publishedfileid)"')
 	totalmodsize=$(echo -e "$result" | awk '{s+=$1}END{print s}')
 	readarray -t newlist <<< $(echo -e "$result" | awk '{print $2}')
-	#readarray -t newlist <<< $(post | jq -r '.[].publishedfiledetails[] | select(.result==1) .publishedfileid')
 }
 validate_mods(){
 	url="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -849,8 +849,38 @@ generate_log(){
 	$(list_mods)
 	DOC
 }
+automods_prompt(){
+cat <<- HERE
+
+Auto-mod installation set to ON.
+
+READ THIS FIRST:
+With this setting on, DZGUI will attempt to download and prepare mods using Valve's steamcmd tool.
+
+The first time this process is run, DZGUI will ask you to select a terminal emulator of your preference to spawn the installation routine. If you don't have a preference or don't know, you can pick any.
+
+Installation will kick off in a separate window and may ask you for input such as your sudo password in order to install system packages and create the steamcmd user.
+
+steamcmd itself will ask for your Steam credentials. This information is used directly by Valve's steamcmd tool to authenticate your account and let you download mods headlessly. steamcmd is an official program created by Valve and communicates only with their servers.
+
+NOTE: it can take some time for large mods to download, and steamcmd will not inform you of activity until each one is finished.
+
+If your distribution is unsupported, you don't have enough disk space to stage all of the mods, or there are other problems, DZGUI will warn you and write a report to $HOME/.local/share/dzgui/helpers/SCMD.log. You can attach this file to a bug report.
+HERE
+}
 toggle_automods(){
-	:
+	mv $config_file ${config_path}dztuirc.old
+	local nr=$(awk '/auto_install=/ {print NR}' ${config_path}dztuirc.old)
+	if [[ $auto_install == "1"  ]]; then
+		auto_install="0"
+	else
+		auto_install="1"
+	fi
+	local flip_state="auto_install=\"$auto_install\""
+	awk -v "var=$flip_state" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
+	printf "[DZGUI] Toggled auto-mod install to '$auto_install'\n"
+	source $config_file
+	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)"
 }
 options_menu(){
 	debug_list=(
@@ -1302,6 +1332,7 @@ check_unmerged(){
 merge_config(){
 	source $config_file
 	mv $config_file ${config_path}dztuirc.old
+	[[ -z $staging_dir ]] && staging_dir="/tmp"
 	write_config > $config_file
 	printf "[DZGUI] Wrote new config file to %sdztuirc\n" $config_path
 	zenity --info --width 500 --title="DZGUI" --text="Wrote new config format to \n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
@@ -1497,7 +1528,7 @@ initial_setup(){
 	check_version
 	check_map_count
 	config
-#	fetch_scmd_helper
+	fetch_scmd_helper
 	run_varcheck
 	init_items
 	setup
