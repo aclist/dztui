@@ -17,7 +17,7 @@ check_config_msg="Check config values and restart."
 issues_url="https://github.com/aclist/dztui/issues"
 url_prefix="https://raw.githubusercontent.com/aclist/dztui"
 stable_url="$url_prefix/dzgui"
-testing_url="$url_prefix/testing"
+testing_url="$url_prefix/automods"
 releases_url="https://github.com/aclist/dztui/releases/download/browser"
 help_url="https://aclist.github.io/dzgui/dzgui"
 news_url="$testing_url/news"
@@ -212,15 +212,14 @@ freedesktop_dirs(){
 	fi
 }
 file_picker(){
-	#TODO: unimplemented
 	while true; do
 	local path=$(zenity --file-selection --directory 2>/dev/null)
-		if [[ -z "$path" ]] || [[ ! -d "$path" ]] || [[ ! "$path" =~ steamapps/common/DayZ ]]; then
-			continue
+		if [[ -z "$path" ]]; then
+			return
 		else
-			echo "[DZGUI]" Set path to $path
-			clean_path=$(echo -e "$path" | awk -F"/steamapps" '{print $1}')
-			steam_path="$clean_path"
+			echo "[DZGUI]" Set mod staging path to "$path"
+			staging_dir="$path"
+			write_config > $config_file
 			return
 		fi
 	done
@@ -684,7 +683,7 @@ concat_mods(){
 launch(){
 	mods=$(concat_mods)
 	if [[ $debug -eq 1 ]]; then
-		launch_options="steam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro \"-mod=$mods\""
+		launch_options="steam -applaunch $aid -connect=$ip -nolauncher -nosplash -name=$name -skipintro \"-mod=$mods\""
 		print_launch_options="$(printf "This is a dry run.\nThese options would have been used to launch the game:\n\n$launch_options\n" | fold -w 60)"
 		zenity --question --title="DZGUI" --ok-label="Write to file" --cancel-label="Back"\
 			--text="$print_launch_options" 2>/dev/null
@@ -863,7 +862,7 @@ Installation will kick off in a separate window and may ask you for input such a
 
 steamcmd itself will ask for your Steam credentials. This information is used directly by Valve's steamcmd tool to authenticate your account and let you download mods headlessly. steamcmd is an official program created by Valve and communicates only with their servers.
 
-NOTE: it can take some time for large mods to download, and steamcmd will not inform you of activity until each one is finished.
+NOTE: it can take some time for large mods to download, and steamcmd will not inform you of activity until each one is finished downloading.
 
 If your distribution is unsupported, you don't have enough disk space to stage all of the mods, or there are other problems, DZGUI will warn you and write a report to $HOME/.local/share/dzgui/helpers/SCMD.log. You can attach this file to a bug report.
 HERE
@@ -885,8 +884,10 @@ toggle_automods(){
 options_menu(){
 	debug_list=(
 		"Toggle branch"
+		"Toggle debug mode"
 		"Generate debug log"
 		"Toggle auto-mod install (experimental)"
+		"Set auto-mod staging directory"
 		)
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
@@ -894,13 +895,17 @@ options_menu(){
 		toggle_branch &&
 		check_version
 	elif [[ $debug_sel == "${debug_list[1]}" ]]; then
+		toggle_debug
+	elif [[ $debug_sel == "${debug_list[2]}" ]]; then
 		source_script=$(realpath "$0")
 		source_dir=$(dirname "$source_script")
 		generate_log > "$source_dir/log"
 		printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
 		zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
-	elif [[ $debug_sel == "${debug_list[2]}" ]]; then
+	elif [[ $debug_sel == "${debug_list[3]}" ]]; then
 		toggle_automods
+	elif [[ $debug_sel == "${debug_list[4]}" ]]; then
+		file_picker
 	fi
 }
 query_and_connect(){
@@ -1006,6 +1011,7 @@ check_geo_file(){
 	cd "$helpers_path"
 	md5sum -c "$sums_path" 2>/dev/null 1>&2
 	local res=$?
+	cd $OLDPWD
 	if [[ $res -eq 1 ]]; then
 		run(){
 		mkdir -p "$helpers_path"
@@ -1235,6 +1241,8 @@ main_menu(){
 			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
 		elif [[ $sel == "${items[14]}" ]]; then
 			options_menu
+			main_menu
+			return
 		else
 			warn "This feature is not yet implemented."
 		fi
@@ -1444,8 +1452,6 @@ toggle_debug(){
 	nr=$(awk '/debug=/ {print NR}' ${config_path}dztuirc.old)
 	if [[ $debug -eq 1 ]]; then
 		debug=0
-		items=()
-		init_items
 	else
 		debug=1
 	fi
