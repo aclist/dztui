@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.7.1
+version=2.7.2
 
 aid=221100
 game="dayz"
@@ -29,7 +29,7 @@ km_helper="$helpers_path/latlon"
 sums_path="$helpers_path/sums.md5"
 km_helper_url="$releases_url/latlon"
 db_file="$releases_url/ips.csv.gz"
-sums_url="$testing_url/helpers/sums.md5"
+sums_url="$stable_url/helpers/sums.md5"
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
