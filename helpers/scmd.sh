@@ -35,7 +35,7 @@ move_files(){
 auto_mod_download(){
 	while true; do
 	read -p 'Enter Steam username: ' steam_username
-	[[ -z $steam_username ]] && { fail "Username can't be empty\n"; continue; }
+	[[ -z $steam_username ]] && { fail "Username can't be empty"; continue; }
 	[[ -n $steam_username ]] && break
 	done
 	if [[ -d "$staging_dir/steamapps" ]]; then
@@ -58,7 +58,7 @@ auto_mod_download(){
 		if [[ $dist == "steamos" ]]; then
 			bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit"
 		else
-			sudo -iu $steamcmd_user bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit"
+			sudo -iu $steamcmd_user bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit" $steamcmd_user
 		fi
 		rc=$?
 		if [[ $rc -eq 0 ]]; then
