@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.1
+version=2.8.0-rc.3
 
 aid=221100
 game="dayz"
@@ -27,9 +27,11 @@ helpers_path="$sd_install_path/helpers"
 geo_file="$helpers_path/ips.csv"
 km_helper="$helpers_path/latlon"
 sums_path="$helpers_path/sums.md5"
+scmd_file="$helpers_path/scmd.sh"
 km_helper_url="$releases_url/latlon"
 db_file="$releases_url/ips.csv.gz"
 sums_url="$testing_url/helpers/sums.md5"
+scmd_url="$testing_url/helpers/scmd.sh"
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
@@ -90,10 +92,10 @@ items=(
 	"	Delete server"
 	"[Options]"
 	"	List installed mods"
-	"	Toggle debug mode"
 	"	Report bug (opens in browser)"
 	"	Help file (opens in browser)"
 	"	View changelog"
+	"	Advanced options"
 	)
 }
 warn_and_exit(){
@@ -481,9 +483,13 @@ connect(){
 	[[ $rc -eq 1 ]] && return
 	compare
 	if [[ -n $diff ]]; then
-		auto_mod_install "$diff"
-		rc=$?
-		[[ $rc -eq 1 ]] && manual_mod_install
+		if [[ $auto_install -eq 1 ]]; then
+			auto_mod_install "$diff"
+			rc=$?
+			[[ $rc -eq 1 ]] && manual_mod_install
+		else
+			manual_mod_install
+		fi
 	else
 		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 		launch
@@ -785,7 +791,7 @@ list_mods(){
 		for d in $(find $game_dir/* -maxdepth 1 -type l); do
 			dir=$(basename $d)
 			awk -v d=$dir -F\" '/name/ {printf "%s\t%s\n", $2,d}' "$gamedir"/$d/meta.cpp
-		done | sort 
+		done | sort
 	fi
 }
 fetch_query_ports(){
@@ -805,14 +811,16 @@ connect_to_fav(){
 
 }
 set_header(){
+	[[ $auto_install -eq 1 ]] && install_mode=auto
+	[[ $auto_install -eq 0 ]] && install_mode=manual
 	if [[ $1 == "delete" ]]; then
-		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Fav: $fav_label" \
+		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 			--separator="$separator" --print-column=1,2 --ok-label="Delete" 2>/dev/null)
 	elif [[ $1 == "populate" ]]; then
-		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Fav: $fav_label" \
+		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 			--separator="$separator" --print-column=2,6 2>/dev/null)
 	elif [[ $1 == "main_menu" ]]; then
-		sel=$(zenity $sd_res --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Fav: $fav_label" \
+		sel=$(zenity $sd_res --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" --hide-header "${items[@]}" 2>/dev/null)
 	fi
 }
@@ -842,14 +850,13 @@ generate_log(){
 	DOC
 }
 toggle_automods(){
-	[[ $auto_install -eq 1 ]] && #print warning message about credentials etc.
 	:
 }
-debug_menu(){
+options_menu(){
 	debug_list=(
 		"Toggle branch"
 		"Generate debug log"
-		"Toggle auto-mod install"
+		"Toggle auto-mod install (experimental)"
 		)
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
@@ -1148,15 +1155,14 @@ server_browser(){
 }
 
 mods_disk_size(){
-	printf "Total size on disk: %s" $(du -sh "$game_dir" | awk '{print $1}')
+	printf "Total size on disk: %s |" $(du -sh "$game_dir" | awk '{print $1}')
+	printf "Mods location: $steam_path/steamapps/workshop/content/221100"
+
 }
 
 main_menu(){
 	print_news
 	set_mode
-	if [[ $debug -eq 1 ]]; then
-		items+=("	Debug options")
-	fi
 	if [[ -n $fav ]]; then
 		items[7]="	Change favorite server"
 	fi
@@ -1192,17 +1198,13 @@ main_menu(){
 				--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
 				--print-column="" 2>/dev/null
 		elif [[ $sel == "${items[11]}" ]]; then
-			toggle_debug
-			main_menu
-			return
-		elif [[ $sel == "${items[12]}" ]]; then
 			report_bug
-		elif [[ $sel == "${items[13]}" ]]; then
+		elif [[ $sel == "${items[12]}" ]]; then
 			help_file
-		elif [[ $sel == "${items[14]}" ]]; then
+		elif [[ $sel == "${items[13]}" ]]; then
 			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
-		elif [[ $sel == "${items[15]}" ]]; then
-			debug_menu
+		elif [[ $sel == "${items[14]}" ]]; then
+			options_menu
 		else
 			warn "This feature is not yet implemented."
 		fi
@@ -1485,6 +1487,9 @@ lock(){
 		echo $$ > $config_path/.lockfile
 	fi
 }
+fetch_scmd_helper(){
+	curl -Ls "$scmd_url" > "$helpers_path"
+}
 initial_setup(){
 	echo "# Initial setup"
 	run_depcheck
@@ -1492,6 +1497,7 @@ initial_setup(){
 	check_version
 	check_map_count
 	config
+#	fetch_scmd_helper
 	run_varcheck
 	init_items
 	setup
