@@ -39,11 +39,11 @@ move_files(){
 	rm -r "$staging_dir"/steamapps
 }
 auto_mod_download(){
-	while true; do
-	read -p 'Enter Steam username: ' steam_username
-	[[ -z $steam_username ]] && { fail "Username can't be empty"; continue; }
-	[[ -n $steam_username ]] && break
-	done
+	#while true; do
+	#read -p 'Enter Steam username: ' steam_username
+	#[[ -z $steam_username ]] && { fail "Username can't be empty"; continue; }
+	#[[ -n $steam_username ]] && break
+	#done
 	if [[ -d "$staging_dir/steamapps" ]]; then
 		log "Sanitizing $staging_dir"
 		if [[ $dist == "steamos" ]]; then
@@ -66,7 +66,7 @@ auto_mod_download(){
 			bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit"
 		else
 			#sudo -iu $steamcmd_user bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit" $steamcmd_user
-			info "In order to cache your credentials, provide your Steam username and password to the steamcmd prompt in the format <login> <pass>, then type quit after successful login. Auto-mod installation will then headlessly invoke steamcmd and download the mods. Valve generates a long-lived token that should persist multiple logins, but you may be asked to periodically log in again if several days pass."
+			log "In order to cache your credentials, provide your Steam username and password to the steamcmd prompt in the format <login> <pass>, then type quit after successful login. Auto-mod installation will then headlessly invoke steamcmd and download the mods. Valve generates a long-lived token that should persist multiple logins, but you may be asked to periodically log in again if several days pass."
 			sudo -iu $steamcmd_user bash -c "$steamcmd_path"
 			rc=$?
 			[[ $rc -eq 0 ]] && sudo -iu $steamcmd_user bash -c "$steamcmd_path +runscript /tmp/run_scmd.txt"
