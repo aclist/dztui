@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.1
+version=2.8.0-rc.2
 
 aid=221100
 game="dayz"
@@ -170,6 +170,15 @@ seen_news="$seen_news"
 
 #Steam API key
 steam_api="$steam_api"
+
+#Terminal emulator
+term="$term"
+
+#Auto-install mods
+auto_install="$auto_install"
+
+#Automod staging directory
+staging_dir="/tmp"
 	END
 }
 write_desktop_file(){

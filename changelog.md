@@ -5,6 +5,14 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.8.0-rc.2] 2022-10-07
+### Added
+- Backend preparation for automods
+
+## [2.8.0-rc.1] 2022-10-06
+### Fixed
+- Bug with normal mode not launching after closing progress bar
+
 ## [2.7.0-rc.26] 2022-10-04
 ### Fixed
 - Delete server list array not being emptied when going back to main menu
