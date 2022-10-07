@@ -17,15 +17,12 @@ fail(){
 	printf "$(tput setaf 1)[FAIL]$(tput sgr0) %s\n" "$1"
 }
 steamcmd_modlist(){
+	printf "force_install_dir %s\n" "$staging_dir"
+	printf "login %s\n" "$steam_username"
 	for i in "${ids[@]}"; do
-	printf "workshop_download_item %s %s validate " $aid $i
+	printf "workshop_download_item %s %s validate\n" $aid $i
 	done
-}
-steamcmd_script(){
-	cat <<- HERE
-	$(steamcmd_modlist)
-	+quit
-	HERE
+	printf "quit"
 }
 move_files(){
 	printf "\n"
@@ -38,12 +35,48 @@ move_files(){
 	cp -R "$staging_dir"/steamapps/workshop/content/$aid/* "$workshop_dir"
 	rm -r "$staging_dir"/steamapps
 }
+#tutorial(){
+#cat <<- HERE
+#
+#INSTRUCTIONS
+#
+#Keep this window adjacent to your terminal as a guide.
+#
+#1. In the steamcmd prompt, enter "login [id] [pass] [2FA]" (if applicable) 
+#and type Enter. E.g., if the user is Billy, pass is Banana, and 2FA token is 777:
+#
+#login Billy Banana 777 [Enter]
+#
+#2. Then enter: runscript /tmp/mods.txt and type Enter
+#
+#3. The auto-mod process will begin to headlessly download the mods.
+#
+#Valve uses a long-lived token to cache credentials, 
+#so you may be able to simply type [id] and "quit"
+#on subsequent invocations, but it expires after some time.
+#HERE
+#}
+#ctdw(){
+#	for((i=3;i>0;i--)); do
+#		printf  "[INFO] Downloading mods in %i\r" "$i"
+#		sleep 1s
+#	done
+#}
+test_dir(){
+	[[ $dist == "steamos" ]] && { staging_dir="/tmp"; return 0; }
+	sudo -u steam test -w "$staging_dir"
+	rc=$?
+	if [[ $rc -eq 1 ]]; then
+		fail "User '$steamcmd_user' does not have write access to $staging_dir. Reverting to /tmp"
+		staging_dir="/tmp"
+	fi
+}
 auto_mod_download(){
-	#while true; do
-	#read -p 'Enter Steam username: ' steam_username
-	#[[ -z $steam_username ]] && { fail "Username can't be empty"; continue; }
-	#[[ -n $steam_username ]] && break
-	#done
+	while true; do
+	read -p 'Enter Steam username: ' steam_username
+	[[ -z $steam_username ]] && { fail "Username can't be empty"; continue; }
+	[[ -n $steam_username ]] && break
+	done
 	if [[ -d "$staging_dir/steamapps" ]]; then
 		log "Sanitizing $staging_dir"
 		if [[ $dist == "steamos" ]]; then
@@ -55,24 +88,18 @@ auto_mod_download(){
 	fi
 		tput civis
 		[[ ${#ids[@]} -gt 1 ]] && s=s
-		log "Preparing to download ${#ids[@]} mod$s. This may take some time. Abort with Ctrl+c."
-		for((i=3;i>0;i--)); do
-			printf  "[INFO] Launching steamcmd in %i\r" "$i"
-			sleep 1s
-		done
 		tput cnorm
-		$(steamcmd_script) > "/tmp/run_scmd.txt"
+		test_dir
+		steamcmd_modlist > "/tmp/mods.txt"
+		log "Preparing to download ${#ids[@]} mod$s. This may take some time. Abort with Ctrl+c."
 		if [[ $dist == "steamos" ]]; then
-			bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit"
+			$steamcmd_path +runscript /tmp/mods.txt
 		else
-			#sudo -iu $steamcmd_user bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit" $steamcmd_user
-			log "In order to cache your credentials, provide your Steam username and password to the steamcmd prompt in the format <login> <pass>, then type quit after successful login. Auto-mod installation will then headlessly invoke steamcmd and download the mods. Valve generates a long-lived token that should persist multiple logins, but you may be asked to periodically log in again if several days pass."
-			sudo -iu $steamcmd_user bash -c "$steamcmd_path" 2>/dev/null
-			rc=$?
-			[[ $rc -eq 0 ]] && sudo -iu $steamcmd_user bash -c "$steamcmd_path +runscript /tmp/run_scmd.txt"
+			#sudo -iu $steamcmd_user bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit"
+			sudo -iu $steamcmd_user bash -c "$steamcmd_path +runscript /tmp/mods.txt"
 		fi
 		rc=$?
-		rm "/tmp/run_scmd.txt"
+		rm "/tmp/mods.txt"
 		if [[ $rc -eq 0 ]]; then
 			move_files
 		else
@@ -213,6 +240,7 @@ arch_install(){
 		[[ -d /tmp/steamcmd ]] && rm -rf /tmp/steamcmd
 		git clone https://aur.archlinux.org/steamcmd.git /tmp/steamcmd
 		cd /tmp/steamcmd && makepkg -si --noconfirm && cd $OLDPWD
+		#TODO: check symlink
 		log "Symlinking steamcmd"
 		sudo ln -s /usr/bin/steamcmd /home/steam/steamcmd
 		rm -rf /tmp/steamcmd
@@ -300,6 +328,8 @@ main(){
 	else
 		pass "All OK. Starting mod auto install process"
 		auto_mod_download
+		rc=$?
+		[[ $rc -eq 1 ]] && ret=1
 		return_to_dzg
 	fi
 }
