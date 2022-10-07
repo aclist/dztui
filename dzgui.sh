@@ -1519,7 +1519,7 @@ lock(){
 	fi
 }
 fetch_scmd_helper(){
-	curl -Ls "$scmd_url" > "$helpers_path"
+	curl -Ls "$scmd_url" > "$helpers_path/scmd.sh"
 }
 initial_setup(){
 	echo "# Initial setup"
