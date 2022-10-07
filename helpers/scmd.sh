@@ -18,8 +18,14 @@ fail(){
 }
 steamcmd_modlist(){
 	for i in "${ids[@]}"; do
-	printf "+workshop_download_item %s %s validate " $aid $i
+	printf "workshop_download_item %s %s validate " $aid $i
 	done
+}
+steamcmd_script(){
+	cat <<- HERE
+	$(steamcmd_modlist)
+	+quit
+	HERE
 }
 move_files(){
 	printf "\n"
@@ -55,12 +61,18 @@ auto_mod_download(){
 			sleep 1s
 		done
 		tput cnorm
+		$(steamcmd_script) > "/tmp/run_scmd.txt"
 		if [[ $dist == "steamos" ]]; then
 			bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit"
 		else
-			sudo -iu $steamcmd_user bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit" $steamcmd_user
+			#sudo -iu $steamcmd_user bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit" $steamcmd_user
+			info "In order to cache your credentials, provide your Steam username and password to the steamcmd prompt in the format <login> <pass>, then type quit after successful login. Auto-mod installation will then headlessly invoke steamcmd and download the mods. Valve generates a long-lived token that should persist multiple logins, but you may be asked to periodically log in again if several days pass."
+			sudo -iu $steamcmd_user bash -c "$steamcmd_path"
+			rc=$?
+			[[ $rc -eq 0 ]] && sudo -iu $steamcmd_user bash -c "$steamcmd_path +runscript /tmp/run_scmd.txt"
 		fi
 		rc=$?
+		rm "/tmp/run_scmd.txt"
 		if [[ $rc -eq 0 ]]; then
 			move_files
 		else
