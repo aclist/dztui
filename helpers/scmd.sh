@@ -152,7 +152,10 @@ check_user(){
 	done
 }
 generic_install(){
-	fail "Unrecognized OS: $distro. Please report this upstream for whitelisting."
+	fail "Unrecognized OS: $distro."
+	log "Please report this upstream for whitelisting and attach your SCMD.log"
+	log "Log file can be found at $HOME/.local/share/dzgui/helpers/SCMD.log"
+
 }
 fedora_install(){
 	#TODO
@@ -275,16 +278,15 @@ check_dist(){
 }
 return_to_dzg(){
 	if [[ $ret -eq 1 ]]; then
-		fail "Errors occurred."
+		fail "Errors occurred. Type any key to return to DZGUI and kick off manual install."
+		read -n1 key
+		case $key in
+			*) exit 1 ;;
+		esac
 	else
-		pass "Mods installed successfully."
+		$(cd $HOME/.local/share/dzgui/helpers; zenity --text-info --html --width=390 --height=452 --filename="d.html" 2>/dev/null)
+		return 0
 	fi
-#	read -n1 key
-#	case $key in
-#		*) exit 0 ;;
-#	esac
-	$(cd $HOME/.local/share/dzgui/helpers; zenity --text-info --html --width=390 --height=452 --filename="d.html" 2>/dev/null)
-	return 0
 }
 cleanup(){
 	tput cnorm
