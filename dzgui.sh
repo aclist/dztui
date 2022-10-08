@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.12
+version=2.8.0-rc.13
 
 aid=221100
 game="dayz"
@@ -354,7 +354,7 @@ steam_deck_mods(){
 			steam steam://url/CommunityFilePage/$next 2>/dev/null &
 			zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." --width=500 2>/dev/null
 		else
-			return
+			return 1
 		fi
 		compare
 	done
@@ -432,6 +432,8 @@ manual_mod_install(){
 		done
 	else
 		steam_deck_mods
+		rc=$?
+		[[ $rc -eq 1 ]] && return 1
 	fi
 	passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 }
