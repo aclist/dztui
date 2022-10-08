@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.2
+version=2.8.0-rc.3
 
 aid=221100
 game="dayz"
@@ -27,9 +27,13 @@ helpers_path="$sd_install_path/helpers"
 geo_file="$helpers_path/ips.csv"
 km_helper="$helpers_path/latlon"
 sums_path="$helpers_path/sums.md5"
+scmd_file="$helpers_path/scmd.sh"
 km_helper_url="$releases_url/latlon"
 db_file="$releases_url/ips.csv.gz"
 sums_url="$testing_url/helpers/sums.md5"
+scmd_url="$testing_url/helpers/scmd.sh"
+notify_url="$testing_url/helpers/d.html"
+notify_img_url="$testing_url/helpers/d.webp"
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
@@ -90,10 +94,10 @@ items=(
 	"	Delete server"
 	"[Options]"
 	"	List installed mods"
-	"	Toggle debug mode"
 	"	Report bug (opens in browser)"
 	"	Help file (opens in browser)"
 	"	View changelog"
+	"	Advanced options"
 	)
 }
 warn_and_exit(){
@@ -178,7 +182,7 @@ term="$term"
 auto_install="$auto_install"
 
 #Automod staging directory
-staging_dir="/tmp"
+staging_dir="$staging_dir"
 	END
 }
 write_desktop_file(){
@@ -210,15 +214,14 @@ freedesktop_dirs(){
 	fi
 }
 file_picker(){
-	#TODO: unimplemented
 	while true; do
 	local path=$(zenity --file-selection --directory 2>/dev/null)
-		if [[ -z "$path" ]] || [[ ! -d "$path" ]] || [[ ! "$path" =~ steamapps/common/DayZ ]]; then
-			continue
+		if [[ -z "$path" ]]; then
+			return
 		else
-			echo "[DZGUI]" Set path to $path
-			clean_path=$(echo -e "$path" | awk -F"/steamapps" '{print $1}')
-			steam_path="$clean_path"
+			echo "[DZGUI]" Set mod staging path to "$path"
+			staging_dir="$path"
+			write_config > $config_file
 			return
 		fi
 	done
@@ -356,6 +359,52 @@ steam_deck_mods(){
 		compare
 	done
 }
+set_term(){
+	local term="$1"
+	local tterm="term=\"$term\""
+	mv $config_file ${config_path}dztuirc.old
+	nr=$(awk '/term=/ {print NR}' ${config_path}dztuirc.old)
+	awk -v "var=$tterm" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
+	printf "[DZGUI] Set term to '$term'\n"
+	source $config_file
+}
+sel_term(){
+	if [[ $is_steam_deck -eq 1 ]]; then
+		set_term konsole
+		return 0
+	fi
+	#only terminals known to support -e flag
+	for i in "$TERMINAL" urxvt alacritty konsole gnome-terminal terminator xfce4-terminal xterm st tilix; do
+		[[ $(command -v $i) ]] && terms+=($i)
+	done
+	#FIXME: if no terms, error
+	local terms=$(printf "%s\n" "${terms[@]}" | sort -u)
+	term=$(echo "$terms" | zenity --list --column=Terminal --height=800 --width=1200 --text="Select your preferred terminal emulator to run steamcmd (setting will be saved)" --title=DZGUI 2>/dev/null)
+}
+calc_mod_sizes(){
+	for i in "$diff"; do
+	local mods+=$(grep -w "$i" /tmp/modsizes | awk '{print $1}')
+	done
+	totalmodsize=$(echo -e "${mods[@]}" | awk '{s+=$1}END{print s}')
+}
+auto_mod_install(){
+	cmd=$(printf "%q " "$@")
+	if [[ -z "$term" ]]; then
+		sel_term && set_term "$term"
+	fi
+	[[ -z "$term" ]] && return 1
+	echo "[DZGUI] Kicking off auto mod script"
+	calc_mod_sizes
+	$term -e bash -c "/$helpers_path/scmd.sh $totalmodsize $cmd"
+	compare
+	if [[ -z $diff ]]; then
+		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+		launch
+	else
+		warn "Auto mod installation failed or some mods missing.\nReverting to manual mode."
+		return 1
+	fi
+}
 manual_mod_install(){
 	l=0
 	if [[ $is_steam_deck -eq 0 ]]; then
@@ -443,7 +492,13 @@ connect(){
 	[[ $rc -eq 1 ]] && return
 	compare
 	if [[ -n $diff ]]; then
-		manual_mod_install
+		if [[ $auto_install -eq 1 ]]; then
+			auto_mod_install "$diff"
+			rc=$?
+			[[ $rc -eq 1 ]] && manual_mod_install
+		else
+			manual_mod_install
+		fi
 	else
 		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 		launch
@@ -599,7 +654,9 @@ query_defunct(){
 	post(){
 		curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded" -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
 	}
-	readarray -t newlist <<< $(post | jq -r '.[].publishedfiledetails[] | select(.result==1) .publishedfileid')
+	result=$(post | jq -r '.[].publishedfiledetails[] | select(.result==1) | "\(.file_size) \(.publishedfileid)"')
+	echo "$result" > /tmp/modsizes
+	readarray -t newlist <<< $(echo -e "$result" | awk '{print $2}')
 }
 validate_mods(){
 	url="https://steamcommunity.com/sharedfiles/filedetails/?id="
@@ -635,7 +692,7 @@ concat_mods(){
 launch(){
 	mods=$(concat_mods)
 	if [[ $debug -eq 1 ]]; then
-		launch_options="steam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro \"-mod=$mods\""
+		launch_options="steam -applaunch $aid -connect=$ip -nolauncher -nosplash -name=$name -skipintro \"-mod=$mods\""
 		print_launch_options="$(printf "This is a dry run.\nThese options would have been used to launch the game:\n\n$launch_options\n" | fold -w 60)"
 		zenity --question --title="DZGUI" --ok-label="Write to file" --cancel-label="Back"\
 			--text="$print_launch_options" 2>/dev/null
@@ -742,7 +799,7 @@ list_mods(){
 		for d in $(find $game_dir/* -maxdepth 1 -type l); do
 			dir=$(basename $d)
 			awk -v d=$dir -F\" '/name/ {printf "%s\t%s\n", $2,d}' "$gamedir"/$d/meta.cpp
-		done | sort 
+		done | sort
 	fi
 }
 fetch_query_ports(){
@@ -762,14 +819,16 @@ connect_to_fav(){
 
 }
 set_header(){
+	[[ $auto_install -eq 1 ]] && install_mode=auto
+	[[ $auto_install -eq 0 ]] && install_mode=manual
 	if [[ $1 == "delete" ]]; then
-		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Fav: $fav_label" \
+		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 			--separator="$separator" --print-column=1,2 --ok-label="Delete" 2>/dev/null)
 	elif [[ $1 == "populate" ]]; then
-		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Fav: $fav_label" \
+		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 			--separator="$separator" --print-column=2,6 2>/dev/null)
 	elif [[ $1 == "main_menu" ]]; then
-		sel=$(zenity $sd_res --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Fav: $fav_label" \
+		sel=$(zenity $sd_res --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" --hide-header "${items[@]}" 2>/dev/null)
 	fi
 }
@@ -798,10 +857,46 @@ generate_log(){
 	$(list_mods)
 	DOC
 }
-debug_menu(){
+automods_prompt(){
+cat <<- HERE
+
+Auto-mod installation set to ON.
+
+READ THIS FIRST:
+With this setting on, DZGUI will attempt to download and prepare mods using Valve's steamcmd tool.
+
+The first time this process is run, DZGUI will ask you to select a terminal emulator of your preference to spawn the installation routine. If you don't have a preference or don't know, you can pick any.
+
+Installation will kick off in a separate window and may ask you for input such as your sudo password in order to install system packages and create the steamcmd user.
+
+steamcmd itself will ask for your Steam credentials. This information is used directly by Valve's steamcmd tool to authenticate your account and let you download mods headlessly. steamcmd is an official program created by Valve and communicates only with their servers.
+
+NOTE: it can take some time for large mods to download, and steamcmd will not inform you of activity until each one is finished downloading.
+
+If your distribution is unsupported, you don't have enough disk space to stage all of the mods, or there are other problems, DZGUI will warn you and write a report to $HOME/.local/share/dzgui/helpers/SCMD.log. You can attach this file to a bug report.
+HERE
+}
+toggle_automods(){
+	mv $config_file ${config_path}dztuirc.old
+	local nr=$(awk '/auto_install=/ {print NR}' ${config_path}dztuirc.old)
+	if [[ $auto_install == "1"  ]]; then
+		auto_install="0"
+	else
+		auto_install="1"
+	fi
+	local flip_state="auto_install=\"$auto_install\""
+	awk -v "var=$flip_state" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
+	printf "[DZGUI] Toggled auto-mod install to '$auto_install'\n"
+	source $config_file
+	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)"
+}
+options_menu(){
 	debug_list=(
 		"Toggle branch"
+		"Toggle debug mode"
 		"Generate debug log"
+		"Toggle auto-mod install (experimental)"
+		"Set auto-mod staging directory [$staging_dir]"
 		)
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
@@ -809,11 +904,17 @@ debug_menu(){
 		toggle_branch &&
 		check_version
 	elif [[ $debug_sel == "${debug_list[1]}" ]]; then
+		toggle_debug
+	elif [[ $debug_sel == "${debug_list[2]}" ]]; then
 		source_script=$(realpath "$0")
 		source_dir=$(dirname "$source_script")
 		generate_log > "$source_dir/log"
 		printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
 		zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
+	elif [[ $debug_sel == "${debug_list[3]}" ]]; then
+		toggle_automods
+	elif [[ $debug_sel == "${debug_list[4]}" ]]; then
+		file_picker
 	fi
 }
 query_and_connect(){
@@ -919,6 +1020,7 @@ check_geo_file(){
 	cd "$helpers_path"
 	md5sum -c "$sums_path" 2>/dev/null 1>&2
 	local res=$?
+	cd $OLDPWD
 	if [[ $res -eq 1 ]]; then
 		run(){
 		mkdir -p "$helpers_path"
@@ -1098,15 +1200,14 @@ server_browser(){
 }
 
 mods_disk_size(){
-	printf "Total size on disk: %s" $(du -sh "$game_dir" | awk '{print $1}')
+	printf "Total size on disk: %s |" $(du -sh "$game_dir" | awk '{print $1}')
+	printf "Mods location: $steam_path/steamapps/workshop/content/221100"
+
 }
 
 main_menu(){
 	print_news
 	set_mode
-	if [[ $debug -eq 1 ]]; then
-		items+=("	Debug options")
-	fi
 	if [[ -n $fav ]]; then
 		items[7]="	Change favorite server"
 	fi
@@ -1142,17 +1243,15 @@ main_menu(){
 				--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
 				--print-column="" 2>/dev/null
 		elif [[ $sel == "${items[11]}" ]]; then
-			toggle_debug
+			report_bug
+		elif [[ $sel == "${items[12]}" ]]; then
+			help_file
+		elif [[ $sel == "${items[13]}" ]]; then
+			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
+		elif [[ $sel == "${items[14]}" ]]; then
+			options_menu
 			main_menu
 			return
-		elif [[ $sel == "${items[12]}" ]]; then
-			report_bug
-		elif [[ $sel == "${items[13]}" ]]; then
-			help_file
-		elif [[ $sel == "${items[14]}" ]]; then
-			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
-		elif [[ $sel == "${items[15]}" ]]; then
-			debug_menu
 		else
 			warn "This feature is not yet implemented."
 		fi
@@ -1250,6 +1349,7 @@ check_unmerged(){
 merge_config(){
 	source $config_file
 	mv $config_file ${config_path}dztuirc.old
+	[[ -z $staging_dir ]] && staging_dir="/tmp"
 	write_config > $config_file
 	printf "[DZGUI] Wrote new config file to %sdztuirc\n" $config_path
 	zenity --info --width 500 --title="DZGUI" --text="Wrote new config format to \n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
@@ -1298,7 +1398,7 @@ enforce_dl(){
 	download_new_version > >(zenity --progress --pulsate --auto-close --no-cancel --width=500)
 }
 prompt_dl(){
-	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t$branch\nYour version\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
+	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		return
@@ -1361,8 +1461,6 @@ toggle_debug(){
 	nr=$(awk '/debug=/ {print NR}' ${config_path}dztuirc.old)
 	if [[ $debug -eq 1 ]]; then
 		debug=0
-		items=()
-		init_items
 	else
 		debug=1
 	fi
@@ -1435,6 +1533,13 @@ lock(){
 		echo $$ > $config_path/.lockfile
 	fi
 }
+fetch_scmd_helper(){
+	mkdir -p "$helpers_path"
+	curl -Ls "$scmd_url" > "$helpers_path/scmd.sh"
+	chmod +x "$helpers_path/scmd.sh"
+	[[ ! -f "$helpers_path/d.html" ]] && curl -Ls "$notify_url" > "$helpers_path/d.html"
+	[[ ! -f "$helpers_path/d.webp" ]] && curl -Ls "$notify_img_url" > "$helpers_path/d.webp"
+}
 initial_setup(){
 	echo "# Initial setup"
 	run_depcheck
@@ -1442,6 +1547,7 @@ initial_setup(){
 	check_version
 	check_map_count
 	config
+	fetch_scmd_helper
 	run_varcheck
 	init_items
 	setup
