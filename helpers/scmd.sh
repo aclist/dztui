@@ -66,8 +66,6 @@ move_files(){
 #}
 test_dir(){
 	if [[ $dist == "steamos" ]]; then
-	       staging_dir="$HOME/.local/share/dzgui/mods"
-	       mkdir -p $staging_dir
 	       return 0
 	fi
 	sudo -u steam test -w "$staging_dir"
@@ -217,7 +215,7 @@ deck_install(){
 	pacman -Qi lib32-gcc-libs 2>/dev/null 1>&2
 	rc=$?
 	[[ ! $rc -eq 0 ]] && return 1
-	if [[ ! -f $HOME/.local/share/dzgui/helpers/steamcmd ]]; then
+	if [[ ! -f $HOME/.local/share/dzgui/helpers/steamcmd/steamcmd.sh ]]; then
 		local tarball="steamcmd_linux.tar.gz"
 		mkdir -p $HOME/.local/share/dzgui/helpers/steamcmd
 		curl -Ls "https://steamcdn-a.akamaihd.net/client/installer/$tarball" > $HOME/.local/share/dzgui/helpers/steamcmd/$tarball
@@ -313,6 +311,10 @@ abort(){
 	exit
 }
 check_disks(){
+	if [[ $dist == "steamos" ]]; then
+	       staging_dir="$HOME/.local/share/dzgui/mods"
+	       mkdir -p $staging_dir
+	fi
 	disksize=$(df $staging_dir --output=avail | tail -n1)
 	disk_bytewise=$((disksize * 1024))
 	hr=$(echo $(numfmt --to=iec --format "%.2f" $totalmodsize $disk_bytewise) | sed 's/ /\//')
