@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.15
+version=2.8.0-rc.16
 
 aid=221100
 game="dayz"
@@ -418,24 +418,34 @@ auto_mod_install(){
 }
 manual_mod_install(){
 	l=0
-	if [[ $is_steam_deck -eq 0 ]]; then
-		open_mod_links
-		until [[ -z $diff ]]; do
-			zenity --question --title="DZGUI" --ok-label="Next" --cancel-label="Cancel" --text="Opened mod links in browser.\nClick [Next] when all mods have been subscribed to.\nThis dialog may reappear if clicking [Next] too soon\nbefore mods are synchronized in the background." --width=500 2>/dev/null
-			rc=$?
-			if [[ $rc -eq 0 ]]; then
-			compare
-			open_mod_links
-		else
-			return
-			fi
+	for i in "$diff"; do
+	workshop_dir="$steam_path/steamapps/workshop/content/$aid"
+	steam "steam://url/CommunityFilePage/$i"
+		until [[ -d $workshop_dir/$i ]]; do
+		sleep 0.1s
 		done
-	else
-		steam_deck_mods
-		rc=$?
-		[[ $rc -eq 1 ]] && return 1
-	fi
-	passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+	done
+	compare
+	[[ -z $diff ]] && passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+	
+	#if [[ $is_steam_deck -eq 0 ]]; then
+	#	open_mod_links
+	#	until [[ -z $diff ]]; do
+	#		zenity --question --title="DZGUI" --ok-label="Next" --cancel-label="Cancel" --text="Opened mod links in browser.\nClick [Next] when all mods have been subscribed to.\nThis dialog may reappear if clicking [Next] too soon\nbefore mods are synchronized in the background." --width=500 2>/dev/null
+	#		rc=$?
+	#		if [[ $rc -eq 0 ]]; then
+	#		compare
+	#		open_mod_links
+	#	else
+	#		return
+	#		fi
+	#	done
+	#else
+	#	steam_deck_mods
+	#	rc=$?
+	#	[[ $rc -eq 1 ]] && return 1
+	#fi
+	#passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 }
 encode(){
 	echo "$1" | md5sum | cut -c -8

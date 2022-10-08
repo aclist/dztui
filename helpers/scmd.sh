@@ -298,14 +298,12 @@ return_to_dzg(){
 			cleanup
 	else
 		$(cd $HOME/.local/share/dzgui/helpers; zenity --text-info --html --width=390 --height=452 --filename="d.html" 2>/dev/null)
-		return 0
+		cleanup
 	fi
 }
 cleanup(){
 	tput cnorm
-	cp $helpers_path/SCMD.log $helpers_path/SCMD.log.bk
-	grep -v "Logging in user" $helpers_path/SCMD.log.bk > $helpers_path/SCMD.log
-	rm $helpers_path/SCMD.log.bk
+	sed -i "s/Logging in user '.*'/Logging in user XXX/" $helpers_path/SCMD.log
 	exit
 }
 abort(){
