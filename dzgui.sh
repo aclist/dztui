@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.18
+version=2.8.0-rc.19
 
 aid=221100
 game="dayz"
@@ -62,7 +62,7 @@ print_news(){
 #TODO: abstract zenity title params and dimensions
 
 declare -A deps
-deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [zenity]="3.42.1" [steam]="1.0.0")
+deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [zenity]="3.42.1" [steam]="1.0.0" [wmctrl]="1.07")
 changelog(){
 	if [[ $branch == "stable" ]]; then
 		md="https://raw.githubusercontent.com/aclist/dztui/dzgui/changelog.md"
@@ -291,6 +291,7 @@ run_depcheck(){
 	if [[ -z $(depcheck) ]]; then 
 		:
 	else	
+		echo "100"
 		zenity --warning --ok-label="Exit" --title="DZGUI" --text="$(depcheck)"
 		exit
 	fi
@@ -299,7 +300,7 @@ run_varcheck(){
 	source $config_file
 	workshop_dir="$steam_path/steamapps/workshop/content/$aid"
 	game_dir="$steam_path/steamapps/common/DayZ"
-	if [[ -z $(varcheck) ]]; then 
+	if [[ -z $(varcheck) ]]; then
 		:
 	else	
 		zenity --warning --width 500 --text="$(varcheck)" 2>/dev/null
@@ -1465,6 +1466,7 @@ check_version(){
 	if [[ $version == $upstream ]]; then
 		check_unmerged
 	else
+		echo "100"
 		echo "[DZGUI] Upstream ($upstream) != local ($version)"
 		if [[ $enforce_dl -eq 1 ]]; then
 			enforce_dl
@@ -1530,6 +1532,7 @@ check_map_count(){
 	count=1048576
 	echo "[DZGUI] Checking system map count"
 	if [[ $(sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -lt $count ]]; then 
+		echo "100"
 		map_warning=$(zenity --question --width 500 --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine. Increase map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null)
 		if [[ $? -eq 0 ]]; then
 			pass=$(zenity --password)
