@@ -82,6 +82,7 @@ auto_mod_download(){
 	[[ -z $steam_username ]] && { fail "Username can't be empty"; continue; }
 	[[ -n $steam_username ]] && break
 	done
+	test_dir
 	if [[ -d "$staging_dir/steamapps" ]]; then
 		log "Sanitizing $staging_dir"
 		if [[ $staging_dir == "/tmp" ]]; then
@@ -96,7 +97,6 @@ auto_mod_download(){
 		tput civis
 		[[ ${#ids[@]} -gt 1 ]] && s=s
 		tput cnorm
-		test_dir
 		log "Staging dir is $staging_dir"
 		steamcmd_modlist > "/tmp/mods.txt"
 		log "Preparing to download ${#ids[@]} mod$s. This may take some time. Abort with Ctrl+c."
