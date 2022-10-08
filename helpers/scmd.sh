@@ -85,7 +85,7 @@ auto_mod_download(){
 		if [[ $staging_dir == "/tmp" ]]; then
 			sudo chown -R $USER:$gid "$staging_dir"/steamapps
 		fi
-		rm -r "$staging_dir"/steamapps
+		sudo rm -rf "$staging_dir"/steamapps
 	fi
 		tput civis
 		[[ ${#ids[@]} -gt 1 ]] && s=s
