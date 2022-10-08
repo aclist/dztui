@@ -290,6 +290,13 @@ return_to_dzg(){
 		case $key in
 			*) exit 1 ;;
 		esac
+	elif [[ $dist == "steamos" ]]; then
+		pass "All OK. Returning to DZGUI."
+			for((i=3;i>0;i--)); do
+				printf  "Returning in %i\r" "$i"
+				sleep 1s
+			done
+			exit 0
 	else
 		$(cd $HOME/.local/share/dzgui/helpers; zenity --text-info --html --width=390 --height=452 --filename="d.html" 2>/dev/null)
 		return 0
