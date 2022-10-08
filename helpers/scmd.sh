@@ -297,6 +297,7 @@ abort(){
 	exit
 }
 check_disks(){
+	log "Staging dir is $staging_dir"
 	disksize=$(df $staging_dir --output=avail | tail -n1)
 	disk_bytewise=$((disksize * 1024))
 	hr=$(echo $(numfmt --to=iec --format "%.2f" $totalmodsize $disk_bytewise) | sed 's/ /\//')
