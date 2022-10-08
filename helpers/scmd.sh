@@ -152,7 +152,7 @@ check_user(){
 	done
 }
 generic_install(){
-	fail "Unrecognized OS: $distro."
+	fail "Unrecognized distro: $distro."
 	log "Please report this upstream for whitelisting and attach your SCMD.log"
 	log "Log file can be found at $HOME/.local/share/dzgui/helpers/SCMD.log"
 
