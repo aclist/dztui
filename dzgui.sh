@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.20
+version=2.8.0-rc.21
 
 aid=221100
 game="dayz"
@@ -345,21 +345,21 @@ open_mod_links(){
 	browser "$link_file" 2>/dev/null &
 
 }
-#steam_deck_mods(){	
-#	until [[ -z $diff ]]; do
-#		next=$(echo -e "$diff" | head -n1)
-#		zenity --question --ok-label="Open" --cancel-label="Cancel" --title="DZGUI" --text="Missing mods. Click [Open] to open mod $next in Steam Workshop and subscribe to it by clicking the green Subscribe button. After the mod is downloaded, return to this menu to continue validation." --width=500 2>/dev/null
-#		rc=$?
-#		if [[ $rc -eq 0 ]]; then
-#			echo "[DZGUI] Opening ${workshop}$next"
-#			steam steam://url/CommunityFilePage/$next 2>/dev/null &
-#			zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." --width=500 2>/dev/null
-#		else
-#			return 1
-#		fi
-#		compare
-#	done
-#}
+steam_deck_mods(){	
+	until [[ -z $diff ]]; do
+		next=$(echo -e "$diff" | head -n1)
+		zenity --question --ok-label="Open" --cancel-label="Cancel" --title="DZGUI" --text="Missing mods. Click [Open] to open mod $next in Steam Workshop and subscribe to it by clicking the green Subscribe button. After the mod is downloaded, return to this menu to continue validation." --width=500 2>/dev/null
+		rc=$?
+		if [[ $rc -eq 0 ]]; then
+			echo "[DZGUI] Opening ${workshop}$next"
+			steam steam://url/CommunityFilePage/$next 2>/dev/null &
+			zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." --width=500 2>/dev/null
+		else
+			return 1
+		fi
+		compare
+	done
+}
 set_term(){
 	local term="$1"
 	local tterm="term=\"$term\""
@@ -415,44 +415,53 @@ auto_mod_install(){
 		return 1
 	fi
 }
+test_display_mode(){
+	pgrep -a gamescope | grep -q "generate-drm-mode"
+	[[ $? -eq 0 ]] && gamemode=1
+}
 manual_mod_install(){
-	local ex="/tmp/dzc.tmp"
-	[[ -f $ex ]] && rm $ex
-	watcher(){	
-	readarray -t stage_mods <<< "$diff"
-	for((i=0;i<${#stage_mods[@]};i++)); do
-		[[ -f $ex ]] && return 1
-		local downloads_dir="$steam_path/steamapps/workshop/downloads/$aid"
-		local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
-		steam "steam://url/CommunityFilePage/${stage_mods[$i]}"
-		echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
-		sleep 1s
-		wmctrl -a "DZG Watcher"
-		until [[ -d $downloads_dir/${stage_mods[$i]} ]]; do
-			[[ -f $ex ]] && return 1
-			sleep 0.1s
-			if [[ -d $workshop_dir/${stage_mods[$i]} ]]; then
-				break
-			fi
-		done
-		wmctrl -a "DZG Watcher"
-		echo "# Steam is downloading ${stage_mods[$i]} (mod $((i+1)) of ${#stage_mods[@]})"
-		until [[ -d $workshop_dir/${stage_mods[$i]} ]]; do
-			[[ -f $ex ]] && return 1
-			sleep 0.1s
-			done
-		wmctrl -a "DZG Watcher"
-		echo "# ${stage_mods[$i]} moved to mods dir"
-	done
-	echo "100"
-	}
-	watcher > >(zenity --pulsate --progress --auto-close --title="DZG Watcher" --width=500 2>/dev/null; rc=$?; [[ $rc -eq 1 ]] && touch $ex)
-	compare
-	if [[ -z $diff ]]; then
-		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
-		launch
+	[[ $is_steam_deck -eq 1 ]] && test_display_mode
+	if [[ $gamemode -eq 1 ]]; then
+		steam_deck_mods
 	else
-		return 1
+		local ex="/tmp/dzc.tmp"
+		[[ -f $ex ]] && rm $ex
+		watcher(){	
+		readarray -t stage_mods <<< "$diff"
+		for((i=0;i<${#stage_mods[@]};i++)); do
+			[[ -f $ex ]] && return 1
+			local downloads_dir="$steam_path/steamapps/workshop/downloads/$aid"
+			local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
+			steam "steam://url/CommunityFilePage/${stage_mods[$i]}"
+			echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
+			sleep 1s
+			wmctrl -a "DZG Watcher"
+			until [[ -d $downloads_dir/${stage_mods[$i]} ]]; do
+				[[ -f $ex ]] && return 1
+				sleep 0.1s
+				if [[ -d $workshop_dir/${stage_mods[$i]} ]]; then
+					break
+				fi
+			done
+			wmctrl -a "DZG Watcher"
+			echo "# Steam is downloading ${stage_mods[$i]} (mod $((i+1)) of ${#stage_mods[@]})"
+			until [[ -d $workshop_dir/${stage_mods[$i]} ]]; do
+				[[ -f $ex ]] && return 1
+				sleep 0.1s
+				done
+			wmctrl -a "DZG Watcher"
+			echo "# ${stage_mods[$i]} moved to mods dir"
+		done
+		echo "100"
+		}
+		watcher > >(zenity --pulsate --progress --auto-close --title="DZG Watcher" --width=500 2>/dev/null; rc=$?; [[ $rc -eq 1 ]] && touch $ex)
+		compare
+		if [[ -z $diff ]]; then
+			passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+			launch
+		else
+			return 1
+		fi
 	fi
 }
 #	if [[ $is_steam_deck -eq 0 ]]; then
