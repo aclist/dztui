@@ -369,10 +369,6 @@ set_term(){
 	source $config_file
 }
 sel_term(){
-	if [[ $is_steam_deck -eq 1 ]]; then
-		set_term konsole
-		return 0
-	fi
 	#only terminals known to support -e flag
 	for i in "$TERMINAL" urxvt alacritty konsole gnome-terminal terminator xfce4-terminal xterm st tilix; do
 		[[ $(command -v $i) ]] && terms+=($i)
@@ -390,7 +386,12 @@ calc_mod_sizes(){
 auto_mod_install(){
 	cmd=$(printf "%q " "$@")
 	if [[ -z "$term" ]]; then
-		sel_term && set_term "$term"
+		if [[ $is_steam_deck -eq 1 ]]; then
+			set_term konsole
+			return 0
+		else
+			sel_term && set_term "$term"
+		fi
 	fi
 	[[ -z "$term" ]] && return 1
 	echo "[DZGUI] Kicking off auto mod script"
@@ -888,7 +889,7 @@ toggle_automods(){
 	awk -v "var=$flip_state" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
 	printf "[DZGUI] Toggled auto-mod install to '$auto_install'\n"
 	source $config_file
-	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)"
+	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)" --width=800
 }
 options_menu(){
 	debug_list=(
