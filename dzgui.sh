@@ -379,6 +379,12 @@ sel_term(){
 	local terms=$(printf "%s\n" "${terms[@]}" | sort -u)
 	term=$(echo "$terms" | zenity --list --column=Terminal --height=800 --width=1200 --text="Select your preferred terminal emulator to run steamcmd (setting will be saved)" --title=DZGUI 2>/dev/null)
 }
+calc_mod_sizes(){
+	for i in "$diff"; do
+	local mods+=$(grep "$i" /tmp/modsizes | awk '{print $1}')
+	done
+	totalmodsize=$(echo -e "${mods[@]}" | awk '{s+=$1}END{print s}')
+}
 auto_mod_install(){
 	cmd=$(printf "%q " "$@")
 	if [[ -z "$term" ]]; then
@@ -386,6 +392,7 @@ auto_mod_install(){
 	fi
 	[[ -z "$term" ]] && return 1
 	echo "[DZGUI] Kicking off auto mod script"
+	calc_mod_sizes
 	$term -e bash -c "/$helpers_path/scmd.sh $totalmodsize $cmd"
 	compare
 	if [[ -z $diff ]]; then
@@ -646,7 +653,7 @@ query_defunct(){
 		curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded" -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
 	}
 	result=$(post | jq -r '.[].publishedfiledetails[] | select(.result==1) | "\(.file_size) \(.publishedfileid)"')
-	totalmodsize=$(echo -e "$result" | awk '{s+=$1}END{print s}')
+	echo "$result" > /tmp/modsizes
 	readarray -t newlist <<< $(echo -e "$result" | awk '{print $2}')
 }
 validate_mods(){
