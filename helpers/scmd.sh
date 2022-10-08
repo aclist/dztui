@@ -99,6 +99,7 @@ auto_mod_download(){
 		[[ ${#ids[@]} -gt 1 ]] && s=s
 		tput cnorm
 		test_dir
+		log "Staging dir is $staging_dir"
 		steamcmd_modlist > "/tmp/mods.txt"
 		log "Preparing to download ${#ids[@]} mod$s. This may take some time. Abort with Ctrl+c."
 		if [[ $dist == "steamos" ]]; then
@@ -216,7 +217,6 @@ deck_install(){
 	pacman -Qi lib32-gcc-libs 2>/dev/null 1>&2
 	rc=$?
 	[[ ! $rc -eq 0 ]] && return 1
-	test_dir
 	if [[ ! -f $HOME/.local/share/dzgui/helpers/steamcmd ]]; then
 		local tarball="steamcmd_linux.tar.gz"
 		mkdir -p $HOME/.local/share/dzgui/helpers/steamcmd
@@ -306,7 +306,6 @@ abort(){
 	exit
 }
 check_disks(){
-	log "Staging dir is $staging_dir"
 	disksize=$(df $staging_dir --output=avail | tail -n1)
 	disk_bytewise=$((disksize * 1024))
 	hr=$(echo $(numfmt --to=iec --format "%.2f" $totalmodsize $disk_bytewise) | sed 's/ /\//')
