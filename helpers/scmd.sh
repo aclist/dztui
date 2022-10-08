@@ -216,6 +216,7 @@ deck_install(){
 	pacman -Qi lib32-gcc-libs 2>/dev/null 1>&2
 	rc=$?
 	[[ ! $rc -eq 0 ]] && return 1
+	test_dir
 	if [[ ! -f $HOME/.local/share/dzgui/helpers/steamcmd ]]; then
 		local tarball="steamcmd_linux.tar.gz"
 		mkdir -p $HOME/.local/share/dzgui/helpers/steamcmd
