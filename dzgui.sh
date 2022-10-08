@@ -896,7 +896,7 @@ options_menu(){
 		"Toggle debug mode"
 		"Generate debug log"
 		"Toggle auto-mod install (experimental)"
-		"Set auto-mod staging directory"
+		"Set auto-mod staging directory [$staging_dir]"
 		)
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
@@ -1534,6 +1534,7 @@ lock(){
 	fi
 }
 fetch_scmd_helper(){
+	mkdir -p "$helpers_path"
 	curl -Ls "$scmd_url" > "$helpers_path/scmd.sh"
 	chmod +x "$helpers_path/scmd.sh"
 	[[ ! -f "$helpers_path/d.html" ]] && curl -Ls "$notify_url" > "$helpers_path/d.html"
