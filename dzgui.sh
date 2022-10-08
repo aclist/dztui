@@ -370,7 +370,7 @@ set_term(){
 }
 sel_term(){
 	#only terminals known to support -e flag
-	for i in "$TERMINAL" urxvt alacritty konsole gnome-terminal terminator xfce4-terminal xterm st tilix; do
+	for i in "$TERMINAL" urxvt alacritty konsole gnome-terminal terminator xfce4-terminal xterm tilix; do
 		[[ $(command -v $i) ]] && terms+=($i)
 	done
 	#FIXME: if no terms, error
@@ -382,6 +382,14 @@ calc_mod_sizes(){
 	local mods+=$(grep -w "$i" /tmp/modsizes | awk '{print $1}')
 	done
 	totalmodsize=$(echo -e "${mods[@]}" | awk '{s+=$1}END{print s}')
+}
+term_params(){
+	case $term in
+		konsole) $term --hold -e "bash $helpers_path/scmd.sh $totalmodsize $1";;
+		urxvt) $term -e bash -c "/$helpers_path/scmd.sh $totalmodsize $1";;
+		alacritty) $term -e bash -c "/$helpers_path/scmd.sh $totalmodsize $1";;
+		terminator|xterm|tilix|xfce4-terminal) $term -e "bash $helpers_path/scmd.sh $totalmodsize $1";;
+	esac
 }
 auto_mod_install(){
 	cmd=$(printf "%q " "$@")
@@ -396,7 +404,9 @@ auto_mod_install(){
 	[[ -z "$term" ]] && return 1
 	echo "[DZGUI] Kicking off auto mod script"
 	calc_mod_sizes
-	$term -e bash -c "/$helpers_path/scmd.sh $totalmodsize $cmd"
+	term_params "$cmd"
+	#$term -e bash -c "/$helpers_path/scmd.sh $totalmodsize $cmd"
+#	$term -e "bash $helpers_path/scmd.sh $totalmodsize $cmd"
 	compare
 	if [[ -z $diff ]]; then
 		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
