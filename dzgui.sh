@@ -62,7 +62,7 @@ print_news(){
 #TODO: abstract zenity title params and dimensions
 
 declare -A deps
-deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [zenity]="3.42.1" [steam]="1.0.0" [wmctrl]="1.07")
+deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [zenity]="3.42.1" [steam]="1.0.0")
 changelog(){
 	if [[ $branch == "stable" ]]; then
 		md="https://raw.githubusercontent.com/aclist/dztui/dzgui/changelog.md"
