@@ -32,6 +32,8 @@ km_helper_url="$releases_url/latlon"
 db_file="$releases_url/ips.csv.gz"
 sums_url="$testing_url/helpers/sums.md5"
 scmd_url="$testing_url/helpers/scmd.sh"
+notify_url="$testing_url/helpers/d.html"
+notify_img_url="$testing_url/helpers/d.webp"
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
@@ -381,7 +383,7 @@ sel_term(){
 }
 calc_mod_sizes(){
 	for i in "$diff"; do
-	local mods+=$(grep "$i" /tmp/modsizes | awk '{print $1}')
+	local mods+=$(grep -w "$i" /tmp/modsizes | awk '{print $1}')
 	done
 	totalmodsize=$(echo -e "${mods[@]}" | awk '{s+=$1}END{print s}')
 }
@@ -1534,6 +1536,8 @@ lock(){
 fetch_scmd_helper(){
 	curl -Ls "$scmd_url" > "$helpers_path/scmd.sh"
 	chmod +x "$helpers_path/scmd.sh"
+	[[ ! -f "$helpers_path/d.html" ]] && curl -Ls "$notify_url" > "$helpers_path/d.html"
+	[[ ! -f "$helpers_path/d.webp" ]] && curl -Ls "$notify_img_url" > "$helpers_path/d.webp"
 }
 initial_setup(){
 	echo "# Initial setup"
