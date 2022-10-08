@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.7
+version=2.8.0-rc.8
 
 aid=221100
 game="dayz"
@@ -899,7 +899,9 @@ toggle_automods(){
 	awk -v "var=$flip_state" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
 	printf "[DZGUI] Toggled auto-mod install to '$auto_install'\n"
 	source $config_file
-	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)" --width=800
+	local big_prompt
+	[[ $is_steam_deck -eq 1 ]] && big_prompt="--width=800"
+	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)" $big_prompt
 }
 options_menu(){
 	debug_list=(
