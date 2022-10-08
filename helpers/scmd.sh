@@ -31,7 +31,11 @@ move_files(){
 		sudo chown -R $USER:$gid "$staging_dir"/steamapps
 	fi
 	cp -R "$staging_dir"/steamapps/workshop/content/$aid/* "$workshop_dir"
-	sudo rm -rf "$staging_dir"/steamapps
+	if [[ $dist == "steamos" ]]; then
+		rm -rf "$staging_dir"/steamapps
+	else
+		sudo rm -rf "$staging_dir"/steamapps
+	fi
 }
 #tutorial(){
 #cat <<- HERE
@@ -76,7 +80,7 @@ test_dir(){
 }
 auto_mod_download(){
 	while true; do
-	read -p 'Enter Steam username: ' steam_username
+	read -p 'Enter Steam login name: ' steam_username
 	[[ -z $steam_username ]] && { fail "Username can't be empty"; continue; }
 	[[ -n $steam_username ]] && break
 	done
@@ -85,7 +89,11 @@ auto_mod_download(){
 		if [[ $staging_dir == "/tmp" ]]; then
 			sudo chown -R $USER:$gid "$staging_dir"/steamapps
 		fi
-		sudo rm -rf "$staging_dir"/steamapps
+		if [[ $dist == "steamos" ]]; then
+			rm -rf "$staging_dir"/steamapps
+		else
+			sudo rm -rf "$staging_dir"/steamapps
+		fi
 	fi
 		tput civis
 		[[ ${#ids[@]} -gt 1 ]] && s=s
@@ -96,7 +104,6 @@ auto_mod_download(){
 		if [[ $dist == "steamos" ]]; then
 			$steamcmd_path +runscript /tmp/mods.txt
 		else
-			#sudo -iu $steamcmd_user bash -c "$steamcmd_path +force_install_dir $staging_dir +login $steam_username $(steamcmd_modlist) +quit"
 			sudo -iu $steamcmd_user bash -c "$steamcmd_path +runscript /tmp/mods.txt"
 		fi
 		rc=$?
@@ -206,7 +213,6 @@ deb_install(){
 
 }
 deck_install(){
-	#TODO: konsole input in game mode
 	pacman -Qi lib32-gcc-libs 2>/dev/null 1>&2
 	rc=$?
 	[[ ! $rc -eq 0 ]] && return 1
@@ -321,7 +327,6 @@ shift
 for i in $@; do
 	ids+=("$i")
 done
-sudo -v
 main(){
 	echo ""
 	echo "────────DZGUI automod helper────────"
