@@ -27,9 +27,7 @@ steamcmd_modlist(){
 move_files(){
 	printf "\n"
 	log "Moving mods from $staging_dir to $workshop_dir"
-	if [[ $dist == "steamos" ]]; then
-		chown -R $USER:$gid "$staging_dir"/steamapps
-	else
+	if [[ $staging_dir == "/tmp" ]]; then
 		sudo chown -R $USER:$gid "$staging_dir"/steamapps
 	fi
 	cp -R "$staging_dir"/steamapps/workshop/content/$aid/* "$workshop_dir"
@@ -63,12 +61,17 @@ move_files(){
 #	done
 #}
 test_dir(){
-	[[ $dist == "steamos" ]] && { staging_dir="/tmp"; return 0; }
+	if [[ $dist == "steamos" ]]; then
+	       staging_dir="$HOME/.local/share/dzgui/mods"
+	       mkdir -p $staging_dir
+	       return 0
+	fi
 	sudo -u steam test -w "$staging_dir"
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		fail "User '$steamcmd_user' does not have write access to $staging_dir. Reverting to /tmp"
 		staging_dir="/tmp"
+		return 0
 	fi
 }
 auto_mod_download(){
@@ -79,9 +82,7 @@ auto_mod_download(){
 	done
 	if [[ -d "$staging_dir/steamapps" ]]; then
 		log "Sanitizing $staging_dir"
-		if [[ $dist == "steamos" ]]; then
-			chown -R $USER:$gid "$staging_dir"/steamapps
-		else
+		if [[ $staging_dir == "/tmp" ]]; then
 			sudo chown -R $USER:$gid "$staging_dir"/steamapps
 		fi
 		rm -r "$staging_dir"/steamapps
@@ -274,14 +275,16 @@ check_dist(){
 }
 return_to_dzg(){
 	if [[ $ret -eq 1 ]]; then
-		fail "Errors occurred. Type any key to return to DZGUI and kick off manual install."
+		fail "Errors occurred."
 	else
-		pass "Mods installed successfully. Type any key to return to DZGUI."
+		pass "Mods installed successfully."
 	fi
-	read -n1 key
-	case $key in
-		*) exit 1 ;;
-	esac
+#	read -n1 key
+#	case $key in
+#		*) exit 0 ;;
+#	esac
+	zenity --text-info --title="DZGUI" --width=390 --height=452 --html --filename="$HOME/.local/share/dzgui/helpers/d.webp" --cancel-label="OK"
+	return 0
 }
 cleanup(){
 	tput cnorm
