@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.6
+version=2.8.0-rc.7
 
 aid=221100
 game="dayz"
@@ -101,15 +101,15 @@ items=(
 	)
 }
 warn_and_exit(){
-	zenity --info --title="DZGUI" --text="$1" --icon-name="dialog-warning" 2>/dev/null
+	zenity --info --title="DZGUI" --text="$1" --width=500 --icon-name="dialog-warning" 2>/dev/null
 	printf "[DZGUI] %s\n" "$check_config_msg"
 	exit
 }
 warn(){
-	zenity --info --title="DZGUI" --text="$1" --icon-name="dialog-warning" 2>/dev/null
+	zenity --info --title="DZGUI" --text="$1" --width=500 --icon-name="dialog-warning" 2>/dev/null
 }
 info(){
-	zenity --info --title="DZGUI" --text="$1" 2>/dev/null
+	zenity --info --title="DZGUI" --text="$1" --width=500 2>/dev/null
 }
 set_api_params(){
 	response=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "sort=-players" \
