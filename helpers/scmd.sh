@@ -283,7 +283,7 @@ return_to_dzg(){
 #	case $key in
 #		*) exit 0 ;;
 #	esac
-	zenity --text-info --title="DZGUI" --width=390 --height=452 --html --filename="$HOME/.local/share/dzgui/helpers/d.webp" --cancel-label="OK"
+	zenity --text-info --title="DZGUI" --width=390 --height=452 --html --filename="$HOME/.local/share/dzgui/helpers/d.html" --cancel-label="OK"
 	return 0
 }
 cleanup(){
