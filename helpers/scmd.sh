@@ -6,6 +6,7 @@ source $conf
 aid=221100
 steamcmd_user=steam
 workshop_dir="$steam_path/steamapps/workshop/content/$aid"
+helpers_path="$HOME/.local/share/dzgui/helpers"
 
 log(){
 	printf "$(tput setaf 3)[INFO]$(tput sgr0) %s\n" "$1"
@@ -160,7 +161,7 @@ check_user(){
 generic_install(){
 	fail "Unrecognized distro: $dist."
 	log "Please report this upstream for whitelisting and attach your SCMD.log"
-	log "Location: $HOME/.local/share/dzgui/helpers/SCMD.log"
+	log "Location: $helpers_path/SCMD.log"
 	return 1
 }
 fedora_install(){
@@ -286,7 +287,7 @@ return_to_dzg(){
 		fail "Errors occurred. Type any key to return to DZGUI and kick off manual install."
 		read -n1 key
 		case $key in
-			*) exit 1 ;;
+			*) cleanup ;;
 		esac
 	elif [[ $dist == "steamos" ]]; then
 		pass "All OK. Returning to DZGUI."
@@ -294,7 +295,7 @@ return_to_dzg(){
 				printf  "Returning in %i\r" "$i"
 				sleep 1s
 			done
-			exit 0
+			cleanup
 	else
 		$(cd $HOME/.local/share/dzgui/helpers; zenity --text-info --html --width=390 --height=452 --filename="d.html" 2>/dev/null)
 		return 0
@@ -302,6 +303,9 @@ return_to_dzg(){
 }
 cleanup(){
 	tput cnorm
+	cp $helpers_path/SCMD.log $helpers_path/SCMD.log.bk
+	grep -v "Logging in user" $helpers_path/SCMD.log.bk > $helpers_path/SCMD.log
+	rm $helpers_path/SCMD.log.bk
 	exit
 }
 abort(){
@@ -355,4 +359,5 @@ main(){
 }
 trap cleanup EXIT
 trap abort SIGINT
-main | tee -a SCMD.log
+main | tee -a $helpers_path/SCMD.log
+cleanup
