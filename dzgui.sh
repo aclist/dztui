@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.23
+version=2.8.0-rc.24
 
 aid=221100
 game="dayz"
@@ -934,7 +934,7 @@ generate_log(){
 automods_prompt(){
 cat <<- HERE
 
-Auto-mod installation set to ON.
+Auto-mod installation set to ON. This method is NOT supported in Game Mode (Steam Deck).
 
 READ THIS FIRST:
 With this setting on, DZGUI will attempt to download and prepare mods using Valve's steamcmd tool.
