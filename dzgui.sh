@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.24
+version=2.8.0-rc.25
 
 aid=221100
 game="dayz"
@@ -1491,7 +1491,7 @@ check_version(){
 	if [[ $version == $upstream ]]; then
 		check_unmerged
 	else
-		echo "100"
+#		echo "100"
 		echo "[DZGUI] Upstream ($upstream) != local ($version)"
 		if [[ $enforce_dl -eq 1 ]]; then
 			enforce_dl
