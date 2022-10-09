@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.21
+version=2.8.0-rc.22
 
 aid=221100
 game="dayz"
@@ -79,6 +79,13 @@ depcheck(){
 	for dep in "${!deps[@]}"; do
 		command -v $dep 2>&1>/dev/null || (printf "Requires %s >=%s\n" $dep ${deps[$dep]}; exit 1)
 	done
+}
+watcher_deps(){
+	if [[ ! $(command -v wmctrl) ]] || [[ ! $(command -v xdotool) ]]; then
+		echo "100"
+		warn "Requires wmctrl or xdotool"
+		exit 1
+	fi
 }
 init_items(){
 	#array order determines menu selector; this is destructive
@@ -419,6 +426,15 @@ test_display_mode(){
 	pgrep -a gamescope | grep -q "generate-drm-mode"
 	[[ $? -eq 0 ]] && gamemode=1
 }
+foreground(){
+	if [[ $(command -v wmctrl) ]]; then
+		wmctrl -a "DZG Watcher"
+	else
+		
+		local window_id=$(xdotool search --name "DZG Watcher")
+		xdotool windowactivate $window_id
+	fi
+}
 manual_mod_install(){
 	[[ $is_steam_deck -eq 1 ]] && test_display_mode
 	if [[ $gamemode -eq 1 ]]; then
@@ -435,7 +451,7 @@ manual_mod_install(){
 			steam "steam://url/CommunityFilePage/${stage_mods[$i]}"
 			echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
 			sleep 1s
-			wmctrl -a "DZG Watcher"
+			foreground
 			until [[ -d $downloads_dir/${stage_mods[$i]} ]]; do
 				[[ -f $ex ]] && return 1
 				sleep 0.1s
@@ -443,13 +459,13 @@ manual_mod_install(){
 					break
 				fi
 			done
-			wmctrl -a "DZG Watcher"
+			foreground
 			echo "# Steam is downloading ${stage_mods[$i]} (mod $((i+1)) of ${#stage_mods[@]})"
 			until [[ -d $workshop_dir/${stage_mods[$i]} ]]; do
 				[[ -f $ex ]] && return 1
 				sleep 0.1s
 				done
-			wmctrl -a "DZG Watcher"
+			foreground
 			echo "# ${stage_mods[$i]} moved to mods dir"
 		done
 		echo "100"
@@ -1605,6 +1621,7 @@ fetch_scmd_helper(){
 initial_setup(){
 	echo "# Initial setup"
 	run_depcheck
+	watcher_deps
 	check_architecture
 	check_version
 	check_map_count
