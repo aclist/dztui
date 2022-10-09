@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.22
+version=2.8.0-rc.23
 
 aid=221100
 game="dayz"
@@ -81,7 +81,7 @@ depcheck(){
 	done
 }
 watcher_deps(){
-	if [[ ! $(command -v wmctrl) ]] || [[ ! $(command -v xdotool) ]]; then
+	if [[ ! $(command -v wmctrl) ]] && [[ ! $(command -v xdotool) ]]; then
 		echo "100"
 		warn "Requires wmctrl or xdotool"
 		exit 1
@@ -1591,9 +1591,6 @@ while true; do
 	fi
 done
 }
-#cleanup(){
-#	rm $config_path/.lockfile
-#}
 lock(){
 	if [[ ! -f $config_path/.lockfile ]]; then
 		touch $config_path/.lockfile
