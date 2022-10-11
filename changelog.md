@@ -5,6 +5,21 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.0.0] 2022-10-12
+### Added
+- Foreground progress of manual mod subscriptions
+- Automatic mod helper through steamcmd
+- Forum link
+- Enforce Steam API
+### Dropped
+- Stop retrieving extra metadata from BM
+### Changed
+- Reorder main menu
+- More verbose error messages
+- Better abstraction of URLs
+### Fixed
+- Width and text of some popups on Steam Deck
+
 ## [2.7.2] 2022-10-07
 ### Fixed
 - Fix internal URL
