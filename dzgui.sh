@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.25
+version=2.8.0-rc.3
 
 aid=221100
 game="dayz"
@@ -34,6 +34,7 @@ sums_url="$testing_url/helpers/sums.md5"
 scmd_url="$testing_url/helpers/scmd.sh"
 notify_url="$testing_url/helpers/d.html"
 notify_img_url="$testing_url/helpers/d.webp"
+forum_url="https://github.com/aclist/dztui/discussions"
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
@@ -103,6 +104,7 @@ items=(
 	"	List installed mods"
 	"	Report bug (opens in browser)"
 	"	Help file (opens in browser)"
+	"	Forum (opens in browser)"
 	"	View changelog"
 	"	Advanced options"
 	)
@@ -801,6 +803,14 @@ report_bug(){
 		browser "$issues_url" 2>/dev/null &
 	fi
 }
+forum(){
+	echo "[DZGUI] Opening forum in browser"
+	if [[ $is_steam_deck -eq 1 ]]; then
+		steam steam://openurl/"$forum_url" 2>/dev/null
+	elif [[ $is_steam_deck -eq 0 ]]; then
+		browser "$forum_url" 2>/dev/null &
+	fi
+}
 help_file(){
 	echo "[DZGUI] Opening help file in browser"
 	if [[ $is_steam_deck -eq 1 ]]; then
@@ -1323,8 +1333,10 @@ main_menu(){
 		elif [[ $sel == "${items[12]}" ]]; then
 			help_file
 		elif [[ $sel == "${items[13]}" ]]; then
-			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
+			forum
 		elif [[ $sel == "${items[14]}" ]]; then
+			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
+		elif [[ $sel == "${items[15]}" ]]; then
 			options_menu
 			main_menu
 			return

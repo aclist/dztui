@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.8.0-rc.2] 2022-10-11
+### Added
+- Add forums link
+
 ## [2.8.0-rc.2] 2022-10-07
 ### Added
 - Backend preparation for automods
