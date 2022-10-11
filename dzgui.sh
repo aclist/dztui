@@ -1661,7 +1661,9 @@ deprecation_warning(){
 	}
 	if [[ -z $steam_api ]]; then
 		echo "100"
-		zenity --info --text="$(warn)"
+		local big_prompt
+		[[ $is_steam_deck -eq 1 ]] && big_prompt="--width=800"
+		zenity --info --text="$(warn)" $big_prompt
 		key_setup_url="https://aclist.github.io/dzgui/dzgui.html#_api_key_server_ids"
 		browser "$key_setup_url" 2>/dev/null &
 		while true; do
