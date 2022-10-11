@@ -1294,9 +1294,9 @@ server_browser(){
 }
 
 mods_disk_size(){
-	printf "Total size on disk: %s |" $(du -sh "$game_dir" | awk '{print $1}')
-	printf "Mods location: $steam_path/steamapps/workshop/content/221100"
-
+	printf "Total size on disk: %s | " $(du -sh "$game_dir" | awk '{print $1}')
+	printf "%s mods | " $(ls -1 "$game_dir" | wc -l)
+	printf "Location: %s/steamapps/workshop/content/221100" "$steam_path"
 }
 
 main_menu(){

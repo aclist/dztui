@@ -12,8 +12,4 @@ DZGUI allows you to connect to both official and modded/community DayZ servers o
 
 Refer to the [manual](https://aclist.github.io/dzgui/dzgui.html) for installation and setup instructions, a feature-by-feature breakdown, and Steam integration tutorials.
 
-## Setup and usage
-
-Refer to the [manual](https://aclist.github.io/dzgui/dzgui.html) for installation and setup instructions, a feature-by-feature breakdown, and Steam integration tutorials.
-
 ![Alt text](/images/example.png)
