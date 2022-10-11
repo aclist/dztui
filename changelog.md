@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [Unreleased] 
 - Clean up logging
 - Custom query API
 - Standardize dialogs
@@ -261,6 +261,96 @@
 - Revert to old issues page index
 - Hide header on unneeded pages
 - Better detection of Steam Deck
+=======
+## [2.7.1] 2022-10-05
+### Fixed
+- Game launch not kicking off after symlink creation
+
+## [2.7.0] 2022-10-04
+### Added
+- Server browser and geolocation algorithm
+- More verbose error codes
+- Additional progress bar setup and destruction throughout the application
+- Additional API response validation
+### Fixed
+- Encapsulate title strings to prevent leaky arguments in title bars
+- Remove erroneous slow boot process if first-time setup was already complete
+- Delete server list not emptying when returning to main menu
+### Changed
+- Group main menu entries in advance of future functionality
+- Better abstraction of paths
+- Clarification of certain options and errors
+
+## [2.6.3] 2022-10-02
+### Fixed
+- Hotfix for connect-to-fav not getting modlist
+
+## [2.6.2] 2022-10-02
+### Fixed
+- Hotfix for BM API returning malformed publishedfileids
+
+## [2.6.1] 2022-09-25
+### Fixed
+- Freedesktop shortcut errors
+
+## [2.6.0] 2022-09-05
+### Added
+- Connect by IP method
+
+## [2.5.1] 2022-08-17
+### Fixed
+- Hotfix for malformed paths during first-time setup
+
+## [2.5.0] 2022-08-16
+### Added
+- Lockfile: prevent concurrent instances of DZGUI from being opened
+
+### Changed
+- Faster path discovery on first-time setup
+
+### Fixed
+- Symlink collision on servers with many mods
+- API response pagination for large server lists
+
+## [2.4.1] 2022-08-09
+### Fixed
+- Hotfix for progress bar breaking table when >9 servers in list
+
+## [2.4.0] 2022-08-07
+### Added
+- Delete server command added to main menu
+- Write log to file for bug reports
+- Prompt to permanently increase map count size
+- Dependency check for Steam
+- Cover artwork
+- News backend for OTA updates
+- Clean up stale symlinks when checking mods
+
+### Fixed
+- Minify long mod launch params for servers with launch params breaking the upper limit
+- Port DZTUI method of handling legacy symlinks
+- Prevent user from entering invalid data on first-time setup
+- Prompt to re-run first-time setup if config is malformed
+- Better handling of field output from table
+- Better Steam Deck detection and handling
+- Prevent garbage in error messages
+- Miscellaneous backend improvements
+
+### Changed
+- Enforce download when switching branches
+
+## [2.3.2] 2022-08-04
+### Fixed
+Set branch flag to 'stable' if no config file present
+
+## [2.3.1] 2022-08-04
+### Fixed
+- Improved error handling of first-time setup fields
+- Interpolate config file values for debug, branch when writing file
+
+### Changed
+- Prompt user to restart first-time setup if broken config is found
+>>>>>>> c293fcd8c5136b6578f519b2f400d45bc01335cc
 
 ## [2.3.0] 2022-07-18
 ### Added
