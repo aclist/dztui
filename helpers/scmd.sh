@@ -297,7 +297,7 @@ return_to_dzg(){
 			done
 			cleanup
 	else
-		$(cd $HOME/.local/share/dzgui/helpers; zenity --text-info --html --width=390 --height=452 --filename="d.html" 2>/dev/null)
+		$(cd $HOME/.local/share/dzgui/helpers; zenity --text-info --title=DZGUI --html --width=390 --height=452 --filename="d.html" 2>/dev/null)
 		cleanup
 	fi
 }

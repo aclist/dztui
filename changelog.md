@@ -5,7 +5,36 @@
 - Custom query API
 - Standardize dialogs
 
-## [2.8.0-rc.2] 2022-10-11
+## [2.8.0-rc.9] 2022-10-11
+### Changed
+- Reordered main menu elements
+
+## [2.8.0-rc.8] 2022-10-11
+### Changed
+- Changed notification title
+
+## [2.8.0-rc.7] 2022-10-11
+### Changed
+- Reword menu option
+### Fixed
+- Redirect stderr on popup
+
+## [2.8.0-rc.6] 2022-10-11
+### Dropped
+- Stop using BM for query ports
+### Added
+- Deprecation warning/enforced Steam API
+
+## [2.8.0-rc.5] 2022-10-11
+### Fixed
+- Width of some popups on Steam Deck
+
+## [2.8.0-rc.4] 2022-10-11
+### Changed
+- Abstract news urls
+- Clarify dependency warning
+
+## [2.8.0-rc.3] 2022-10-11
 ### Added
 - Add forums link
 

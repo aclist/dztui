@@ -93,7 +93,7 @@ init_items(){
 	#array order determines menu selector; this is destructive
 items=(
 	"[Connect]"
-	"	NEW: Server browser"
+	"	Server browser"
 	"	My servers"
 	"	Quick connect to favorite server"
 	"[Manage servers]"
@@ -103,11 +103,12 @@ items=(
 	"	Delete server"
 	"[Options]"
 	"	List installed mods"
-	"	Report bug (opens in browser)"
-	"	Help file (opens in browser)"
-	"	Forum (opens in browser)"
 	"	View changelog"
 	"	Advanced options"
+	"[Help]"
+	"	Help file ⧉"
+	"	Report bug ⧉"
+	"	Become a beta tester ⧉"
 	)
 }
 warn_and_exit(){
@@ -668,10 +669,11 @@ fetch_ip_metadata(){
 test_steam_api(){
 	local code=$(curl -ILs "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api" \
 		| grep -E "^HTTP")
-	[[ $code =~ 403 ]] && return 1
+	[[ $code =~ 403 ]] && echo 1
+	[[ $code =~ 200 ]] && echo 0
 }
 add_steam_api(){
-		[[ ! $(test_steam_api) ]] && return 1
+		[[ $(test_steam_api) -eq 1 ]] && return 1
 		mv $config_file ${config_path}dztuirc.old
 		nr=$(awk '/steam_api=/ {print NR}' ${config_path}dztuirc.old)
 		steam_api="steam_api=\"$steam_api\""
@@ -685,7 +687,7 @@ check_steam_api(){
 		steam_api=$(zenity --entry --text="Key 'steam_api' not present in config file. Enter Steam API key:" --title="DZGUI" 2>/dev/null)
 		if [[ $? -eq 1 ]] ; then
 			return
-		elif [[ ${#steam_api} -lt 32 ]] || [[ ! $(test_steam_api) ]]; then
+		elif [[ ${#steam_api} -lt 32 ]] || [[ $(test_steam_api) -eq 1 ]]; then
 			zenity --warning --title="DZGUI" --text="Check API key and try again." 2>/dev/null
 			return 1
 		else
@@ -847,10 +849,16 @@ delete_or_connect(){
 		else
 			#hotfix for bug #36
 			local lookup_ip=$(echo "$sel" | awk -F%% '{print $1}')
-			local lookup_id="$(echo "$sel" | awk -F%% '{print $2}')"
-			local qport=$(echo "$response" | jq --arg id $lookup_id '.data[]|select(.id==$id).attributes.portQuery')
+			local lookup_port=$(echo "$lookup_ip" | awk -F: '{print $2}')
+			source $config_file
+			file=$(mktemp)
+			url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100\gameaddr\\$lookup_ip&key=$steam_api"
+			curl -Ls "$url" > $file
+			local qport_res=$(< $file jq -r --arg port $lookup_port '.response.servers[]|select(.gameport==($port|tonumber)).addr')
+			local qport=$(echo "$qport_res" | awk -F: '{print $2}')
 			qport_list="$lookup_ip%%$qport"
-			connect "$sel" "ip"
+			echo "$response" > resp
+			connect "$qport_list" "ip"
 			
 		fi
 }
@@ -975,7 +983,7 @@ toggle_automods(){
 	source $config_file
 	local big_prompt
 	[[ $is_steam_deck -eq 1 ]] && big_prompt="--width=800"
-	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)" $big_prompt
+	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)" $big_prompt 2>/dev/null
 }
 options_menu(){
 	debug_list=(
@@ -1330,17 +1338,19 @@ main_menu(){
 				--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
 				--print-column="" 2>/dev/null
 		elif [[ $sel == "${items[11]}" ]]; then
-			report_bug
-		elif [[ $sel == "${items[12]}" ]]; then
-			help_file
-		elif [[ $sel == "${items[13]}" ]]; then
-			forum
-		elif [[ $sel == "${items[14]}" ]]; then
 			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
-		elif [[ $sel == "${items[15]}" ]]; then
+		elif [[ $sel == "${items[12]}" ]]; then
 			options_menu
 			main_menu
 			return
+		elif [[ $sel == "${items[13]}" ]]; then
+			:
+		elif [[ $sel == "${items[14]}" ]]; then
+			help_file
+		elif [[ $sel == "${items[15]}" ]]; then
+			report_bug
+		elif [[ $sel == "${items[16]}" ]]; then
+			forum
 		else
 			warn "This feature is not yet implemented."
 		fi
@@ -1628,6 +1638,40 @@ fetch_scmd_helper(){
 	[[ ! -f "$helpers_path/d.html" ]] && curl -Ls "$notify_url" > "$helpers_path/d.html"
 	[[ ! -f "$helpers_path/d.webp" ]] && curl -Ls "$notify_img_url" > "$helpers_path/d.webp"
 }
+deprecation_warning(){
+	warn(){
+	cat <<- HERE
+		IMPORTANT ANNOUNCEMENT
+		(Steam API key not found)
+
+		A Steam API key is now mandatory to run the app.
+		The BM API returns incorrect mod data on some servers
+		and cannot be relied upon for up to date information.
+
+		Going forward, we will only use the BM API as a convenience
+		function to manage server names and your favorite servers list,
+		and migrate to indexing servers on an IP basis.
+
+		This is a backend change. You can continue adding servers by ID,
+		but we will retrieve information from Valve instead, as we do for the
+		server browser and connect-by-ip methods.
+
+		Click [OK] to open the help page describing how to set up your key.
+		After you input a valid key, the app will resume.
+		HERE
+	}
+	if [[ -z $steam_api ]]; then
+		echo "100"
+		zenity --info --text="$(warn)"
+		key_setup_url="https://aclist.github.io/dzgui/dzgui.html#_api_key_server_ids"
+		browser "$key_setup_url" 2>/dev/null &
+		while true; do
+			if [[ $(check_steam_api) ]]; then
+				break
+			fi
+		done
+	fi
+}
 initial_setup(){
 	echo "# Initial setup"
 	run_depcheck
@@ -1640,6 +1684,7 @@ initial_setup(){
 	run_varcheck
 	init_items
 	setup
+	deprecation_warning
 	echo "100"
 }
 main(){

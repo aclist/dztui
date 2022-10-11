@@ -1,15 +1,13 @@
 = DZGUI documentation
-DayZ community server graphical launcher for Linux | Last updated: 2022-09-08
+DayZ community server graphical launcher for Linux | Last updated: 2022-10-11
 :nofooter:
 :toc: left
 :stylesheet: custom.css
 
 == What this is
-A GUI version of https://github.com/aclist/dztui[DZTUI] for Linux. Used to list community server details and quick connect to preferred servers by staging mods and concatenating launch options automatically. 
+A GUI version of https://github.com/aclist/dztui[DZTUI] for Linux. Used to list official and community server details and quick connect to preferred servers by staging mods and concatenating launch options automatically. 
 
 DZGUI contains some expanded functionality that will eventually be backported to DZTUI. It is intended to be more of a user-friendly, turnkey solution for graphical desktop environments, and could also be used on the Steam Deck or similar devices.
-
-
 
 == Setup
 === Dependencies
@@ -19,7 +17,7 @@ If not already installed, the below can be found in your system's package manage
 - `jq`
 - `zenity`
 - `steam`
-
+- `wmctrl` or `xdotool`
 
 === Preparation
 . Download DZGUI and make it executable:
@@ -57,6 +55,7 @@ If it detects an incorrect map count value, DZGUI will prompt you to permanently
 
 
 === API key & server IDs
+==== BattleMetrics API key
 1. Register for an API key at https://www.battlemetrics.com/account/register?after=%2Fdevelopers[BattleMetrics] (free)
 2. From the **Personal Access Tokens** area, Select **New Token**
 3. Give the token any name in the field at the top
@@ -68,6 +67,10 @@ If it detects an incorrect map count value, DZGUI will prompt you to permanently
 [NOTE]
 You will be prompted to enter these IDs when starting the app, so you could refer to them in another window while you complete setup. More IDs can be added later.
 
+==== Steam API key
+1. Register for a https://steamcommunity.com/dev/apikey[Steam API key] using your Steam account. You will be asked for a unique URL for your app when registering. 
+2. Since this key is for a personal use application and does not actually call back anywhere, set a generic local identifier here like "127.0.0.1".
+3. Once configured, you can insert this key in the app when launching the "Connect by IP" feature for the first time.
 
 === First-time launch
 
