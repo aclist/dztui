@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.4
+version=2.8.0-rc.5
 
 aid=221100
 game="dayz"
@@ -315,7 +315,7 @@ run_varcheck(){
 	else	
 		zenity --warning --width 500 --text="$(varcheck)" 2>/dev/null
 		printf "[DZGUI] %s\n" "$check_config_msg"
-		zenity --question --cancel-label="Exit" --text="Malformed config file. This is probably user error.\nStart first-time setup process again?" 2>/dev/null
+		zenity --question --cancel-label="Exit" --text="Malformed config file. This is probably user error.\nStart first-time setup process again?" --width=500 2>/dev/null
 		code=$?
 		if [[ $code -eq 1 ]]; then
 			exit
@@ -833,7 +833,7 @@ delete_by_id(){
 	nr=$(awk '/whitelist=/ {print NR}' ${config_path}dztuirc.old)
 	awk -v "var=$new_whitelist" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
 	echo "[DZGUI] Removed $server_id from key 'whitelist'"
-	zenity --info --title="DZGUI" --text="Removed "$server_id" from:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
+	zenity --info --title="DZGUI" --text="Removed "$server_id" from:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
 	source $config_file
 }
 delete_or_connect(){
@@ -1539,7 +1539,7 @@ add_by_id(){
 				nr=$(awk '/whitelist=/ {print NR}' ${config_path}dztuirc.old)
 				awk -v "var=$new_whitelist" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
 				echo "[DZGUI] Added $id to key 'whitelist'"
-				zenity --info --title="DZGUI" --text="Added "$id" to:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
+				zenity --info --title="DZGUI" --text="Added "$id" to:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
 				source $config_file
 				return
 			fi
