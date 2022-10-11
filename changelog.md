@@ -5,7 +5,7 @@
 - Custom query API
 - Standardize dialogs
 
-## [3.0.0-rc.1] 2022-10-12
+## [3.0.0-testing] 2022-10-12
 ### Changed
 - Increment major version
 
