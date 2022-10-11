@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.3
+version=2.8.0-rc.4
 
 aid=221100
 game="dayz"
@@ -20,7 +20,6 @@ stable_url="$url_prefix/dzgui"
 testing_url="$url_prefix/testing"
 releases_url="https://github.com/aclist/dztui/releases/download/browser"
 help_url="https://aclist.github.io/dzgui/dzgui"
-news_url="$testing_url/news"
 freedesktop_path="$HOME/.local/share/applications"
 sd_install_path="$HOME/.local/share/dzgui"
 helpers_path="$sd_install_path/helpers"
@@ -45,6 +44,8 @@ update_last_seen(){
 	source $config_file
 }
 check_news(){
+	[[ $branch == "stable" ]] && news_url="$stable_url/news"
+	[[ $branch == "testing" ]] && news_url="$testing_url/news"
 	result=$(curl -Ls "$news_url")
 	sum=$(echo -n "$result" | md5sum | awk '{print $1}')
 }
@@ -84,7 +85,7 @@ depcheck(){
 watcher_deps(){
 	if [[ ! $(command -v wmctrl) ]] && [[ ! $(command -v xdotool) ]]; then
 		echo "100"
-		warn "Requires wmctrl or xdotool"
+		warn "Missing dependency: requires 'wmctrl' or 'xdotool'.\nInstall from your system's package manager."
 		exit 1
 	fi
 }
