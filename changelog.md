@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.8.0-rc.8] 2022-10-11
+### Changed
+- Changed notification title
+
 ## [2.8.0-rc.7] 2022-10-11
 ### Changed
 - Reword menu option
