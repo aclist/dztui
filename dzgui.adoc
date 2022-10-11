@@ -1,9 +1,6 @@
 = DZGUI documentation
-<<<<<<< HEAD
-DayZ community server graphical launcher for Linux | Last updated: 2022-10-11
+DayZ official/community server graphical launcher for Linux | Last updated: 2022-10-11
 =======
-DayZ community server graphical launcher for Linux | Last updated: 2022-09-08
->>>>>>> c293fcd8c5136b6578f519b2f400d45bc01335cc
 :nofooter:
 :toc: left
 :stylesheet: custom.css
@@ -25,10 +22,7 @@ If any dependencies are missing when the application starts, it will warn you, s
 - `jq`
 - `zenity`
 - `steam`
-<<<<<<< HEAD
 - `wmctrl` or `xdotool`
-=======
->>>>>>> c293fcd8c5136b6578f519b2f400d45bc01335cc
 
 === Preparation
 . Download DZGUI and make it executable:
@@ -45,12 +39,8 @@ curl -s "https://raw.githubusercontent.com/aclist/dztui/dzgui/install.sh" | bash
 chmod +x dzgui.sh
 ```
 [start=2]
-<<<<<<< HEAD
 . Update the `vm.max_map_count` value (see https://www.protondb.com/app/221100)
-=======
-. Update the `vm.max_map_count` value (see https://www.protondb.com/app/221100). 
 This is handled automatically by DZGUI if you just choose to run the application out of the box.
->>>>>>> c293fcd8c5136b6578f519b2f400d45bc01335cc
 
 Ephemeral method:
 ```
@@ -304,22 +294,14 @@ Bypasses the server list and quick-connects to a single favorite server specifie
 
 ==== Connect by IP
 
-<<<<<<< HEAD
-Instead of relying on server IDs, returns the list of servers behind a given IP. Provide only the IP; no port is necessary. This returns the server metadata for you to verify before connecting.
-=======
 Instead of relying on server IDs, returns the list of maps behind a given IP. Provide only the IP; no port is necessary. This returns the server metadata for you to verify before connecting.
->>>>>>> c293fcd8c5136b6578f519b2f400d45bc01335cc
 
 If there are multiple maps hosted behind an IP (e.g. different maps on varying ports), the application will list all of them.
 
 In order to use this feature, you must have a https://steamcommunity.com/dev/apikey[Steam API key]. You will be asked for a unique URL for your app when registering. 
 Since this key is for a personal use application and does not actually call back anywhere, set a generic local identifier here like "127.0.0.1".
 
-<<<<<<< HEAD
-Once configured, you can insert this key in the app when launching the "Connect by IP" feature for the first time.
-=======
 You will be prompted to insert this key into the app when launching the "Connect by IP" feature for the first time.
->>>>>>> c293fcd8c5136b6578f519b2f400d45bc01335cc
 
 ==== Add server by ID
 Prompts you to add servers to the config file by ID. An indefinite number of servers can be added. These will be listed when using the <<Launch server list>> option.
