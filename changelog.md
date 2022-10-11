@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.0.0-rc.1] 2022-10-12
+### Changed
+- Increment major version
+
 ## [2.8.0-rc.9] 2022-10-11
 ### Changed
 - Reordered main menu elements
