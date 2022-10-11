@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.6
+version=2.8.0-rc.7
 
 aid=221100
 game="dayz"
@@ -105,7 +105,7 @@ items=(
 	"	List installed mods"
 	"	Report bug (opens in browser)"
 	"	Help file (opens in browser)"
-	"	Forum (opens in browser)"
+	"	Become a beta tester (opens in browser)"
 	"	View changelog"
 	"	Advanced options"
 	)
@@ -982,7 +982,7 @@ toggle_automods(){
 	source $config_file
 	local big_prompt
 	[[ $is_steam_deck -eq 1 ]] && big_prompt="--width=800"
-	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)" $big_prompt
+	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)" $big_prompt 2>/dev/null
 }
 options_menu(){
 	debug_list=(

@@ -5,6 +5,12 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.8.0-rc.7] 2022-10-11
+### Changed
+- Reword menu option
+### Fixed
+- Redirect stderr on popup
+
 ## [2.8.0-rc.6] 2022-10-11
 ### Dropped
 - Stop using BM for query ports
