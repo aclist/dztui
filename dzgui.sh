@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0
+version=2.7.2
 
 aid=221100
 game="dayz"
@@ -857,7 +857,6 @@ delete_or_connect(){
 			local qport_res=$(< $file jq -r --arg port $lookup_port '.response.servers[]|select(.gameport==($port|tonumber)).addr')
 			local qport=$(echo "$qport_res" | awk -F: '{print $2}')
 			qport_list="$lookup_ip%%$qport"
-			echo "$response" > resp
 			connect "$qport_list" "ip"
 			
 		fi
