@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [2.8.0-rc.9] 2022-10-11
+### Changed
+- Reordered main menu elements
+
 ## [2.8.0-rc.8] 2022-10-11
 ### Changed
 - Changed notification title

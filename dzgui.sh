@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=2.8.0-rc.8
+version=2.8.0-rc.9
 
 aid=221100
 game="dayz"
@@ -103,11 +103,12 @@ items=(
 	"	Delete server"
 	"[Options]"
 	"	List installed mods"
-	"	Report bug (opens in browser)"
-	"	Help file (opens in browser)"
-	"	Become a beta tester (opens in browser)"
 	"	View changelog"
 	"	Advanced options"
+	"[Help]"
+	"	Help file ⧉"
+	"	Report bug ⧉"
+	"	Become a beta tester ⧉"
 	)
 }
 warn_and_exit(){
@@ -1337,17 +1338,19 @@ main_menu(){
 				--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
 				--print-column="" 2>/dev/null
 		elif [[ $sel == "${items[11]}" ]]; then
-			report_bug
-		elif [[ $sel == "${items[12]}" ]]; then
-			help_file
-		elif [[ $sel == "${items[13]}" ]]; then
-			forum
-		elif [[ $sel == "${items[14]}" ]]; then
 			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
-		elif [[ $sel == "${items[15]}" ]]; then
+		elif [[ $sel == "${items[12]}" ]]; then
 			options_menu
 			main_menu
 			return
+		elif [[ $sel == "${items[13]}" ]]; then
+			:
+		elif [[ $sel == "${items[14]}" ]]; then
+			help_file
+		elif [[ $sel == "${items[15]}" ]]; then
+			report_bug
+		elif [[ $sel == "${items[16]}" ]]; then
+			forum
 		else
 			warn "This feature is not yet implemented."
 		fi
