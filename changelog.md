@@ -5,6 +5,14 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.0.2] 2022-10-12
+### Fixed
+- Size of certain popups on Steam Deck
+
+## [3.0.1] 2022-10-12
+### Fixed
+- Initial popup size on Steam Deck
+
 ## [3.0.0] 2022-10-12
 ### Added
 - Foreground progress of manual mod subscriptions
