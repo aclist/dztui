@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.1
+version=3.1.0-rc.2
 
 aid=221100
 game="dayz"
@@ -679,7 +679,7 @@ add_steam_api(){
 		steam_api="steam_api=\"$steam_api\""
 		awk -v "var=$steam_api" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
 		echo "[DZGUI] Added Steam API key"
-		zenity --info --title="DZGUI" --text="Added Steam API key to:\n\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
+		zenity --info --title="DZGUI" --text="Added Steam API key to:\n\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
 		source $config_file
 }
 check_steam_api(){
