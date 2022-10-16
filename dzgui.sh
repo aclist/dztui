@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.0.2
+version=3.0.3
 
 aid=221100
 game="dayz"
@@ -245,7 +245,7 @@ guess_path(){
 		steam_path="$clean_path"
 	else
 		echo "# Searching for alternate DayZ path. This may take some time."
-		path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" -o -path "/run" -o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/run" -o -path "/lost+found" \) -prune -o -regex ".*/steamapps/common/DayZ$" -print -quit 2>/dev/null)
+		path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" -o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/run" -o -path "/lost+found" \) -prune -o -regex ".*/steamapps/common/DayZ$" -print -quit 2>/dev/null)
 			clean_path=$(echo -e "$path" | awk -F"/steamapps" '{print $1}')
 			steam_path="$clean_path"
 	fi
