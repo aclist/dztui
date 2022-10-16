@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.1.0-rc.1-2] 2022-10-16
+### Fixed
+- Steam Deck path discovery
+
 ## [3.0.0-testing] 2022-10-12
 ### Changed
 - Increment major version
