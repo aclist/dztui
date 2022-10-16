@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.0.3-4] 2022-10-16
+### Fixed
+- Steam Deck path discovery on first-time setup
+
 ## [3.0.2] 2022-10-12
 ### Fixed
 - Size of certain popups on Steam Deck
