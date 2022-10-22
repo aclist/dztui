@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.2
+version=3.1.0-rc.3
 
 aid=221100
 game="dayz"
@@ -194,6 +194,9 @@ auto_install="$auto_install"
 
 #Automod staging directory
 staging_dir="$staging_dir"
+
+#Path to default Steam client
+default_steam_path=$default_steam_path
 	END
 }
 write_desktop_file(){
