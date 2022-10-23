@@ -5,6 +5,14 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.1.0-rc.4] 2022-10-23
+### Added
+- Automod v.2 method
+
+## [3.1.0-rc.3] 2022-10-16
+### Added
+- Backend preparation
+
 ## [3.1.0-rc.1-2] 2022-10-16
 ### Fixed
 - Steam Deck path discovery

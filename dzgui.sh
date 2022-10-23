@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.2
+version=3.1.0-rc.4
 
 aid=221100
 game="dayz"
@@ -194,6 +194,9 @@ auto_install="$auto_install"
 
 #Automod staging directory
 staging_dir="$staging_dir"
+
+#Path to default Steam client
+default_steam_path="$default_steam_path"
 	END
 }
 write_desktop_file(){
@@ -403,7 +406,7 @@ term_params(){
 		terminator|xterm|tilix|xfce4-terminal) $term -e "bash $helpers_path/scmd.sh $totalmodsize $1";;
 	esac
 }
-auto_mod_install(){
+headless_mod_install(){
 	cmd=$(printf "%q " "$@")
 	if [[ -z "$term" ]]; then
 		if [[ $is_steam_deck -eq 1 ]]; then
@@ -445,7 +448,6 @@ manual_mod_install(){
 		steam_deck_mods
 	else
 		local ex="/tmp/dzc.tmp"
-		[[ -f $ex ]] && rm $ex
 		watcher(){	
 		readarray -t stage_mods <<< "$diff"
 		for((i=0;i<${#stage_mods[@]};i++)); do
@@ -457,7 +459,6 @@ manual_mod_install(){
 			sleep 1s
 			foreground
 			until [[ -d $downloads_dir/${stage_mods[$i]} ]]; do
-				[[ -f $ex ]] && return 1
 				sleep 0.1s
 				if [[ -d $workshop_dir/${stage_mods[$i]} ]]; then
 					break
@@ -466,7 +467,6 @@ manual_mod_install(){
 			foreground
 			echo "# Steam is downloading ${stage_mods[$i]} (mod $((i+1)) of ${#stage_mods[@]})"
 			until [[ -d $workshop_dir/${stage_mods[$i]} ]]; do
-				[[ -f $ex ]] && return 1
 				sleep 0.1s
 				done
 			foreground
@@ -484,24 +484,6 @@ manual_mod_install(){
 		fi
 	fi
 }
-#	if [[ $is_steam_deck -eq 0 ]]; then
-#		open_mod_links
-#		until [[ -z $diff ]]; do
-#			zenity --question --title="DZGUI" --ok-label="Next" --cancel-label="Cancel" --text="Opened mod links in browser.\nClick [Next] when all mods have been subscribed to.\nThis dialog may reappear if clicking [Next] too soon\nbefore mods are synchronized in the background." --width=500 2>/dev/null
-#			rc=$?
-#			if [[ $rc -eq 0 ]]; then
-#			compare
-#			open_mod_links
-#		else
-#			return
-#			fi
-#		done
-#	else
-#		steam_deck_mods
-#		rc=$?
-#		[[ $rc -eq 1 ]] && return 1
-#	fi
-#	passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 encode(){
 	echo "$1" | md5sum | cut -c -8
 }
@@ -547,6 +529,39 @@ passed_mod_check(){
 	echo "100"
 
 }
+auto_mod_install(){
+	popup 300
+	rc=$?
+	if [[ $rc -eq 0 ]]; then
+		calc_mod_sizes
+		local total_size=$(numfmt --to=iec $totalmodsize)
+		depot_watcher "$diff" &
+		console_dl "$diff" &&
+		steam steam://open/minigameslist
+		until [[ -d $staging_dir/app_$aid ]]; do
+			sleep 0.1s
+		done
+		until [[ ! -d $staging_dir/app_$aid ]]; do
+			until [[ "$fmt_size" == "$total_size" ]]; do
+				local cur_size=$(du -sb "$staging_dir/app_$aid" | awk '{print $1}')
+				local fmt_size=$(numfmt --to=iec $cur_size)
+				sleep 0.1s
+				[[ ${#modids[@]} -gt 1 ]] && s=s
+				echo "# Downloading ${#modids[@]} mod$s ($fmt_size of $total_size)"
+			done
+			echo "# Waiting for hangup signal from Steam"
+		done | zenity --progress --pulsate --text="Downloading mods" --auto-close --no-cancel --width=500 --title=DZGUI 2>/dev/null
+		compare
+		if [[ -z $diff ]]; then
+			passed_mod_check > >(zenity --pulsate --progress --title=DZGUI --auto-close --width=500 2>/dev/null)
+			launch
+		else
+			manual_mod_install
+		fi
+	else
+		manual_mod_install
+	fi
+}
 connect(){
 	#TODO: sanitize/validate input
 	readarray -t qport_arr <<< "$qport_list"
@@ -571,9 +586,11 @@ connect(){
 	compare
 	if [[ -n $diff ]]; then
 		if [[ $auto_install -eq 1 ]]; then
-			auto_mod_install "$diff"
+			headless_mod_install "$diff"
 			rc=$?
 			[[ $rc -eq 1 ]] && manual_mod_install
+		elif [[ $auto_install -eq 2 ]]; then
+			auto_mod_install
 		else
 			manual_mod_install
 		fi
@@ -851,10 +868,8 @@ delete_or_connect(){
 			local lookup_ip=$(echo "$sel" | awk -F%% '{print $1}')
 			local lookup_port=$(echo "$lookup_ip" | awk -F: '{print $2}')
 			source $config_file
-			file=$(mktemp)
 			url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100\gameaddr\\$lookup_ip&key=$steam_api"
-			curl -Ls "$url" > $file
-			local qport_res=$(< $file jq -r --arg port $lookup_port '.response.servers[]|select(.gameport==($port|tonumber)).addr')
+			local qport_res=$(curl -Ls "$url" | jq -r --arg port $lookup_port '.response.servers[]|select(.gameport==($port|tonumber)).addr')
 			local qport=$(echo "$qport_res" | awk -F: '{print $2}')
 			qport_list="$lookup_ip%%$qport"
 			connect "$qport_list" "ip"
@@ -911,7 +926,8 @@ connect_to_fav(){
 
 }
 set_header(){
-	[[ $auto_install -eq 1 ]] && install_mode=auto
+	[[ $auto_install -eq 2 ]] && install_mode="auto"
+	[[ $auto_install -eq 1 ]] && install_mode="headless"
 	[[ $auto_install -eq 0 ]] && install_mode=manual
 	if [[ $1 == "delete" ]]; then
 		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
@@ -952,7 +968,7 @@ generate_log(){
 automods_prompt(){
 cat <<- HERE
 
-Auto-mod installation set to ON. This method is NOT supported in Game Mode (Steam Deck).
+Headless installation set to ON.
 
 READ THIS FIRST:
 With this setting on, DZGUI will attempt to download and prepare mods using Valve's steamcmd tool.
@@ -968,7 +984,9 @@ NOTE: it can take some time for large mods to download, and steamcmd will not in
 If your distribution is unsupported, you don't have enough disk space to stage all of the mods, or there are other problems, DZGUI will warn you and write a report to $HOME/.local/share/dzgui/helpers/SCMD.log. You can attach this file to a bug report.
 HERE
 }
-toggle_automods(){
+toggle_headless(){
+	[[ $is_steam_deck -eq 1 ]] && test_display_mode
+	[[ $gamemode -eq 1 ]] && { popup 200; return; }
 	mv $config_file ${config_path}dztuirc.old
 	local nr=$(awk '/auto_install=/ {print NR}' ${config_path}dztuirc.old)
 	if [[ $auto_install == "1"  ]]; then
@@ -978,18 +996,108 @@ toggle_automods(){
 	fi
 	local flip_state="auto_install=\"$auto_install\""
 	awk -v "var=$flip_state" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
-	printf "[DZGUI] Toggled auto-mod install to '$auto_install'\n"
+	printf "[DZGUI] Set mod install to '$auto_install'\n"
 	source $config_file
 	local big_prompt
 	[[ $is_steam_deck -eq 1 ]] && big_prompt="--width=800"
 	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)" $big_prompt 2>/dev/null
 }
+depot_watcher(){
+	local last=$(echo "${@: -1}")
+	payload(){
+		echo -e "itemcount=1&publishedfileids[0]=$last"
+	}
+	post(){
+		curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded" -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
+	}
+	depot_id=$(post | jq -r '.response.publishedfiledetails[].hcontent_file')
+
+	local dir="$default_steam_path/ubuntu12_32/steamapps/content"
+	local alt="$default_steam_path/ubuntu12_32/steamapps/_content"
+	local log="$default_steam_path/logs/content_log.txt"
+	[[ -d $dir ]] && { mv "$dir" $alt; }
+	[[ -h "$dir" ]] && unlink "$dir"
+	[[ -d $staging_dir/app_$aid ]] && rm -rf $staging_dir/app_$aid
+	ln -s $staging_dir "$dir"
+	echo "" > "$log"
+
+	until [[ "$(tail -n1 $log)" =~ "/depot/$aid/manifest/$depot_id" ]]; do
+		sleep 0.1s
+	done
+	until [[ "$(tail -n1 $log)" =~ "Closing connection" ]]; do
+		sleep 0.1s
+	done
+	readarray -t modids <<< "$@"
+	echo "[DZGUI] Moving mods"
+	for i in "${modids[@]}"; do
+		mv $staging_dir/app_$aid/item_$i "$workshop_dir/$i"
+	done
+	echo "[DZGUI] Cleanup"
+	rmdir $staging_dir/app_$aid
+	unlink "$dir"
+	[[ -d "$alt" ]] && { mv "$alt" "$dir"; }
+}
+console_dl(){
+	readarray -t modids <<< "$@"
+	steam steam://open/console
+	sleep 1s
+	for i in "${modids[@]}"; do
+		xdotool type --delay 15 "download_item $aid $i"
+		sleep 0.2s
+		xdotool key Return
+		sleep 0.2s
+	done
+}
+find_default_path(){
+	[[ -n $default_steam_path ]] && return
+	default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path \
+	"/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" \
+	-o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
+	-o -regex ".*/Steam/ubuntu12_32$" -print -quit 2>/dev/null | sed 's@/ubuntu12_32@@')
+	echo "$default_steam_path" >> logs
+	default_steam_path="default_steam_path=\"$default_steam_path\""
+	mv $config_file ${config_path}dztuirc.old
+	local nr=$(awk '/default_steam_path=/ {print NR}' ${config_path}dztuirc.old)
+	awk -v "var=$default_steam_path" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
+	printf "[DZGUI] Set default Steam path to $default_steam_path\n"
+	source $config_file
+}
+popup(){
+	[[ $1 -eq 100 ]] && zenity --info --text="This feature requires xdotool" --title=DZGUI --width=500
+	[[ $1 -eq 200 ]] && zenity --info --text="This feature is not supported on Gaming Mode" --title=DZGUI --width=500
+	[[ $1 -eq 300 ]] && zenity --info --text="\nThe Steam console will now open and briefly issue commands to\ndownload the workshop files, then return to the small Steam client\nwhile they download.\n\nEnsure that the Steam console has keyboard and mouse focus\n(keep hands off keyboard) while the commands are being issued.\n\nIt will only take a few seconds to queue the downloads, but if a\npopup or notification window steals focus, it could obstruct\nthe process." --title=DZGUI --width=500
+}
+requires_xdo(){
+	zenity --info --text="This feature requires xdojool" --title=DZGUI --width=500
+}
+toggle_console_dl(){
+	[[ $is_steam_deck -eq 1 ]] && test_display_mode
+	[[ $gamemode -eq 1 ]] && { popup 200; return; }
+	[[ ! $(command -v xdotool) ]] && { popup 100; return; }
+	mv $config_file ${config_path}dztuirc.old
+	local nr=$(awk '/auto_install=/ {print NR}' ${config_path}dztuirc.old)
+	if [[ $auto_install == "2"  ]]; then
+		auto_install="0"
+	else
+		auto_install="2"
+	fi
+	local flip_state="auto_install=\"$auto_install\""
+	awk -v "var=$flip_state" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
+	printf "[DZGUI] Set mod install to '$auto_install'\n"
+	source $config_file
+}
 options_menu(){
+	case "$auto_install" in
+		0) auto_hr="OFF"; headless_hr="OFF" ;;
+		1) auto_hr="OFF"; headless_hr="ON" ;;
+		2) auto_hr="ON"; headless_hr="OFF" ;;
+	esac
 	debug_list=(
 		"Toggle branch"
 		"Toggle debug mode"
 		"Generate debug log"
-		"Toggle auto-mod install (experimental)"
+		"Toggle auto mod install [$auto_hr]"
+		"Toggle headless mod install [$headless_hr]"
 		"Set auto-mod staging directory [$staging_dir]"
 		)
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
@@ -1006,8 +1114,10 @@ options_menu(){
 		printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
 		zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
 	elif [[ $debug_sel == "${debug_list[3]}" ]]; then
-		toggle_automods
+		toggle_console_dl
 	elif [[ $debug_sel == "${debug_list[4]}" ]]; then
+		toggle_headless
+	elif [[ $debug_sel == "${debug_list[5]}" ]]; then
 		file_picker
 	fi
 }
@@ -1268,10 +1378,9 @@ server_browser(){
 	#TODO: some error handling here
 	fetch(){
 		echo "# Getting server list"
-		curl -Ls "$url" > $file
+		response=$(curl -Ls "$url" | jq -r '.response.servers')
 	}
 	fetch > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
-	response=$(< $file jq -r '.response.servers')
 	total_servers=$(echo "$response" | jq 'length')
 	players_online=$(echo "$response" | jq '.[].players' | awk '{s+=$1}END{print s}')
 	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
@@ -1638,7 +1747,7 @@ fetch_scmd_helper(){
 	[[ ! -f "$helpers_path/d.webp" ]] && curl -Ls "$notify_img_url" > "$helpers_path/d.webp"
 }
 deprecation_warning(){
-	warn(){
+	warn_big(){
 	cat <<- HERE
 		IMPORTANT ANNOUNCEMENT
 		(Steam API key not found)
@@ -1663,7 +1772,7 @@ deprecation_warning(){
 		echo "100"
 		local big_prompt
 		[[ $is_steam_deck -eq 1 ]] && big_prompt="--width=800"
-		zenity --info --text="$(warn)" $big_prompt
+		zenity --info --text="$(warn_big)" $big_prompt
 		key_setup_url="https://aclist.github.io/dzgui/dzgui.html#_api_key_server_ids"
 		browser "$key_setup_url" 2>/dev/null &
 		while true; do
@@ -1681,6 +1790,7 @@ initial_setup(){
 	check_version
 	check_map_count
 	config
+	find_default_path
 	fetch_scmd_helper
 	run_varcheck
 	init_items
