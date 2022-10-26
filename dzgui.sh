@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.5
+version=3.1.0-rc.6
 
 aid=221100
 game="dayz"
@@ -539,22 +539,15 @@ auto_mod_install(){
 	if [[ $rc -eq 0 ]]; then
 		calc_mod_sizes
 		local total_size=$(numfmt --to=iec $totalmodsize)
+		log="$default_steam_path/logs/content_log.txt"
+		[[ -f "/tmp/dz.status" ]] && rm "/tmp/dz.status"
+		touch "/tmp/dz.status"
 		depot_watcher "$diff" &
 		console_dl "$diff" &&
-		steam steam://open/minigameslist
-		until [[ -d $staging_dir/app_$aid ]]; do
+		steam steam://open/downloads 2>/dev/null 1>&2
+		until [[ $(tail -n1 "/tmp/dz.status") =~ "Finished" ]]; do
 			sleep 0.1s
 		done
-		until [[ ! -d $staging_dir/app_$aid ]]; do
-			until [[ "$fmt_size" == "$total_size" ]]; do
-				local cur_size=$(du -s -B1 "$staging_dir/app_$aid" | awk '{print $1}')
-				local fmt_size=$(numfmt --to=iec $cur_size)
-				sleep 0.1s
-				[[ ${#modids[@]} -gt 1 ]] && s=s
-				echo "# Downloading ${#modids[@]} mod$s ($fmt_size of $total_size)"
-			done
-			echo "# Waiting for hangup signal from Steam"
-		done | zenity --progress --pulsate --text="Downloading mods" --auto-close --no-cancel --width=500 --title=DZGUI 2>/dev/null
 		compare
 		if [[ -z $diff ]]; then
 			check_timestamps
@@ -1067,47 +1060,25 @@ toggle_headless(){
 	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)" $big_prompt 2>/dev/null
 }
 depot_watcher(){
-	local last=$(echo "${@: -1}")
-	payload(){
-		echo -e "itemcount=1&publishedfileids[0]=$last"
-	}
-	post(){
-		curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded" -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
-	}
-	depot_id=$(post | jq -r '.response.publishedfiledetails[].hcontent_file')
-
-	local dir="$default_steam_path/ubuntu12_32/steamapps/content"
-	local alt="$default_steam_path/ubuntu12_32/steamapps/_content"
-	local log="$default_steam_path/logs/content_log.txt"
-	[[ -d $dir ]] && { mv "$dir" $alt; }
-	[[ -h "$dir" ]] && unlink "$dir"
-	[[ -d $staging_dir/app_$aid ]] && rm -rf $staging_dir/app_$aid
-	ln -s $staging_dir "$dir"
-	echo "" > "$log"
-
-	until [[ "$(tail -n1 $log)" =~ "/depot/$aid/manifest/$depot_id" ]]; do
-		sleep 0.1s
+	readarray -t watched_mods <<< "$@"
+	for i in "${watched_mods[@]}"; do
+		echo "[DZGUI] Downloading mod $i"
+		until [[ -d "$workshop_dir/$i" ]]; do
+			sleep 0.1s
+		done
+		until [[ "$(tail -n1 $log)" =~ AppID[[:space:]]221100[[:space:]]scheduler[[:space:]]finished ]]; do
+			sleep 0.1s
+		done
 	done
-	until [[ "$(tail -n1 $log)" =~ "Closing connection" ]]; do
-		sleep 0.1s
-	done
-	readarray -t modids <<< "$@"
-	echo "[DZGUI] Moving mods"
-	for i in "${modids[@]}"; do
-		rsync -a --delete "$staging_dir/app_$aid/item_$i/" "$workshop_dir/$i/" &&
-		rm -rf "$staging_dir/app_$aid/item_$i"
-	done
-	echo "[DZGUI] Cleanup"
-	rmdir $staging_dir/app_$aid
-	unlink "$dir"
-	[[ -d "$alt" ]] && { mv "$alt" "$dir"; }
+	echo "Finished" >> "/tmp/dz.status"
+	return 0
 }
 console_dl(){
 	readarray -t modids <<< "$@"
-	steam steam://open/console
+	steam steam://open/console 2>/dev/null 1>&2
 	sleep 1s
 	for i in "${modids[@]}"; do
-		xdotool type --delay 15 "download_item $aid $i"
+		xdotool type --delay 15 "workshop_download_item $aid $i"
 		sleep 0.2s
 		xdotool key Return
 		sleep 0.2s
@@ -1137,7 +1108,7 @@ find_default_path(){
 popup(){
 	[[ $1 -eq 100 ]] && zenity --info --text="This feature requires xdotool" --title=DZGUI --width=500
 	[[ $1 -eq 200 ]] && zenity --info --text="This feature is not supported on Gaming Mode" --title=DZGUI --width=500
-	[[ $1 -eq 300 ]] && zenity --info --text="\nThe Steam console will now open and briefly issue commands to\ndownload the workshop files, then return to the small Steam client\nwhile they download.\n\nEnsure that the Steam console has keyboard and mouse focus\n(keep hands off keyboard) while the commands are being issued.\n\nIt will only take a few seconds to queue the downloads, but if a\npopup or notification window steals focus, it could obstruct\nthe process." --title=DZGUI --width=500
+	[[ $1 -eq 300 ]] && zenity --info --text="\nThe Steam console will now open and briefly issue commands to\ndownload the workshop files, then return to the small Steam client\nwhile they download.\n\nEnsure that the Steam console has keyboard and mouse focus\n(keep hands off keyboard) while the commands are being issued.\n\nIt will only take a few seconds to queue the downloads, but if a\npopup or notification window steals focus, it could obstruct\nthe process." --title=DZGUI --width=500 2>/dev/null
 }
 requires_xdo(){
 	zenity --info --text="This feature requires xdojool" --title=DZGUI --width=500
