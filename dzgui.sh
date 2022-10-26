@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.6
+version=3.1.0-rc.7
 
 aid=221100
 game="dayz"
@@ -542,12 +542,12 @@ auto_mod_install(){
 		log="$default_steam_path/logs/content_log.txt"
 		[[ -f "/tmp/dz.status" ]] && rm "/tmp/dz.status"
 		touch "/tmp/dz.status"
-		depot_watcher "$diff" &
 		console_dl "$diff" &&
-		steam steam://open/downloads 2>/dev/null 1>&2
-		until [[ $(tail -n1 "/tmp/dz.status") =~ "Finished" ]]; do
-			sleep 0.1s
-		done
+		steam steam://open/downloads && 2>/dev/null 1>&2
+		until [[ -z $(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort)) ]]; do
+			local missing=$(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort) | wc -l)
+			echo "# Downloaded $((${#modids[@]}-missing)) of ${#modids[@]} mods"
+		done | zenity --pulsate --progress --title=DZGUI --auto-close --no-cancel --width=500 2>/dev/null
 		compare
 		if [[ -z $diff ]]; then
 			check_timestamps
@@ -1058,20 +1058,6 @@ toggle_headless(){
 	local big_prompt
 	[[ $is_steam_deck -eq 1 ]] && big_prompt="--width=800"
 	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)" $big_prompt 2>/dev/null
-}
-depot_watcher(){
-	readarray -t watched_mods <<< "$@"
-	for i in "${watched_mods[@]}"; do
-		echo "[DZGUI] Downloading mod $i"
-		until [[ -d "$workshop_dir/$i" ]]; do
-			sleep 0.1s
-		done
-		until [[ "$(tail -n1 $log)" =~ AppID[[:space:]]221100[[:space:]]scheduler[[:space:]]finished ]]; do
-			sleep 0.1s
-		done
-	done
-	echo "Finished" >> "/tmp/dz.status"
-	return 0
 }
 console_dl(){
 	readarray -t modids <<< "$@"

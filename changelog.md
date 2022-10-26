@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.1.0-rc.7] 2022-10-25
+### Changed
+- Simplify mod progress watcher
+
 ## [3.1.0-rc.6] 2022-10-25
 ### Fixed
 - Download mod metadata
