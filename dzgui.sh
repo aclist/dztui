@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.4
+version=3.1.0-rc.5
 
 aid=221100
 game="dayz"
@@ -34,6 +34,7 @@ scmd_url="$testing_url/helpers/scmd.sh"
 notify_url="$testing_url/helpers/d.html"
 notify_img_url="$testing_url/helpers/d.webp"
 forum_url="https://github.com/aclist/dztui/discussions"
+version_file="$config_path/versions"
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
@@ -448,6 +449,7 @@ manual_mod_install(){
 		steam_deck_mods
 	else
 		local ex="/tmp/dzc.tmp"
+		[[ -f $ex ]] && rm $ex
 		watcher(){	
 		readarray -t stage_mods <<< "$diff"
 		for((i=0;i<${#stage_mods[@]};i++)); do
@@ -459,6 +461,7 @@ manual_mod_install(){
 			sleep 1s
 			foreground
 			until [[ -d $downloads_dir/${stage_mods[$i]} ]]; do
+				[[ -f $ex ]] && return 1
 				sleep 0.1s
 				if [[ -d $workshop_dir/${stage_mods[$i]} ]]; then
 					break
@@ -467,6 +470,7 @@ manual_mod_install(){
 			foreground
 			echo "# Steam is downloading ${stage_mods[$i]} (mod $((i+1)) of ${#stage_mods[@]})"
 			until [[ -d $workshop_dir/${stage_mods[$i]} ]]; do
+				[[ -f $ex ]] && return 1
 				sleep 0.1s
 				done
 			foreground
@@ -543,7 +547,7 @@ auto_mod_install(){
 		done
 		until [[ ! -d $staging_dir/app_$aid ]]; do
 			until [[ "$fmt_size" == "$total_size" ]]; do
-				local cur_size=$(du -sb "$staging_dir/app_$aid" | awk '{print $1}')
+				local cur_size=$(du -s -B1 "$staging_dir/app_$aid" | awk '{print $1}')
 				local fmt_size=$(numfmt --to=iec $cur_size)
 				sleep 0.1s
 				[[ ${#modids[@]} -gt 1 ]] && s=s
@@ -553,6 +557,7 @@ auto_mod_install(){
 		done | zenity --progress --pulsate --text="Downloading mods" --auto-close --no-cancel --width=500 --title=DZGUI 2>/dev/null
 		compare
 		if [[ -z $diff ]]; then
+			check_timestamps
 			passed_mod_check > >(zenity --pulsate --progress --title=DZGUI --auto-close --width=500 2>/dev/null)
 			launch
 		else
@@ -560,6 +565,64 @@ auto_mod_install(){
 		fi
 	else
 		manual_mod_install
+	fi
+}
+get_local_stamps(){
+	concat(){
+	for ((i=0;i<$max;i++)); do
+	   echo "publishedfileids[$i]=${local_modlist[$i]}&"
+	done | awk '{print}' ORS=''
+	}
+	payload(){
+		echo -e "itemcount=${max}&$(concat)"
+	}
+	post(){
+		curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded" \
+		-d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
+	}
+	post
+}
+update_stamps(){
+	for((i=0;i<${#local_modlist[@]};i++)); do
+		mod=${local_modlist[$i]}
+		stamp=${stamps[$i]}
+		printf "%s\t%s\n" "$mod" "$stamp" >> $version_file
+	done
+}
+check_timestamps(){
+	readarray -t local_modlist < <(ls -1 $workshop_dir)
+	max=${#local_modlist[@]}
+	readarray -t stamps < <(get_local_stamps | jq -r '.response.publishedfiledetails[].time_updated')
+	if [[ ! -f $version_file ]]; then
+		update_stamps
+		return
+	else
+		needs_update=()
+		for((i=0;i<${#local_modlist[@]};i++)); do
+			mod=${local_modlist[$i]}
+			stamp=${stamps[$i]}
+			if [[ ! $(awk -v var=$mod '$1 == var' $version_file) ]]; then
+				echo -e "$mod\t$stamp" >> $version_file
+			elif [[ $(awk -v var=$mod -v var2=$stamp '$1 == var && $2 == var2' $version_file) ]]; then
+				:
+			else
+				awk -v var=$mod -v var2=$stamp '$1 == var {$2=var2;print $1"\t"$2; next;};{print}' $version_file > $version_file.new
+				mv $version_file.new $version_file
+				needs_update+=($mod)
+			fi
+		done
+	fi
+}
+merge_modlists(){
+	check_timestamps
+	if [[ -z "$diff" ]] && [[ ${#needs_update[@]} -gt 0 ]]; then
+		diff=$(printf "%s\n" "${needs_update[@]}")
+	elif [[ -z "$diff" ]] && [[ ${#needs_update[@]} -eq 0 ]]; then
+		diff=
+	elif [[ -n "$diff" ]] && [[ ${#needs_update[@]} -eq 0 ]]; then
+		:
+	else
+		diff="$(echo -e "$diff\n${needs_update[@]}")"
 	fi
 }
 connect(){
@@ -584,6 +647,7 @@ connect(){
 	rc=$?
 	[[ $rc -eq 1 ]] && return
 	compare
+	merge_modlists
 	if [[ -n $diff ]]; then
 		if [[ $auto_install -eq 1 ]]; then
 			headless_mod_install "$diff"
@@ -1030,7 +1094,8 @@ depot_watcher(){
 	readarray -t modids <<< "$@"
 	echo "[DZGUI] Moving mods"
 	for i in "${modids[@]}"; do
-		mv $staging_dir/app_$aid/item_$i "$workshop_dir/$i"
+		rsync -a --delete "$staging_dir/app_$aid/item_$i/" "$workshop_dir/$i/" &&
+		rm -rf "$staging_dir/app_$aid/item_$i"
 	done
 	echo "[DZGUI] Cleanup"
 	rmdir $staging_dir/app_$aid
@@ -1050,11 +1115,18 @@ console_dl(){
 }
 find_default_path(){
 	[[ -n $default_steam_path ]] && return
-	default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path \
-	"/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" \
-	-o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
-	-o -regex ".*/Steam/ubuntu12_32$" -print -quit 2>/dev/null | sed 's@/ubuntu12_32@@')
-	echo "$default_steam_path" >> logs
+	if [[ $is_steam_deck -eq 1 ]]; then
+		default_steam_path="$HOME/.local/share/Steam"
+	else
+		if [[ -d "$HOME/.local/share/Steam" ]]; then
+			default_steam_path="$HOME/.local/share/Steam"
+		else
+			default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path \
+			"/tmp" -o -path "/usr" -o -path "/boot" -o -path "/run" -o -path "/proc" -o -path "/root" \
+			-o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
+			-o -regex ".*/Steam/ubuntu12_32$" -print -quit 2>/dev/null | sed 's@/ubuntu12_32@@')
+		fi
+	fi
 	default_steam_path="default_steam_path=\"$default_steam_path\""
 	mv $config_file ${config_path}dztuirc.old
 	local nr=$(awk '/default_steam_path=/ {print NR}' ${config_path}dztuirc.old)

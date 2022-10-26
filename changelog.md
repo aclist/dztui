@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.1.0-rc.5] 2022-10-25
+### Added
+- Versioning for automods
+
 ## [3.1.0-rc.4] 2022-10-23
 ### Added
 - Automod v.2 method
