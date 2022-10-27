@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.0.3-5] 2022-10-27
+### Fixed
+- Properly create .desktop file on desktop PCs
+
 ## [3.0.3-4] 2022-10-16
 ### Fixed
 - Steam Deck path discovery on first-time setup
