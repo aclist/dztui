@@ -1017,7 +1017,10 @@ generate_log(){
 	Version: $version
 	Branch: $branch
 	Whitelist: $whitelist
-	Path: $steam_path
+	Steam path: $steam_path
+	Workshop path: $workshop_dir
+	Game path: $game_dir
+	
 	Linux: $(uname -mrs)
 
 	Mods:
