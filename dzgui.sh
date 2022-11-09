@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.9
+version=3.1.0-rc.10
 
 aid=221100
 game="dayz"
@@ -1014,14 +1014,13 @@ toggle_branch(){
 }
 generate_log(){
 	cat <<-DOC
+	Linux: $(uname -mrs)
 	Version: $version
 	Branch: $branch
 	Whitelist: $whitelist
 	Steam path: $steam_path
 	Workshop path: $workshop_dir
 	Game path: $game_dir
-	
-	Linux: $(uname -mrs)
 
 	Mods:
 	$(list_mods)
@@ -1144,7 +1143,7 @@ options_menu(){
 	elif [[ $debug_sel == "${debug_list[2]}" ]]; then
 		source_script=$(realpath "$0")
 		source_dir=$(dirname "$source_script")
-		generate_log > "$source_dir/log"
+		generate_log > "$source_dir/DZGUI.log"
 		printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
 		zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
 	elif [[ $debug_sel == "${debug_list[3]}" ]]; then

@@ -5,6 +5,11 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.1.0-rc.10] 2022-11-09
+### Changed
+- More verbose logs
+- Rename log file for clarity
+
 ## [3.1.0-rc.8] 2022-10-26
 ### Changed
 - Foreground mod progress watcher
