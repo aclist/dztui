@@ -5,7 +5,11 @@
 - Custom query API
 - Standardize dialogs
 
-## [3.0.3-5] 2022-10-27
+## [3.0.6] 2022-11-09
+### Changed
+- More verbose logs
+
+## [3.0.5] 2022-10-27
 ### Fixed
 - Properly create .desktop file on desktop PCs
 
