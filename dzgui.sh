@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.0.5
+version=3.0.6
 
 aid=221100
 game="dayz"
@@ -939,11 +939,14 @@ toggle_branch(){
 }
 generate_log(){
 	cat <<-DOC
+	Linux: $(uname -mrs)
 	Version: $version
 	Branch: $branch
 	Whitelist: $whitelist
 	Path: $steam_path
-	Linux: $(uname -mrs)
+	Steam path: $steam_path
+	Workshop path: $workshop_dir
+	Game path: $game_dir
 
 	Mods:
 	$(list_mods)
