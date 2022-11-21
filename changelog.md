@@ -5,6 +5,15 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.1.0-rc.10] 2022-11-21
+### Added
+- Recent connect history
+- Force refresh local mods
+### Changed
+- More verbose messages regarding automod installation
+### Dropped
+- Headless mode
+
 ## [3.1.0-rc.10] 2022-11-09
 ### Changed
 - More verbose logs
