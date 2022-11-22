@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.11
+version=3.1.0-rc.12
 
 aid=221100
 game="dayz"
@@ -725,9 +725,9 @@ history_table(){
 		res=$(< $meta_file jq -er '.response.servers[]' 2>/dev/null)
 	prepare_ip_list "$meta_file" >> /tmp/dz.hist
 	sleep 1s
-	done > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+	done > >(zenity --pulsate --progress --auto-close --title=DZGUI --width=500 2>/dev/null)
 	while true; do
-	sel=$(cat /tmp/dz.hist | zenity --width 1200 --height 800 --list --column=Name --column=IP --column=Players --column=Gametime --print-column=2 --separator=%% 2>/dev/null)
+	sel=$(cat /tmp/dz.hist | zenity --width 1200 --height 800 --title=DZGUI --text="Recent servers" --list --column=Name --column=IP --column=Players --column=Gametime --print-column=2 --separator=%% 2>/dev/null)
 	if [[ $? -eq 1 ]]; then
 		return_from_table=1
 		rm /tmp/dz.hist

@@ -5,7 +5,11 @@
 - Custom query API
 - Standardize dialogs
 
-## [3.1.0-rc.10] 2022-11-21
+## [3.1.0-rc.12] 2022-11-22
+### Changed
+- Updated menu labels
+
+## [3.1.0-rc.11] 2022-11-21
 ### Added
 - Recent connect history
 - Force refresh local mods
