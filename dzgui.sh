@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.12
+version=3.1.0-rc.13
 
 aid=221100
 game="dayz"
@@ -632,6 +632,9 @@ update_history(){
 	fi
 	echo -e "${old}${ip}" > "$hist_file"
 }
+is_steam_running(){
+	xdotool search --desktop "$(xdotool get_desktop)" --name "Steam"
+}
 connect(){
 	#TODO: sanitize/validate input
 	readarray -t qport_arr <<< "$qport_list"
@@ -656,6 +659,7 @@ connect(){
 	compare
 	[[ $auto_install -eq 2 ]] && merge_modlists
 	if [[ -n $diff ]]; then
+		[[ -z $(is_steam_running) ]] && { zenity --info --text "Steam must be running on the current desktop to use this feature."; return; }
 		if [[ $auto_install -eq 1 ]]; then
 			headless_mod_install "$diff"
 			rc=$?
@@ -1116,7 +1120,7 @@ console_dl(){
 	steam steam://open/console 2>/dev/null 1>&2 &&
 	sleep 1s
 	#https://github.com/jordansissel/xdotool/issues/67
-	local wid=$(xdotool search --sync --onlyvisible --desktop "$(xdotool get_desktop)" --name Steam)
+	local wid=$(xdotool search --desktop "$(xdotool get_desktop)" --name Steam)
 	xdotool windowactivate $wid
 	for i in "${modids[@]}"; do
 		xdotool type --delay 15 "workshop_download_item $aid $i"
@@ -1197,10 +1201,10 @@ options_menu(){
 		"Toggle debug mode"
 		"Generate debug log"
 		"Toggle auto mod install [$auto_hr]"
-		"Force update local mods"
 #		"Toggle headless mod install [$headless_hr]"
 #		"Set auto-mod staging directory [$staging_dir]"
 		)
+	[[ $auto_install -eq 2 ]] && debug_list+=("Force update local mods")
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
 		enforce_dl=1
@@ -1220,6 +1224,7 @@ options_menu(){
 		force_update=1
 		force_update_mods
 		merge_modlists > >(zenity --pulsate --progress --auto-close --title=DZGUI --width=500 2>/dev/null)
+		[[ -z $(is_steam_running) ]] && { zenity --info --text "Steam must be running on the current desktop to use this feature."; return; }
 		auto_mod_install
 	fi
 }

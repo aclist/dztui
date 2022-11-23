@@ -5,6 +5,11 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.1.0-rc.13] 2022-11-24
+### Fixed
+- Prevent downloading mods if Steam is not running
+- Suppress "force refresh mods" option if automods is disabled
+
 ## [3.1.0-rc.12] 2022-11-22
 ### Changed
 - Updated menu labels
