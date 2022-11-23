@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.13
+version=3.1.0-rc.14
 
 aid=221100
 game="dayz"
@@ -99,7 +99,7 @@ items=(
 	"	My servers"
 	"	Quick connect to favorite server"
 	"	Connect by IP"
-	"	History (last 10 connected)"
+	"	Recent servers (last 10)"
 	"[Manage servers]"
 	"	Add server by ID"
 	"	Add favorite server"

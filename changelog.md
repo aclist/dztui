@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.1.0-rc.14] 2022-11-24
+### Changed
+- Rename "History" to "Recent"
+
 ## [3.1.0-rc.13] 2022-11-24
 ### Fixed
 - Prevent downloading mods if Steam is not running
