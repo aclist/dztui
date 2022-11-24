@@ -5,6 +5,21 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.1.0-rc.15] 2022-11-24
+### Fixed
+- Faster path discovery on initial setup
+- Handle whitelist deletion when only one entry present
+- Return to main menu from recent servers list
+- Unset delete menu flags after deletion
+### Added
+- Add python to deps
+- Add Steam API key requirement to initial setup
+### Dropped
+- Drop mandatory server IDs on initial setup
+- Old functions and files pertaining to headless mode
+### Changed
+- Allow My Servers list to be initially empty
+
 ## [3.1.0-rc.14] 2022-11-24
 ### Changed
 - Rename "History" to "Recent"
