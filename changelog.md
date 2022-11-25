@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.1.0-rc.16] 2022-11-25
+### Fixed
+- Hotfix for server modlists returning multiples of same mod
+
 ## [3.1.0-rc.15] 2022-11-24
 ### Fixed
 - Faster path discovery on initial setup

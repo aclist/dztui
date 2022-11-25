@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.15
+version=3.1.0-rc.16
 
 aid=221100
 game="dayz"
@@ -814,7 +814,7 @@ server_modlist(){
 	done
 }
 compare(){
-	diff=$(comm -23 <(server_modlist | sort) <(installed_mods | sort))
+	diff=$(comm -23 <(server_modlist | sort -u) <(installed_mods | sort))
 }
 
 installed_mods(){
