@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.0.7] 2022-11-025
+### Fixed
+- Hotfix for server reporting multiple versions of same mod
+
 ## [3.0.6] 2022-11-09
 ### Changed
 - More verbose logs
