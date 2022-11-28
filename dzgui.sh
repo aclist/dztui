@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.16
+version=3.1.0-rc.17
 
 aid=221100
 game="dayz"
@@ -68,7 +68,7 @@ print_news(){
 }
 
 declare -A deps
-deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [zenity]="3.42.1" [steam]="1.0.0" [python]="3.0")
+deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [zenity]="3.42.1" [steam]="1.0.0")
 changelog(){
 	if [[ $branch == "stable" ]]; then
 		md="https://raw.githubusercontent.com/aclist/dztui/dzgui/changelog.md"
@@ -248,6 +248,7 @@ file_picker(){
 	done
 }
 create_config(){
+	check_pyver
 	while true; do
 		player_input="$(zenity --forms --add-entry="Player name (required for some servers)" --add-entry="BattleMetrics API key" --add-entry="Steam API key" --title="DZGUI" --text="DZGUI" $sd_res --separator="│" 2>/dev/null)"
 		#explicitly setting IFS crashes zenity in loop
@@ -295,6 +296,13 @@ run_depcheck(){
 	else	
 		echo "100"
 		zenity --warning --ok-label="Exit" --title="DZGUI" --text="$(depcheck)"
+		exit
+	fi
+}
+check_pyver(){
+	pyver=$(python --version | awk '{print $2}')
+	if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]]; then
+		warn "Requires python >=3.0" &&
 		exit
 	fi
 }

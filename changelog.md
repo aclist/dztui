@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.1.0-rc.17] 2022-11-28
+### Changed
+- Explicitly check Python version
+
 ## [3.1.0-rc.16] 2022-11-25
 ### Fixed
 - Hotfix for server modlists returning multiples of same mod
