@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.17
+version=3.1.0-rc.18
 
 aid=221100
 game="dayz"
@@ -115,11 +115,6 @@ items=(
 	"	Report bug ⧉"
 	"	Forum ⧉"
 	)
-}
-warn_and_exit(){
-	zenity --info --title="DZGUI" --text="$1" --width=500 --icon-name="dialog-warning" 2>/dev/null
-	printf "[DZGUI] %s\n" "$check_config_msg"
-	exit
 }
 warn(){
 	zenity --info --title="DZGUI" --text="$1" --width=500 --icon-name="dialog-warning" 2>/dev/null
@@ -291,9 +286,7 @@ varcheck(){
 	[[ ! -d "$game_dir" ]] && (err "Malformed game path")
 }
 run_depcheck(){
-	if [[ -z $(depcheck) ]]; then 
-		:
-	else	
+	if [[ -n $(depcheck) ]]; then
 		echo "100"
 		zenity --warning --ok-label="Exit" --title="DZGUI" --text="$(depcheck)"
 		exit
@@ -310,11 +303,8 @@ run_varcheck(){
 	source $config_file
 	workshop_dir="$steam_path/steamapps/workshop/content/$aid"
 	game_dir="$steam_path/steamapps/common/DayZ"
-	if [[ -z $(varcheck) ]]; then
-		:
-	else	
+	if [[ -n $(varcheck) ]]; then
 		zenity --warning --width 500 --text="$(varcheck)" 2>/dev/null
-		printf "[DZGUI] %s\n" "$check_config_msg"
 		zenity --question --cancel-label="Exit" --text="Malformed config file. This is probably user error.\nStart first-time setup process again?" --width=500 2>/dev/null
 		code=$?
 		if [[ $code -eq 1 ]]; then
@@ -330,7 +320,7 @@ config(){
 		#echo "100"
 		zenity --width 500 --info --text="Config file not found. Click OK to proceed to first-time setup." 2>/dev/null
 		code=$?
-		#prevent progress if user hits ESC
+		#TODO: prevent progress if user hits ESC
 		if [[ $code -eq 1 ]]; then
 			exit
 		else
@@ -339,21 +329,6 @@ config(){
 	else
 		source $config_file
 	fi
-
-}
-open_mod_links(){
-	link_file=$(mktemp)
-	echo "<html>" > $link_file
-	echo "<title>DZGUI</title>" >> $link_file
-	echo "<h1>DZGUI</h1>" >> $link_file
-	echo "<p>Open these links and subscribe to them on the Steam Workshop, then continue with the application prompts.<br><b>Note:</b> it may take some time for mods to synchronize before DZGUI can see them.<br>It can help to have Steam in an adjacent window so that you can see the downloads completing.</p>" >> $link_file
-	n=1
-	for i in $diff; do
-		echo "$n. <a href=\"${workshop}$i\">${workshop}$i</a><br>"
-		let n++
-	done >> $link_file
-	echo "</html>" >> $link_file
-	browser "$link_file" 2>/dev/null &
 
 }
 steam_deck_mods(){	
@@ -605,6 +580,7 @@ connect(){
 	[[ $auto_install -eq 2 ]] && merge_modlists
 	if [[ -n $diff ]]; then
 		[[ -z $(is_steam_running) ]] && { zenity --info --text "Steam must be running on the current desktop to use this feature."; return; }
+		#TODO: headless is deprecated
 		if [[ $auto_install -eq 1 ]]; then
 			headless_mod_install "$diff"
 			rc=$?
@@ -1025,43 +1001,6 @@ generate_log(){
 	$(list_mods)
 	DOC
 }
-automods_prompt(){
-cat <<- HERE
-
-Headless installation set to ON.
-
-READ THIS FIRST:
-With this setting on, DZGUI will attempt to download and prepare mods using Valve's steamcmd tool.
-
-The first time this process is run, DZGUI will ask you to select a terminal emulator of your preference to spawn the installation routine. If you don't have a preference or don't know, you can pick any.
-
-Installation will kick off in a separate window and may ask you for input such as your sudo password in order to install system packages and create the steamcmd user.
-
-steamcmd itself will ask for your Steam credentials. This information is used directly by Valve's steamcmd tool to authenticate your account and let you download mods headlessly. steamcmd is an official program created by Valve and communicates only with their servers.
-
-NOTE: it can take some time for large mods to download, and steamcmd will not inform you of activity until each one is finished downloading.
-
-If your distribution is unsupported, you don't have enough disk space to stage all of the mods, or there are other problems, DZGUI will warn you and write a report to $HOME/.local/share/dzgui/helpers/SCMD.log. You can attach this file to a bug report.
-HERE
-}
-toggle_headless(){
-	[[ $is_steam_deck -eq 1 ]] && test_display_mode
-	[[ $gamemode -eq 1 ]] && { popup 200; return; }
-	mv $config_file ${config_path}dztuirc.old
-	local nr=$(awk '/auto_install=/ {print NR}' ${config_path}dztuirc.old)
-	if [[ $auto_install == "1"  ]]; then
-		auto_install="0"
-	else
-		auto_install="1"
-	fi
-	local flip_state="auto_install=\"$auto_install\""
-	awk -v "var=$flip_state" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
-	printf "[DZGUI] Set mod install to '$auto_install'\n"
-	source $config_file
-	local big_prompt
-	[[ $is_steam_deck -eq 1 ]] && big_prompt="--width=800"
-	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)" $big_prompt 2>/dev/null
-}
 console_dl(){
 	readarray -t modids <<< "$@"
 	steam steam://open/console 2>/dev/null 1>&2 &&
@@ -1116,9 +1055,6 @@ popup(){
 		600) pop "No preferred servers set." ;;
 	esac
 }
-requires_xdo(){
-	zenity --info --text="This feature requires xdotool" --title=DZGUI --width=500
-}
 toggle_console_dl(){
 	[[ $is_steam_deck -eq 1 ]] && test_display_mode
 	[[ $gamemode -eq 1 ]] && { popup 200; return; }
@@ -1154,8 +1090,6 @@ options_menu(){
 		"Toggle debug mode"
 		"Generate debug log"
 		"Toggle auto mod install [$auto_hr]"
-#		"Toggle headless mod install [$headless_hr]"
-#		"Set auto-mod staging directory [$staging_dir]"
 		)
 	[[ $auto_install -eq 2 ]] && debug_list+=("Force update local mods")
 	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
@@ -1442,8 +1376,8 @@ server_browser(){
 		response=$(curl -Ls "$url" | jq -r '.response.servers')
 	}
 	fetch > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
-	total_servers=$(echo "$response" | jq 'length')
-	players_online=$(echo "$response" | jq '.[].players' | awk '{s+=$1}END{print s}')
+	total_servers=$(echo "$response" | jq 'length' | numfmt --grouping)
+	players_online=$(echo "$response" | jq '.[].players' | awk '{s+=$1}END{print s}' | numfmt --grouping)
 	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
 	debug_servers
 	local sel=$(munge_servers)

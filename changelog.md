@@ -5,6 +5,12 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.1.0-rc.18] 2022-12-01
+### Added
+- Thousands separator to player counts
+### Dropped
+- Removed deprecated functions
+
 ## [3.1.0-rc.17] 2022-11-28
 ### Changed
 - Explicitly check Python version
