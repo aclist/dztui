@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.2.1-rc.1] 2022-12-03
+### Changed
+- Dropped legacy headless mode logic and refactor against new automod method
+
 ## [3.1.0-rc.21] 2022-12-03
 ### Added
 - File picker error handling
