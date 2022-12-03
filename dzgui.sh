@@ -1032,7 +1032,7 @@ find_default_path(){
 			case "$res" in
 				*auto*) discover ;;
 				*manual*)
-					zenity --info --text="\nSelect the top-level path to the Steam library folder containing \"steamapps\".\n\nE.g., if DayZ is installed at:\n\"/media/mydrive/steamapps/common/DayZ\"\n\nYou should select:\n\"/media/mydrive\"" --width=500 &&
+					zenity --info --text="\nSelect the top-level entry point to the location where Steam (not DayZ)\nis installed and before entering the \"steamapps\" path.\n\nE.g., if Steam is installed at:\n\"/media/mydrive/Steam\"\n\nCorrect:\n- \"/media/mydrive/Steam\"\n\nIncorrect:\n- \"/media/mydrive/Steam/steamapps/common/DayZ\"\n- \"/media/mydrive/\"" --width=500 &&
 					file_picker ;;
 			esac
 		fi
