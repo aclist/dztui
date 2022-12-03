@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.1
+version=3.1.2
 
 aid=221100
 game="dayz"
@@ -1712,10 +1712,10 @@ while true; do
 done
 }
 lock(){
-	if [[ ! -f $config_path/.lockfile ]]; then
-		touch $config_path/.lockfile
+	if [[ ! -f ${config_path}.lockfile ]]; then
+		touch ${config_path}.lockfile
 	fi
-	pid=$(cat $config_path/.lockfile)
+	pid=$(cat ${config_path}.lockfile)
 	ps -p $pid -o pid= >/dev/null 2>&1
 	res=$?
 	if [[ $res -eq 0 ]]; then
@@ -1725,7 +1725,7 @@ lock(){
 	elif [[ $pid == $$ ]]; then
 		:
 	else
-		echo $$ > $config_path/.lockfile
+		echo $$ > ${config_path}.lockfile
 	fi
 }
 fetch_helpers(){

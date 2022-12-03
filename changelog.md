@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Validate BM API key
 
+## [3.1.1-2] 2022-12-03
+### Fixed
+- Fix lockfile path
+
 ## [3.1.0] 2022-12-03
 ### Added
 - Recent connect history
