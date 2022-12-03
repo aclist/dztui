@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.19
+version=3.1.0-rc.20
 
 aid=221100
 game="dayz"
@@ -1020,7 +1020,7 @@ find_default_path(){
 	discover(){
 		echo "# Searching for Steam"
 		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path \
-		"/tmp" -o -path "/usr" -o -path "/boot" -o -path "/run" -o -path "/proc" -o -path "/root" \
+		"/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" \
 		-o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
 		-o -regex ".*/Steam/ubuntu12_32$" -print -quit 2>/dev/null | sed 's@/ubuntu12_32@@')
 		echo "100"
@@ -1498,7 +1498,6 @@ check_ping(){
 }
 create_array(){
 	rows=()
-	list=$(cat $tmp)
 	#TODO: improve error handling for null values
 	lc=1
 	while read line; do
@@ -1525,7 +1524,7 @@ create_array(){
 			declare -g -a rows=("${rows[@]}" "$name" "$ip" "$players" "$time" "$stat" "$id" "$ping")
 		fi
 		let lc++
-	done <<< "$list"
+	done < "$tmp"
 
 	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp
 }
