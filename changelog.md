@@ -5,6 +5,9 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.1.0-rc.21] 2022-12-03
+### Added
+- File picker error handling
 
 ## [3.1.0-rc.20] 2022-12-02
 ### Fixed
