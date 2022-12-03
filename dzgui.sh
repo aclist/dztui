@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.0.7
+version=3.1.0
 
 aid=221100
 game="dayz"
@@ -10,6 +10,7 @@ api="https://api.battlemetrics.com/servers"
 sd_res="--width=1280 --height=800"
 config_path="$HOME/.config/dztui/"
 config_file="${config_path}dztuirc"
+hist_file="${config_path}/history"
 tmp=/tmp/dzgui.tmp
 fifo=/tmp/table.tmp
 separator="%%"
@@ -31,9 +32,15 @@ km_helper_url="$releases_url/latlon"
 db_file="$releases_url/ips.csv.gz"
 sums_url="$stable_url/helpers/sums.md5"
 scmd_url="$stable_url/helpers/scmd.sh"
+vdf2json_url="$stable_url/helpers/vdf2json.py"
 notify_url="$stable_url/helpers/d.html"
 notify_img_url="$stable_url/helpers/d.webp"
 forum_url="https://github.com/aclist/dztui/discussions"
+version_file="$config_path/versions"
+steamsafe_zenity="/usr/bin/zenity"
+
+#TODO: prevent connecting to offline servers
+#TODO: abstract zenity title params and dimensions
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
@@ -51,7 +58,7 @@ check_news(){
 }
 print_news(){
 	check_news
-	if [[ $sum == $seen_news || -z $result ]]; then 
+	if [[ $sum == $seen_news || -z $result ]]; then
 		hchar=""
 		news=""
 	else
@@ -60,11 +67,9 @@ print_news(){
 		update_last_seen
 	fi
 }
-#TODO: prevent connecting to offline servers
-#TODO: abstract zenity title params and dimensions
 
 declare -A deps
-deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [zenity]="3.42.1" [steam]="1.0.0")
+deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [$steamsafe_zenity]="3.42.1" [steam]="1.0.0")
 changelog(){
 	if [[ $branch == "stable" ]]; then
 		md="https://raw.githubusercontent.com/aclist/dztui/dzgui/changelog.md"
@@ -96,8 +101,9 @@ items=(
 	"	Server browser"
 	"	My servers"
 	"	Quick connect to favorite server"
-	"[Manage servers]"
 	"	Connect by IP"
+	"	Recent servers (last 10)"
+	"[Manage servers]"
 	"	Add server by ID"
 	"	Add favorite server"
 	"	Delete server"
@@ -108,19 +114,14 @@ items=(
 	"[Help]"
 	"	Help file ⧉"
 	"	Report bug ⧉"
-	"	Become a beta tester ⧉"
+	"	Forum ⧉"
 	)
 }
-warn_and_exit(){
-	zenity --info --title="DZGUI" --text="$1" --width=500 --icon-name="dialog-warning" 2>/dev/null
-	printf "[DZGUI] %s\n" "$check_config_msg"
-	exit
-}
 warn(){
-	zenity --info --title="DZGUI" --text="$1" --width=500 --icon-name="dialog-warning" 2>/dev/null
+	$steamsafe_zenity --info --title="DZGUI" --text="$1" --width=500 --icon-name="dialog-warning" 2>/dev/null
 }
 info(){
-	zenity --info --title="DZGUI" --text="$1" --width=500 2>/dev/null
+	$steamsafe_zenity --info --title="DZGUI" --text="$1" --width=500 2>/dev/null
 }
 set_api_params(){
 	response=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "sort=-players" \
@@ -133,11 +134,7 @@ query_api(){
 	if [[ $one_shot_launch -eq 1 ]]; then
 		list_of_ids="$fav"
 	else
-		if [[ -n $fav ]]; then
-			list_of_ids="$whitelist,$fav"
-		else
-			list_of_ids="$whitelist"
-		fi
+		list_of_ids="$whitelist"
 	fi
 	set_api_params
 	if [[ "$(jq -r 'keys[]' <<< "$response")" == "errors" ]]; then
@@ -194,6 +191,9 @@ auto_install="$auto_install"
 
 #Automod staging directory
 staging_dir="$staging_dir"
+
+#Path to default Steam client
+default_steam_path="$default_steam_path"
 	END
 }
 write_desktop_file(){
@@ -215,7 +215,7 @@ freedesktop_dirs(){
 	#TODO: update url
 	curl -s "$version_url" > "$sd_install_path/dzgui.sh"
 	chmod +x "$sd_install_path/dzgui.sh"
-	img_url="https://raw.githubusercontent.com/aclist/dztui/testing/images"
+	img_url="$stable_url/images"
 	for i in dzgui grid.png hero.png logo.png; do
 		curl -s "$img_url/$i" > "$sd_install_path/$i"
 	done
@@ -224,68 +224,59 @@ freedesktop_dirs(){
 		write_desktop_file > "$HOME/Desktop/dzgui.desktop"
 	fi
 }
+find_library_folder(){
+	steam_path=$(python $helpers_path/vdf2json.py -i $default_steam_path/steamapps/libraryfolders.vdf | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
+}
 file_picker(){
 	while true; do
-	local path=$(zenity --file-selection --directory 2>/dev/null)
+	local path=$($steamsafe_zenity --file-selection --directory 2>/dev/null)
 		if [[ -z "$path" ]]; then
 			return
 		else
-			echo "[DZGUI]" Set mod staging path to "$path"
-			staging_dir="$path"
-			write_config > $config_file
+			default_steam_path="$path"
+			find_library_folder
+		fi
+		if [[ -z $steam_path ]]; then
+			warn "DayZ not found at this path."
+		else
 			return
 		fi
 	done
 }
-guess_path(){
-	echo "# Checking for default DayZ path"
-	path=$(find $HOME -type d -regex ".*/steamapps/common/DayZ$" -print -quit)
-	if [[ -n "$path" ]]; then
-		clean_path=$(echo -e "$path" | awk -F"/steamapps" '{print $1}')
-		steam_path="$clean_path"
-	else
-		echo "# Searching for alternate DayZ path. This may take some time."
-		path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" -o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune -o -regex ".*/steamapps/common/DayZ$" -print -quit 2>/dev/null)
-			clean_path=$(echo -e "$path" | awk -F"/steamapps" '{print $1}')
-			steam_path="$clean_path"
-	fi
-}
 create_config(){
+	check_pyver
 	while true; do
-	player_input="$(zenity --forms --add-entry="Player name (required for some servers)" --add-entry="API key" --add-entry="Server 1 (you can add more later)" --title="DZGUI" --text="DZGUI" --add-entry="Server 2" --add-entry="Server 3" --add-entry="Server 4" $sd_res --separator="│" 2>/dev/null)"
-	#explicitly setting IFS crashes zenity in loop
-	#and mapfile does not support high ascii delimiters
-	#so split fields with newline
-	readarray -t args < <(echo "$player_input" | sed 's/│/\n/g')
-	name="${args[0]}"
-	api_key="${args[1]}"
-	server_1="${args[2]}"
-	server_2="${args[3]}"
-	server_3="${args[4]}"
-	server_4="${args[5]}"
+		player_input="$($steamsafe_zenity --forms --add-entry="Player name (required for some servers)" --add-entry="BattleMetrics API key" --add-entry="Steam API key" --title="DZGUI" --text="DZGUI" $sd_res --separator="│" 2>/dev/null)"
+		#explicitly setting IFS crashes $steamsafe_zenity in loop
+		#and mapfile does not support high ascii delimiters
+		#so split fields with newline
+		readarray -t args < <(echo "$player_input" | sed 's/│/\n/g')
+		name="${args[0]}"
+		api_key="${args[1]}"
+		steam_api="${args[2]}"
 
-	[[ -z $player_input ]] && exit
-	if [[ -z $api_key ]]; then
-		warn "API key: invalid value"
-	elif [[ -z $server_1 ]]; then
-		warn "Server 1: cannot be empty"
-	elif [[ ! $server_1 =~ ^[0-9]+$ ]]; then
-		warn "Server 1: only numeric IDs"
-	elif [[ -n $server_2 ]] && [[ ! $server_2 =~ ^[0-9]+$ ]]; then
-		warn "Server 2: only numeric IDs"
-	elif [[ -n $server_3 ]] && [[ ! $server_3 =~ ^[0-9]+$ ]]; then
-		warn "Server 3: only numeric IDs"
-	elif [[ -n $server_4 ]] && [[ ! $server_3 =~ ^[0-9]+$ ]]; then
-		warn "Server 4: only numeric IDs"
-	else
-	whitelist=$(echo "$player_input" | awk -F"│" '{OFS=","}{print $3,$4,$5,$6}' | sed 's/,*$//g' | sed 's/^,*//g')
-	guess_path > >(zenity --width 500 --progress --auto-close --pulsate 2>/dev/null) &&
-	echo "[DZGUI] Set path to $steam_path"
-	#FIXME: tech debt: gracefully exit if user cancels search process
-	mkdir -p $config_path; write_config > $config_file
-	info "Config file created at $config_file."
-	return
-	fi
+		[[ -z $player_input ]] && exit
+		if [[ -z $api_key ]] || [[ -z $steam_api ]]; then
+			warn "API key: invalid value"
+		#TODO: test BM key
+		elif [[ $(test_steam_api) -eq 1 ]]; then
+			warn "Invalid Steam API key"
+		else
+			while true; do
+				find_default_path
+				find_library_folder
+				if [[ -z $steam_path ]]; then
+					zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Retry" --cancel-label="Exit"
+					[[ $? -eq 1 ]] && exit
+				else
+					mkdir -p $config_path
+					write_config > $config_file
+					info "Config file created at $config_file."
+					source $config_file
+					return
+				fi
+			done
+		fi
 	done
 
 }
@@ -293,17 +284,21 @@ err(){
 	printf "[ERROR] %s\n" "$1"
 }
 varcheck(){
-	[[ -z $api_key ]] && (err "Error in key: 'api_key'")
-	[[ -z $whitelist ]] && (err "Error in key: 'whitelist'")
-	[[ ! -d "$game_dir" ]] && (err "Malformed game path")
-	[[ $whitelist =~ [[:space:]] ]] && (err "Separate whitelist values with commas")
+	if [[ -z $api_key ]] || [[ ! -d $steam_path ]] || [[ ! -d $game_dir ]]; then
+		echo 1
+	fi
 }
 run_depcheck(){
-	if [[ -z $(depcheck) ]]; then 
-		:
-	else	
+	if [[ -n $(depcheck) ]]; then
 		echo "100"
-		zenity --warning --ok-label="Exit" --title="DZGUI" --text="$(depcheck)"
+		$steamsafe_zenity --warning --ok-label="Exit" --title="DZGUI" --text="$(depcheck)"
+		exit
+	fi
+}
+check_pyver(){
+	pyver=$(python --version | awk '{print $2}')
+	if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]]; then
+		warn "Requires python >=3.0" &&
 		exit
 	fi
 }
@@ -311,26 +306,21 @@ run_varcheck(){
 	source $config_file
 	workshop_dir="$steam_path/steamapps/workshop/content/$aid"
 	game_dir="$steam_path/steamapps/common/DayZ"
-	if [[ -z $(varcheck) ]]; then
-		:
-	else	
-		zenity --warning --width 500 --text="$(varcheck)" 2>/dev/null
-		printf "[DZGUI] %s\n" "$check_config_msg"
-		zenity --question --cancel-label="Exit" --text="Malformed config file. This is probably user error.\nStart first-time setup process again?" --width=500 2>/dev/null
+	if [[ $(varcheck) -eq 1 ]]; then
+		$steamsafe_zenity --question --cancel-label="Exit" --text="Malformed config file. This is probably user error.\nStart first-time setup process again?" --width=500 2>/dev/null
 		code=$?
 		if [[ $code -eq 1 ]]; then
 			exit
 		else
-			echo "100"
 			create_config
 		fi
 	fi
 }
 config(){
 	if [[ ! -f $config_file ]]; then
-		zenity --width 500 --info --text="Config file not found. Click OK to proceed to first-time setup." 2>/dev/null
+		$steamsafe_zenity --width 500 --info --text="Config file not found. Click OK to proceed to first-time setup." 2>/dev/null
 		code=$?
-		#prevent progress if user hits ESC
+		#TODO: prevent progress if user hits ESC
 		if [[ $code -eq 1 ]]; then
 			exit
 		else
@@ -341,90 +331,26 @@ config(){
 	fi
 
 }
-open_mod_links(){
-	link_file=$(mktemp)
-	echo "<html>" > $link_file
-	echo "<title>DZGUI</title>" >> $link_file
-	echo "<h1>DZGUI</h1>" >> $link_file
-	echo "<p>Open these links and subscribe to them on the Steam Workshop, then continue with the application prompts.<br><b>Note:</b> it may take some time for mods to synchronize before DZGUI can see them.<br>It can help to have Steam in an adjacent window so that you can see the downloads completing.</p>" >> $link_file
-	n=1
-	for i in $diff; do
-		echo "$n. <a href=\"${workshop}$i\">${workshop}$i</a><br>"
-		let n++
-	done >> $link_file
-	echo "</html>" >> $link_file
-	browser "$link_file" 2>/dev/null &
-
-}
 steam_deck_mods(){	
 	until [[ -z $diff ]]; do
 		next=$(echo -e "$diff" | head -n1)
-		zenity --question --ok-label="Open" --cancel-label="Cancel" --title="DZGUI" --text="Missing mods. Click [Open] to open mod $next in Steam Workshop and subscribe to it by clicking the green Subscribe button. After the mod is downloaded, return to this menu to continue validation." --width=500 2>/dev/null
+		$steamsafe_zenity --question --ok-label="Open" --cancel-label="Cancel" --title="DZGUI" --text="Missing mods. Click [Open] to open mod $next in Steam Workshop and subscribe to it by clicking the green Subscribe button. After the mod is downloaded, return to this menu to continue validation." --width=500 2>/dev/null
 		rc=$?
 		if [[ $rc -eq 0 ]]; then
 			echo "[DZGUI] Opening ${workshop}$next"
 			steam steam://url/CommunityFilePage/$next 2>/dev/null &
-			zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." --width=500 2>/dev/null
+			$steamsafe_zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." --width=500 2>/dev/null
 		else
 			return 1
 		fi
 		compare
 	done
 }
-set_term(){
-	local term="$1"
-	local tterm="term=\"$term\""
-	mv $config_file ${config_path}dztuirc.old
-	nr=$(awk '/term=/ {print NR}' ${config_path}dztuirc.old)
-	awk -v "var=$tterm" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
-	printf "[DZGUI] Set term to '$term'\n"
-	source $config_file
-}
-sel_term(){
-	#only terminals known to support -e flag
-	for i in "$TERMINAL" urxvt alacritty konsole gnome-terminal terminator xfce4-terminal xterm tilix; do
-		[[ $(command -v $i) ]] && terms+=($i)
-	done
-	#FIXME: if no terms, error
-	local terms=$(printf "%s\n" "${terms[@]}" | sort -u)
-	term=$(echo "$terms" | zenity --list --column=Terminal --height=800 --width=1200 --text="Select your preferred terminal emulator to run steamcmd (setting will be saved)" --title=DZGUI 2>/dev/null)
-}
 calc_mod_sizes(){
 	for i in "$diff"; do
 	local mods+=$(grep -w "$i" /tmp/modsizes | awk '{print $1}')
 	done
 	totalmodsize=$(echo -e "${mods[@]}" | awk '{s+=$1}END{print s}')
-}
-term_params(){
-	case $term in
-		konsole) $term --hold -e "bash $helpers_path/scmd.sh $totalmodsize $1";;
-		urxvt) $term -e bash -c "/$helpers_path/scmd.sh $totalmodsize $1";;
-		alacritty) $term -e bash -c "/$helpers_path/scmd.sh $totalmodsize $1";;
-		terminator|xterm|tilix|xfce4-terminal) $term -e "bash $helpers_path/scmd.sh $totalmodsize $1";;
-	esac
-}
-auto_mod_install(){
-	cmd=$(printf "%q " "$@")
-	if [[ -z "$term" ]]; then
-		if [[ $is_steam_deck -eq 1 ]]; then
-			set_term konsole
-			return 0
-		else
-			sel_term && set_term "$term"
-		fi
-	fi
-	[[ -z "$term" ]] && return 1
-	echo "[DZGUI] Kicking off auto mod script"
-	calc_mod_sizes
-	term_params "$cmd"
-	compare
-	if [[ -z $diff ]]; then
-		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
-		launch
-	else
-		warn "Auto mod installation failed or some mods missing.\nReverting to manual mode."
-		return 1
-	fi
 }
 test_display_mode(){
 	pgrep -a gamescope | grep -q "generate-drm-mode"
@@ -474,34 +400,16 @@ manual_mod_install(){
 		done
 		echo "100"
 		}
-		watcher > >(zenity --pulsate --progress --auto-close --title="DZG Watcher" --width=500 2>/dev/null; rc=$?; [[ $rc -eq 1 ]] && touch $ex)
+		watcher > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZG Watcher" --width=500 2>/dev/null; rc=$?; [[ $rc -eq 1 ]] && touch $ex)
 		compare
 		if [[ -z $diff ]]; then
-			passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+			passed_mod_check > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 			launch
 		else
 			return 1
 		fi
 	fi
 }
-#	if [[ $is_steam_deck -eq 0 ]]; then
-#		open_mod_links
-#		until [[ -z $diff ]]; do
-#			zenity --question --title="DZGUI" --ok-label="Next" --cancel-label="Cancel" --text="Opened mod links in browser.\nClick [Next] when all mods have been subscribed to.\nThis dialog may reappear if clicking [Next] too soon\nbefore mods are synchronized in the background." --width=500 2>/dev/null
-#			rc=$?
-#			if [[ $rc -eq 0 ]]; then
-#			compare
-#			open_mod_links
-#		else
-#			return
-#			fi
-#		done
-#	else
-#		steam_deck_mods
-#		rc=$?
-#		[[ $rc -eq 1 ]] && return 1
-#	fi
-#	passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 encode(){
 	echo "$1" | md5sum | cut -c -8
 }
@@ -541,11 +449,111 @@ symlinks(){
 passed_mod_check(){
 	echo "[DZGUI] Passed mod check"
 	echo "# Preparing symlinks"
-	stale_symlinks
 	legacy_symlinks
 	symlinks
 	echo "100"
 
+}
+auto_mod_install(){
+	popup 300
+	rc=$?
+	if [[ $rc -eq 0 ]]; then
+		calc_mod_sizes
+		local total_size=$(numfmt --to=iec $totalmodsize)
+		log="$default_steam_path/logs/content_log.txt"
+		[[ -f "/tmp/dz.status" ]] && rm "/tmp/dz.status"
+		touch "/tmp/dz.status"
+		console_dl "$diff" &&
+		steam steam://open/downloads && 2>/dev/null 1>&2
+		until [[ -z $(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort)) ]]; do
+			win=$(xdotool search --name "DZG Watcher")
+			[[ ! $(xdotool getwindowfocus) -eq $win ]] && xdotool windowraise $win
+			local missing=$(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort) | wc -l)
+			echo "# Downloaded $((${#modids[@]}-missing)) of ${#modids[@]} mods"
+		done | $steamsafe_zenity --pulsate --progress --title="DZG Watcher" --auto-close --no-cancel --width=500 2>/dev/null
+		compare
+		[[ $force_update -eq 1 ]] && { unset force_update; return; }
+		if [[ -z $diff ]]; then
+			check_timestamps
+			passed_mod_check > >($steamsafe_zenity --pulsate --progress --title=DZGUI --auto-close --width=500 2>/dev/null)
+			launch
+		else
+			manual_mod_install
+		fi
+	else
+		manual_mod_install
+	fi
+}
+get_local_stamps(){
+	concat(){
+	for ((i=0;i<$max;i++)); do
+	   echo "publishedfileids[$i]=${local_modlist[$i]}&"
+	done | awk '{print}' ORS=''
+	}
+	payload(){
+		echo -e "itemcount=${max}&$(concat)"
+	}
+	post(){
+		curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded" \
+		-d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
+	}
+	post
+}
+update_stamps(){
+	for((i=0;i<${#local_modlist[@]};i++)); do
+		mod=${local_modlist[$i]}
+		stamp=${stamps[$i]}
+		printf "%s\t%s\n" "$mod" "$stamp" >> $version_file
+	done
+}
+check_timestamps(){
+	readarray -t local_modlist < <(ls -1 $workshop_dir)
+	max=${#local_modlist[@]}
+	readarray -t stamps < <(get_local_stamps | jq -r '.response.publishedfiledetails[].time_updated')
+	if [[ ! -f $version_file ]]; then
+		update_stamps
+		return
+	else
+		needs_update=()
+		for((i=0;i<${#local_modlist[@]};i++)); do
+			mod=${local_modlist[$i]}
+			stamp=${stamps[$i]}
+			if [[ ! $(awk -v var=$mod '$1 == var' $version_file) ]]; then
+				echo -e "$mod\t$stamp" >> $version_file
+			elif [[ $(awk -v var=$mod -v var2=$stamp '$1 == var && $2 == var2' $version_file) ]]; then
+				:
+			else
+				awk -v var=$mod -v var2=$stamp '$1 == var {$2=var2;print $1"\t"$2; next;};{print}' $version_file > $version_file.new
+				mv $version_file.new $version_file
+				needs_update+=($mod)
+			fi
+		done
+	fi
+}
+merge_modlists(){
+	[[ $force_update -eq 1 ]] && echo "# Checking mod versions"
+	check_timestamps
+	if [[ -z "$diff" ]] && [[ ${#needs_update[@]} -gt 0 ]]; then
+		diff=$(printf "%s\n" "${needs_update[@]}")
+	elif [[ -z "$diff" ]] && [[ ${#needs_update[@]} -eq 0 ]]; then
+		diff=
+	elif [[ -n "$diff" ]] && [[ ${#needs_update[@]} -eq 0 ]]; then
+		:
+	else
+		diff="$(echo -e "$diff\n${needs_update[@]}")"
+	fi
+	[[ $force_update -eq 1 ]] && echo "100"
+}
+update_history(){
+	[[ -n $(grep "$ip" $hist_file) ]] && return
+	if [[ -f $hist_file ]]; then
+		old=$(tail -n9 "$hist_file")
+		old="$old\n"
+	fi
+	echo -e "${old}${ip}" > "$hist_file"
+}
+is_steam_running(){
+	xdotool search --desktop "$(xdotool get_desktop)" --name "Steam"
 }
 connect(){
 	#TODO: sanitize/validate input
@@ -557,7 +565,7 @@ connect(){
 	ip=$(echo "$1" | awk -F"$separator" '{print $1}')
 	bid=$(echo "$1" | awk -F"$separator" '{print $2}')
 	if [[ $2 == "ip" ]]; then
-		fetch_mods_sa "$ip" > >(zenity --pulsate --progress --auto-close --no-cancel --width=500 2>/dev/null)
+		fetch_mods_sa "$ip" > >($steamsafe_zenity --pulsate --progress --auto-close --no-cancel --width=500 2>/dev/null)
 	else
 		fetch_mods "$bid"
 	fi
@@ -569,16 +577,16 @@ connect(){
 	rc=$?
 	[[ $rc -eq 1 ]] && return
 	compare
+	[[ $auto_install -eq 2 ]] && merge_modlists
 	if [[ -n $diff ]]; then
-		if [[ $auto_install -eq 1 ]]; then
-			auto_mod_install "$diff"
-			rc=$?
-			[[ $rc -eq 1 ]] && manual_mod_install
-		else
-			manual_mod_install
-		fi
+		[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running on the current desktop to use this feature."; return; }
+		case $auto_install in
+			1|2) auto_mod_install ;;
+			*) manual_mod_install ;;
+		esac
 	else
-		passed_mod_check > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+		passed_mod_check > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+		update_history
 		launch
 	fi
 }
@@ -600,7 +608,7 @@ fetch_mods_sa(){
 	if [[ $status -eq 1 ]]; then
 		echo "100"
 		err "97: Failed to fetch modlist"
-		zenity --error --title="DZGUI" --width=500 --text="[ERROR] 97: Failed to fetch modlist" 2>/dev/null &&
+		$steamsafe_zenity --error --title="DZGUI" --width=500 --text="[ERROR] 97: Failed to fetch modlist" 2>/dev/null &&
 		ret=96
 		return
 	fi
@@ -624,10 +632,46 @@ prepare_ip_list(){
 		echo "$time"
 	done
 }
+history_table(){
+	[[ -f /tmp/dz.hist ]] && rm /tmp/dz.hist
+	for i in $(cat $hist_file); do
+		echo "# Getting metadata for $i"
+		local meta_file=$(mktemp)
+		source $config_file
+		local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100\gameaddr\\$i&key=$steam_api"
+		curl -Ls "$url" > $meta_file
+		json=$(mktemp)
+		< $meta_file jq '.response' > $json
+		res=$(< $meta_file jq -er '.response.servers[]' 2>/dev/null)
+		prepare_ip_list "$meta_file" >> /tmp/dz.hist
+		sleep 0.5s
+	done | $steamsafe_zenity --pulsate --progress --auto-close --title=DZGUI --width=500 --no-cancel 2>/dev/null
+	[[ $? -eq 1 ]] && return
+	while true; do
+	sel=$(cat /tmp/dz.hist | $steamsafe_zenity --width 1200 --height 800 --title=DZGUI --text="Recent servers" --list --column=Name --column=IP --column=Players --column=Gametime --print-column=2 --separator=%% 2>/dev/null)
+	if [[ $? -eq 1 ]]; then
+		return_from_table=1
+		rm /tmp/dz.hist
+		return
+	fi
+		if [[ -z $sel ]]; then
+			echo "No selection"
+		else
+			local gameport="$(echo "$sel" | awk -F: '{print $2}')"
+			local ip="$(echo "$sel" | awk -F: '{print $1}')"
+			local addr=$(< $json jq -r --arg gameport $gameport '.servers[]|select(.gameport == ($gameport|tonumber)).addr')
+			local qport=$(echo "$addr" | awk -F: '{print $2}')
+			local sa_ip=$(echo "$ip:$gameport%%$qport")
+			qport_list="$sa_ip"
+			connect "$sel" "ip"
+		fi
+	done
+	rm /tmp/dz.hist
+}
 
 ip_table(){
 	while true; do
-	sel=$(prepare_ip_list "$meta_file" | zenity --width 1200 --height 800 --list --column=Name --column=IP --column=Players --column=Gametime --print-column=2 --separator=%% 2>/dev/null)
+	sel=$(prepare_ip_list "$meta_file" | $steamsafe_zenity --width 1200 --height 800 --list --column=Name --column=IP --column=Players --column=Gametime --print-column=2 --separator=%% 2>/dev/null)
 	if [[ $? -eq 1 ]]; then
 		return_from_table=1
 		return
@@ -679,16 +723,16 @@ add_steam_api(){
 		steam_api="steam_api=\"$steam_api\""
 		awk -v "var=$steam_api" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
 		echo "[DZGUI] Added Steam API key"
-		zenity --info --title="DZGUI" --text="Added Steam API key to:\n\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
+		$steamsafe_zenity --info --title="DZGUI" --text="Added Steam API key to:\n\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
 		source $config_file
 }
 check_steam_api(){
 	if [[ -z $steam_api ]]; then
-		steam_api=$(zenity --entry --text="Key 'steam_api' not present in config file. Enter Steam API key:" --title="DZGUI" 2>/dev/null)
+		steam_api=$($steamsafe_zenity --entry --text="Key 'steam_api' not present in config file. Enter Steam API key:" --title="DZGUI" 2>/dev/null)
 		if [[ $? -eq 1 ]] ; then
 			return
 		elif [[ ${#steam_api} -lt 32 ]] || [[ $(test_steam_api) -eq 1 ]]; then
-			zenity --warning --title="DZGUI" --text="Check API key and try again." 2>/dev/null
+			$steamsafe_zenity --warning --title="DZGUI" --text="Check API key and try again." 2>/dev/null
 			return 1
 		else
 			add_steam_api
@@ -707,7 +751,7 @@ connect_by_ip(){
 			return_from_table=0
 			return
 		fi
-		ip=$(zenity --entry --text="Enter server IP (omit port)" --title="DZGUI" 2>/dev/null)
+		ip=$($steamsafe_zenity --entry --text="Enter server IP (omit port)" --title="DZGUI" 2>/dev/null)
 		[[ $? -eq 1 ]] && return
 		if validate_ip "$ip"; then
 			fetch_ip_metadata
@@ -773,19 +817,19 @@ launch(){
 	if [[ $debug -eq 1 ]]; then
 		launch_options="steam -applaunch $aid -connect=$ip -nolauncher -nosplash -name=$name -skipintro \"-mod=$mods\""
 		print_launch_options="$(printf "This is a dry run.\nThese options would have been used to launch the game:\n\n$launch_options\n" | fold -w 60)"
-		zenity --question --title="DZGUI" --ok-label="Write to file" --cancel-label="Back"\
+		$steamsafe_zenity --question --title="DZGUI" --ok-label="Write to file" --cancel-label="Back"\
 			--text="$print_launch_options" 2>/dev/null
 		if [[ $? -eq 0 ]]; then
 			source_script=$(realpath "$0")
 			source_dir=$(dirname "$source_script")
 			echo "$launch_options" > "$source_dir"/options.log
 			echo "[DZGUI] Wrote launch options to $source_dir/options.log"
-			zenity --info --width 500 --title="DZGUI" --text="Wrote launch options to \n$source_dir/options.log" 2>/dev/null
+			$steamsafe_zenity --info --width 500 --title="DZGUI" --text="Wrote launch options to \n$source_dir/options.log" 2>/dev/null
 		fi
 
 	else
 		echo "[DZGUI] All OK. Launching DayZ"
-		zenity --width 500 --title="DZGUI" --info --text="Launch conditions satisfied.\nDayZ will now launch after clicking [OK]." 2>/dev/null
+		$steamsafe_zenity --width 500 --title="DZGUI" --info --text="Launch conditions satisfied.\nDayZ will now launch after clicking [OK]." 2>/dev/null
 		steam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro -name=$name \"-mod=$mods\"
 		exit
 	fi
@@ -830,31 +874,31 @@ set_mode(){
 	fi
 }
 delete_by_id(){
-	new_whitelist="whitelist=\"$(echo "$whitelist" | sed "s/,$server_id$//;s/^$server_id,//;s/,$server_id,/,/")\""
+	new_whitelist="whitelist=\"$(echo "$whitelist" | sed "s/,$server_id$//;s/^$server_id,//;s/,$server_id,/,/;s/^$server_id$//")\""
 	mv $config_file ${config_path}dztuirc.old
 	nr=$(awk '/whitelist=/ {print NR}' ${config_path}dztuirc.old)
 	awk -v "var=$new_whitelist" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
 	echo "[DZGUI] Removed $server_id from key 'whitelist'"
-	zenity --info --title="DZGUI" --text="Removed "$server_id" from:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
+	$steamsafe_zenity --info --title="DZGUI" --text="Removed "$server_id" from:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
 	source $config_file
 }
 delete_or_connect(){
 		if [[ $delete -eq 1 ]]; then
 			server_name=$(echo "$sel" | awk -F"%%" '{print $1}')
 			server_id=$(echo "$sel" | awk -F"%%" '{print $2}')
-			zenity --question --text="Delete this server? \n$server_name"
+			$steamsafe_zenity --question --text="Delete this server? \n$server_name" --title=DZGUI --width=500 2>/dev/null
 			if [[ $? -eq 0 ]]; then
 				delete_by_id $server_id
 			fi
+			source $config_file
+			unset delete
 		else
 			#hotfix for bug #36
 			local lookup_ip=$(echo "$sel" | awk -F%% '{print $1}')
 			local lookup_port=$(echo "$lookup_ip" | awk -F: '{print $2}')
 			source $config_file
-			file=$(mktemp)
 			url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100\gameaddr\\$lookup_ip&key=$steam_api"
-			curl -Ls "$url" > $file
-			local qport_res=$(< $file jq -r --arg port $lookup_port '.response.servers[]|select(.gameport==($port|tonumber)).addr')
+			local qport_res=$(curl -Ls "$url" | jq -r --arg port $lookup_port '.response.servers[]|select(.gameport==($port|tonumber)).addr')
 			local qport=$(echo "$qport_res" | awk -F: '{print $2}')
 			qport_list="$lookup_ip%%$qport"
 			connect "$qport_list" "ip"
@@ -886,7 +930,7 @@ populate(){
 }
 list_mods(){
 	if [[ -z $(installed_mods) ]] || [[ -z $(find $workshop_dir -maxdepth 2 -name "*.cpp" | grep .cpp) ]]; then
-		zenity --info --text="94: No mods currently installed or incorrect path given" $sd_res 2>/dev/null
+		$steamsafe_zenity --info --text="94: No mods currently installed or incorrect path given" $sd_res 2>/dev/null
 	else
 		for d in $(find $game_dir/* -maxdepth 1 -type l); do
 			dir=$(basename $d)
@@ -911,16 +955,17 @@ connect_to_fav(){
 
 }
 set_header(){
-	[[ $auto_install -eq 1 ]] && install_mode=auto
+	[[ $auto_install -eq 2 ]] && install_mode="auto"
+	[[ $auto_install -eq 1 ]] && install_mode="headless"
 	[[ $auto_install -eq 0 ]] && install_mode=manual
 	if [[ $1 == "delete" ]]; then
-		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
+		sel=$(cat $tmp | $steamsafe_zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 			--separator="$separator" --print-column=1,2 --ok-label="Delete" 2>/dev/null)
 	elif [[ $1 == "populate" ]]; then
-		sel=$(cat $tmp | zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
+		sel=$(cat $tmp | $steamsafe_zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 			--separator="$separator" --print-column=2,6 2>/dev/null)
 	elif [[ $1 == "main_menu" ]]; then
-		sel=$(zenity $sd_res --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
+		sel=$($steamsafe_zenity $sd_res --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" --hide-header "${items[@]}" 2>/dev/null)
 	fi
 }
@@ -943,7 +988,6 @@ generate_log(){
 	Version: $version
 	Branch: $branch
 	Whitelist: $whitelist
-	Path: $steam_path
 	Steam path: $steam_path
 	Workshop path: $workshop_dir
 	Game path: $game_dir
@@ -952,50 +996,100 @@ generate_log(){
 	$(list_mods)
 	DOC
 }
-automods_prompt(){
-cat <<- HERE
-
-Auto-mod installation set to ON. This method is NOT supported in Game Mode (Steam Deck).
-
-READ THIS FIRST:
-With this setting on, DZGUI will attempt to download and prepare mods using Valve's steamcmd tool.
-
-The first time this process is run, DZGUI will ask you to select a terminal emulator of your preference to spawn the installation routine. If you don't have a preference or don't know, you can pick any.
-
-Installation will kick off in a separate window and may ask you for input such as your sudo password in order to install system packages and create the steamcmd user.
-
-steamcmd itself will ask for your Steam credentials. This information is used directly by Valve's steamcmd tool to authenticate your account and let you download mods headlessly. steamcmd is an official program created by Valve and communicates only with their servers.
-
-NOTE: it can take some time for large mods to download, and steamcmd will not inform you of activity until each one is finished downloading.
-
-If your distribution is unsupported, you don't have enough disk space to stage all of the mods, or there are other problems, DZGUI will warn you and write a report to $HOME/.local/share/dzgui/helpers/SCMD.log. You can attach this file to a bug report.
-HERE
+console_dl(){
+	readarray -t modids <<< "$@"
+	steam steam://open/console 2>/dev/null 1>&2 &&
+	sleep 1s
+	#https://github.com/jordansissel/xdotool/issues/67
+	local wid=$(xdotool search --desktop "$(xdotool get_desktop)" --name Steam)
+	xdotool windowactivate $wid
+	for i in "${modids[@]}"; do
+		xdotool type --delay 15 "workshop_download_item $aid $i"
+		sleep 0.2s
+		xdotool key Return
+		sleep 0.2s
+	done
 }
-toggle_automods(){
+find_default_path(){
+	discover(){
+		echo "# Searching for Steam"
+		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path \
+		"/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" \
+		-o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
+		-o -regex ".*/Steam/ubuntu12_32$" -print -quit 2>/dev/null | sed 's@/ubuntu12_32@@')
+	}
+	if [[ $is_steam_deck -eq 1 ]]; then
+		default_steam_path="$HOME/.local/share/Steam"
+	else
+		#default
+		if [[ -d "$HOME/.local/share/Steam" ]]; then
+			default_steam_path="$HOME/.local/share/Steam"
+		#ubuntu
+		elif [[ -d "$HOME/.steam/steam" ]]; then
+			default_steam_path="$HOME/.steam/steam"
+		else
+			local res=$(echo -e "Let DZGUI auto-discover Steam path (accurate, slower)\nSelect the Steam path manually (less accurate, faster)" | $steamsafe_zenity --list --column="Choice" --title=DZGUI --hide-header --text="Steam is not installed in a standard location." $sd_res)
+			case "$res" in
+				*auto*) discover ;;
+				*manual*)
+					zenity --info --text="\nSelect the top-level path to the Steam library folder containing \"steamapps\".\n\nE.g., if DayZ is installed at:\n\"/media/mydrive/steamapps/common/DayZ\"\n\nYou should select:\n\"/media/mydrive\"" --width=500 &&
+					file_picker ;;
+			esac
+		fi
+	fi
+}
+popup(){
+	pop(){
+		$steamsafe_zenity --info --text="$1" --title=DZGUI --width=500 2>/dev/null
+	}
+	case "$1" in
+		100) pop "This feature requires xdotool.";;
+		200) pop "This feature is not supported on Gaming Mode.";;
+		300) pop "\nThe Steam console will now open and briefly issue commands to\ndownload the workshop files, then return to the download progress page.\n\nEnsure that the Steam console has keyboard and mouse focus\n(keep hands off keyboard) while the commands are being issued.\n\nDepending on the number if mods, it may take some time to queue the downloads,\nbut if a popup or notification window steals focus, it could obstruct\nthe process." ;;
+		400) pop "Automod install enabled. Auto-downloaded mods will not appear\nin your Steam Workshop subscriptions, but DZGUI will\ntrack the version number of downloaded mods internally\nand trigger an update if necessary." ;;
+		500) pop "Automod install disabled.\nSwitched to manual mode." ;;
+		600) pop "No preferred servers set." ;;
+	esac
+}
+toggle_console_dl(){
+	[[ $is_steam_deck -eq 1 ]] && test_display_mode
+	[[ $gamemode -eq 1 ]] && { popup 200; return; }
+	[[ ! $(command -v xdotool) ]] && { popup 100; return; }
 	mv $config_file ${config_path}dztuirc.old
 	local nr=$(awk '/auto_install=/ {print NR}' ${config_path}dztuirc.old)
-	if [[ $auto_install == "1"  ]]; then
+	if [[ $auto_install == "2"  ]]; then
 		auto_install="0"
+		popup 500
 	else
-		auto_install="1"
+		auto_install="2"
+		popup 400
 	fi
 	local flip_state="auto_install=\"$auto_install\""
 	awk -v "var=$flip_state" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
-	printf "[DZGUI] Toggled auto-mod install to '$auto_install'\n"
+	printf "[DZGUI] Set mod install to '$auto_install'\n"
 	source $config_file
-	local big_prompt
-	[[ $is_steam_deck -eq 1 ]] && big_prompt="--width=800"
-	[[ $auto_install == "1" ]] && zenity --info --text="$(automods_prompt)" $big_prompt 2>/dev/null
+}
+force_update_mods(){
+	if [[ -f $version_file ]]; then
+		awk '{OFS="\t"}{$2="000"}1' $version_file > /tmp/versions
+		mv /tmp/versions $version_file
+	fi
 }
 options_menu(){
+	case "$auto_install" in
+		0|1|"") auto_hr="OFF"; ;;
+		2) auto_hr="ON"; ;;
+	esac
 	debug_list=(
 		"Toggle branch"
 		"Toggle debug mode"
 		"Generate debug log"
-		"Toggle auto-mod install (experimental)"
-		"Set auto-mod staging directory [$staging_dir]"
+		"Toggle auto mod install [$auto_hr]"
 		)
-	debug_sel=$(zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
+	#TODO: tech debt: drop old flags
+	[[ $auto_install -eq 2 ]] || [[ $auto_install -eq 1 ]] && debug_list+=("Force update local mods")
+	debug_sel=$($steamsafe_zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
+	[[ -z $debug_sel ]] && return
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
 		enforce_dl=1
 		toggle_branch &&
@@ -1005,22 +1099,27 @@ options_menu(){
 	elif [[ $debug_sel == "${debug_list[2]}" ]]; then
 		source_script=$(realpath "$0")
 		source_dir=$(dirname "$source_script")
-		generate_log > "$source_dir/log"
+		generate_log > "$source_dir/DZGUI.log"
 		printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
-		zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
+		$steamsafe_zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
 	elif [[ $debug_sel == "${debug_list[3]}" ]]; then
-		toggle_automods
+		toggle_console_dl
 	elif [[ $debug_sel == "${debug_list[4]}" ]]; then
-		file_picker
+		force_update=1
+		force_update_mods
+		merge_modlists > >($steamsafe_zenity --pulsate --progress --no-cancel --auto-close --title=DZGUI --width=500 2>/dev/null)
+		[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running on the current desktop to use this feature."; return; }
+		auto_mod_install
 	fi
 }
 query_and_connect(){
+	[[ -z $whitelist ]] && { popup 600; return; }
 	query_api
 	parse_json
 	#TODO: create logger function
 	if [[ ! $delete -eq 1 ]]; then
 		echo "[DZGUI] Checking response time of servers"
-		create_array | zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
+		create_array | $steamsafe_zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
 	else
 		create_array
 	fi
@@ -1042,7 +1141,7 @@ filter_maps(){
 	[[ $ret -eq 98 ]] && return
 	local maps=$(echo "$response" | jq -r '.[].map//empty|ascii_downcase' | sort -u) 
 	local map_ct=$(echo "$maps" | wc -l)
-	local map_sel=$(echo "$maps" | zenity --list --column="Check" --width=1200 --height=800 2>/dev/null --title="DZGUI" --text="Found $map_ct map types")
+	local map_sel=$(echo "$maps" | $steamsafe_zenity --list --column="Check" --width=1200 --height=800 2>/dev/null --title="DZGUI" --text="Found $map_ct map types")
 	echo "[DZGUI] Selected '$map_sel'"
 	if [[ -z $map_sel ]]; then
 		ret=97
@@ -1131,16 +1230,16 @@ check_geo_file(){
 		chmod +x $km_helper
 		echo "100"
 		}
-		run > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+		run > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	fi 
 }
 choose_filters(){
 	if [[ $is_steam_deck -eq 0 ]]; then
 		sd_res="--width=1920 --height=1080"
 	fi
-	sels=$(zenity --title="DZGUI" --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" False "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
+	sels=$($steamsafe_zenity --title="DZGUI" --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" False "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
 	if [[ $sels =~ Keyword ]]; then
-		search=$(zenity --entry --text="Search (case insensitive)" --width=500 --title="DZGUI" 2>/dev/null | awk '{print tolower($0)}')
+		search=$($steamsafe_zenity --entry --text="Search (case insensitive)" --width=500 --title="DZGUI" 2>/dev/null | awk '{print tolower($0)}')
 		[[ -z $search ]] && { ret=97; return; }
 	fi	
 	[[ -z $sels ]] && return
@@ -1186,13 +1285,13 @@ write_fifo(){
 }
 munge_servers(){
 	if [[ ! "$sels" =~ "All maps" ]]; then
-		filter_maps > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+		filter_maps > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 		disabled+=("All maps")
 	fi
 	[[ $ret -eq 97 ]] && return
-	prepare_filters > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+	prepare_filters > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	if [[ $(echo "$response" | jq 'length') -eq 0 ]]; then
-		zenity --error --text="No matching servers" 2>/dev/null
+		$steamsafe_zenity --error --text="No matching servers" 2>/dev/null
 		return
 	fi
 	local addr=$(echo "$response" | jq -r '.[].addr' | awk -F: '{print $1}')
@@ -1218,7 +1317,7 @@ munge_servers(){
 	
 	write_fifo &
 	pid=$!
-	local sel=$(zenity --text="$(pagination)" --title="DZGUI" --list --column=Map --column=Name --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=7,8 --separator=%% 2>/dev/null < <(while true; do cat $fifo; done))
+	local sel=$($steamsafe_zenity --text="$(pagination)" --title="DZGUI" --list --column=Map --column=Name --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=7,8 --separator=%% 2>/dev/null < <(while true; do cat $fifo; done))
 	if [[ -z $sel ]]; then
 		rm $fifo
 		kill -9 $pid
@@ -1249,7 +1348,7 @@ debug_servers(){
 	Key length: $key_len
 	======Short query======
 	Expected: 10
-	Found: $debug_len 
+	Found: $debug_len
 	Response follows---->
 	$debug_res
 	======END DEBUG=======
@@ -1263,7 +1362,7 @@ server_browser(){
 	file=$(mktemp)
 	local limit=20000
 	local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=$limit&key=$steam_api"
-	check_geo_file 
+	check_geo_file
 	local_latlon
 	choose_filters
 	[[ -z $sels ]] && return
@@ -1271,12 +1370,11 @@ server_browser(){
 	#TODO: some error handling here
 	fetch(){
 		echo "# Getting server list"
-		curl -Ls "$url" > $file
+		response=$(curl -Ls "$url" | jq -r '.response.servers')
 	}
-	fetch > >(zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
-	response=$(< $file jq -r '.response.servers')
-	total_servers=$(echo "$response" | jq 'length')
-	players_online=$(echo "$response" | jq '.[].players' | awk '{s+=$1}END{print s}')
+	fetch > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+	total_servers=$(echo "$response" | jq 'length' | numfmt --grouping)
+	players_online=$(echo "$response" | jq '.[].players' | awk '{s+=$1}END{print s}' | numfmt --grouping)
 	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
 	debug_servers
 	local sel=$(munge_servers)
@@ -1301,13 +1399,12 @@ mods_disk_size(){
 	printf "%s mods | " $(ls -1 "$game_dir" | wc -l)
 	printf "Location: %s/steamapps/workshop/content/221100" "$steam_path"
 }
-
 main_menu(){
 	print_news
 	set_mode
-	if [[ -n $fav ]]; then
-		items[7]="	Change favorite server"
-	fi
+#	if [[ -n $fav ]]; then
+#		items[8]="	Change favorite server"
+#	fi
 	while true; do
 		set_header ${FUNCNAME[0]}
 	rc=$?
@@ -1323,35 +1420,37 @@ main_menu(){
 		elif [[ $sel == "${items[3]}" ]]; then
 			connect_to_fav
 		elif [[ $sel == "${items[4]}" ]]; then
-			:
-		elif [[ $sel == "${items[5]}" ]]; then
 			connect_by_ip
+		elif [[ $sel == "${items[5]}" ]]; then
+			history_table
 		elif [[ $sel == "${items[6]}" ]]; then
-			add_by_id
+			:
 		elif [[ $sel == "${items[7]}" ]]; then
-			add_by_fav
+			add_by_id
 		elif [[ $sel == "${items[8]}" ]]; then
+			add_by_fav
+		elif [[ $sel == "${items[9]}" ]]; then
 			delete=1
 			query_and_connect
-		elif [[ $sel == "${items[9]}" ]]; then
-			:
 		elif [[ $sel == "${items[10]}" ]]; then
-			list_mods | sed 's/\t/\n/g' | zenity --list --column="Mod" --column="Symlink" \
+			:
+		elif [[ $sel == "${items[11]}" ]]; then
+			list_mods | sed 's/\t/\n/g' | $steamsafe_zenity --list --column="Mod" --column="Symlink" \
 				--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
 				--print-column="" 2>/dev/null
-		elif [[ $sel == "${items[11]}" ]]; then
-			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
 		elif [[ $sel == "${items[12]}" ]]; then
+			changelog | $steamsafe_zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
+		elif [[ $sel == "${items[13]}" ]]; then
 			options_menu
 			main_menu
 			return
-		elif [[ $sel == "${items[13]}" ]]; then
-			:
 		elif [[ $sel == "${items[14]}" ]]; then
-			help_file
+			:
 		elif [[ $sel == "${items[15]}" ]]; then
-			report_bug
+			help_file
 		elif [[ $sel == "${items[16]}" ]]; then
+			report_bug
+		elif [[ $sel == "${items[17]}" ]]; then
 			forum
 		else
 			warn "This feature is not yet implemented."
@@ -1395,7 +1494,6 @@ check_ping(){
 }
 create_array(){
 	rows=()
-	list=$(cat $tmp) 
 	#TODO: improve error handling for null values
 	lc=1
 	while read line; do
@@ -1411,9 +1509,6 @@ create_array(){
 		time=$(echo "$line" | awk -F'\t' '{print $4}')
 		stat=$(echo "$line" | awk -F'\t' '{print $5}')
 
-		#yad only
-		#[[ $stat == "online" ]] && stat="<span color='#77ff33'>online</span>" || :
-
 		#TODO: probe offline return codes
 		id=$(echo "$line" | awk -F'\t' '{print $6}')
 		tc=$(awk 'END{print NR}' $tmp)
@@ -1425,12 +1520,11 @@ create_array(){
 			declare -g -a rows=("${rows[@]}" "$name" "$ip" "$players" "$time" "$stat" "$id" "$ping")
 		fi
 		let lc++
-	done <<< "$list"
+	done < "$tmp"
 
 	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp
 }
 set_fav(){
-	#TODO: test API key here and return errors
 	echo "[DZGUI] Querying favorite server"
 	query_api
 	fav_label=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "filter[game]=$game" -d "filter[ids][whitelist]=$fav" \
@@ -1453,7 +1547,7 @@ merge_config(){
 	[[ -z $staging_dir ]] && staging_dir="/tmp"
 	write_config > $config_file
 	printf "[DZGUI] Wrote new config file to %sdztuirc\n" $config_path
-	zenity --info --width 500 --title="DZGUI" --text="Wrote new config format to \n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
+	$steamsafe_zenity --info --width 500 --title="DZGUI" --text="Wrote new config format to \n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
 
 }
 download_new_version(){
@@ -1471,10 +1565,10 @@ download_new_version(){
 		chmod +x $source_script
 		touch ${config_path}.unmerged
 		echo "100"
-		zenity --question --width 500 --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
+		$steamsafe_zenity --question --width 500 --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
 		code=$?
 		if [[ $code -eq 0 ]]; then
-			changelog | zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
+			changelog | $steamsafe_zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
 			exit
 		elif [[ $code -eq 1 ]]; then
 			exit
@@ -1482,7 +1576,7 @@ download_new_version(){
 	else
 		echo "100"
 		mv $source_script.old $source_script
-		zenity --info --title="DZGUI" --text "[ERROR] 99: Failed to download new version." 2>/dev/null
+		$steamsafe_zenity --info --title="DZGUI" --text "[ERROR] 99: Failed to download new version." 2>/dev/null
 		return
 	fi
 
@@ -1496,16 +1590,16 @@ check_branch(){
 	upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
 }
 enforce_dl(){
-	download_new_version > >(zenity --progress --pulsate --auto-close --no-cancel --width=500)
+	download_new_version > >($steamsafe_zenity --progress --pulsate --auto-close --no-cancel --width=500)
 }
 prompt_dl(){
-	zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
+	$steamsafe_zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		return
 	else
 		echo "100"
-		download_new_version > >(zenity --progress --pulsate --auto-close --no-cancel --width=500)
+		download_new_version > >($steamsafe_zenity --progress --pulsate --auto-close --no-cancel --width=500)
 	fi
 }
 check_version(){
@@ -1538,20 +1632,21 @@ check_architecture(){
 add_by_id(){
 	#FIXME: prevent redundant creation of existent IDs (for neatness)
 	while true; do
-		id=$(zenity --entry --text="Enter server ID" --title="DZGUI" 2>/dev/null)
+		id=$($steamsafe_zenity --entry --text="Enter server ID" --title="DZGUI" 2>/dev/null)
 		rc=$?
 		if [[ $rc -eq 1 ]]; then
 			return
 		else
 			if [[ ! $id =~ ^[0-9]+$ ]]; then
-				zenity --warning --title="DZGUI" --text="Invalid ID" 2>/dev/null
+				$steamsafe_zenity --warning --title="DZGUI" --text="Invalid ID" 2>/dev/null
 			else
-				new_whitelist="whitelist=\"$whitelist,$id\""
+				[[ -z $whitelist ]] && new_whitelist="whitelist=\"$id\""
+				[[ -n $whitelist ]] && new_whitelist="whitelist=\"$whitelist,$id\""
 				mv $config_file ${config_path}dztuirc.old
 				nr=$(awk '/whitelist=/ {print NR}' ${config_path}dztuirc.old)
 				awk -v "var=$new_whitelist" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
 				echo "[DZGUI] Added $id to key 'whitelist'"
-				zenity --info --title="DZGUI" --text="Added "$id" to:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
+				$steamsafe_zenity --info --title="DZGUI" --text="Added "$id" to:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
 				source $config_file
 				return
 			fi
@@ -1575,7 +1670,7 @@ toggle_debug(){
 setup(){
 	if [[ -n $fav ]]; then
 		set_fav
-		items[7]="	Change favorite server"
+		items[8]="	Change favorite server"
 	fi
 }
 check_map_count(){
@@ -1583,9 +1678,9 @@ check_map_count(){
 	echo "[DZGUI] Checking system map count"
 	if [[ $(sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -lt $count ]]; then 
 		echo "100"
-		map_warning=$(zenity --question --width 500 --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine. Increase map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null)
+		map_warning=$($steamsafe_zenity --question --width 500 --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine. Increase map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null)
 		if [[ $? -eq 0 ]]; then
-			pass=$(zenity --password)
+			pass=$($steamsafe_zenity --password)
 			sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=1048576' > /etc/sysctl.d/dayz.conf"
 			echo ""
 
@@ -1594,23 +1689,23 @@ check_map_count(){
 }
 add_by_fav(){
 while true; do
-	fav_id=$(zenity --entry --text="Enter server ID" --title="DZGUI" 2>/dev/null)
+	fav_id=$($steamsafe_zenity --entry --text="Enter server ID" --title="DZGUI" 2>/dev/null)
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		return
 	else
 		if [[ ! $fav_id =~ ^[0-9]+$ ]]; then
-			zenity --warning --title="DZGUI" --text="Invalid ID"
+			$steamsafe_zenity --warning --title="DZGUI" --text="Invalid ID"
 		else
 			new_fav="fav=\"$fav_id\""
 			mv $config_file ${config_path}dztuirc.old
 			nr=$(awk '/fav=/ {print NR}' ${config_path}dztuirc.old)
 			awk -v "var=$new_fav" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
 			echo "[DZGUI] Added $fav_id to key 'fav'"
-			zenity --info --title="DZGUI" --text="Added "$fav_id" to:\n${config_path}dztuirc\nIf errors occurred, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
+			$steamsafe_zenity --info --title="DZGUI" --text="Added "$fav_id" to:\n${config_path}dztuirc\nIf errors occurred, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
 			source $config_file
 			set_fav
-			items[7]="	Change favorite server"
+			items[8]="	Change favorite server"
 			return
 		fi
 	fi
@@ -1625,7 +1720,7 @@ lock(){
 	res=$?
 	if [[ $res -eq 0 ]]; then
 		echo "[DZGUI] Already running ($pid)"
-		zenity --info --text="DZGUI already running (pid $pid)" --width=500 --title="DZGUI" 2>/dev/null
+		$steamsafe_zenity --info --text="DZGUI already running (pid $pid)" --width=500 --title="DZGUI" 2>/dev/null
 		exit
 	elif [[ $pid == $$ ]]; then
 		:
@@ -1633,48 +1728,9 @@ lock(){
 		echo $$ > $config_path/.lockfile
 	fi
 }
-fetch_scmd_helper(){
+fetch_helpers(){
 	mkdir -p "$helpers_path"
-	curl -Ls "$scmd_url" > "$helpers_path/scmd.sh"
-	chmod +x "$helpers_path/scmd.sh"
-	[[ ! -f "$helpers_path/d.html" ]] && curl -Ls "$notify_url" > "$helpers_path/d.html"
-	[[ ! -f "$helpers_path/d.webp" ]] && curl -Ls "$notify_img_url" > "$helpers_path/d.webp"
-}
-deprecation_warning(){
-	warn(){
-	cat <<- HERE
-		IMPORTANT ANNOUNCEMENT
-		(Steam API key not found)
-
-		A Steam API key is now mandatory to run the app.
-		The BM API returns incorrect mod data on some servers
-		and cannot be relied upon for up to date information.
-
-		Going forward, we will only use the BM API as a convenience
-		function to manage server names and your favorite servers list,
-		and migrate to indexing servers on an IP basis.
-
-		This is a backend change. You can continue adding servers by ID,
-		but we will retrieve information from Valve instead, as we do for the
-		server browser and connect-by-ip methods.
-
-		Click [OK] to open the help page describing how to set up your key.
-		After you input a valid key, the app will resume.
-		HERE
-	}
-	if [[ -z $steam_api ]]; then
-		echo "100"
-		local big_prompt
-		[[ $is_steam_deck -eq 1 ]] && big_prompt="--width=800"
-		zenity --info --text="$(warn)" $big_prompt
-		key_setup_url="https://aclist.github.io/dzgui/dzgui.html#_api_key_server_ids"
-		browser "$key_setup_url" 2>/dev/null &
-		while true; do
-			if [[ $(check_steam_api) ]]; then
-				break
-			fi
-		done
-	fi
+	[[ ! -f "$helpers_path/vdf2json.py" ]] && curl -Ls "$vdf2json_url" > "$helpers_path/vdf2json.py"
 }
 initial_setup(){
 	echo "# Initial setup"
@@ -1683,21 +1739,19 @@ initial_setup(){
 	check_architecture
 	check_version
 	check_map_count
+	fetch_helpers
 	config
-	fetch_scmd_helper
 	run_varcheck
+	stale_symlinks
 	init_items
 	setup
-	deprecation_warning
 	echo "100"
 }
 main(){
 	lock
-	initial_setup > >(zenity --pulsate --progress --auto-close --title="DZGUI" --width=500 2>/dev/null)
+	initial_setup > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --no-cancel --width=500 2>/dev/null)
 	main_menu
-	#cruddy handling for steam forking
+	#TODO: tech debt: cruddy handling for steam forking
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh
 }
-
 main
-#trap cleanup EXIT

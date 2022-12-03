@@ -4,8 +4,33 @@
 - Clean up logging
 - Custom query API
 - Standardize dialogs
+- Validate BM API key
 
-## [3.0.7] 2022-11-025
+## [3.1.0] 2022-12-03
+### Added
+- Recent connect history
+- Simple, OS-agnostic automod installation
+- Track local mod versions
+- Force update local mods option
+- Added python to dependencies
+- File-picker driven path discovery on initial setup
+### Dropped
+- Headless mod installation
+- Drop server ID field requirement on initial setup
+### Changed
+- Clean up main menu options
+- Enforce Steam API key on initial setup
+- More accurate path discovery on initial setup
+- Add thousands separator to player counts in server browser
+### Fixed
+- Initial setup dialog causing early crash
+- Improved error handling on initial setup to avoid malformed config files
+- Delete server menu not clearing when returning to main menu
+- Handle whitelist deletion when only one entry present
+- Include path to drives under /run in path discovery
+- Use Steam-safe local zenity version
+
+## [3.0.7] 2022-11-25
 ### Fixed
 - Hotfix for server reporting multiple versions of same mod
 
