@@ -215,7 +215,7 @@ freedesktop_dirs(){
 	#TODO: update url
 	curl -s "$version_url" > "$sd_install_path/dzgui.sh"
 	chmod +x "$sd_install_path/dzgui.sh"
-	img_url="https://raw.githubusercontent.com/aclist/dztui/testing/images"
+	img_url="$testing_url/images"
 	for i in dzgui grid.png hero.png logo.png; do
 		curl -s "$img_url/$i" > "$sd_install_path/$i"
 	done
@@ -266,7 +266,8 @@ create_config(){
 				find_default_path
 				find_library_folder
 				if [[ -z $steam_path ]]; then
-					return
+					zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Retry" --cancel-label="Exit"
+					[[ $? -eq 1 ]] && exit
 				else
 					mkdir -p $config_path
 					write_config > $config_file
@@ -283,8 +284,9 @@ err(){
 	printf "[ERROR] %s\n" "$1"
 }
 varcheck(){
-	[[ -z $api_key ]] && (err "Error in key: 'api_key'")
-	[[ ! -d "$game_dir" ]] && (err "Malformed game path")
+	if [[ -z $api_key ]] || [[ ! -d $steam_path ]] || [[ ! -d $game_dir ]]; then
+		echo 1
+	fi
 }
 run_depcheck(){
 	if [[ -n $(depcheck) ]]; then
@@ -304,14 +306,12 @@ run_varcheck(){
 	source $config_file
 	workshop_dir="$steam_path/steamapps/workshop/content/$aid"
 	game_dir="$steam_path/steamapps/common/DayZ"
-	if [[ -n $(varcheck) ]]; then
-		$steamsafe_zenity --warning --width 500 --text="$(varcheck)" 2>/dev/null
+	if [[ $(varcheck) -eq 1 ]]; then
 		$steamsafe_zenity --question --cancel-label="Exit" --text="Malformed config file. This is probably user error.\nStart first-time setup process again?" --width=500 2>/dev/null
 		code=$?
 		if [[ $code -eq 1 ]]; then
 			exit
 		else
-			#echo "100"
 			create_config
 		fi
 	fi
@@ -640,6 +640,7 @@ prepare_ip_list(){
 	done
 }
 history_table(){
+	[[ -f /tmp/dz.hist ]] && rm /tmp/dz.hist
 	for i in $(cat $hist_file); do
 		echo "# Getting metadata for $i"
 		local meta_file=$(mktemp)
@@ -1023,7 +1024,6 @@ find_default_path(){
 		"/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" \
 		-o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
 		-o -regex ".*/Steam/ubuntu12_32$" -print -quit 2>/dev/null | sed 's@/ubuntu12_32@@')
-		echo "100"
 	}
 	if [[ $is_steam_deck -eq 1 ]]; then
 		default_steam_path="$HOME/.local/share/Steam"
@@ -1037,8 +1037,10 @@ find_default_path(){
 		else
 			local res=$(echo -e "Let DZGUI auto-discover Steam path (accurate, slower)\nSelect the Steam path manually (less accurate, faster)" | $steamsafe_zenity --list --column="Choice" --title=DZGUI --hide-header --text="Steam is not installed in a standard location." $sd_res)
 			case "$res" in
-				*auto*) discover > >($steamsafe_zenity --width 500 --progress --auto-close --title="DZGUI" --pulsate --no-cancel 2>/dev/null) ;;
-				*manual*) file_picker ;;
+				*auto*) discover ;;
+				*manual*)
+					zenity --info --text="\nSelect the top-level path to the Steam library folder containing \"steamapps\".\n\nE.g., if DayZ is installed at:\n\"/media/mydrive/steamapps/common/DayZ\"\n\nYou should select:\n\"/media/mydrive\"" --width=500 &&
+					file_picker ;;
 			esac
 		fi
 	fi
@@ -1755,7 +1757,7 @@ main(){
 	lock
 	initial_setup > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --no-cancel --width=500 2>/dev/null)
 	main_menu
-	#cruddy handling for steam forking
+	#TODO: tech debt: cruddy handling for steam forking
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh
 }
 main
