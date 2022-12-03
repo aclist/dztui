@@ -215,7 +215,7 @@ freedesktop_dirs(){
 	#TODO: update url
 	curl -s "$version_url" > "$sd_install_path/dzgui.sh"
 	chmod +x "$sd_install_path/dzgui.sh"
-	img_url="$stable_url/images"
+	img_url="$testing_url/images"
 	for i in dzgui grid.png hero.png logo.png; do
 		curl -s "$img_url/$i" > "$sd_install_path/$i"
 	done
@@ -1712,10 +1712,10 @@ while true; do
 done
 }
 lock(){
-	if [[ ! -f $config_path/.lockfile ]]; then
-		touch $config_path/.lockfile
+	if [[ ! -f ${config_path}.lockfile ]]; then
+		touch ${config_path}.lockfile
 	fi
-	pid=$(cat $config_path/.lockfile)
+	pid=$(cat ${config_path}.lockfile)
 	ps -p $pid -o pid= >/dev/null 2>&1
 	res=$?
 	if [[ $res -eq 0 ]]; then
@@ -1725,7 +1725,7 @@ lock(){
 	elif [[ $pid == $$ ]]; then
 		:
 	else
-		echo $$ > $config_path/.lockfile
+		echo $$ > ${config_path}.lockfile
 	fi
 }
 fetch_helpers(){
