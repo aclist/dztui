@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.0-rc.21
+version=3.2.1-rc.1
 
 aid=221100
 game="dayz"
@@ -215,7 +215,7 @@ freedesktop_dirs(){
 	#TODO: update url
 	curl -s "$version_url" > "$sd_install_path/dzgui.sh"
 	chmod +x "$sd_install_path/dzgui.sh"
-	img_url="$testing_url/images"
+	img_url="$stable_url/images"
 	for i in dzgui grid.png hero.png logo.png; do
 		curl -s "$img_url/$i" > "$sd_install_path/$i"
 	done
@@ -318,7 +318,6 @@ run_varcheck(){
 }
 config(){
 	if [[ ! -f $config_file ]]; then
-		#echo "100"
 		$steamsafe_zenity --width 500 --info --text="Config file not found. Click OK to proceed to first-time setup." 2>/dev/null
 		code=$?
 		#TODO: prevent progress if user hits ESC
@@ -581,16 +580,10 @@ connect(){
 	[[ $auto_install -eq 2 ]] && merge_modlists
 	if [[ -n $diff ]]; then
 		[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running on the current desktop to use this feature."; return; }
-		#TODO: headless is deprecated
-		if [[ $auto_install -eq 1 ]]; then
-			headless_mod_install "$diff"
-			rc=$?
-			[[ $rc -eq 1 ]] && manual_mod_install
-		elif [[ $auto_install -eq 2 ]]; then
-			auto_mod_install
-		else
-			manual_mod_install
-		fi
+		case $auto_install in
+			1|2) auto_mod_install ;;
+			*) manual_mod_install ;;
+		esac
 	else
 		passed_mod_check > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 		update_history
@@ -1039,7 +1032,7 @@ find_default_path(){
 			case "$res" in
 				*auto*) discover ;;
 				*manual*)
-					zenity --info --text="\nSelect the top-level path to the Steam library folder containing \"steamapps\".\n\nE.g., if DayZ is installed at:\n\"/media/mydrive/steamapps/common/DayZ\"\n\nYou should select:\n\"/media/mydrive\"" --width=500 &&
+					zenity --info --text="\nSelect the top-level entry point to the location where Steam (not DayZ)\nis installed and before entering the \"steamapps\" path.\n\nE.g., if Steam is installed at:\n\"/media/mydrive/Steam\"\n\nCorrect:\n- \"/media/mydrive/Steam\"\n\nIncorrect:\n- \"/media/mydrive/Steam/steamapps/common/DayZ\"\n- \"/media/mydrive/\"" --width=500 &&
 					file_picker ;;
 			esac
 		fi
@@ -1084,9 +1077,8 @@ force_update_mods(){
 }
 options_menu(){
 	case "$auto_install" in
-		0) auto_hr="OFF"; headless_hr="OFF" ;;
-		1) auto_hr="OFF"; headless_hr="ON" ;;
-		2) auto_hr="ON"; headless_hr="OFF" ;;
+		0|1|"") auto_hr="OFF"; ;;
+		2) auto_hr="ON"; ;;
 	esac
 	debug_list=(
 		"Toggle branch"
@@ -1094,8 +1086,10 @@ options_menu(){
 		"Generate debug log"
 		"Toggle auto mod install [$auto_hr]"
 		)
-	[[ $auto_install -eq 2 ]] && debug_list+=("Force update local mods")
+	#TODO: tech debt: drop old flags
+	[[ $auto_install -eq 2 ]] || [[ $auto_install -eq 1 ]] && debug_list+=("Force update local mods")
 	debug_sel=$($steamsafe_zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
+	[[ -z $debug_sel ]] && return
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
 		enforce_dl=1
 		toggle_branch &&
@@ -1113,7 +1107,7 @@ options_menu(){
 	elif [[ $debug_sel == "${debug_list[4]}" ]]; then
 		force_update=1
 		force_update_mods
-		merge_modlists > >($steamsafe_zenity --pulsate --progress --auto-close --title=DZGUI --width=500 2>/dev/null)
+		merge_modlists > >($steamsafe_zenity --pulsate --progress --no-cancel --auto-close --title=DZGUI --width=500 2>/dev/null)
 		[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running on the current desktop to use this feature."; return; }
 		auto_mod_install
 	fi
