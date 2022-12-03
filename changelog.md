@@ -5,6 +5,15 @@
 - Custom query API
 - Standardize dialogs
 
+
+## [3.1.0-rc.20] 2022-12-02
+### Fixed
+- Include /run in auto-discovery routine
+
+## [3.1.0-rc.19] 2022-12-02
+### Fixed
+- Use Steam-safe local zenity version
+
 ## [3.1.0-rc.18] 2022-12-01
 ### Added
 - Thousands separator to player counts
