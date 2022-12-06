@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.2
+version=3.1.3
 
 aid=221100
 game="dayz"
@@ -225,7 +225,7 @@ freedesktop_dirs(){
 	fi
 }
 find_library_folder(){
-	steam_path=$(python $helpers_path/vdf2json.py -i $default_steam_path/steamapps/libraryfolders.vdf | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
+	steam_path=$(python3 $helpers_path/vdf2json.py -i $default_steam_path/steamapps/libraryfolders.vdf | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
 }
 file_picker(){
 	while true; do
@@ -296,7 +296,7 @@ run_depcheck(){
 	fi
 }
 check_pyver(){
-	pyver=$(python --version | awk '{print $2}')
+	pyver=$(python3 --version | awk '{print $2}')
 	if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]]; then
 		warn "Requires python >=3.0" &&
 		exit
