@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Validate BM API key
 
+## [3.1.1-3] 2022-12-06
+### Fixed
+- Explicitly require Python 3
+
 ## [3.1.1-2] 2022-12-03
 ### Fixed
 - Fix lockfile path
