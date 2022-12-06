@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.3.0-rc.1] 2022-12-06
+### Fixed
+- Merge Python version hotfix from stable branch
+
 ## [3.2.1-rc.1] 2022-12-03
 ### Changed
 - Dropped legacy headless mode logic and refactor against new automod method
