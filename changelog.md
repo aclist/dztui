@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Validate BM API key
 
+## [3.1.1-3] 2022-12-10
+### Fixed
+- Issue #43: Hotfix for workspace-driven WMs
+
 ## [3.1.1-3] 2022-12-06
 ### Fixed
 - Explicitly require Python 3

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.3
+version=3.1.4
 
 aid=221100
 game="dayz"
@@ -579,7 +579,7 @@ connect(){
 	compare
 	[[ $auto_install -eq 2 ]] && merge_modlists
 	if [[ -n $diff ]]; then
-		[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running on the current desktop to use this feature."; return; }
+#		[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running on the current desktop to use this feature."; return; }
 		case $auto_install in
 			1|2) auto_mod_install ;;
 			*) manual_mod_install ;;
@@ -1108,7 +1108,7 @@ options_menu(){
 		force_update=1
 		force_update_mods
 		merge_modlists > >($steamsafe_zenity --pulsate --progress --no-cancel --auto-close --title=DZGUI --width=500 2>/dev/null)
-		[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running on the current desktop to use this feature."; return; }
+#		[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running on the current desktop to use this feature."; return; }
 		auto_mod_install
 	fi
 }
