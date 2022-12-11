@@ -1237,7 +1237,7 @@ choose_filters(){
 	if [[ $is_steam_deck -eq 0 ]]; then
 		sd_res="--width=1920 --height=1080"
 	fi
-	sels=$($steamsafe_zenity --title="DZGUI" --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" False "Low population (<10 players)" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
+	sels=$($steamsafe_zenity --title="DZGUI" --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" TRUE "Low population (<10 players)" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
 	if [[ $sels =~ Keyword ]]; then
 		search=$($steamsafe_zenity --entry --text="Search (case insensitive)" --width=500 --title="DZGUI" 2>/dev/null | awk '{print tolower($0)}')
 		[[ -z $search ]] && { ret=97; return; }
