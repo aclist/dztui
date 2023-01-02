@@ -6,11 +6,18 @@
 - Standardize dialogs
 - Validate BM API key
 
-## [3.1.1-3] 2022-12-10
+## [3.1.5] 2023-01-01
+### Fixed
+- Validate BM key on initial setup
+- Fix history menu not parsing query ports correctly
+### Changed
+- More permissive Steam client discovery for tiling WMs
+
+## [3.1.4] 2022-12-10
 ### Fixed
 - Issue #43: Hotfix for workspace-driven WMs
 
-## [3.1.1-3] 2022-12-06
+## [3.1.3] 2022-12-06
 ### Fixed
 - Explicitly require Python 3
 
