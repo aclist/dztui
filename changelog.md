@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Validate BM API key
 
+## [3.1.6] 2023-01-01
+### Changed
+- Tick low pop servers by default
+
 ## [3.1.5] 2023-01-01
 ### Fixed
 - Validate BM key on initial setup
