@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.2
+version=3.2.0-rc.1
 
 aid=221100
 game="dayz"
@@ -257,10 +257,12 @@ create_config(){
 
 		[[ -z $player_input ]] && exit
 		if [[ -z $api_key ]] || [[ -z $steam_api ]]; then
-			warn "API key: invalid value"
+			warn "API key cannot be empty"
 		#TODO: test BM key
 		elif [[ $(test_steam_api) -eq 1 ]]; then
 			warn "Invalid Steam API key"
+		elif [[ $(test_bm_api) -eq 1 ]]; then
+			warn "Invalid BM API key"
 		else
 			while true; do
 				find_default_path
@@ -455,6 +457,7 @@ passed_mod_check(){
 
 }
 auto_mod_install(){
+	[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running to use this feature."; return; }
 	popup 300
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
@@ -467,7 +470,7 @@ auto_mod_install(){
 		steam steam://open/downloads && 2>/dev/null 1>&2
 		until [[ -z $(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort)) ]]; do
 			win=$(xdotool search --name "DZG Watcher")
-			[[ ! $(xdotool getwindowfocus) -eq $win ]] && xdotool windowraise $win
+			[[ ! $(xdotool getwindowfocus) -eq $win ]] && xdotool windowactivate $win
 			local missing=$(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort) | wc -l)
 			echo "# Downloaded $((${#modids[@]}-missing)) of ${#modids[@]} mods"
 		done | $steamsafe_zenity --pulsate --progress --title="DZG Watcher" --auto-close --no-cancel --width=500 2>/dev/null
@@ -553,7 +556,7 @@ update_history(){
 	echo -e "${old}${ip}" > "$hist_file"
 }
 is_steam_running(){
-	xdotool search --desktop "$(xdotool get_desktop)" --name "Steam"
+	xdotool search --onlyvisible --name "Steam"
 }
 connect(){
 	#TODO: sanitize/validate input
@@ -579,7 +582,6 @@ connect(){
 	compare
 	[[ $auto_install -eq 2 ]] && merge_modlists
 	if [[ -n $diff ]]; then
-		[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running on the current desktop to use this feature."; return; }
 		case $auto_install in
 			1|2) auto_mod_install ;;
 			*) manual_mod_install ;;
@@ -616,21 +618,26 @@ fetch_mods_sa(){
 	qport_arr=()
 }
 prepare_ip_list(){
-	ct=$(< "$1" jq '[.response.servers[]]|length')
-	for((i=0;i<$ct;i++));do
-		name=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].name')
-		addr=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].addr')
-		ip=$(echo "$addr" | awk -F: '{print $1}')
-		players=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].players')
-		max_players=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].max_players')
-		gameport=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].gameport')
-		ip_port=$(echo "$ip:$gameport")
-		time=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].gametype' | grep -oP '(?<!\d)\d{2}:\d{2}(?!\d)')
-		echo "$name"
-		echo "$ip_port"
-		echo "$players/$max_players"
-		echo "$time"
-	done
+	ct=$(< "$1" jq '[.response.servers[]]|length' 2>/dev/null)
+	#old servers may become stale and return nothing
+	if [[ -n $ct ]]; then
+		for((i=0;i<$ct;i++));do
+			name=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].name')
+			addr=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].addr')
+			ip=$(echo "$addr" | awk -F: '{print $1}')
+			local qport=$(awk -F: '{print $2}' <<< $addr)
+			players=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].players')
+			max_players=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].max_players')
+			gameport=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].gameport')
+			ip_port=$(echo "$ip:$gameport")
+			time=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].gametype' | grep -oP '(?<!\d)\d{2}:\d{2}(?!\d)')
+			echo "$name"
+			echo "$ip_port"
+			echo "$players/$max_players"
+			echo "$time"
+			echo "$qport"
+		done
+	fi
 }
 history_table(){
 	[[ -f /tmp/dz.hist ]] && rm /tmp/dz.hist
@@ -648,7 +655,7 @@ history_table(){
 	done | $steamsafe_zenity --pulsate --progress --auto-close --title=DZGUI --width=500 --no-cancel 2>/dev/null
 	[[ $? -eq 1 ]] && return
 	while true; do
-	sel=$(cat /tmp/dz.hist | $steamsafe_zenity --width 1200 --height 800 --title=DZGUI --text="Recent servers" --list --column=Name --column=IP --column=Players --column=Gametime --print-column=2 --separator=%% 2>/dev/null)
+	sel=$(cat /tmp/dz.hist | $steamsafe_zenity --width 1200 --height 800 --title=DZGUI --text="Recent servers" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2,5 --separator=%% 2>/dev/null)
 	if [[ $? -eq 1 ]]; then
 		return_from_table=1
 		rm /tmp/dz.hist
@@ -657,10 +664,10 @@ history_table(){
 		if [[ -z $sel ]]; then
 			echo "No selection"
 		else
-			local gameport="$(echo "$sel" | awk -F: '{print $2}')"
-			local ip="$(echo "$sel" | awk -F: '{print $1}')"
-			local addr=$(< $json jq -r --arg gameport $gameport '.servers[]|select(.gameport == ($gameport|tonumber)).addr')
-			local qport=$(echo "$addr" | awk -F: '{print $2}')
+			local addr="$(echo "$sel" | awk -F"%%" '{print $1}')"
+			local qport="$(echo "$sel" | awk -F"%%" '{print $2}')"
+			local ip=$(awk -F: '{print $1}' <<< $addr)
+			local gameport=$(awk -F: '{print $2}' <<< $addr)
 			local sa_ip=$(echo "$ip:$gameport%%$qport")
 			qport_list="$sa_ip"
 			connect "$sel" "ip"
@@ -715,6 +722,13 @@ test_steam_api(){
 		| grep -E "^HTTP")
 	[[ $code =~ 403 ]] && echo 1
 	[[ $code =~ 200 ]] && echo 0
+}
+test_bm_api(){
+	local code=$(curl -ILs "$api" -H "Authorization: Bearer "$api_key"" -G \
+		-d "filter[game]=$game" | grep -E "^HTTP")
+	[[ $code =~ 401 ]] && echo 1
+	[[ $code =~ 200 ]] && echo 0
+	
 }
 add_steam_api(){
 		[[ $(test_steam_api) -eq 1 ]] && return 1
@@ -1001,12 +1015,13 @@ console_dl(){
 	steam steam://open/console 2>/dev/null 1>&2 &&
 	sleep 1s
 	#https://github.com/jordansissel/xdotool/issues/67
-	local wid=$(xdotool search --desktop "$(xdotool get_desktop)" --name Steam)
+	#https://dwm.suckless.org/patches/current_desktop/
+	local wid=$(xdotool search --onlyvisible --name Steam)
 	xdotool windowactivate $wid
 	for i in "${modids[@]}"; do
-		xdotool type --delay 15 "workshop_download_item $aid $i"
+		xdotool type --delay 15 --window $wid "workshop_download_item $aid $i"
 		sleep 0.2s
-		xdotool key Return
+		xdotool key --window $wid Return
 		sleep 0.2s
 	done
 }
@@ -1108,7 +1123,6 @@ options_menu(){
 		force_update=1
 		force_update_mods
 		merge_modlists > >($steamsafe_zenity --pulsate --progress --no-cancel --auto-close --title=DZGUI --width=500 2>/dev/null)
-		[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running on the current desktop to use this feature."; return; }
 		auto_mod_install
 	fi
 }
@@ -1237,7 +1251,7 @@ choose_filters(){
 	if [[ $is_steam_deck -eq 0 ]]; then
 		sd_res="--width=1920 --height=1080"
 	fi
-	sels=$($steamsafe_zenity --title="DZGUI" --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" TRUE "Low population (<10 players)" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
+	sels=$($steamsafe_zenity --title="DZGUI" --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" TRUE "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
 	if [[ $sels =~ Keyword ]]; then
 		search=$($steamsafe_zenity --entry --text="Search (case insensitive)" --width=500 --title="DZGUI" 2>/dev/null | awk '{print tolower($0)}')
 		[[ -z $search ]] && { ret=97; return; }
