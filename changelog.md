@@ -5,6 +5,14 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.2.0-rc.1] 2023-01-01
+### Fixed
+- History menu not parsing ports correctly
+- Validate BM key on initial setup
+### Changed
+- More permissive Steam client discovery for tiling WMs
+- Reset minor version (was 1 ahead)
+
 ## [3.3.0-rc.2] 2022-12-10
 ### Changed
 - Clarify low pop server count
