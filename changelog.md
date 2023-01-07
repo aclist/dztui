@@ -6,6 +6,10 @@
 - Standardize dialogs
 - Validate BM API key
 
+## [3.1.7] 2023-01-06
+### Fixed
+- Hotfix for xdotool repeating input
+
 ## [3.1.6] 2023-01-01
 ### Changed
 - Tick low pop servers by default

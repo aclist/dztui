@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.6
+version=3.1.7
 
 aid=221100
 game="dayz"
@@ -1017,12 +1017,13 @@ console_dl(){
 	#https://github.com/jordansissel/xdotool/issues/67
 	#https://dwm.suckless.org/patches/current_desktop/
 	local wid=$(xdotool search --onlyvisible --name Steam)
-	xdotool windowactivate $wid
+	#xdotool windowactivate $wid
+	sleep 1.5s
 	for i in "${modids[@]}"; do
-		xdotool type --delay 15 --window $wid "workshop_download_item $aid $i"
-		sleep 0.2s
+		xdotool type --delay 0 "workshop_download_item $aid $i"
+		sleep 0.5s
 		xdotool key --window $wid Return
-		sleep 0.2s
+		sleep 0.5s
 	done
 }
 find_default_path(){
