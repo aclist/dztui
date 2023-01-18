@@ -1,6 +1,11 @@
 # DZTUI
 
-**NOTE:** this project is currently superseded by [DZGUI](https://github.com/aclist/dztui/tree/dzgui), which brings numerous hotfixes and quality of life features. Those features are gradually being backported to the TUI client and the documentation for both is undergoing a rewrite in order to reach feature parity between the terminal and GUI versions. For the most extensive server support, use DZGUI. Most of the DZGUI documentation applies to DZTUI as far as configuration parameters are concerned.
+**NOTE:** this project has been superseded by [DZGUI](https://github.com/aclist/dztui/tree/dzgui), which brings numerous hotfixes and quality of life features. 
+
+Development of DZGUI is ongoing and has been driven by the needs of desktop, Steam Deck, and GUI users, and supports many more use cases and idiosyncrasies of DayZ servers. 
+
+By comparison, the DZTUI codebase is quite ancient now and has served mainly as a proof of concept for the implementation of DZGUI. If you continue to use DZTUI in its current state, be aware that it
+lacks critical features.
 
 ## What this is:
 
@@ -94,7 +99,7 @@ Lastly, the launch options and mod list will be concatenated and used to launch 
 - Servers don't verbosely report the version of mods they are running, so other than checking that the mod exists, we can't easily compare version differences. This means you may get booted on connect if your mod is not up to date. (Shouldn't happen due to Steam updates, but it's theoretically possible if a server is pegged to some older version). If that happens, you could manually install the desired version and reconnect.
 - The server protocol enforces a maximum length of 64 characters, so server names should never exceed the acceptable width of the table, making truncation unneccessary.
 - This was not tested with Flatpak steam or Steam native runtime. If there is a particular method of invocation for those, submit an issue.
-- Official servers do not get indexed by server trackers in the usual manner, so this works only with custom servers. It might be possible to include a manifest of official servers in a future revision, however.
+- Official servers do not get indexed by server trackers in the usual manner, so this works only with custom servers. (DZGUI supports official servers)
 - You may still encounter weird bugs from DayZ itself due to the unstable nature of the client. (E.g., "User is not connected to Steam" when loading into a map.)
 - Wasn't tested on esoteric terminal emulators or fancy configs. (Tested against urxvt)
 
@@ -106,11 +111,4 @@ A. It is technically feasible using A2S, but is complicated and offers little be
 
 Q. Why not allow browsing all servers in real time?
 
-A. It greatly complicates the scope. There are 10K+ servers that would have to be queried and some kind of manifest created, to say nothing of sorting, searching, pagination, etc. Having a simple heads-up list of your servers of interest should suffice for most use cases. I am thinking of rewriting this in curses as a fully-featured browser at some point, but we would have to see what improvements are made to the in-game browser and launcher to see if this is maintainable or even necessary in the first place.
-
-Q. What about adding the field «insert some field name here»?
-
-A. See above. "Number of players in queue" could be added to help decide whether to join a full server, but this requires a custom API.
-
-
-
+A. This feature exists in DZGUI. It is not ideal for a TUI client due to the need for pagination/scrolling.
