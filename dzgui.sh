@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.7
+version=3.1.8
 
 aid=221100
 game="dayz"
@@ -396,7 +396,7 @@ manual_mod_install(){
 			until [[ -d $workshop_dir/${stage_mods[$i]} ]]; do
 				[[ -f $ex ]] && return 1
 				sleep 0.1s
-				done
+			done
 			foreground
 			echo "# ${stage_mods[$i]} moved to mods dir"
 		done
@@ -468,9 +468,9 @@ auto_mod_install(){
 		touch "/tmp/dz.status"
 		console_dl "$diff" &&
 		steam steam://open/downloads && 2>/dev/null 1>&2
+		win=$(xdotool search --name "DZG Watcher")
+		xdotool windowactivate $win
 		until [[ -z $(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort)) ]]; do
-			win=$(xdotool search --name "DZG Watcher")
-			[[ ! $(xdotool getwindowfocus) -eq $win ]] && xdotool windowactivate $win
 			local missing=$(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort) | wc -l)
 			echo "# Downloaded $((${#modids[@]}-missing)) of ${#modids[@]} mods"
 		done | $steamsafe_zenity --pulsate --progress --title="DZG Watcher" --auto-close --no-cancel --width=500 2>/dev/null
@@ -543,7 +543,7 @@ merge_modlists(){
 	elif [[ -n "$diff" ]] && [[ ${#needs_update[@]} -eq 0 ]]; then
 		:
 	else
-		diff="$(echo -e "$diff\n${needs_update[@]}")"
+		diff="$(printf "%s\n%s\n" "$diff" "${needs_update[@]}")"
 	fi
 	[[ $force_update -eq 1 ]] && echo "100"
 }

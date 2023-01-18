@@ -2,9 +2,14 @@
 
 ## [Unreleased] 
 - Clean up logging
-- Custom query API
 - Standardize dialogs
-- Validate BM API key
+- Custom query API
+- Store favorites by IP
+
+## [3.1.8] 2023-01-18
+### Fixed
+- Progress window blocking rest of window stack
+- Bug when updating old mods if automod set to ON
 
 ## [3.1.7] 2023-01-06
 ### Fixed
