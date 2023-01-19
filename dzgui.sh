@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.4
+version=3.3.0-rc.5
 
 aid=221100
 game="dayz"
@@ -1130,28 +1130,29 @@ options_menu(){
 	[[ $toggle_steam -eq 1 ]] && debug_list+=("Toggle native Steam or Flatpak [$steam_hr]")
 	debug_sel=$($steamsafe_zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	[[ -z $debug_sel ]] && return
-	if [[ $debug_sel == "${debug_list[0]}" ]]; then
-		enforce_dl=1
-		toggle_branch &&
-		check_version
-	elif [[ $debug_sel == "${debug_list[1]}" ]]; then
-		toggle_debug
-	elif [[ $debug_sel == "${debug_list[2]}" ]]; then
-		source_script=$(realpath "$0")
-		source_dir=$(dirname "$source_script")
-		generate_log > "$source_dir/DZGUI.log"
-		printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
-		$steamsafe_zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
-	elif [[ $debug_sel == "${debug_list[3]}" ]]; then
-		toggle_console_dl
-	elif [[ $debug_sel == "${debug_list[4]}" ]]; then
-		force_update=1
-		force_update_mods
-		merge_modlists > >($steamsafe_zenity --pulsate --progress --no-cancel --auto-close --title=DZGUI --width=500 2>/dev/null)
-		auto_mod_install
-	elif [[ $debug_sel == "${debug_list[5]}" ]]; then
-		toggle_steam_binary
-	fi
+	case "$debug_sel" in
+		"Toggle branch")
+			enforce_dl=1
+			toggle_branch &&
+			check_version
+			;;
+		"Toggle debug mode") toggle_debug ;;
+		"Generate debug log")
+			source_script=$(realpath "$0")
+			source_dir=$(dirname "$source_script")
+			generate_log > "$source_dir/DZGUI.log"
+			printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
+			$steamsafe_zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
+			;;
+		Toggle[[:space:]]auto*) toggle_console_dl ;;
+		"Force update local mods")
+			force_update=1
+			force_update_mods
+			merge_modlists > >($steamsafe_zenity --pulsate --progress --no-cancel --auto-close --title=DZGUI --width=500 2>/dev/null)
+			auto_mod_install
+			;;
+		Toggle[[:space:]]native*) toggle_steam_binary ;;
+	esac
 }
 query_and_connect(){
 	[[ -z $whitelist ]] && { popup 600; return; }
