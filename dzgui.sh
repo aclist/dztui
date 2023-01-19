@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.0-rc.4
+version=3.2.0-rc.5
 
 aid=221100
 game="dayz"
@@ -340,7 +340,7 @@ steam_deck_mods(){
 		rc=$?
 		if [[ $rc -eq 0 ]]; then
 			echo "[DZGUI] Opening ${workshop}$next"
-			"$steam_cmd" steam://url/CommunityFilePage/$next 2>/dev/null &
+			"$sbp_cmd" steam://url/CommunityFilePage/$next 2>/dev/null &
 			$steamsafe_zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." --width=500 2>/dev/null
 		else
 			return 1
@@ -380,7 +380,7 @@ manual_mod_install(){
 			[[ -f $ex ]] && return 1
 			local downloads_dir="$steam_path/steamapps/workshop/downloads/$aid"
 			local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
-			"$steam_cmd" "steam://url/CommunityFilePage/${stage_mods[$i]}"
+			"$sbp_cmd" "steam://url/CommunityFilePage/${stage_mods[$i]}"
 			echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
 			sleep 1s
 			foreground
@@ -467,7 +467,7 @@ auto_mod_install(){
 		[[ -f "/tmp/dz.status" ]] && rm "/tmp/dz.status"
 		touch "/tmp/dz.status"
 		console_dl "$diff" &&
-		"$steam_cmd" steam://open/downloads && 2>/dev/null 1>&2
+		"$sbp_cmd" steam://open/downloads && 2>/dev/null 1>&2
 		win=$(xdotool search --name "DZG Watcher")
 		xdotool windowactivate $win
 		until [[ -z $(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort)) ]]; do
@@ -1095,13 +1095,15 @@ force_update_mods(){
 	fi
 }
 toggle_steam_binary(){
-	case $steam_cmd in
+	case $sbp_cmd in
 		steam)
-			steam_cmd=xdg-open
+			sbp_cmd="xdg-open"
+			steam_cmd="flatpak run com.valvesoftware.Steam"
 			popup 700
 			;;
 		xdg-open)
-			steam_cmd=steam
+			sbp_cmd="steam"
+			steam_cmd="steam"
 			popup 800;;
 	esac
 }
@@ -1118,7 +1120,7 @@ options_menu(){
 		)
 	#TODO: tech debt: drop old flags
 	[[ $auto_install -eq 2 ]] || [[ $auto_install -eq 1 ]] && debug_list+=("Force update local mods")
-	case $steam_cmd in
+	case $sbp_cmd in
 		steam) steam_hr=Steam ;;
 		xdg-open) steam_hr=Flatpak ;;
 	esac
@@ -1777,11 +1779,14 @@ steam_deps(){
 		exit
 	elif [[ -n "$steam" ]] && [[ -n "$flatpak" ]]; then
 		toggle_steam=1
+		sbp_cmd="steam"
 		steam_cmd="steam"
 	elif [[ -n "$steam" ]]; then
+		sbp_cmd="steam"
 		steam_cmd="steam"
 	else
-		steam_cmd="xdg-open"
+		sbp_cmd="xdg-open"
+		steam_cmd="flatpak run com.valvesoftware.Steam"
 	fi
 }
 initial_setup(){
