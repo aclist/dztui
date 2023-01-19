@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.3
+version=3.3.0-rc.4
 
 aid=221100
 game="dayz"
@@ -196,7 +196,7 @@ staging_dir="$staging_dir"
 default_steam_path="$default_steam_path"
 
 #Preferred Steam launch command (for Flatpak support)
-sbp_cmd="$sbp_cmd"
+preferred_client="$preferred_client"
 	END
 }
 write_desktop_file(){
@@ -343,7 +343,7 @@ steam_deck_mods(){
 		rc=$?
 		if [[ $rc -eq 0 ]]; then
 			echo "[DZGUI] Opening ${workshop}$next"
-			"$sbp_cmd" steam://url/CommunityFilePage/$next 2>/dev/null &
+			"$steam_cmd" steam://url/CommunityFilePage/$next 2>/dev/null &
 			$steamsafe_zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." --width=500 2>/dev/null
 		else
 			return 1
@@ -383,7 +383,7 @@ manual_mod_install(){
 			[[ -f $ex ]] && return 1
 			local downloads_dir="$steam_path/steamapps/workshop/downloads/$aid"
 			local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
-			"$sbp_cmd" "steam://url/CommunityFilePage/${stage_mods[$i]}"
+			"$steam_cmd" "steam://url/CommunityFilePage/${stage_mods[$i]}"
 			echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
 			sleep 1s
 			foreground
@@ -470,7 +470,7 @@ auto_mod_install(){
 		[[ -f "/tmp/dz.status" ]] && rm "/tmp/dz.status"
 		touch "/tmp/dz.status"
 		console_dl "$diff" &&
-		"$sbp_cmd" steam://open/downloads && 2>/dev/null 1>&2
+		"$steam_cmd" steam://open/downloads && 2>/dev/null 1>&2
 		win=$(xdotool search --name "DZG Watcher")
 		xdotool windowactivate $win
 		until [[ -z $(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort)) ]]; do
@@ -1098,19 +1098,15 @@ force_update_mods(){
 	fi
 }
 toggle_steam_binary(){
-	case $sbp_cmd in
+	case "$steam_cmd" in
 		steam)
-			sbp_cmd="xdg-open"
 			steam_cmd="flatpak run com.valvesoftware.Steam"
-			preferred_client=$sbp_cmd
-			update_sbp_cmd
+			update_steam_cmd
 			popup 700
 			;;
-		xdg-open)
-			sbp_cmd="steam"
+		flatpak*)
 			steam_cmd="steam"
-			preferred_client=$sbp_cmd
-			update_sbp_cmd
+			update_steam_cmd
 			popup 800;;
 	esac
 }
@@ -1127,9 +1123,9 @@ options_menu(){
 		)
 	#TODO: tech debt: drop old flags
 	[[ $auto_install -eq 2 ]] || [[ $auto_install -eq 1 ]] && debug_list+=("Force update local mods")
-	case $sbp_cmd in
+	case "$steam_cmd" in
 		steam) steam_hr=Steam ;;
-		xdg-open) steam_hr=Flatpak ;;
+		flatpak*) steam_hr=Flatpak ;;
 	esac
 	[[ $toggle_steam -eq 1 ]] && debug_list+=("Toggle native Steam or Flatpak [$steam_hr]")
 	debug_sel=$($steamsafe_zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
@@ -1777,8 +1773,9 @@ fetch_helpers(){
 	mkdir -p "$helpers_path"
 	[[ ! -f "$helpers_path/vdf2json.py" ]] && curl -Ls "$vdf2json_url" > "$helpers_path/vdf2json.py"
 }
-update_sbp_cmd(){
+update_steam_cmd(){
 	local new_cmd
+	preferred_client="$steam_cmd"
 	new_cmd="preferred_client=\"$preferred_client\""
 	mv $config_file ${config_path}dztuirc.old
 	nr=$(awk '/preferred_client=/ {print NR}' ${config_path}dztuirc.old)
@@ -1793,15 +1790,12 @@ steam_deps(){
 		exit
 	elif [[ -n "$steam" ]] && [[ -n "$flatpak" ]]; then
 		toggle_steam=1
-		sbp_cmd="steam"
 		steam_cmd="steam"
-		[[ -n $preferred_client ]] && sbp_cmd=$preferred_client
-		[[ -z $preferred_client ]] && { preferred_client=$sbp_cmd; update_sbp_cmd; }
+		[[ -n $preferred_client ]] && steam_cmd="$preferred_client"
+		[[ -z $preferred_client ]] && update_steam_cmd
 	elif [[ -n "$steam" ]]; then
-		sbp_cmd="steam"
 		steam_cmd="steam"
 	else
-		sbp_cmd="xdg-open"
 		steam_cmd="flatpak run com.valvesoftware.Steam"
 	fi
 }
