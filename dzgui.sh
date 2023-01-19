@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.1
+version=3.3.0-rc.2
 
 aid=221100
 game="dayz"
@@ -1787,7 +1787,6 @@ update_sbp_cmd(){
 steam_deps(){
 	local flatpak steam new_cmd
 	flatpak=$(flatpak list | grep valvesoftware.Steam)
-	flatpak="yes"
 	steam=$(command -v steam)
 	if [[ -z "$steam" ]] && [[ -z "$flatpak" ]]; then
 		warn "Requires Steam or Flatpak Steam"
