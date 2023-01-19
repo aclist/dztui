@@ -69,7 +69,7 @@ print_news(){
 }
 
 declare -A deps
-deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [$steamsafe_zenity]="3.42.1" [steam]="1.0.0")
+deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [$steamsafe_zenity]="3.42.1")
 changelog(){
 	if [[ $branch == "stable" ]]; then
 		md="https://raw.githubusercontent.com/aclist/dztui/dzgui/changelog.md"
@@ -84,7 +84,7 @@ changelog(){
 
 depcheck(){
 	for dep in "${!deps[@]}"; do
-		command -v $dep 2>&1>/dev/null || (printf "Requires %s >=%s\n" $dep ${deps[$dep]}; exit 1)
+		command -v "$dep" 2>&1>/dev/null || (printf "Requires %s >=%s\n" "$dep" ${deps[$dep]}; exit 1)
 	done
 }
 watcher_deps(){
@@ -340,7 +340,7 @@ steam_deck_mods(){
 		rc=$?
 		if [[ $rc -eq 0 ]]; then
 			echo "[DZGUI] Opening ${workshop}$next"
-			steam steam://url/CommunityFilePage/$next 2>/dev/null &
+			"$steam_cmd" steam://url/CommunityFilePage/$next 2>/dev/null &
 			$steamsafe_zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." --width=500 2>/dev/null
 		else
 			return 1
@@ -380,7 +380,7 @@ manual_mod_install(){
 			[[ -f $ex ]] && return 1
 			local downloads_dir="$steam_path/steamapps/workshop/downloads/$aid"
 			local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
-			steam "steam://url/CommunityFilePage/${stage_mods[$i]}"
+			"$steam_cmd" "steam://url/CommunityFilePage/${stage_mods[$i]}"
 			echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
 			sleep 1s
 			foreground
@@ -396,7 +396,7 @@ manual_mod_install(){
 			until [[ -d $workshop_dir/${stage_mods[$i]} ]]; do
 				[[ -f $ex ]] && return 1
 				sleep 0.1s
-				done
+			done
 			foreground
 			echo "# ${stage_mods[$i]} moved to mods dir"
 		done
@@ -467,12 +467,12 @@ auto_mod_install(){
 		[[ -f "/tmp/dz.status" ]] && rm "/tmp/dz.status"
 		touch "/tmp/dz.status"
 		console_dl "$diff" &&
-		steam steam://open/downloads && 2>/dev/null 1>&2
+		"$steam_cmd" steam://open/downloads && 2>/dev/null 1>&2
+		win=$(xdotool search --name "DZG Watcher")
+		xdotool windowactivate $win
 		until [[ -z $(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort)) ]]; do
-			win=$(xdotool search --name "DZG Watcher")
-			[[ ! $(xdotool getwindowfocus) -eq $win ]] && xdotool windowactivate $win
 			local missing=$(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort) | wc -l)
-			echo "# Downloaded $((${#modids[@]}-missing)) of ${#modids[@]} mods"
+			echo "# Downloaded $((${#modids[@]}-missing)) of ${#modids[@]} mods. ESC cancels"
 		done | $steamsafe_zenity --pulsate --progress --title="DZG Watcher" --auto-close --no-cancel --width=500 2>/dev/null
 		compare
 		[[ $force_update -eq 1 ]] && { unset force_update; return; }
@@ -512,6 +512,7 @@ update_stamps(){
 check_timestamps(){
 	readarray -t local_modlist < <(ls -1 $workshop_dir)
 	max=${#local_modlist[@]}
+	[[ $max -eq 0 ]] && return
 	readarray -t stamps < <(get_local_stamps | jq -r '.response.publishedfiledetails[].time_updated')
 	if [[ ! -f $version_file ]]; then
 		update_stamps
@@ -543,7 +544,7 @@ merge_modlists(){
 	elif [[ -n "$diff" ]] && [[ ${#needs_update[@]} -eq 0 ]]; then
 		:
 	else
-		diff="$(echo -e "$diff\n${needs_update[@]}")"
+		diff="$(printf "%s\n%s\n" "$diff" "${needs_update[@]}")"
 	fi
 	[[ $force_update -eq 1 ]] && echo "100"
 }
@@ -1017,12 +1018,13 @@ console_dl(){
 	#https://github.com/jordansissel/xdotool/issues/67
 	#https://dwm.suckless.org/patches/current_desktop/
 	local wid=$(xdotool search --onlyvisible --name Steam)
-	xdotool windowactivate $wid
+	#xdotool windowactivate $wid
+	sleep 1.5s
 	for i in "${modids[@]}"; do
-		xdotool type --delay 15 --window $wid "workshop_download_item $aid $i"
-		sleep 0.2s
+		xdotool type --delay 0 "workshop_download_item $aid $i"
+		sleep 0.5s
 		xdotool key --window $wid Return
-		sleep 0.2s
+		sleep 0.5s
 	done
 }
 find_default_path(){
@@ -1064,6 +1066,8 @@ popup(){
 		400) pop "Automod install enabled. Auto-downloaded mods will not appear\nin your Steam Workshop subscriptions, but DZGUI will\ntrack the version number of downloaded mods internally\nand trigger an update if necessary." ;;
 		500) pop "Automod install disabled.\nSwitched to manual mode." ;;
 		600) pop "No preferred servers set." ;;
+		700) pop "Toggled to Flatpak Steam." ;;
+		800) pop "Toggled to native Steam." ;;
 	esac
 }
 toggle_console_dl(){
@@ -1090,6 +1094,17 @@ force_update_mods(){
 		mv /tmp/versions $version_file
 	fi
 }
+toggle_steam_binary(){
+	case $steam_cmd in
+		steam)
+			steam_cmd=xdg-open
+			popup 700
+			;;
+		xdg-open)
+			steam_cmd=steam
+			popup 800;;
+	esac
+}
 options_menu(){
 	case "$auto_install" in
 		0|1|"") auto_hr="OFF"; ;;
@@ -1103,6 +1118,11 @@ options_menu(){
 		)
 	#TODO: tech debt: drop old flags
 	[[ $auto_install -eq 2 ]] || [[ $auto_install -eq 1 ]] && debug_list+=("Force update local mods")
+	case $steam_cmd in
+		steam) steam_hr=Steam ;;
+		xdg-open) steam_hr=Flatpak ;;
+	esac
+	[[ $toggle_steam -eq 1 ]] && debug_list+=("Toggle native Steam or Flatpak [$steam_hr]")
 	debug_sel=$($steamsafe_zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
 	[[ -z $debug_sel ]] && return
 	if [[ $debug_sel == "${debug_list[0]}" ]]; then
@@ -1124,6 +1144,8 @@ options_menu(){
 		force_update_mods
 		merge_modlists > >($steamsafe_zenity --pulsate --progress --no-cancel --auto-close --title=DZGUI --width=500 2>/dev/null)
 		auto_mod_install
+	elif [[ $debug_sel == "${debug_list[5]}" ]]; then
+		toggle_steam_binary
 	fi
 }
 query_and_connect(){
@@ -1746,10 +1768,27 @@ fetch_helpers(){
 	mkdir -p "$helpers_path"
 	[[ ! -f "$helpers_path/vdf2json.py" ]] && curl -Ls "$vdf2json_url" > "$helpers_path/vdf2json.py"
 }
+steam_deps(){
+	local flatpak steam
+	flatpak=$(flatpak run com.valvesoftware.Steam --version 2>/dev/null)
+	steam=$(command -v steam)
+	if [[ -z "$steam" ]] && [[ -z "$flatpak" ]]; then
+		warn "Requires Steam or Flatpak Steam"
+		exit
+	elif [[ -n "$steam" ]] && [[ -n "$flatpak" ]]; then
+		toggle_steam=1
+		steam_cmd="steam"
+	elif [[ -n "$steam" ]]; then
+		steam_cmd="steam"
+	else
+		steam_cmd="xdg-open"
+	fi
+}
 initial_setup(){
 	echo "# Initial setup"
 	run_depcheck
 	watcher_deps
+	steam_deps
 	check_architecture
 	check_version
 	check_map_count
