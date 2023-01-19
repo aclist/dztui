@@ -10,6 +10,7 @@
 - Don't check mod version timestamps if no mods installed
 - Don't continuously force popup to top of stack
 - Fix for repeated key input in console
+- Split merged modlist correctly on newline
 ### Added
 - Parameterize native/Flatpak steam selection
 - Toggle native/Flatpak steam from options menu
