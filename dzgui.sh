@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.0-rc.5
+version=3.3.0-rc.1
 
 aid=221100
 game="dayz"
@@ -194,6 +194,9 @@ staging_dir="$staging_dir"
 
 #Path to default Steam client
 default_steam_path="$default_steam_path"
+
+#Preferred Steam launch command (for Flatpak support)
+sbp_cmd="$sbp_cmd"
 	END
 }
 write_desktop_file(){
@@ -1099,11 +1102,15 @@ toggle_steam_binary(){
 		steam)
 			sbp_cmd="xdg-open"
 			steam_cmd="flatpak run com.valvesoftware.Steam"
+			preferred_client=$sbp_cmd
+			update_sbp_cmd
 			popup 700
 			;;
 		xdg-open)
 			sbp_cmd="steam"
 			steam_cmd="steam"
+			preferred_client=$sbp_cmd
+			update_sbp_cmd
 			popup 800;;
 	esac
 }
@@ -1770,17 +1777,28 @@ fetch_helpers(){
 	mkdir -p "$helpers_path"
 	[[ ! -f "$helpers_path/vdf2json.py" ]] && curl -Ls "$vdf2json_url" > "$helpers_path/vdf2json.py"
 }
+update_sbp_cmd(){
+	local new_cmd
+	new_cmd="preferred_client=\"$preferred_client\""
+	mv $config_file ${config_path}dztuirc.old
+	nr=$(awk '/preferred_client=/ {print NR}' ${config_path}dztuirc.old)
+	awk -v "var=$new_cmd" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
+}
 steam_deps(){
-	local flatpak steam
+	local flatpak steam new_cmd
 	flatpak=$(flatpak list | grep valvesoftware.Steam)
+	flatpak="yes"
 	steam=$(command -v steam)
 	if [[ -z "$steam" ]] && [[ -z "$flatpak" ]]; then
 		warn "Requires Steam or Flatpak Steam"
 		exit
 	elif [[ -n "$steam" ]] && [[ -n "$flatpak" ]]; then
+		echo updating >> $HOME/dzlog
 		toggle_steam=1
 		sbp_cmd="steam"
 		steam_cmd="steam"
+		[[ -n $preferred_client ]] && sbp_cmd=$preferred_client
+		[[ -z $preferred_client ]] && { preferred_client=$sbp_cmd; update_sbp_cmd; }
 	elif [[ -n "$steam" ]]; then
 		sbp_cmd="steam"
 		steam_cmd="steam"
@@ -1793,12 +1811,12 @@ initial_setup(){
 	echo "# Initial setup"
 	run_depcheck
 	watcher_deps
-	steam_deps
 	check_architecture
 	check_version
 	check_map_count
 	fetch_helpers
 	config
+	steam_deps
 	run_varcheck
 	stale_symlinks
 	init_items
