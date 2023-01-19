@@ -1783,7 +1783,7 @@ update_steam_cmd(){
 	awk -v "var=$new_cmd" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
 }
 steam_deps(){
-	local flatpak steam new_cmd
+	local flatpak steam
 	flatpak=$(flatpak list | grep valvesoftware.Steam)
 	steam=$(command -v steam)
 	if [[ -z "$steam" ]] && [[ -z "$flatpak" ]]; then
