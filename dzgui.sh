@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.1.8
+version=3.2.0
 
 aid=221100
 game="dayz"
@@ -340,7 +340,7 @@ steam_deck_mods(){
 		rc=$?
 		if [[ $rc -eq 0 ]]; then
 			echo "[DZGUI] Opening ${workshop}$next"
-			"$steam_cmd" steam://url/CommunityFilePage/$next 2>/dev/null &
+			"$sbp_cmd" steam://url/CommunityFilePage/$next 2>/dev/null &
 			$steamsafe_zenity --info --title="DZGUI" --ok-label="Next" --text="Click [Next] to continue mod check." --width=500 2>/dev/null
 		else
 			return 1
@@ -380,7 +380,7 @@ manual_mod_install(){
 			[[ -f $ex ]] && return 1
 			local downloads_dir="$steam_path/steamapps/workshop/downloads/$aid"
 			local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
-			"$steam_cmd" "steam://url/CommunityFilePage/${stage_mods[$i]}"
+			"$sbp_cmd" "steam://url/CommunityFilePage/${stage_mods[$i]}"
 			echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
 			sleep 1s
 			foreground
@@ -467,7 +467,7 @@ auto_mod_install(){
 		[[ -f "/tmp/dz.status" ]] && rm "/tmp/dz.status"
 		touch "/tmp/dz.status"
 		console_dl "$diff" &&
-		"$steam_cmd" steam://open/downloads && 2>/dev/null 1>&2
+		"$sbp_cmd" steam://open/downloads && 2>/dev/null 1>&2
 		win=$(xdotool search --name "DZG Watcher")
 		xdotool windowactivate $win
 		until [[ -z $(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort)) ]]; do
@@ -830,7 +830,7 @@ concat_mods(){
 launch(){
 	mods=$(concat_mods)
 	if [[ $debug -eq 1 ]]; then
-		launch_options="steam -applaunch $aid -connect=$ip -nolauncher -nosplash -name=$name -skipintro \"-mod=$mods\""
+		launch_options="$steam_cmd -applaunch $aid -connect=$ip -nolauncher -nosplash -name=$name -skipintro \"-mod=$mods\""
 		print_launch_options="$(printf "This is a dry run.\nThese options would have been used to launch the game:\n\n$launch_options\n" | fold -w 60)"
 		$steamsafe_zenity --question --title="DZGUI" --ok-label="Write to file" --cancel-label="Back"\
 			--text="$print_launch_options" 2>/dev/null
@@ -845,7 +845,7 @@ launch(){
 	else
 		echo "[DZGUI] All OK. Launching DayZ"
 		$steamsafe_zenity --width 500 --title="DZGUI" --info --text="Launch conditions satisfied.\nDayZ will now launch after clicking [OK]." 2>/dev/null
-		steam -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro -name=$name \"-mod=$mods\"
+		$steam_cmd -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro -name=$name \"-mod=$mods\"
 		exit
 	fi
 		one_shot_launch=0
@@ -1095,13 +1095,15 @@ force_update_mods(){
 	fi
 }
 toggle_steam_binary(){
-	case $steam_cmd in
+	case $sbp_cmd in
 		steam)
-			steam_cmd=xdg-open
+			sbp_cmd="xdg-open"
+			steam_cmd="flatpak run com.valvesoftware.Steam"
 			popup 700
 			;;
 		xdg-open)
-			steam_cmd=steam
+			sbp_cmd="steam"
+			steam_cmd="steam"
 			popup 800;;
 	esac
 }
@@ -1118,7 +1120,7 @@ options_menu(){
 		)
 	#TODO: tech debt: drop old flags
 	[[ $auto_install -eq 2 ]] || [[ $auto_install -eq 1 ]] && debug_list+=("Force update local mods")
-	case $steam_cmd in
+	case $sbp_cmd in
 		steam) steam_hr=Steam ;;
 		xdg-open) steam_hr=Flatpak ;;
 	esac
@@ -1770,18 +1772,21 @@ fetch_helpers(){
 }
 steam_deps(){
 	local flatpak steam
-	flatpak=$(flatpak run com.valvesoftware.Steam --version 2>/dev/null)
+	flatpak=$(flatpak list | grep valvesoftware.Steam)
 	steam=$(command -v steam)
 	if [[ -z "$steam" ]] && [[ -z "$flatpak" ]]; then
 		warn "Requires Steam or Flatpak Steam"
 		exit
 	elif [[ -n "$steam" ]] && [[ -n "$flatpak" ]]; then
 		toggle_steam=1
+		sbp_cmd="steam"
 		steam_cmd="steam"
 	elif [[ -n "$steam" ]]; then
+		sbp_cmd="steam"
 		steam_cmd="steam"
 	else
-		steam_cmd="xdg-open"
+		sbp_cmd="xdg-open"
+		steam_cmd="flatpak run com.valvesoftware.Steam"
 	fi
 }
 initial_setup(){

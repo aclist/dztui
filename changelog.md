@@ -6,6 +6,10 @@
 - Custom query API
 - Store favorites by IP
 
+## [3.2.0] 2023-01-19
+### Added
+- Support Flatpak version of Steam
+
 ## [3.1.8] 2023-01-18
 ### Fixed
 - Progress window blocking rest of window stack
