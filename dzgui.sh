@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.2
+version=3.3.0-rc.3
 
 aid=221100
 game="dayz"
@@ -1792,7 +1792,6 @@ steam_deps(){
 		warn "Requires Steam or Flatpak Steam"
 		exit
 	elif [[ -n "$steam" ]] && [[ -n "$flatpak" ]]; then
-		echo updating >> $HOME/dzlog
 		toggle_steam=1
 		sbp_cmd="steam"
 		steam_cmd="steam"
