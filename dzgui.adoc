@@ -25,21 +25,30 @@ If any dependencies are missing when the application starts, it will warn you, s
 - `wmctrl` or `xdotool`
 
 === Preparation
-. Download DZGUI and make it executable:
+. **Download DZGUI and make it executable:**
 
-**Automatic method (skip to 3 below when complete)**
+Automatic method: generic OS (skip to step 3 below when complete)
 
 ```
 curl -s "https://raw.githubusercontent.com/aclist/dztui/dzgui/install.sh" | bash
 ```
 
-**Manual method**
+Automatic method: nix-based systems (contributed by lelgenio)
+
+Follow the instructions at https://github.com/lelgenio/dzgui-nix to ingest the package and dependencies
+into your system using flakes. 
+
+Manual method
 
 ```
+git clone https://github.com/aclist/dztui.git
 chmod +x dzgui.sh
 ```
+
+'''
 [start=2]
-. Update the `vm.max_map_count` value (see https://www.protondb.com/app/221100)
+. **Update the `vm.max_map_count` value (see https://www.protondb.com/app/221100)**
+
 This is handled automatically by DZGUI if you just choose to run the application out of the box.
 
 Ephemeral method:
@@ -56,8 +65,8 @@ echo 'vm.max_map_count=1048576' | sudo tee /etc/sysctl.d/dayz.conf
 If it detects an incorrect map count value, DZGUI will prompt you to permanently update the map count value when starting up.
 
 [start=3]
-. Steam account with DayZ license
-. Enable a Proton version ≥ `6.8` (or use Experimental) in the **Compatibility** field of the game's right-click options. 
+. **Prepare a Steam account with a DayZ license**
+. **Enable a Proton version ≥ `6.8` (or use Experimental) in the `Compatibility` field of the game's right-click options.**
 
 
 === API key & server IDs
