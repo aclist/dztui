@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.7
+version=3.3.0-rc.8
 
 aid=221100
 game="dayz"
@@ -989,8 +989,10 @@ set_header(){
 		sel=$(cat $tmp | $steamsafe_zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 			--separator="$separator" --print-column=2,6 2>/dev/null)
 	elif [[ $1 == "main_menu" ]]; then
+		echo "entered header" >> /tmp/dzgui.log
 		sel=$($steamsafe_zenity $sd_res --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
-		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" --hide-header "${items[@]}" 2>/dev/null)
+		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" --hide-header "${items[@]}" 2>/tmp/dzgui.log)
+		echo "sel was $sel" >> /tmp/dzgui.log
 	fi
 }
 toggle_branch(){
@@ -1812,6 +1814,10 @@ steam_deps(){
 		steam_cmd="flatpak run com.valvesoftware.Steam"
 	fi
 }
+dbl(){
+	t=$(date "+%F %T")
+	printf "[%s] %s\n" "$t" "$1"
+}
 initial_setup(){
 	echo "# Initial setup"
 	run_depcheck
@@ -1829,6 +1835,7 @@ initial_setup(){
 	echo "100"
 }
 main(){
+	> /tmp/dzgui.log
 	echo "setting lockfile" >> /tmp/dzgui.log
 	lock
 	initial_setup > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --no-cancel --width=500 2>/dev/null)
