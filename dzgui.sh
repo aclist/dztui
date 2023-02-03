@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.6
+version=3.3.0-rc.7
 
 aid=221100
 game="dayz"
@@ -88,6 +88,7 @@ depcheck(){
 	done
 }
 watcher_deps(){
+	echo "watcher deps" >> /tmp/dzgui.log
 	if [[ ! $(command -v wmctrl) ]] && [[ ! $(command -v xdotool) ]]; then
 		echo "100"
 		warn "Missing dependency: requires 'wmctrl' or 'xdotool'.\nInstall from your system's package manager."
@@ -96,6 +97,7 @@ watcher_deps(){
 }
 init_items(){
 	#array order determines menu selector; this is destructive
+echo "init" >> /tmp/dzgui.log
 items=(
 	"[Connect]"
 	"	Server browser"
@@ -294,6 +296,7 @@ varcheck(){
 	fi
 }
 run_depcheck(){
+	echo "depcheck" >> /tmp/dzgui.log
 	if [[ -n $(depcheck) ]]; then
 		echo "100"
 		$steamsafe_zenity --warning --ok-label="Exit" --title="DZGUI" --text="$(depcheck)"
@@ -308,6 +311,7 @@ check_pyver(){
 	fi
 }
 run_varcheck(){
+	echo "varcheck" >> /tmp/dzgui.log
 	source $config_file
 	workshop_dir="$steam_path/steamapps/workshop/content/$aid"
 	game_dir="$steam_path/steamapps/common/DayZ"
@@ -322,6 +326,7 @@ run_varcheck(){
 	fi
 }
 config(){
+	echo "config" >> /tmp/dzgui.log
 	if [[ ! -f $config_file ]]; then
 		$steamsafe_zenity --width 500 --info --text="Config file not found. Click OK to proceed to first-time setup." 2>/dev/null
 		code=$?
@@ -419,6 +424,7 @@ encode(){
 	echo "$1" | md5sum | cut -c -8
 }
 stale_symlinks(){
+	echo "symlinks" >> /tmp/dzgui.log
 	for l in $(find "$game_dir" -xtype l); do
 		unlink $l
 	done
@@ -1442,6 +1448,7 @@ mods_disk_size(){
 	printf "Location: %s/steamapps/workshop/content/221100" "$steam_path"
 }
 main_menu(){
+	echo "entered main" >> /tmp/dzgui.log
 	print_news
 	set_mode
 #	if [[ -n $fav ]]; then
@@ -1645,6 +1652,7 @@ prompt_dl(){
 	fi
 }
 check_version(){
+	echo "version" >> /tmp/dzgui.log
 	[[ -f $config_file ]] && source $config_file
 	[[ -z $branch ]] && branch="stable"
 	check_branch
@@ -1662,6 +1670,7 @@ check_version(){
 	fi
 }
 check_architecture(){
+	echo "checking architecture" >> /tmp/dzgui.log
 	cpu=$(cat /proc/cpuinfo | grep "AMD Custom APU 0405")
 	if [[ -n "$cpu" ]]; then
 		is_steam_deck=1
@@ -1710,12 +1719,14 @@ toggle_debug(){
 
 }
 setup(){
+	echo "setup index" >> /tmp/dzgui.log
 	if [[ -n $fav ]]; then
 		set_fav
 		items[8]="	Change favorite server"
 	fi
 }
 check_map_count(){
+	echo "mapcount" >> /tmp/dzgui.log
 	count=1048576
 	echo "[DZGUI] Checking system map count"
 	if [[ $(sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -lt $count ]]; then 
@@ -1783,6 +1794,7 @@ update_steam_cmd(){
 	awk -v "var=$new_cmd" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
 }
 steam_deps(){
+	echo "steam deps" >> /tmp/dzgui.log
 	local flatpak steam
 	flatpak=$(flatpak list | grep valvesoftware.Steam)
 	steam=$(command -v steam)
@@ -1817,8 +1829,10 @@ initial_setup(){
 	echo "100"
 }
 main(){
+	echo "setting lockfile" >> /tmp/dzgui.log
 	lock
 	initial_setup > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --no-cancel --width=500 2>/dev/null)
+	echo "entering main menu" >> /tmp/dzgui.log
 	main_menu
 	#TODO: tech debt: cruddy handling for steam forking
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh
