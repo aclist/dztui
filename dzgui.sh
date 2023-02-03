@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.8
+version=3.3.0-rc.9
 
 aid=221100
 game="dayz"
@@ -979,6 +979,7 @@ connect_to_fav(){
 
 }
 set_header(){
+	echo "setting header" >> /tmp/dzgui.log
 	[[ $auto_install -eq 2 ]] && install_mode="auto"
 	[[ $auto_install -eq 1 ]] && install_mode="headless"
 	[[ $auto_install -eq 0 ]] && install_mode=manual
@@ -989,7 +990,7 @@ set_header(){
 		sel=$(cat $tmp | $steamsafe_zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 			--separator="$separator" --print-column=2,6 2>/dev/null)
 	elif [[ $1 == "main_menu" ]]; then
-		echo "entered header" >> /tmp/dzgui.log
+		echo "drawing header" >> /tmp/dzgui.log
 		sel=$($steamsafe_zenity $sd_res --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" --hide-header "${items[@]}" 2>/tmp/dzgui.log)
 		echo "sel was $sel" >> /tmp/dzgui.log
@@ -1507,6 +1508,7 @@ main_menu(){
 			warn "This feature is not yet implemented."
 		fi
 	else
+		echo "returning from main" >> /tmp/dzgui.log
 		return
 	fi
 	done
