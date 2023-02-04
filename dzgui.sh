@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.10
+version=3.3.0-rc.11
 
 aid=221100
 game="dayz"
@@ -994,7 +994,7 @@ set_header(){
 		dbl "FAV: $fav_label" >> /tmp/dzgui.log
 		dbl "${items[@]}" >> /tmp/dzgui.log
 		dbl "$steamsafe_zenity --version" >> /tmp/dzgui.log
-		sel=$($steamsafe_zenity --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
+		sel=$($steamsafe_zenity --width=1280 --height=800 --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" --hide-header "${items[@]}" 2>>/tmp/dzgui.log)
 	fi
 }
