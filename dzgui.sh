@@ -993,6 +993,7 @@ set_header(){
 		dbl "INS: $install_mode" >> /tmp/dzgui.log
 		dbl "FAV: $fav_label" >> /tmp/dzgui.log
 		dbl "${items[@]}" >> /tmp/dzgui.log
+		dbl "$steamsafe_zenity -version" >> /tmp/dzgui.log
 		sel=$($steamsafe_zenity $sd_res --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" --hide-header "${items[@]}" 2>/dev/null)
 	fi
