@@ -6,6 +6,12 @@
 - Custom query API
 - Store favorites by IP
 
+## [3.2.3] 2023-02-17
+### Fixed
+- sysctl map count value not being loaded immediately after setting
+- Application terminating when user declines to update map count value
+- Erroneous stderror output when flatpak is not installed
+
 ## [3.2.0] 2023-01-19
 ### Added
 - Support Flatpak version of Steam
