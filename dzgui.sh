@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.13
+version=3.3.0-rc.14
 
 aid=221100
 game="dayz"
@@ -1730,13 +1730,11 @@ check_map_count(){
 	count=1048576
 	echo "[DZGUI] Checking system map count"
 	if [[ $(sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -lt $count ]]; then 
-		echo "100"
-		map_warning=$($steamsafe_zenity --question --width 500 --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine. Increase map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null)
+		$steamsafe_zenity --question --width 500 --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine.\nIncrease map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null
 		if [[ $? -eq 0 ]]; then
 			pass=$($steamsafe_zenity --password)
 			sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=1048576' > /etc/sysctl.d/dayz.conf"
-			echo ""
-
+			sudo sysctl -p /etc/sysctl.d/dayz.conf
 		fi
 	fi
 }
@@ -1795,7 +1793,7 @@ update_steam_cmd(){
 }
 steam_deps(){
 	local flatpak steam
-	flatpak=$(flatpak list | grep valvesoftware.Steam)
+	[[ $(command -v flatpak) ]] && flatpak=$(flatpak list | grep valvesoftware.Steam)
 	steam=$(command -v steam)
 	if [[ -z "$steam" ]] && [[ -z "$flatpak" ]]; then
 		warn "Requires Steam or Flatpak Steam"
