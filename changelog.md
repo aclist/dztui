@@ -5,7 +5,7 @@
 - Custom query API
 - Standardize dialogs
 
-## [3.2.0-rc.2] 2023-01-19
+## [3.3.0-rc.12] 2023-01-19
 ### Fixed
 - Don't check mod version timestamps if no mods installed
 - Don't continuously force popup to top of stack
@@ -16,7 +16,7 @@
 - Toggle native/Flatpak steam from options menu
 - Clarify popup wording
 
-## [3.2.0-rc.1] 2023-01-01
+## [3.3.0-rc.11] 2023-01-01
 ### Fixed
 - History menu not parsing ports correctly
 - Validate BM key on initial setup
