@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.14
+version=3.3.0-rc.15
 
 aid=221100
 game="dayz"
@@ -682,7 +682,7 @@ history_table(){
 
 ip_table(){
 	while true; do
-	sel=$(prepare_ip_list "$meta_file" | $steamsafe_zenity --width 1200 --height 800 --list --column=Name --column=IP --column=Players --column=Gametime --print-column=2 --separator=%% 2>/dev/null)
+	sel=$(prepare_ip_list "$meta_file" | $steamsafe_zenity --width 1200 --height 800 --text="Multiple maps found at this server. Select map from the list below" --title="DZGUI" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2 --separator=%% 2>/dev/null)
 	if [[ $? -eq 1 ]]; then
 		return_from_table=1
 		return
@@ -701,20 +701,13 @@ ip_table(){
 	done
 }
 fetch_ip_metadata(){
-	local meta_file=$(mktemp)
+	meta_file=$(mktemp)
 	source $config_file
 	url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100\gameaddr\\$ip&key=$steam_api"
 	curl -Ls "$url" > $meta_file
 	json=$(mktemp)
 	< $meta_file jq '.response' > $json
 	res=$(< $meta_file jq -er '.response.servers[]' 2>/dev/null)
-	if [[ ! $? -eq 0 ]]; then
-		warn "[ERROR] 96: Failed to retrieve IP metadata. Check IP or API key and try again."
-		echo "[DZGUI] 96: Failed to retrieve IP metadata"
-
-	else
-		ip_table
-	fi
 }
 
 #TODO: local servers
@@ -773,6 +766,12 @@ connect_by_ip(){
 		[[ $? -eq 1 ]] && return
 		if validate_ip "$ip"; then
 			fetch_ip_metadata
+			if [[ ! $? -eq 0 ]]; then
+				warn "[ERROR] 96: Failed to retrieve IP metadata. Check IP or API key and try again."
+				echo "[DZGUI] 96: Failed to retrieve IP metadata"
+			else
+				ip_table
+			fi
 		else
 			continue
 		fi
@@ -901,27 +900,37 @@ delete_by_id(){
 	source $config_file
 }
 delete_or_connect(){
-		if [[ $delete -eq 1 ]]; then
-			server_name=$(echo "$sel" | awk -F"%%" '{print $1}')
-			server_id=$(echo "$sel" | awk -F"%%" '{print $2}')
-			$steamsafe_zenity --question --text="Delete this server? \n$server_name" --title=DZGUI --width=500 2>/dev/null
-			if [[ $? -eq 0 ]]; then
-				delete_by_id $server_id
-			fi
-			source $config_file
-			unset delete
-		else
-			#hotfix for bug #36
-			local lookup_ip=$(echo "$sel" | awk -F%% '{print $1}')
-			local lookup_port=$(echo "$lookup_ip" | awk -F: '{print $2}')
-			source $config_file
-			url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100\gameaddr\\$lookup_ip&key=$steam_api"
-			local qport_res=$(curl -Ls "$url" | jq -r --arg port $lookup_port '.response.servers[]|select(.gameport==($port|tonumber)).addr')
-			local qport=$(echo "$qport_res" | awk -F: '{print $2}')
-			qport_list="$lookup_ip%%$qport"
-			connect "$qport_list" "ip"
-			
+	if [[ $delete -eq 1 ]]; then
+		server_name=$(echo "$sel" | awk -F"%%" '{print $1}')
+		server_id=$(echo "$sel" | awk -F"%%" '{print $2}')
+		$steamsafe_zenity --question --text="Delete this server? \n$server_name" --title=DZGUI --width=500 2>/dev/null
+		if [[ $? -eq 0 ]]; then
+			delete_by_id $server_id
 		fi
+		source $config_file
+		unset delete
+	else
+		local lookup_ip=$(echo "$sel" | awk -F: '{print $1}')
+		ip=$lookup_ip
+		fetch_ip_metadata
+		if [[ ! $? -eq 0 ]]; then
+			warn "[ERROR] 96: Failed to retrieve IP metadata. Check IP or API key and try again."
+			echo "[DZGUI] 96: Failed to retrieve IP metadata"
+		else
+			local jad=$(echo "$res" | jq -r '.addr')
+			if [[ $(<<< "$jad" wc -l ) -gt 1 ]]; then
+				ip_table
+			elif [[ $(<<< "$jad" wc -l ) -eq 1 ]]; then
+				local gameport="$(echo "$res" | jq -r '.gameport')"
+				local ip="$(echo "$jad" | awk -F: '{print $1}')"
+				local qport=$(echo "$jad" | awk -F: '{print $2}')
+				local sa_ip=$(echo "$ip:$gameport%%$qport")
+				qport_list="$sa_ip"
+				local sel="$ip:$gameport%%$qport"
+				connect "$sel" "ip"
+			fi
+		fi
+	fi
 }
 populate(){
 	while true; do
@@ -983,19 +992,8 @@ set_header(){
 		sel=$(cat $tmp | $steamsafe_zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
 			--separator="$separator" --print-column=2,6 2>/dev/null)
 	elif [[ $1 == "main_menu" ]]; then
-		dbl "ARG: $1" >> /tmp/dzgui.log
-		dbl "SSZ: $steamsafe_zenity" >> /tmp/dzgui.log
-		dbl "SDR: $sd_res" >> /tmp/dzgui.log
-		dbl "NEWS: $news" >> /tmp/dzgui.log
-		dbl "VER: $version" >> /tmp/dzgui.log
-		dbl "MOD: $mode" >> /tmp/dzgui.log
-		dbl "BR: $branch" >> /tmp/dzgui.log
-		dbl "INS: $install_mode" >> /tmp/dzgui.log
-		dbl "FAV: $fav_label" >> /tmp/dzgui.log
-		echo "${items[@]}" >> /tmp/dzgui.log
-		dbl "$($steamsafe_zenity --version)" >> /tmp/dzgui.log
-		sel=$($steamsafe_zenity --width=1280 --height=800 --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
-		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" --hide-header "${items[@]}" 2>>/tmp/dzgui.log)
+		sel=$($steamsafe_zenity $sd_res --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
+		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" --hide-header "${items[@]}" 2>/dev/null)
 	fi
 }
 toggle_branch(){
@@ -1455,9 +1453,6 @@ mods_disk_size(){
 main_menu(){
 	print_news
 	set_mode
-#	if [[ -n $fav ]]; then
-#		items[8]="	Change favorite server"
-#	fi
 	while true; do
 		set_header ${FUNCNAME[0]}
 	rc=$?
@@ -1808,10 +1803,6 @@ steam_deps(){
 	else
 		steam_cmd="flatpak run com.valvesoftware.Steam"
 	fi
-}
-dbl(){
-	t=$(date "+%F %T")
-	printf "[%s] %s\n" "$t" "$1"
 }
 initial_setup(){
 	echo "# Initial setup"

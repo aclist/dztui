@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.3.0-rc.15] 2023-02-22
+### Fixed
+- BM API returning stale query port and preventing fetching modlist
+
 ## [3.3.0-rc.12] 2023-01-19
 ### Fixed
 - Don't check mod version timestamps if no mods installed
