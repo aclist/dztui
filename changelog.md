@@ -6,6 +6,10 @@
 - Custom query API
 - Store favorites by IP
 
+## [3.2.4] 2023-03-01
+### Fixed
+- BM API returning stale query port and preventing fetching modlist
+
 ## [3.2.3] 2023-02-17
 ### Fixed
 - sysctl map count value not being loaded immediately after setting
