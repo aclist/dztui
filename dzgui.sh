@@ -1023,20 +1023,60 @@ generate_log(){
 	$(list_mods)
 	DOC
 }
+is_beta(){
+	local dir="$default_steam_path/package"
+	if [[ -f $dir/beta ]]; then
+		echo 0
+	else
+		echo 1
+	fi
+}
+focus_beta_client(){
+	until [[ -z $(wmctrl -lG | grep "Steam Games List") ]]; do
+		sleep 0.1s
+	done
+	until [[ -n $(wmctrl -lG | grep "Steam Games List") ]]; do
+		sleep 0.1s
+	done
+	wmctrl -a "Steam Games List"
+	wid=$(xdotool getactivewindow)
+	local geo=$(xdotool getwindowgeometry $wid)
+	local pos=$(<<< "$geo" awk 'NR==2 {print $2}' | sed 's/,/ /')
+	local dim=$(<<< "$geo" awk 'NR==3 {print $2}' | sed 's/x/ /')
+	local pos1=$(<<< "$pos" awk '{print $1}')
+	local pos2=$(<<< "$pos" awk '{print $2}')
+	local dim1=$(<<< "$dim" awk '{print $1}')
+	local dim2=$(<<< "$dim" awk '{print $2}')
+	local dim1=$(((dim1/2)+pos1))
+	local dim2=$(((dim2/2)+pos2))
+	xdotool mousemove $dim1 $dim2
+	xdotool click 1
+	sleep 0.5s
+	xdotool key Tab
+}
 console_dl(){
 	readarray -t modids <<< "$@"
 	steam steam://open/console 2>/dev/null 1>&2 &&
 	sleep 1s
 	#https://github.com/jordansissel/xdotool/issues/67
 	#https://dwm.suckless.org/patches/current_desktop/
-	local wid=$(xdotool search --onlyvisible --name Steam)
-	#xdotool windowactivate $wid
-	sleep 1.5s
 	for i in "${modids[@]}"; do
-		xdotool type --delay 0 "workshop_download_item $aid $i"
-		sleep 0.5s
-		xdotool key --window $wid Return
-		sleep 0.5s
+		if [[ $(is_beta) -eq 0 ]]; then
+			if [[ ${#modids[@]} -eq 1 ]]; then
+				focus_beta_client
+			fi
+		else
+			wid=0
+			until [[ $(xdotool getwindowname $wid 2>/dev/null) == "Steam" ]]; do
+				wid=$(xdotool getactivewindow)
+			done
+			xdotool windowfocus $wid
+			xdotool key Tab
+		fi
+			xdotool type --delay 0 "workshop_download_item $aid $i"
+			sleep 0.5s
+			xdotool key --window $wid Return
+			sleep 0.5s
 	done
 }
 find_default_path(){
