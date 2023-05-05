@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.3.0-rc.16] 2023-05-06
+### Fixed
+- Steam beta console not focusing (#60)
+
 ## [3.3.0-rc.15] 2023-02-22
 ### Fixed
 - BM API returning stale query port and preventing fetching modlist
