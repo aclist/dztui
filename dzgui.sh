@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.4
+version=3.2.5
 
 aid=221100
 game="dayz"
@@ -1724,7 +1724,7 @@ setup(){
 check_map_count(){
 	count=1048576
 	echo "[DZGUI] Checking system map count"
-	if [[ $(sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -lt $count ]]; then 
+	if [[ $(sudo sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -lt $count ]]; then
 		$steamsafe_zenity --question --width 500 --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine.\nIncrease map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null
 		if [[ $? -eq 0 ]]; then
 			pass=$($steamsafe_zenity --password)
