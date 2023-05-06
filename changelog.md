@@ -6,6 +6,10 @@
 - Custom query API
 - Store favorites by IP
 
+## [3.2.5] 2023-05-07
+### Fixed
+- Require sudo when checking vm map count
+
 ## [3.2.4] 2023-03-01
 ### Fixed
 - BM API returning stale query port and preventing fetching modlist
