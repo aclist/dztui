@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.3.0-rc.17] 2023-05-07
+### Fixed
+- Use sudo when checking vm map count (#61)
+
 ## [3.3.0-rc.16] 2023-05-06
 ### Fixed
 - Steam beta console not focusing (#60)
