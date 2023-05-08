@@ -481,7 +481,7 @@ auto_mod_install(){
 		[[ $force_update -eq 1 ]] && { unset force_update; return; }
 		if [[ -z $diff ]]; then
 			check_timestamps
-			passed_mod_check > >($steamsafe_zenity --pulsate --progress --title=DZGUI --auto-close --width=500 2>/dev/null)
+			passed_mod_check > >($steamsafe_zenity --pulsate --progress --title="DZGUI" --auto-close --width=500 2>/dev/null)
 			launch
 		else
 			manual_mod_install
@@ -660,10 +660,10 @@ history_table(){
 		res=$(< $meta_file jq -er '.response.servers[]' 2>/dev/null)
 		prepare_ip_list "$meta_file" >> /tmp/dz.hist
 		sleep 0.5s
-	done | $steamsafe_zenity --pulsate --progress --auto-close --title=DZGUI --width=500 --no-cancel 2>/dev/null
+	done | $steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --width=500 --no-cancel 2>/dev/null
 	[[ $? -eq 1 ]] && return
 	while true; do
-	sel=$(cat /tmp/dz.hist | $steamsafe_zenity --width 1200 --height 800 --title=DZGUI --text="Recent servers" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2,5 --separator=%% 2>/dev/null)
+	sel=$(cat /tmp/dz.hist | $steamsafe_zenity --width 1200 --height 800 --title="DZGUI" --text="Recent servers" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2,5 --separator=%% 2>/dev/null)
 	if [[ $? -eq 1 ]]; then
 		return_from_table=1
 		rm /tmp/dz.hist
@@ -907,7 +907,7 @@ delete_or_connect(){
 	if [[ $delete -eq 1 ]]; then
 		server_name=$(echo "$sel" | awk -F"%%" '{print $1}')
 		server_id=$(echo "$sel" | awk -F"%%" '{print $2}')
-		$steamsafe_zenity --question --text="Delete this server? \n$server_name" --title=DZGUI --width=500 2>/dev/null
+		$steamsafe_zenity --question --text="Delete this server? \n$server_name" --title="DZGUI" --width=500 2>/dev/null
 		if [[ $? -eq 0 ]]; then
 			delete_by_id $server_id
 		fi
@@ -1101,7 +1101,7 @@ find_default_path(){
 		elif [[ -d "$HOME/.steam/steam" ]]; then
 			default_steam_path="$HOME/.steam/steam"
 		else
-			local res=$(echo -e "Let DZGUI auto-discover Steam path (accurate, slower)\nSelect the Steam path manually (less accurate, faster)" | $steamsafe_zenity --list --column="Choice" --title=DZGUI --hide-header --text="Steam is not installed in a standard location." $sd_res)
+			local res=$(echo -e "Let DZGUI auto-discover Steam path (accurate, slower)\nSelect the Steam path manually (less accurate, faster)" | $steamsafe_zenity --list --column="Choice" --title="DZGUI" --hide-header --text="Steam is not installed in a standard location." $sd_res)
 			case "$res" in
 				*auto*) discover ;;
 				*manual*)
@@ -1113,7 +1113,7 @@ find_default_path(){
 }
 popup(){
 	pop(){
-		$steamsafe_zenity --info --text="$1" --title=DZGUI --width=500 2>/dev/null
+		$steamsafe_zenity --info --text="$1" --title="DZGUI" --width=500 2>/dev/null
 	}
 	case "$1" in
 		100) pop "This feature requires xdotool.";;
@@ -1201,7 +1201,7 @@ options_menu(){
 		"Force update local mods")
 			force_update=1
 			force_update_mods
-			merge_modlists > >($steamsafe_zenity --pulsate --progress --no-cancel --auto-close --title=DZGUI --width=500 2>/dev/null)
+			merge_modlists > >($steamsafe_zenity --pulsate --progress --no-cancel --auto-close --title="DZGUI" --width=500 2>/dev/null)
 			auto_mod_install
 			;;
 		Toggle[[:space:]]native*) toggle_steam_binary ;;
