@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.16
+version=3.3.0-rc.18
 
 aid=221100
 game="dayz"
@@ -88,9 +88,9 @@ depcheck(){
 	done
 }
 watcher_deps(){
-	if [[ ! $(command -v wmctrl) ]] && [[ ! $(command -v xdotool) ]]; then
+	if [[ ! $(command -v wmctrl) ]] || [[ ! $(command -v xdotool) ]]; then
 		echo "100"
-		warn "Missing dependency: requires 'wmctrl' or 'xdotool'.\nInstall from your system's package manager."
+		warn "Missing dependency: requires 'wmctrl' and 'xdotool'.\nInstall from your system's package manager."
 		exit 1
 	fi
 }
@@ -560,7 +560,11 @@ update_history(){
 	echo -e "${old}${ip}" > "$hist_file"
 }
 is_steam_running(){
-	xdotool search --onlyvisible --name "Steam"
+	if [[ $(is_beta) -eq 0 ]]; then
+		wmctrl -l | grep "Steam Games List"
+	else
+		wmctrl -ilx | awk '$3 == "Steam.Steam"'
+	fi
 }
 connect(){
 	#TODO: sanitize/validate input
@@ -1075,7 +1079,7 @@ console_dl(){
 		fi
 			xdotool type --delay 0 "workshop_download_item $aid $i"
 			sleep 0.5s
-			xdotool key --window $wid Return
+			xdotool key Return
 			sleep 0.5s
 	done
 }

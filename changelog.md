@@ -5,6 +5,11 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.3.0-rc.18] 2023-05-09
+### Changed
+- More robust targeting of Steam client
+- Change method of issuing console commands to Beta client
+
 ## [3.3.0-rc.17] 2023-05-07
 ### Fixed
 - Use sudo when checking vm map count (#61)
