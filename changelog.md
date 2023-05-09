@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.3.0-rc.19] 2023-05-09
+### Fixed
+- Case folding when targeting WM_CLASS
+
 ## [3.3.0-rc.18] 2023-05-09
 ### Changed
 - More robust targeting of Steam client

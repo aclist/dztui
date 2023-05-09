@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.18
+version=3.3.0-rc.19
 
 aid=221100
 game="dayz"
@@ -563,7 +563,7 @@ is_steam_running(){
 	if [[ $(is_beta) -eq 0 ]]; then
 		wmctrl -l | grep "Steam Games List"
 	else
-		wmctrl -ilx | awk '$3 == "Steam.Steam"'
+		wmctrl -ilx | awk 'tolower($3) == "steam.steam"'
 	fi
 }
 connect(){
