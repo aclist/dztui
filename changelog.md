@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.3.0-rc.20] 2023-05-09
+### Changed
+- Use same WM_CLASS targeting method for beta and stable clients
+
 ## [3.3.0-rc.19] 2023-05-09
 ### Fixed
 - Case folding when targeting WM_CLASS
