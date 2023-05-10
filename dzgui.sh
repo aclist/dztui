@@ -1032,13 +1032,14 @@ is_beta(){
 	fi
 }
 focus_beta_client(){
-	until [[ -z $(wmctrl -lG | grep "Steam Games List") ]]; do
-		sleep 0.1s
+	wid(){
+		wmctrl -ilx | awk 'tolower($3) == "steam.steam"' | grep 'Steam$' | awk '{print $1}'
+	}
+	until [[ -n $(wid) ]]; do
+		:
 	done
-	until [[ -n $(wmctrl -lG | grep "Steam Games List") ]]; do
-		sleep 0.1s
-	done
-	wmctrl -a "Steam Games List"
+	wmctrl -ia $(wid)
+	sleep 0.1s
 	wid=$(xdotool getactivewindow)
 	local geo=$(xdotool getwindowgeometry $wid)
 	local pos=$(<<< "$geo" awk 'NR==2 {print $2}' | sed 's/,/ /')

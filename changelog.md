@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.3.0-rc.21] 2023-05-10
+### Fixed
+- Hardening of beta client targeting function to avoid false positives
+
 ## [3.3.0-rc.20] 2023-05-09
 ### Changed
 - Use same WM_CLASS targeting method for beta and stable clients
