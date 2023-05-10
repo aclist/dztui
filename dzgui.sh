@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.5
+version=3.2.6
 
 aid=221100
 game="dayz"
@@ -1042,7 +1042,7 @@ console_dl(){
 find_default_path(){
 	discover(){
 		echo "# Searching for Steam"
-		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path \
+		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "$HOME/.var" -o -path \
 		"/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" \
 		-o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
 		-o -regex ".*/Steam/ubuntu12_32$" -print -quit 2>/dev/null | sed 's@/ubuntu12_32@@')
