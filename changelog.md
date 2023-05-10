@@ -6,9 +6,9 @@
 - Custom query API
 - Store favorites by IP
 
-## [3.2.8] 2023-05-10
-### Fixed
-- Allow user to retry with filepicker if auto path discovery resulted in false positive
+## [3.2.9] 2023-05-10
+### Changed
+- Reword button to "Choose path manually" instead of "Retry"
 
 ## [3.2.7] 2023-05-10
 ### Changed
