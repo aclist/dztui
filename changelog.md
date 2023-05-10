@@ -5,6 +5,10 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.3.0-rc.22] 2023-05-10
+### Changed
+- Display canonical dir name of mods in list installed mods menu
+
 ## [3.3.0-rc.21] 2023-05-10
 ### Fixed
 - Hardening of beta client targeting function to avoid false positives

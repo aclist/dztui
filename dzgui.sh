@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.21
+version=3.3.0-rc.22
 
 aid=221100
 game="dayz"
@@ -961,8 +961,9 @@ list_mods(){
 	else
 		for d in $(find $game_dir/* -maxdepth 1 -type l); do
 			dir=$(basename $d)
-			awk -v d=$dir -F\" '/name/ {printf "%s\t%s\n", $2,d}' "$gamedir"/$d/meta.cpp
-		done | sort
+			awk -v d=$dir -F\" '/name/ {printf "%s\t%s\t", $2,d}' "$gamedir"/$d/meta.cpp
+			printf "%s\n" "$(basename $(readlink -f $game_dir/$dir))"
+		done | sort -k1
 	fi
 }
 fetch_query_ports(){
@@ -1524,7 +1525,7 @@ main_menu(){
 		elif [[ $sel == "${items[10]}" ]]; then
 			:
 		elif [[ $sel == "${items[11]}" ]]; then
-			list_mods | sed 's/\t/\n/g' | $steamsafe_zenity --list --column="Mod" --column="Symlink" \
+			list_mods | sed 's/\t/\n/g' | $steamsafe_zenity --list --column="Mod" --column="Symlink" --column="Dir" \
 				--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
 				--print-column="" 2>/dev/null
 		elif [[ $sel == "${items[12]}" ]]; then
@@ -1765,7 +1766,7 @@ setup(){
 check_map_count(){
 	count=1048576
 	echo "[DZGUI] Checking system map count"
-	if [[ $(sudo sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -lt $count ]]; then
+	if [[ $(sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -lt $count ]]; then
 		$steamsafe_zenity --question --width 500 --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine.\nIncrease map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null
 		if [[ $? -eq 0 ]]; then
 			pass=$($steamsafe_zenity --password)
