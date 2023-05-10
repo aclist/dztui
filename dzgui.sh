@@ -1725,24 +1725,16 @@ check_map_count(){
 	local count=1048576
 	echo "[DZGUI] Checking system map count"
 	if [[ ! -f /etc/sysctl.d/dayz.conf ]]; then
-		if [[ $parent != "bash" ]]; then
-			echo "parent is not bash" >> $HOME/log
-			$steamsafe_zenity --question --width 500 --title="DZGUI" --cancel-label="Cancel" --ok-label="OK" --text "sudo password required to check system vm map count." 2>/dev/null
-			if [[ $? -eq 0 ]]; then
-				local pass=$($steamsafe_zenity --password)
-				local ct=$(sudo -S <<< "$pass" sh -c "sysctl -q vm.max_map_count | awk -F"= " '{print $2}')")
-				if [[ $ct -lt $count ]]; then
-					sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=1048576' > /etc/sysctl.d/dayz.conf"
-					sudo sysctl -p /etc/sysctl.d/dayz.conf
-				fi
-			else
-				exit 1
-			fi
+		$steamsafe_zenity --question --width 500 --title="DZGUI" --cancel-label="Cancel" --ok-label="OK" --text "sudo password required to check system vm map count." 2>/dev/null
+		if [[ $? -eq 0 ]]; then
+			local pass=$($steamsafe_zenity --password)
+			local ct=$(sudo -S <<< "$pass" sh -c "sysctl -q vm.max_map_count | awk -F'= ' '{print \$2}'")
+			local new_ct
+			[[ $ct -lt $count ]] && ct=$count
+			sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=$ct' > /etc/sysctl.d/dayz.conf"
+			sudo sysctl -p /etc/sysctl.d/dayz.conf
 		else
-			if [[ $(sudo sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -lt $count ]]; then
-				sudo sh -c "echo 'vm.max_map_count=1048576' > /etc/sysctl.d/dayz.conf"
-				sudo sysctl -p /etc/sysctl.d/dayz.conf
-			fi
+			exit 1
 		fi
 	fi
 }
