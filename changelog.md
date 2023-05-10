@@ -6,6 +6,10 @@
 - Custom query API
 - Store favorites by IP
 
+## [3.2.8] 2023-05-10
+### Fixed
+- Allow user to retry with filepicker if auto path discovery resulted in false positive
+
 ## [3.2.7] 2023-05-10
 ### Changed
 - Better sudo escalation within zenity dialogs if vm map count is too small

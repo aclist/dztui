@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.7
+version=3.2.8
 
 aid=221100
 game="dayz"
@@ -272,7 +272,11 @@ create_config(){
 				find_library_folder
 				if [[ -z $steam_path ]]; then
 					zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Retry" --cancel-label="Exit"
-					[[ $? -eq 1 ]] && exit
+					if [[ $? -eq 0 ]]; then
+						file_picker
+					else
+						exit
+					fi
 				else
 					mkdir -p $config_path
 					write_config > $config_file
