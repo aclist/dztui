@@ -6,6 +6,10 @@
 - Custom query API
 - Store favorites by IP
 
+## [3.2.7] 2023-05-10
+### Changed
+- Better sudo escalation within zenity dialogs if vm map count is too small
+
 ## [3.2.6] 2023-05-10
 ### Fixed
 - Don't parse Flatpak symlinks when setting up default Steam path

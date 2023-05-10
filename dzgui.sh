@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.6
+version=3.2.7
 
 aid=221100
 game="dayz"
@@ -1722,14 +1722,19 @@ setup(){
 	fi
 }
 check_map_count(){
-	count=1048576
+	local count=1048576
 	echo "[DZGUI] Checking system map count"
-	if [[ $(sudo sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -lt $count ]]; then
-		$steamsafe_zenity --question --width 500 --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine.\nIncrease map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null
+	if [[ ! -f /etc/sysctl.d/dayz.conf ]]; then
+		$steamsafe_zenity --question --width 500 --title="DZGUI" --cancel-label="Cancel" --ok-label="OK" --text "sudo password required to check system vm map count." 2>/dev/null
 		if [[ $? -eq 0 ]]; then
-			pass=$($steamsafe_zenity --password)
-			sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=1048576' > /etc/sysctl.d/dayz.conf"
+			local pass=$($steamsafe_zenity --password)
+			local ct=$(sudo -S <<< "$pass" sh -c "sysctl -q vm.max_map_count | awk -F'= ' '{print \$2}'")
+			local new_ct
+			[[ $ct -lt $count ]] && ct=$count
+			sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=$ct' > /etc/sysctl.d/dayz.conf"
 			sudo sysctl -p /etc/sysctl.d/dayz.conf
+		else
+			exit 1
 		fi
 	fi
 }
@@ -1827,4 +1832,5 @@ main(){
 	#TODO: tech debt: cruddy handling for steam forking
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh
 }
+parent=$(cat /proc/$PPID/comm)
 main
