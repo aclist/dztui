@@ -6,6 +6,10 @@
 - Custom query API
 - Store favorites by IP
 
+## [3.2.6] 2023-05-10
+### Fixed
+- Don't parse Flatpak symlinks when setting up default Steam path
+
 ## [3.2.5] 2023-05-07
 ### Fixed
 - Require sudo when checking vm map count
