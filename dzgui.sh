@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.10
+version=3.2.11
 
 aid=221100
 game="dayz"
@@ -231,20 +231,13 @@ find_library_folder(){
 	steam_path=$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
 }
 file_picker(){
-	while true; do
 	local path=$($steamsafe_zenity --file-selection --directory 2>/dev/null)
-		if [[ -z "$path" ]]; then
-			return
-		else
-			default_steam_path="$path"
-			find_library_folder "$default_steam_path"
-		fi
-		if [[ -z $steam_path ]]; then
-			warn "DayZ not found at this path."
-		else
-			return
-		fi
-	done
+	if [[ -z "$path" ]]; then
+		return
+	else
+		default_steam_path="$path"
+		find_library_folder "$default_steam_path"
+	fi
 }
 create_config(){
 	check_pyver
@@ -269,7 +262,7 @@ create_config(){
 		else
 			while true; do
 				find_default_path
-				find_library_folder
+				find_library_folder "$default_steam_path"
 				if [[ -z $steam_path ]]; then
 					zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Choose path manually" --cancel-label="Exit"
 					if [[ $? -eq 0 ]]; then
@@ -1645,7 +1638,7 @@ enforce_dl(){
 	download_new_version > >($steamsafe_zenity --progress --pulsate --auto-close --no-cancel --width=500)
 }
 prompt_dl(){
-	$steamsafe_zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
+	$steamsafe_zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version:\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		return
