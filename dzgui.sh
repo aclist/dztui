@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.11
+version=3.2.12
 
 aid=221100
 game="dayz"
@@ -228,11 +228,17 @@ freedesktop_dirs(){
 	fi
 }
 find_library_folder(){
+	echo "${FUNCNAME[0]}" >> $config_path/debug.log
+	echo "RECEIVED ARG $1" >> $config_path/debug.log
 	steam_path=$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
+	echo "STEAM PATH RESOLVED TO: $steam_path" >> $config_path/debug.log
 }
 file_picker(){
+	echo "${FUNCNAME[0]}" >> $config_path/debug.log
 	local path=$($steamsafe_zenity --file-selection --directory 2>/dev/null)
+	echo "FILE PICKER PATH RESOLVED TO: $path" >> $config_path/debug.log
 	if [[ -z "$path" ]]; then
+		echo "PATH WAS EMPTY" >> $config_path/debug.log
 		return
 	else
 		default_steam_path="$path"
@@ -261,11 +267,14 @@ create_config(){
 			warn "Invalid BM API key"
 		else
 			while true; do
+				echo "STEAMSAFEZENITY: $steamsafe_zenity" >> $config_path/debug.log
 				find_default_path
 				find_library_folder "$default_steam_path"
 				if [[ -z $steam_path ]]; then
+					echo "STEAM PATH WAS EMPTY" >> $config_path/debug.log
 					zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Choose path manually" --cancel-label="Exit"
 					if [[ $? -eq 0 ]]; then
+						echo "USER SELECTED FILE PICKER" >> $config_path/debug.log
 						file_picker
 					else
 						exit
@@ -1055,6 +1064,7 @@ find_default_path(){
 			default_steam_path="$HOME/.steam/steam"
 		else
 			local res=$(echo -e "Let DZGUI auto-discover Steam path (accurate, slower)\nSelect the Steam path manually (less accurate, faster)" | $steamsafe_zenity --list --column="Choice" --title=DZGUI --hide-header --text="Steam is not installed in a standard location." $sd_res)
+			echo "USER CHOSE $res" >> $config_path/debug.log
 			case "$res" in
 				*auto*) discover ;;
 				*manual*)
@@ -1062,6 +1072,7 @@ find_default_path(){
 					file_picker ;;
 			esac
 		fi
+		echo "FOUND DEFAULT PATH AT $default_steam_path" >> $config_path/debug.log
 	fi
 }
 popup(){
