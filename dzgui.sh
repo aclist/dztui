@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.10
+version=3.2.13
 
 aid=221100
 game="dayz"
@@ -228,23 +228,22 @@ freedesktop_dirs(){
 	fi
 }
 find_library_folder(){
+	echo "ENTERED: ${FUNCNAME[0]}" >> /tmp/debug.log
+	echo "RECEIVED ARG: $1" >> /tmp/debug.log
 	steam_path=$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
+	echo "STEAM PATH RESOLVED TO: $steam_path" >> /tmp/debug.log
 }
 file_picker(){
-	while true; do
+	echo "${FUNCNAME[0]}" >> /tmp/debug.log
 	local path=$($steamsafe_zenity --file-selection --directory 2>/dev/null)
-		if [[ -z "$path" ]]; then
-			return
-		else
-			default_steam_path="$path"
-			find_library_folder "$default_steam_path"
-		fi
-		if [[ -z $steam_path ]]; then
-			warn "DayZ not found at this path."
-		else
-			return
-		fi
-	done
+	echo "FILE PICKER PATH RESOLVED TO: $path" >> /tmp/debug.log
+	if [[ -z "$path" ]]; then
+		echo "PATH WAS EMPTY" >> /tmp/debug.log
+		return
+	else
+		default_steam_path="$path"
+		find_library_folder "$default_steam_path"
+	fi
 }
 create_config(){
 	check_pyver
@@ -268,11 +267,14 @@ create_config(){
 			warn "Invalid BM API key"
 		else
 			while true; do
+				echo "STEAMSAFEZENITY: $steamsafe_zenity" >> /tmp/debug.log
 				find_default_path
-				find_library_folder
+				find_library_folder "$default_steam_path"
 				if [[ -z $steam_path ]]; then
+					echo "STEAM PATH WAS EMPTY" >> /tmp/debug.log
 					zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Choose path manually" --cancel-label="Exit"
 					if [[ $? -eq 0 ]]; then
+						echo "USER SELECTED FILE PICKER" >> /tmp/debug.log
 						file_picker
 					else
 						exit
@@ -1044,6 +1046,7 @@ console_dl(){
 	done
 }
 find_default_path(){
+	echo "ENTER: ${FUNCNAME[0]}" >> $config/debug.log
 	discover(){
 		echo "# Searching for Steam"
 		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "$HOME/.var" -o -path \
@@ -1062,6 +1065,7 @@ find_default_path(){
 			default_steam_path="$HOME/.steam/steam"
 		else
 			local res=$(echo -e "Let DZGUI auto-discover Steam path (accurate, slower)\nSelect the Steam path manually (less accurate, faster)" | $steamsafe_zenity --list --column="Choice" --title=DZGUI --hide-header --text="Steam is not installed in a standard location." $sd_res)
+			echo "USER CHOSE: $res" >> /tmp/debug.log
 			case "$res" in
 				*auto*) discover ;;
 				*manual*)
@@ -1070,6 +1074,7 @@ find_default_path(){
 			esac
 		fi
 	fi
+	echo "FOUND DEFAULT PATH AT: $default_steam_path" >> /tmp/debug.log
 }
 popup(){
 	pop(){
@@ -1645,7 +1650,7 @@ enforce_dl(){
 	download_new_version > >($steamsafe_zenity --progress --pulsate --auto-close --no-cancel --width=500)
 }
 prompt_dl(){
-	$steamsafe_zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
+	$steamsafe_zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version:\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		return
