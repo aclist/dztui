@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.9
+version=3.2.10
 
 aid=221100
 game="dayz"
@@ -88,9 +88,9 @@ depcheck(){
 	done
 }
 watcher_deps(){
-	if [[ ! $(command -v wmctrl) ]] && [[ ! $(command -v xdotool) ]]; then
+	if [[ ! $(command -v wmctrl) ]] || [[ ! $(command -v xdotool) ]]; then
 		echo "100"
-		warn "Missing dependency: requires 'wmctrl' or 'xdotool'.\nInstall from your system's package manager."
+		warn "Missing dependency: requires 'wmctrl' and 'xdotool'.\nInstall from your system's package manager."
 		exit 1
 	fi
 }
@@ -228,7 +228,7 @@ freedesktop_dirs(){
 	fi
 }
 find_library_folder(){
-	steam_path=$(python3 $helpers_path/vdf2json.py -i $default_steam_path/steamapps/libraryfolders.vdf | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
+	steam_path=$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
 }
 file_picker(){
 	while true; do
@@ -237,7 +237,7 @@ file_picker(){
 			return
 		else
 			default_steam_path="$path"
-			find_library_folder
+			find_library_folder "$default_steam_path"
 		fi
 		if [[ -z $steam_path ]]; then
 			warn "DayZ not found at this path."
@@ -485,7 +485,7 @@ auto_mod_install(){
 		[[ $force_update -eq 1 ]] && { unset force_update; return; }
 		if [[ -z $diff ]]; then
 			check_timestamps
-			passed_mod_check > >($steamsafe_zenity --pulsate --progress --title=DZGUI --auto-close --width=500 2>/dev/null)
+			passed_mod_check > >($steamsafe_zenity --pulsate --progress --title="DZGUI" --auto-close --width=500 2>/dev/null)
 			launch
 		else
 			manual_mod_install
@@ -1767,6 +1767,7 @@ while true; do
 done
 }
 lock(){
+	[[ ! -d $config_path ]] && return
 	if [[ ! -f ${config_path}.lockfile ]]; then
 		touch ${config_path}.lockfile
 	fi
