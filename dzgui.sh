@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.24
+version=3.3.0-rc.25
 
 aid=221100
 game="dayz"
@@ -271,8 +271,12 @@ create_config(){
 				find_default_path
 				find_library_folder
 				if [[ -z $steam_path ]]; then
-					zenity --question --title"DZGUI" --text="DayZ not found or not installed at the expected path." --ok-label="Retry" --cancel-label="Exit"
-					[[ $? -eq 1 ]] && exit
+					zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Choose path manually" --cancel-label="Exit"
+					if [[ $? -eq 0 ]]; then
+						file_picker
+					else
+						exit
+					fi
 				else
 					mkdir -p $config_path
 					write_config > $config_file
@@ -1024,67 +1028,26 @@ generate_log(){
 	$(list_mods)
 	DOC
 }
-is_beta(){
-	local dir="$default_steam_path/package"
-	if [[ -f $dir/beta ]]; then
-		echo 0
-	else
-		echo 1
-	fi
-}
-focus_beta_client(){
-	wid(){
-		wmctrl -ilx | awk 'tolower($3) == "steam.steam"' | grep 'Steam$' | awk '{print $1}'
-	}
-	until [[ -n $(wid) ]]; do
-		:
-	done
-	wmctrl -ia $(wid)
-	sleep 0.1s
-	wid=$(xdotool getactivewindow)
-	local geo=$(xdotool getwindowgeometry $wid)
-	local pos=$(<<< "$geo" awk 'NR==2 {print $2}' | sed 's/,/ /')
-	local dim=$(<<< "$geo" awk 'NR==3 {print $2}' | sed 's/x/ /')
-	local pos1=$(<<< "$pos" awk '{print $1}')
-	local pos2=$(<<< "$pos" awk '{print $2}')
-	local dim1=$(<<< "$dim" awk '{print $1}')
-	local dim2=$(<<< "$dim" awk '{print $2}')
-	local dim1=$(((dim1/2)+pos1))
-	local dim2=$(((dim2/2)+pos2))
-	xdotool mousemove $dim1 $dim2
-	xdotool click 1
-	sleep 0.5s
-	xdotool key Tab
-}
 console_dl(){
 	readarray -t modids <<< "$@"
 	steam steam://open/console 2>/dev/null 1>&2 &&
 	sleep 1s
 	#https://github.com/jordansissel/xdotool/issues/67
 	#https://dwm.suckless.org/patches/current_desktop/
+	local wid=$(xdotool search --onlyvisible --name Steam)
+	#xdotool windowactivate $wid
+	sleep 1.5s
 	for i in "${modids[@]}"; do
-		if [[ $(is_beta) -eq 0 ]]; then
-			if [[ ${#modids[@]} -eq 1 ]]; then
-				focus_beta_client
-			fi
-		else
-			wid=0
-			until [[ $(xdotool getwindowname $wid 2>/dev/null) == "Steam" ]]; do
-				wid=$(xdotool getactivewindow)
-			done
-			xdotool windowfocus $wid
-			xdotool key Tab
-		fi
-			xdotool type --delay 0 "workshop_download_item $aid $i"
-			sleep 0.5s
-			xdotool key Return
-			sleep 0.5s
+		xdotool type --delay 0 "workshop_download_item $aid $i"
+		sleep 0.5s
+		xdotool key --window $wid Return
+		sleep 0.5s
 	done
 }
 find_default_path(){
 	discover(){
 		echo "# Searching for Steam"
-		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path \
+		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "$HOME/.var" -o -path \
 		"/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" \
 		-o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
 		-o -regex ".*/Steam/ubuntu12_32$" -print -quit 2>/dev/null | sed 's@/ubuntu12_32@@')
@@ -1765,14 +1728,19 @@ setup(){
 	fi
 }
 check_map_count(){
-	count=1048576
+	local count=1048576
 	echo "[DZGUI] Checking system map count"
-	if [[ $(sysctl -q vm.max_map_count | awk -F"= " '{print $2}') -lt $count ]]; then
-		$steamsafe_zenity --question --width 500 --title="DZGUI" --text "System map count must be $count or higher to run DayZ with Wine.\nIncrease map count and make this change permanent? (will prompt for sudo password)" 2>/dev/null
+	if [[ ! -f /etc/sysctl.d/dayz.conf ]]; then
+		$steamsafe_zenity --question --width 500 --title="DZGUI" --cancel-label="Cancel" --ok-label="OK" --text "sudo password required to check system vm map count." 2>/dev/null
 		if [[ $? -eq 0 ]]; then
-			pass=$($steamsafe_zenity --password)
-			sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=1048576' > /etc/sysctl.d/dayz.conf"
+			local pass=$($steamsafe_zenity --password)
+			local ct=$(sudo -S <<< "$pass" sh -c "sysctl -q vm.max_map_count | awk -F'= ' '{print \$2}'")
+			local new_ct
+			[[ $ct -lt $count ]] && ct=$count
+			sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=$ct' > /etc/sysctl.d/dayz.conf"
 			sudo sysctl -p /etc/sysctl.d/dayz.conf
+		else
+			exit 1
 		fi
 	fi
 }
@@ -1871,4 +1839,5 @@ main(){
 	#TODO: tech debt: cruddy handling for steam forking
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh
 }
+parent=$(cat /proc/$PPID/comm)
 main
