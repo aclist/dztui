@@ -228,7 +228,7 @@ freedesktop_dirs(){
 	fi
 }
 find_library_folder(){
-	steam_path=$(python3 $helpers_path/vdf2json.py -i $default_steam_path/steamapps/libraryfolders.vdf | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
+	steam_path=$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
 }
 file_picker(){
 	while true; do
@@ -237,7 +237,7 @@ file_picker(){
 			return
 		else
 			default_steam_path="$path"
-			find_library_folder
+			find_library_folder "$default_steam_path"
 		fi
 		if [[ -z $steam_path ]]; then
 			warn "DayZ not found at this path."
@@ -271,7 +271,7 @@ create_config(){
 				find_default_path
 				find_library_folder
 				if [[ -z $steam_path ]]; then
-					zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Retry" --cancel-label="Exit"
+					zenity --question --title"DZGUI" --text="DayZ not found or not installed at the expected path." --ok-label="Retry" --cancel-label="Exit"
 					[[ $? -eq 1 ]] && exit
 				else
 					mkdir -p $config_path
@@ -1301,7 +1301,7 @@ pagination(){
 		printf "| Keyword:  %s " "$search"
 	fi
 	printf "\nReturned: %s %s of %s | " "${#qport[@]}" "$entry" "$total_servers"
-	printf "Players online: %s" "$players_online"
+	printf "Players in-game: %s" "$players_online"
 }
 check_geo_file(){
 	local gzip="$helpers_path/ips.csv.gz"
@@ -1467,7 +1467,8 @@ server_browser(){
 	}
 	fetch > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	total_servers=$(echo "$response" | jq 'length' | numfmt --grouping)
-	players_online=$(echo "$response" | jq '.[].players' | awk '{s+=$1}END{print s}' | numfmt --grouping)
+	players_online=$(curl -Ls "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=221100" \
+		| jq '.response.player_count' | numfmt --grouping)
 	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
 	debug_servers
 	local sel=$(munge_servers)
