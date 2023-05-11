@@ -228,8 +228,8 @@ freedesktop_dirs(){
 	fi
 }
 find_library_folder(){
-	echo "${FUNCNAME[0]}" >> $config_path/debug.log
-	echo "RECEIVED ARG $1" >> $config_path/debug.log
+	echo "ENTERED: ${FUNCNAME[0]}" >> $config_path/debug.log
+	echo "RECEIVED ARG: $1" >> $config_path/debug.log
 	steam_path=$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
 	echo "STEAM PATH RESOLVED TO: $steam_path" >> $config_path/debug.log
 }
@@ -1046,6 +1046,7 @@ console_dl(){
 	done
 }
 find_default_path(){
+	echo "ENTER: ${FUNCNAME[0]}" >> $config/debug.log
 	discover(){
 		echo "# Searching for Steam"
 		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "$HOME/.var" -o -path \
@@ -1064,7 +1065,7 @@ find_default_path(){
 			default_steam_path="$HOME/.steam/steam"
 		else
 			local res=$(echo -e "Let DZGUI auto-discover Steam path (accurate, slower)\nSelect the Steam path manually (less accurate, faster)" | $steamsafe_zenity --list --column="Choice" --title=DZGUI --hide-header --text="Steam is not installed in a standard location." $sd_res)
-			echo "USER CHOSE $res" >> $config_path/debug.log
+			echo "USER CHOSE: $res" >> $config_path/debug.log
 			case "$res" in
 				*auto*) discover ;;
 				*manual*)
@@ -1072,8 +1073,8 @@ find_default_path(){
 					file_picker ;;
 			esac
 		fi
-		echo "FOUND DEFAULT PATH AT $default_steam_path" >> $config_path/debug.log
 	fi
+	echo "FOUND DEFAULT PATH AT: $default_steam_path" >> $config_path/debug.log
 }
 popup(){
 	pop(){
