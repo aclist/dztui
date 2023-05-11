@@ -5,6 +5,16 @@
 - Custom query API
 - Standardize dialogs
 
+## [3.3.0-rc.24] 2023-05-10
+### Fixed
+- Return from lockfile function if first time setup is not complete
+
+## [3.3.0-rc.23] 2023-05-10
+### Fixed
+- Display correct players in-game count
+### Changed
+- Make file picker method more robust
+
 ## [3.3.0-rc.22] 2023-05-10
 ### Changed
 - Display canonical dir name of mods in list installed mods menu

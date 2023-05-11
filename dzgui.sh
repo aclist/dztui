@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.23
+version=3.3.0-rc.24
 
 aid=221100
 game="dayz"
@@ -1801,6 +1801,7 @@ while true; do
 done
 }
 lock(){
+	[[ ! -d $config_path ]] && return
 	if [[ ! -f ${config_path}.lockfile ]]; then
 		touch ${config_path}.lockfile
 	fi
