@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.27
+version=3.3.0-rc.28
 
 aid=221100
 game="dayz"
@@ -1176,7 +1176,6 @@ options_menu(){
 		"Toggle debug mode"
 		"Generate debug log"
 		"Toggle auto mod install [$auto_hr]"
-		"Toggle native"
 		)
 	#TODO: tech debt: drop old flags
 	[[ $auto_install -eq 2 ]] || [[ $auto_install -eq 1 ]] && debug_list+=("Force update local mods")
