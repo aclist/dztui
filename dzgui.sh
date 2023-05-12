@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.15
+version=3.2.16
 
 aid=221100
 game="dayz"
@@ -247,6 +247,13 @@ file_picker(){
 }
 create_config(){
 	check_pyver
+	write_to_config(){
+		mkdir -p $config_path
+		write_config > $config_file
+		info "Config file created at $config_file."
+		source $config_file
+		return
+	}
 	while true; do
 		player_input="$($steamsafe_zenity --forms --add-entry="Player name (required for some servers)" --add-entry="BattleMetrics API key" --add-entry="Steam API key" --title="DZGUI" --text="DZGUI" $sd_res --separator="│" 2>/dev/null)"
 		#explicitly setting IFS crashes $steamsafe_zenity in loop
@@ -268,7 +275,7 @@ create_config(){
 		else
 			while true; do
 				echo "STEAMSAFEZENITY: $steamsafe_zenity" >> /tmp/debug.log
-				[[ -n $steam_path ]] && break
+				[[ -n $steam_path ]] && { write_to_config; return; }
 				find_default_path
 				find_library_folder "$default_steam_path"
 				if [[ -z $steam_path ]]; then
@@ -281,11 +288,7 @@ create_config(){
 						exit
 					fi
 				else
-					mkdir -p $config_path
-					write_config > $config_file
-					info "Config file created at $config_file."
-					source $config_file
-					return
+					write_to_config
 				fi
 			done
 		fi
