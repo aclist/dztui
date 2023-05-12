@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.28
+version=3.3.0-rc.29
 
 aid=221100
 game="dayz"
@@ -35,7 +35,7 @@ scmd_url="$testing_url/helpers/scmd.sh"
 vdf2json_url="$testing_url/helpers/vdf2json.py"
 notify_url="$testing_url/helpers/d.html"
 notify_img_url="$testing_url/helpers/d.webp"
-forum_url="https://github.com/aclist/dztui/discussions"
+forum_url="https://old.reddit.com/r/dzgui"
 version_file="$config_path/versions"
 steamsafe_zenity="/usr/bin/zenity"
 
