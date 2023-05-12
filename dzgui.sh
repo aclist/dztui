@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.17
+version=3.2.18
 
 aid=221100
 game="dayz"
@@ -246,6 +246,7 @@ file_picker(){
 	fi
 }
 create_config(){
+	debug "ENTERED ${FUNCNAME[0]}"
 	check_pyver
 	write_to_config(){
 		mkdir -p $config_path
@@ -274,15 +275,15 @@ create_config(){
 			warn "Invalid BM API key"
 		else
 			while true; do
-				echo "STEAMSAFEZENITY: $steamsafe_zenity" >> /tmp/debug.log
+				debug "STEAMSAFEZENITY: $steamsafe_zenity"
 				[[ -n $steam_path ]] && { write_to_config; return; }
 				find_default_path
 				find_library_folder "$default_steam_path"
 				if [[ -z $steam_path ]]; then
-					echo "STEAM PATH WAS EMPTY" >> /tmp/debug.log
+					debug "STEAM PATH WAS EMPTY"
 					zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Choose path manually" --cancel-label="Exit"
 					if [[ $? -eq 0 ]]; then
-						echo "USER SELECTED FILE PICKER" >> /tmp/debug.log
+						debug "USER SELECTED FILE PICKER"
 						file_picker
 					else
 						exit
@@ -310,8 +311,13 @@ run_depcheck(){
 		exit
 	fi
 }
+debug(){
+	echo "$*" >> /tmp/debug.log
+}
 check_pyver(){
+	debug "ENTERED ${FUNCNAME[0]}"
 	pyver=$(python3 --version | awk '{print $2}')
+	debug "PYVER is $pyver"
 	if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]]; then
 		warn "Requires python >=3.0" &&
 		exit
@@ -332,13 +338,19 @@ run_varcheck(){
 	fi
 }
 config(){
+	debug "ENTERED ${FUNCNAME[0]}"
 	if [[ ! -f $config_file ]]; then
+		debug "CONFIG FILE MISSING"
+		debug "STEAMSAFEZENITY is $steamsafe_zenity"
 		$steamsafe_zenity --width 500 --info --text="Config file not found. Click OK to proceed to first-time setup." 2>/dev/null
 		code=$?
+		debug "RETURN CODE WAS $code"
 		#TODO: prevent progress if user hits ESC
 		if [[ $code -eq 1 ]]; then
+			debug "RECEIVED EXIT CODE 1"
 			exit
 		else
+			debug "CREATING CONFIG"
 			create_config
 		fi
 	else
