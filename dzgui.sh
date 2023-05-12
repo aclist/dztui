@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.16
+version=3.2.17
 
 aid=221100
 game="dayz"
@@ -88,9 +88,9 @@ depcheck(){
 	done
 }
 watcher_deps(){
-	if [[ ! $(command -v wmctrl) ]] || [[ ! $(command -v xdotool) ]]; then
+	if [[ ! $(command -v wmctrl) ]] && [[ ! $(command -v xdotool) ]]; then
 		echo "100"
-		warn "Missing dependency: requires 'wmctrl' and 'xdotool'.\nInstall from your system's package manager."
+		warn "Missing dependency: requires 'wmctrl' or 'xdotool'.\nInstall from your system's package manager."
 		exit 1
 	fi
 }
