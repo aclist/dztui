@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.3.0-rc.26
+version=3.3.0-rc.27
 
 aid=221100
 game="dayz"
@@ -1062,7 +1062,7 @@ generate_log(){
 }
 console_dl(){
 	readarray -t modids <<< "$@"
-	steam steam://open/console 2>/dev/null 1>&2 &&
+	$steam_cmd steam://open/console 2>/dev/null 1>&2 &&
 	sleep 1s
 	#https://github.com/jordansissel/xdotool/issues/67
 	#https://dwm.suckless.org/patches/current_desktop/
@@ -1176,6 +1176,7 @@ options_menu(){
 		"Toggle debug mode"
 		"Generate debug log"
 		"Toggle auto mod install [$auto_hr]"
+		"Toggle native"
 		)
 	#TODO: tech debt: drop old flags
 	[[ $auto_install -eq 2 ]] || [[ $auto_install -eq 1 ]] && debug_list+=("Force update local mods")
