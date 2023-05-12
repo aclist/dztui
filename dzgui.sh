@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.14
+version=3.2.15
 
 aid=221100
 game="dayz"
@@ -230,7 +230,7 @@ freedesktop_dirs(){
 find_library_folder(){
 	echo "ENTERED: ${FUNCNAME[0]}" >> /tmp/debug.log
 	echo "RECEIVED ARG: $1" >> /tmp/debug.log
-	steam_path=$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
+	steam_path="$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')"
 	echo "STEAM PATH RESOLVED TO: $steam_path" >> /tmp/debug.log
 }
 file_picker(){
@@ -268,6 +268,7 @@ create_config(){
 		else
 			while true; do
 				echo "STEAMSAFEZENITY: $steamsafe_zenity" >> /tmp/debug.log
+				[[ -n $steam_path ]] && break
 				find_default_path
 				find_library_folder "$default_steam_path"
 				if [[ -z $steam_path ]]; then
@@ -1046,7 +1047,7 @@ console_dl(){
 	done
 }
 find_default_path(){
-	echo "ENTER: ${FUNCNAME[0]}" >> $config/debug.log
+	echo "ENTER: ${FUNCNAME[0]}" >> /tmp/debug.log
 	discover(){
 		echo "# Searching for Steam"
 		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "$HOME/.var" -o -path \
