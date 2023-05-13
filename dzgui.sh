@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o pipefail
-version=3.2.18
+version=3.2.19
 
 aid=221100
 game="dayz"
@@ -1852,7 +1852,6 @@ initial_setup(){
 	echo "100"
 }
 main(){
-	> /tmp/debug.log
 	lock
 	initial_setup > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --no-cancel --width=500 2>/dev/null)
 	main_menu
