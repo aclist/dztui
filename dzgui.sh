@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.2.20
+version=3.2.21
 
 aid=221100
 game="dayz"
@@ -228,17 +228,17 @@ freedesktop_dirs(){
 	fi
 }
 find_library_folder(){
-	echo "ENTERED: ${FUNCNAME[0]}" >> /tmp/debug.log
-	echo "RECEIVED ARG: $1" >> /tmp/debug.log
+	echo "ENTERED: ${FUNCNAME[0]}" >> /tmp/dzdebug.log
+	echo "RECEIVED ARG: $1" >> /tmp/dzdebug.log
 	steam_path="$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')"
-	echo "STEAM PATH RESOLVED TO: $steam_path" >> /tmp/debug.log
+	echo "STEAM PATH RESOLVED TO: $steam_path" >> /tmp/dzdebug.log
 }
 file_picker(){
-	echo "${FUNCNAME[0]}" >> /tmp/debug.log
+	echo "${FUNCNAME[0]}" >> /tmp/dzdebug.log
 	local path=$($steamsafe_zenity --file-selection --directory 2>/dev/null)
-	echo "FILE PICKER PATH RESOLVED TO: $path" >> /tmp/debug.log
+	echo "FILE PICKER PATH RESOLVED TO: $path" >> /tmp/dzdebug.log
 	if [[ -z "$path" ]]; then
-		echo "PATH WAS EMPTY" >> /tmp/debug.log
+		echo "PATH WAS EMPTY" >> /tmp/dzdebug.log
 		return
 	else
 		default_steam_path="$path"
@@ -256,11 +256,11 @@ create_config(){
 		return
 	}
 	while true; do
-		player_input="$($steamsafe_zenity --forms --add-entry="Player name (required for some servers)" --add-entry="BattleMetrics API key" --add-entry="Steam API key" --title="DZGUI" --text="DZGUI" $sd_res --separator="│" 2>/dev/null)"
+		player_input="$($steamsafe_zenity --forms --add-entry="Player name (required for some servers)" --add-entry="BattleMetrics API key" --add-entry="Steam API key" --title="DZGUI" --text="DZGUI" $sd_res --separator="@" 2>/dev/null)"
 		#explicitly setting IFS crashes $steamsafe_zenity in loop
 		#and mapfile does not support high ascii delimiters
 		#so split fields with newline
-		readarray -t args < <(echo "$player_input" | sed 's/│/\n/g')
+		readarray -t args < <(echo "$player_input" | sed 's/@/\n/g')
 		name="${args[0]}"
 		api_key="${args[1]}"
 		steam_api="${args[2]}"
@@ -312,7 +312,7 @@ run_depcheck(){
 	fi
 }
 debug(){
-	echo "$*" >> /tmp/debug.log
+	echo "$*" >> /tmp/dzdebug.log
 }
 check_pyver(){
 	debug "ENTERED ${FUNCNAME[0]}"
@@ -1062,7 +1062,7 @@ console_dl(){
 	done
 }
 find_default_path(){
-	echo "ENTER: ${FUNCNAME[0]}" >> /tmp/debug.log
+	echo "ENTER: ${FUNCNAME[0]}" >> /tmp/dzdebug.log
 	discover(){
 		echo "# Searching for Steam"
 		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "$HOME/.var" -o -path \
@@ -1081,7 +1081,7 @@ find_default_path(){
 			default_steam_path="$HOME/.steam/steam"
 		else
 			local res=$(echo -e "Let DZGUI auto-discover Steam path (accurate, slower)\nSelect the Steam path manually (less accurate, faster)" | $steamsafe_zenity --list --column="Choice" --title=DZGUI --hide-header --text="Steam is not installed in a standard location." $sd_res)
-			echo "USER CHOSE: $res" >> /tmp/debug.log
+			echo "USER CHOSE: $res" >> /tmp/dzdebug.log
 			case "$res" in
 				*auto*) discover ;;
 				*manual*)
@@ -1090,7 +1090,7 @@ find_default_path(){
 			esac
 		fi
 	fi
-	echo "FOUND DEFAULT PATH AT: $default_steam_path" >> /tmp/debug.log
+	echo "FOUND DEFAULT PATH AT: $default_steam_path" >> /tmp/dzdebug.log
 }
 popup(){
 	pop(){
@@ -1636,6 +1636,7 @@ download_new_version(){
 	if [[ $rc -eq 0 ]]; then
 		echo "[DZGUI] Wrote $upstream to $source_script"
 		chmod +x $source_script
+		#FIXME: doesnt exist yet
 		touch ${config_path}.unmerged
 		echo "100"
 		$steamsafe_zenity --question --width 500 --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
