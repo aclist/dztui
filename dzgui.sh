@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.2.21
+version=3.2.22
 
 aid=221100
 game="dayz"
@@ -130,6 +130,7 @@ set_api_params(){
 	first_entry=1
 }
 query_api(){
+	echo "# Querying API"
 	#TODO: prevent drawing list if null values returned without API error
 	if [[ $one_shot_launch -eq 1 ]]; then
 		list_of_ids="$fav"
@@ -1190,15 +1191,12 @@ options_menu(){
 }
 query_and_connect(){
 	[[ -z $whitelist ]] && { popup 600; return; }
-	query_api
-	parse_json
-	#TODO: create logger function
-	if [[ ! $delete -eq 1 ]]; then
-		echo "[DZGUI] Checking response time of servers"
-		create_array | $steamsafe_zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
-	else
+	q(){
+		query_api
+		parse_json
 		create_array
-	fi
+	}
+	q | $steamsafe_zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		:
@@ -1540,6 +1538,7 @@ page_through(){
 	parse_json
 }
 parse_json(){
+	echo "# Parsing servers"
 	page=$(echo "$list_response" | jq -r '.links.next?')
 	if [[ $first_entry -eq 1 ]]; then
 		local list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
@@ -1547,8 +1546,6 @@ parse_json(){
 		first_entry=0
 	fi
 	if [[ "$page" != "null" ]]; then
-		local list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
-		idarr+=("$list")
 		page_through
 	else
 		printf "%s\n" "${idarr[@]}" > $tmp
