@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.0-rc.29
+version=3.3.0-rc.30
 
 aid=221100
 game="dayz"
@@ -51,13 +51,13 @@ update_last_seen(){
 	source $config_file
 }
 check_news(){
+	echo "# Checking news"
 	[[ $branch == "stable" ]] && news_url="$stable_url/news"
 	[[ $branch == "testing" ]] && news_url="$testing_url/news"
 	result=$(curl -Ls "$news_url")
 	sum=$(echo -n "$result" | md5sum | awk '{print $1}')
 }
 print_news(){
-	check_news
 	if [[ $sum == $seen_news || -z $result ]]; then
 		hchar=""
 		news=""
@@ -130,6 +130,7 @@ set_api_params(){
 	first_entry=1
 }
 query_api(){
+	echo "# Querying API"
 	#TODO: prevent drawing list if null values returned without API error
 	if [[ $one_shot_launch -eq 1 ]]; then
 		list_of_ids="$fav"
@@ -228,32 +229,39 @@ freedesktop_dirs(){
 	fi
 }
 find_library_folder(){
-	steam_path=$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
+	echo "ENTERED: ${FUNCNAME[0]}" >> /tmp/dzdebug.log
+	echo "RECEIVED ARG: $1" >> /tmp/dzdebug.log
+	steam_path="$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')"
+	echo "STEAM PATH RESOLVED TO: $steam_path" >> /tmp/dzdebug.log
 }
 file_picker(){
-	while true; do
+	echo "${FUNCNAME[0]}" >> /tmp/dzdebug.log
 	local path=$($steamsafe_zenity --file-selection --directory 2>/dev/null)
-		if [[ -z "$path" ]]; then
-			return
-		else
-			default_steam_path="$path"
-			find_library_folder "$default_steam_path"
-		fi
-		if [[ -z $steam_path ]]; then
-			warn "DayZ not found at this path."
-		else
-			return
-		fi
-	done
+	echo "FILE PICKER PATH RESOLVED TO: $path" >> /tmp/dzdebug.log
+	if [[ -z "$path" ]]; then
+		echo "PATH WAS EMPTY" >> /tmp/dzdebug.log
+		return
+	else
+		default_steam_path="$path"
+		find_library_folder "$default_steam_path"
+	fi
 }
 create_config(){
+	debug "ENTERED ${FUNCNAME[0]}"
 	check_pyver
+	write_to_config(){
+		mkdir -p $config_path
+		write_config > $config_file
+		info "Config file created at $config_file."
+		source $config_file
+		return
+	}
 	while true; do
-		player_input="$($steamsafe_zenity --forms --add-entry="Player name (required for some servers)" --add-entry="BattleMetrics API key" --add-entry="Steam API key" --title="DZGUI" --text="DZGUI" $sd_res --separator="│" 2>/dev/null)"
+		player_input="$($steamsafe_zenity --forms --add-entry="Player name (required for some servers)" --add-entry="BattleMetrics API key" --add-entry="Steam API key" --title="DZGUI" --text="DZGUI" $sd_res --separator="@" 2>/dev/null)"
 		#explicitly setting IFS crashes $steamsafe_zenity in loop
 		#and mapfile does not support high ascii delimiters
 		#so split fields with newline
-		readarray -t args < <(echo "$player_input" | sed 's/│/\n/g')
+		readarray -t args < <(echo "$player_input" | sed 's/@/\n/g')
 		name="${args[0]}"
 		api_key="${args[1]}"
 		steam_api="${args[2]}"
@@ -268,21 +276,21 @@ create_config(){
 			warn "Invalid BM API key"
 		else
 			while true; do
+				debug "STEAMSAFEZENITY: $steamsafe_zenity"
+				[[ -n $steam_path ]] && { write_to_config; return; }
 				find_default_path
-				find_library_folder
+				find_library_folder "$default_steam_path"
 				if [[ -z $steam_path ]]; then
+					debug "STEAM PATH WAS EMPTY"
 					zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Choose path manually" --cancel-label="Exit"
 					if [[ $? -eq 0 ]]; then
+						debug "USER SELECTED FILE PICKER"
 						file_picker
 					else
 						exit
 					fi
 				else
-					mkdir -p $config_path
-					write_config > $config_file
-					info "Config file created at $config_file."
-					source $config_file
-					return
+					write_to_config
 				fi
 			done
 		fi
@@ -304,8 +312,13 @@ run_depcheck(){
 		exit
 	fi
 }
+debug(){
+	echo "$*" >> /tmp/dzdebug.log
+}
 check_pyver(){
+	debug "ENTERED ${FUNCNAME[0]}"
 	pyver=$(python3 --version | awk '{print $2}')
+	debug "PYVER is $pyver"
 	if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]]; then
 		warn "Requires python >=3.0" &&
 		exit
@@ -326,13 +339,19 @@ run_varcheck(){
 	fi
 }
 config(){
+	debug "ENTERED ${FUNCNAME[0]}"
 	if [[ ! -f $config_file ]]; then
+		debug "CONFIG FILE MISSING"
+		debug "STEAMSAFEZENITY is $steamsafe_zenity"
 		$steamsafe_zenity --width 500 --info --text="Config file not found. Click OK to proceed to first-time setup." 2>/dev/null
 		code=$?
+		debug "RETURN CODE WAS $code"
 		#TODO: prevent progress if user hits ESC
 		if [[ $code -eq 1 ]]; then
+			debug "RECEIVED EXIT CODE 1"
 			exit
 		else
+			debug "CREATING CONFIG"
 			create_config
 		fi
 	else
@@ -1212,15 +1231,12 @@ options_menu(){
 }
 query_and_connect(){
 	[[ -z $whitelist ]] && { popup 600; return; }
-	query_api
-	parse_json
-	#TODO: create logger function
-	if [[ ! $delete -eq 1 ]]; then
-		echo "[DZGUI] Checking response time of servers"
-		create_array | $steamsafe_zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
-	else
+	q(){
+		query_api
+		parse_json
 		create_array
-	fi
+	}
+	q | $steamsafe_zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		:
@@ -1342,7 +1358,6 @@ choose_filters(){
 	fi	
 	[[ -z $sels ]] && return
 	filters=$(echo "$sels" | sed 's/|/, /g;s/ (untick to select from map list)//')
-	echo "[DZGUI] Filters: $filters"
 }
 get_dist(){
 	local given_ip="$1"
@@ -1481,6 +1496,7 @@ server_browser(){
 		unset filters
 		unset search
 		ret=98
+		sd_res="--width=1280 --height=800"
 		return
 	fi
 	local sel_ip=$(echo "$sel" | awk -F%% '{print $1}')
@@ -1488,7 +1504,9 @@ server_browser(){
 	qport_list="$sel_ip%%$sel_port"
 	if [[ -n "$sel_ip" ]]; then
 		connect "$sel_ip" "ip"
+		sd_res="--width=1280 --height=800"
 	else
+		sd_res="--width=1280 --height=800"
 		return
 	fi
 }
@@ -1563,6 +1581,7 @@ page_through(){
 	parse_json
 }
 parse_json(){
+	echo "# Parsing servers"
 	page=$(echo "$list_response" | jq -r '.links.next?')
 	if [[ $first_entry -eq 1 ]]; then
 		local list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
@@ -1570,8 +1589,6 @@ parse_json(){
 		first_entry=0
 	fi
 	if [[ "$page" != "null" ]]; then
-		local list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
-		idarr+=("$list")
 		page_through
 	else
 		printf "%s\n" "${idarr[@]}" > $tmp
@@ -1616,7 +1633,7 @@ create_array(){
 			declare -g -a rows=("${rows[@]}" "$name" "$ip" "$players" "$time" "$stat" "$id" "$ping")
 		fi
 		let lc++
-	done < "$tmp"
+	done < <(cat "$tmp" | sort -k1)
 
 	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp
 }
@@ -1627,8 +1644,9 @@ set_fav(){
 	| jq -r '.data[] .attributes .name')
 	if [[ -z $fav_label ]]; then
 		fav_label=null
+	else
+		fav_label="'$fav_label'"
 	fi
-	echo "[DZGUI] Setting favorite server to '$fav_label'"
 }
 check_unmerged(){
 	if [[ -f ${config_path}.unmerged ]]; then
@@ -1689,7 +1707,7 @@ enforce_dl(){
 	download_new_version > >($steamsafe_zenity --progress --pulsate --auto-close --no-cancel --width=500)
 }
 prompt_dl(){
-	$steamsafe_zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
+	$steamsafe_zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version:\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		return
@@ -1741,7 +1759,6 @@ add_by_id(){
 				mv $config_file ${config_path}dztuirc.old
 				nr=$(awk '/whitelist=/ {print NR}' ${config_path}dztuirc.old)
 				awk -v "var=$new_whitelist" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
-				echo "[DZGUI] Added $id to key 'whitelist'"
 				$steamsafe_zenity --info --title="DZGUI" --text="Added "$id" to:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
 				source $config_file
 				return
@@ -1775,7 +1792,9 @@ check_map_count(){
 	if [[ ! -f /etc/sysctl.d/dayz.conf ]]; then
 		$steamsafe_zenity --question --width 500 --title="DZGUI" --cancel-label="Cancel" --ok-label="OK" --text "sudo password required to check system vm map count." 2>/dev/null
 		if [[ $? -eq 0 ]]; then
-			local pass=$($steamsafe_zenity --password)
+			local pass
+			pass=$($steamsafe_zenity --password)
+			[[ $? -eq 1 ]] && exit 1
 			local ct=$(sudo -S <<< "$pass" sh -c "sysctl -q vm.max_map_count | awk -F'= ' '{print \$2}'")
 			local new_ct
 			[[ $ct -lt $count ]] && ct=$count
@@ -1872,6 +1891,7 @@ initial_setup(){
 	stale_symlinks
 	init_items
 	setup
+	check_news
 	echo "100"
 }
 main(){
