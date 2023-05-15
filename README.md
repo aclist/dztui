@@ -1,5 +1,5 @@
 ## What this is
-A GUI version of [DZTUI](https://github.com/aclist/dztui/tree/dztui) for Linux. 
+DZGUI is a GUI version of [DZTUI](https://github.com/aclist/dztui/tree/dztui) for Linux. 
 
 Note: development of DZTUI has stopped and has been replaced with DZGUI.
 
