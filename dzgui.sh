@@ -679,10 +679,10 @@ history_table(){
 		res=$(< $meta_file jq -er '.response.servers[]' 2>/dev/null)
 		prepare_ip_list "$meta_file" >> /tmp/dz.hist
 		sleep 0.5s
-	done | $steamsafe_zenity --pulsate --progress --auto-close --title=DZGUI --width=500 --no-cancel 2>/dev/null
+	done | $steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --width=500 --no-cancel 2>/dev/null
 	[[ $? -eq 1 ]] && return
 	while true; do
-	sel=$(cat /tmp/dz.hist | $steamsafe_zenity --width 1200 --height 800 --title=DZGUI --text="Recent servers" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2,5 --separator=%% 2>/dev/null)
+	sel=$(cat /tmp/dz.hist | $steamsafe_zenity --width 1200 --height 800 --title="DZGUI" --text="Recent servers" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2,5 --separator=%% 2>/dev/null)
 	if [[ $? -eq 1 ]]; then
 		return_from_table=1
 		rm /tmp/dz.hist
@@ -926,7 +926,7 @@ delete_or_connect(){
 	if [[ $delete -eq 1 ]]; then
 		server_name=$(echo "$sel" | awk -F"%%" '{print $1}')
 		server_id=$(echo "$sel" | awk -F"%%" '{print $2}')
-		$steamsafe_zenity --question --text="Delete this server? \n$server_name" --title=DZGUI --width=500 2>/dev/null
+		$steamsafe_zenity --question --text="Delete this server? \n$server_name" --title="DZGUI" --width=500 2>/dev/null
 		if [[ $? -eq 0 ]]; then
 			delete_by_id $server_id
 		fi
@@ -984,8 +984,9 @@ list_mods(){
 	else
 		for d in $(find $game_dir/* -maxdepth 1 -type l); do
 			dir=$(basename $d)
-			awk -v d=$dir -F\" '/name/ {printf "%s\t%s\n", $2,d}' "$gamedir"/$d/meta.cpp
-		done | sort
+			awk -v d=$dir -F\" '/name/ {printf "%s\t%s\t", $2,d}' "$gamedir"/$d/meta.cpp
+			printf "%s\n" "$(basename $(readlink -f $game_dir/$dir))"
+		done | sort -k1
 	fi
 }
 fetch_query_ports(){
@@ -1280,7 +1281,7 @@ pagination(){
 		printf "| Keyword:  %s " "$search"
 	fi
 	printf "\nReturned: %s %s of %s | " "${#qport[@]}" "$entry" "$total_servers"
-	printf "Players online: %s" "$players_online"
+	printf "Players in-game: %s" "$players_online"
 }
 check_geo_file(){
 	local gzip="$helpers_path/ips.csv.gz"
@@ -1445,7 +1446,8 @@ server_browser(){
 	}
 	fetch > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	total_servers=$(echo "$response" | jq 'length' | numfmt --grouping)
-	players_online=$(echo "$response" | jq '.[].players' | awk '{s+=$1}END{print s}' | numfmt --grouping)
+	players_online=$(curl -Ls "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=221100" \
+		| jq '.response.player_count' | numfmt --grouping)
 	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
 	debug_servers
 	local sel=$(munge_servers)
@@ -1506,7 +1508,7 @@ main_menu(){
 		elif [[ $sel == "${items[10]}" ]]; then
 			:
 		elif [[ $sel == "${items[11]}" ]]; then
-			list_mods | sed 's/\t/\n/g' | $steamsafe_zenity --list --column="Mod" --column="Symlink" \
+			list_mods | sed 's/\t/\n/g' | $steamsafe_zenity --list --column="Mod" --column="Symlink" --column="Dir" \
 				--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
 				--print-column="" 2>/dev/null
 		elif [[ $sel == "${items[12]}" ]]; then
@@ -1634,7 +1636,6 @@ download_new_version(){
 	if [[ $rc -eq 0 ]]; then
 		echo "[DZGUI] Wrote $upstream to $source_script"
 		chmod +x $source_script
-		#FIXME: doesnt exist yet
 		touch ${config_path}.unmerged
 		echo "100"
 		$steamsafe_zenity --question --width 500 --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
