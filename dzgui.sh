@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.2.22
+version=3.2.23
 
 aid=221100
 game="dayz"
@@ -1081,8 +1081,7 @@ find_default_path(){
 		elif [[ -d "$HOME/.steam/steam" ]]; then
 			default_steam_path="$HOME/.steam/steam"
 		else
-			local res=$(echo -e "Let DZGUI auto-discover Steam path (accurate, slower)\nSelect the Steam path manually (less accurate, faster)" | $steamsafe_zenity --list --column="Choice" --title=DZGUI --hide-header --text="Steam is not installed in a standard location." $sd_res)
-			echo "USER CHOSE: $res" >> /tmp/dzdebug.log
+			local res=$(echo -e "Let DZGUI auto-discover Steam path (accurate, slower)\nSelect the Steam path manually (less accurate, faster)" | $steamsafe_zenity --list --column="Choice" --title="DZGUI" --hide-header --text="Steam is not installed in a standard location." $sd_res)
 			case "$res" in
 				*auto*) discover ;;
 				*manual*)
@@ -1091,11 +1090,10 @@ find_default_path(){
 			esac
 		fi
 	fi
-	echo "FOUND DEFAULT PATH AT: $default_steam_path" >> /tmp/dzdebug.log
 }
 popup(){
 	pop(){
-		$steamsafe_zenity --info --text="$1" --title=DZGUI --width=500 2>/dev/null
+		$steamsafe_zenity --info --text="$1" --title="DZGUI" --width=500 2>/dev/null
 	}
 	case "$1" in
 		100) pop "This feature requires xdotool.";;
@@ -1183,7 +1181,7 @@ options_menu(){
 		"Force update local mods")
 			force_update=1
 			force_update_mods
-			merge_modlists > >($steamsafe_zenity --pulsate --progress --no-cancel --auto-close --title=DZGUI --width=500 2>/dev/null)
+			merge_modlists > >($steamsafe_zenity --pulsate --progress --no-cancel --auto-close --title="DZGUI" --width=500 2>/dev/null)
 			auto_mod_install
 			;;
 		Toggle[[:space:]]native*) toggle_steam_binary ;;
@@ -1751,6 +1749,7 @@ check_map_count(){
 		$steamsafe_zenity --question --width 500 --title="DZGUI" --cancel-label="Cancel" --ok-label="OK" --text "sudo password required to check system vm map count." 2>/dev/null
 		if [[ $? -eq 0 ]]; then
 			local pass=$($steamsafe_zenity --password)
+			[[ $? -eq 1 ]] && exit 1
 			local ct=$(sudo -S <<< "$pass" sh -c "sysctl -q vm.max_map_count | awk -F'= ' '{print \$2}'")
 			local new_ct
 			[[ $ct -lt $count ]] && ct=$count
