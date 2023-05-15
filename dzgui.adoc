@@ -1,19 +1,23 @@
-= DZGUI documentation
-DayZ official/community server graphical launcher for Linux | Last updated: 2022-10-11
-=======
 :nofooter:
 :toc: left
 :stylesheet: custom.css
 
-== What this is
-A GUI version of https://github.com/aclist/dztui[DZTUI] for Linux. Used to list official and community server details and quick connect to preferred servers by staging mods and concatenating launch options automatically. 
+= DZGUI documentation
+DayZ official/community server graphical launcher for Linux | Last updated: 2023-05-15
 
-Development on DZTUI (terminal client) has stopped at this time. DZGUI brings numerous functionality and security improvements and is intended to be a more user-friendly, turnkey solution for graphical desktop environments, and can also be used on the Steam Deck or similar devices.
+
+== What this is
+A GUI version of https://github.com/aclist/dztui[DZTUI] for Linux. 
+Used to list official and community server details and quick connect to preferred servers 
+by staging mods and concatenating launch options automatically. 
+
+Development on DZTUI (terminal client) has stopped at this time. 
+Instead, DZGUI brings numerous functionality and security improvements and is intended to be a more user-friendly, 
+turnkey solution for graphical desktop environments, and can also be used on the Steam Deck or similar devices.
 
 == Setup
 === Dependencies
 If not already installed, the below can be found in your system's package manager. 
-With the exception of Steam (which presumably you already have), wmctrl, and xdotool, the other utilities should ship out of the box with mainstream distributions. They are provided here merely as a reference.
 
 If any dependencies are missing when the application starts, it will warn you, so you need not take any preemptive measures here.
 
@@ -29,7 +33,7 @@ If any dependencies are missing when the application starts, it will warn you, s
 Automatic method: generic OS (skip to step 3 below when complete)
 
 ```
-curl -s "https://raw.githubusercontent.com/aclist/dztui/dzgui/install.sh" | bash
+curl -s "https://raw.githubusercontent.com/aclist/dztui/main/install.sh" | bash
 ```
 
 Automatic method: nix-based systems (contributed by lelgenio)
@@ -48,25 +52,33 @@ chmod +x dzgui.sh
 [start=2]
 . **Update the `vm.max_map_count` value (see https://www.protondb.com/app/221100)**
 
-This is handled automatically by DZGUI if you just choose to run the application out of the box. You will be prompted for your sudo password in order to check whether the system map count is too small. This is a one-time check that will not be triggered again once the map count is updated. If using the automatic method, you can skip to Step 3 below.
+**Automatic method:**
 
-Ephemeral method:
+This is handled automatically by DZGUI if you just choose to run the application out of the box.
+You will be prompted for your sudo password in order to check whether the system map count is too small.
+This is a one-time check that will not be triggered again once the map count is updated.
+If you used the automatic method, you can skip to Step 3 below.
+
+This process writes the count to the file `/etc/sysctl.d/dayz.conf`. 
+
+If the map count was lower than the threshold, it is updated to 1048576. 
+If the system map count was already higher, that value is interpolated into this file as a redundancy check.
+
+**Ephemeral method:**
+The map count will revert after the system is rebooted.
+
 ```
 sudo sysctl -w vm.max_map_count=1048576
 ```
 
-Persistent method:
+**Persistent method:**
 ```
 echo 'vm.max_map_count=1048576' | sudo tee /etc/sysctl.d/dayz.conf
 ```
 
-[NOTE]
-If it detects an incorrect map count value, DZGUI will prompt you to permanently update the map count value when starting up.
-
 [start=3]
 . **Prepare a Steam account with a DayZ license**
 . **Enable a Proton version ≥ `6.8` (or use Experimental) in the `Compatibility` field of the game's right-click options.**
-
 
 === API key & server IDs
 ==== BattleMetrics API key
@@ -75,8 +87,6 @@ If it detects an incorrect map count value, DZGUI will prompt you to permanently
 3. Give the token any name in the field at the top
 4. Leave all options **unchecked** and scroll to the bottom, select **Create Token**
 5. Copy the access token for later use (see below). This is the unique token you will use to query servers.
-6. (Post-setup) Use the https://www.battlemetrics.com/servers/dayz[DayZ server browser] to find servers of interest (proximity, player count, rules, etc.)
-7. (Post-setup) Each server has a unique ID. This is the string of numbers at the end of the URL. Copy these IDs. For example, in the URL https://www.battlemetrics.com/servers/dayz/8039514, the ID is `8039514`.
 
 ==== Steam API key
 1. Register for a https://steamcommunity.com/dev/apikey[Steam API key] using your Steam account. You will be asked for a unique URL for your app when registering. 
@@ -95,9 +105,7 @@ If it detects an incorrect map count value, DZGUI will prompt you to permanently
 
 Launching from the terminal gives more verbose information, and can be a good way of troubleshooting problems.
 
-**From the shortcut shipped with the application:**
-
-*If using a desktop environment based on the Freedesktop specification
+**From the shortcut shipped with the application:** (if using a desktop environment based on the Freedesktop specification)
 
 - Located under the "Games" category of your system's applications list.
 - Via the DZGUI desktop shortcut (Steam Deck only)
@@ -109,10 +117,24 @@ Launching from the terminal gives more verbose information, and can be a good wa
 - Player name (a generic handle, required by some servers)
 - At least one server ID
 
-DZGUI will then attempt to locate your default Steam installation and DayZ path. If it detects multiple paths, you will be given a list to choose from.
+==== Steam path discovery
 
-[NOTE]
-If the path was not detected correctly, you can manually edit the config file at `$HOME/.config/dztui/dztuirc`.
+DZGUI will then attempt to locate your default Steam installation and DayZ path. You *must* have DayZ installed in your Steam library in order to proceed. (It can be installed to any drive of your choosing.)
+If DZGUI cannot find Steam or cannot find DayZ installed at the detected Steam path, it will prompt you to manually specify the path to your Steam installation.
+
+Specify the top-level entry point to Steam, not DayZ. E.g.,
+
+`/media/mydrive/Steam`, not `/media/mydrive/Steam/steamapps/common/DayZ`
+
+If your Steam installation is in a hidden folder but the file picker dialog does not show hidden folders, ensure that your GTK settings include the parameter `ShowHidden=true`.
+
+For GTK 2, edit the file:
+
+`~/.config/gtk-2.0/gtkfilechooser.ini`
+
+For GTK 3, invoke the command: 
+
+`gsettings set org.gtk.Settings.FileChooser show-hidden true`
 
 === Steam integration & artwork 
 
@@ -255,14 +277,14 @@ You must have a minimum of one filter active to return any results.
 |Filter|Usage
 
 |All maps|Return all available map types being served. 
-Note: disabling this option will present a list from which you can select one specific map type (e.g., namalsk)
+Note: unticking this filter will present a list from which you can select one specific map type (e.g., namalsk)
 |Daytime|Include servers with gametime between 0600 and 1659
 |Nighttime|Include servers with gametime between 1700 and 0559
 |Empty|Include servers with 0 current players
 |Full|Include servers at maximum capacity
 |Low population|Include servers with fewer than 10 players online
 |Non-ASCII titles|Include servers with special symbols, Unicode, or text in the title. 
-Note: disabling this filter will also exclude CJK languages, Cyrillic, and other special character sets.
+Note: unticking this filter will also exclude CJK languages, Cyrillic, and other special character sets.
 |Keyword|Select this option to filter by server titles matching a specific word or phrase (case insensitive)
 |===
 
@@ -296,32 +318,32 @@ Fetches detailed server information on the list of servers saved in the config f
 ==== Quick connect to favorite server
 Bypasses the server list and quick-connects to a single favorite server specified in advance using the <<Add favorite server>> option.
 
-
 ==== Connect by IP
-
-Instead of relying on server IDs, returns the list of maps behind a given IP. Provide only the IP; no port is necessary. This returns the server metadata for you to verify before connecting.
+Instead of relying on server IDs, returns the list of maps behind a given IP.
+Provide only the IP; no port is necessary. This returns the server metadata for you to verify before connecting.
 
 If there are multiple maps hosted behind an IP (e.g. different maps on varying ports), the application will list all of them.
 
-In order to use this feature, you must have a https://steamcommunity.com/dev/apikey[Steam API key]. You will be asked for a unique URL for your app when registering. 
-Since this key is for a personal use application and does not actually call back anywhere, set a generic local identifier here like "127.0.0.1".
-
-You will be prompted to insert this key into the app when launching the "Connect by IP" feature for the first time.
+==== Recent servers
 
 ==== Add server by ID
-Prompts you to add servers to the config file by ID. An indefinite number of servers can be added. These will be listed when using the <<Launch server list>> option.
+Use the https://www.battlemetrics.com/servers/dayz[DayZ server browser] to find servers of interest (proximity, player count, rules, etc.)
+
+Each server has a unique ID. This is the string of numbers at the end of the URL. Copy these IDs.
+For example, in the URL https://www.battlemetrics.com/servers/dayz/8039514, the ID is `8039514`.
+
+An indefinite number of servers can be added. These will be listed when using the <<My servers>> option.
 
 ==== Add favorite server
 Prompts you to add/change a favorite server to the config file by ID. The name of the server will be updated in the header of the app. This server is used when selecting the <<Quick connect to favorite server>> option. If a favorite server is already enabled, this option switches to "Change favorite server."
+
+==== Change favorite server
 
 ==== Delete server
 Prints a list of human-readable servers currently saved, and lets you delete them by selecting one from the list.
 
 ==== List installed mods
-Prints a scrollable dialog containing all locally-installed mods and their corresponding symlinks IDs.
-
-==== Toggle debug mode
-Toggles debug mode, which is used to perform dry-runs and output what parameters would have been used to connect to a server. Enabling debug mode also exposes the <<Debug options>> menu, which contains some settings for advanced use.
+Prints a scrollable dialog containing all locally-installed mods and their corresponding symlink IDs and directory names.
 
 ==== Report bug
 Using the system browser, opens the project's GitHub issues page to submit a report.
@@ -332,17 +354,32 @@ Using the system browser, opens this document.
 ==== View changelog
 Prints the entire changelog up to the current version (and unreleased changes) in-app.
 
-==== Debug options
+===== Advanced options
 If enabled, this menu contains a sub-menu with various advanced features, enumerated below.
 
 ===== Toggle branch
-Used to toggle the branch to fetch DZGUI from between `stable` and `testing`. The app ships with the stable branch enabled, with the testing branch being used to elaborate various experimental features.
+Used to toggle the branch to fetch DZGUI from between `stable` and `testing`.
+The app ships with the stable branch enabled, with the testing branch being used to elaborate various experimental features.
+
+===== Toggle debug mode
+Toggles debug mode, which is used to perform dry-runs and output what parameters would have been used to connect to a server.
 
 ===== Generate debug log
 Writes a list of your current settings to a local file that can be pasted into bug reports.
 
+===== Toggle auto mod install
+
+===== Force update local mods
+
+===== Help file
+
+===== Report bug
+
+===== Forum
+
 == Config file key/value pairs
 Under normal usage, these values are populated and toggled automatically in-app. This config file is partially compatible DZTUI.
+
 
 [%autowidth]
 |===
