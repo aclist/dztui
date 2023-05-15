@@ -51,13 +51,13 @@ update_last_seen(){
 	source $config_file
 }
 check_news(){
+	echo "# Checking news"
 	[[ $branch == "stable" ]] && news_url="$stable_url/news"
 	[[ $branch == "testing" ]] && news_url="$testing_url/news"
 	result=$(curl -Ls "$news_url")
 	sum=$(echo -n "$result" | md5sum | awk '{print $1}')
 }
 print_news(){
-	check_news
 	if [[ $sum == $seen_news || -z $result ]]; then
 		hchar=""
 		news=""
@@ -1316,7 +1316,6 @@ choose_filters(){
 	fi	
 	[[ -z $sels ]] && return
 	filters=$(echo "$sels" | sed 's/|/, /g;s/ (untick to select from map list)//')
-	echo "[DZGUI] Filters: $filters"
 }
 get_dist(){
 	local given_ip="$1"
@@ -1454,6 +1453,7 @@ server_browser(){
 		unset filters
 		unset search
 		ret=98
+		sd_res="--width=1280 --height=800"
 		return
 	fi
 	local sel_ip=$(echo "$sel" | awk -F%% '{print $1}')
@@ -1461,7 +1461,9 @@ server_browser(){
 	qport_list="$sel_ip%%$sel_port"
 	if [[ -n "$sel_ip" ]]; then
 		connect "$sel_ip" "ip"
+		sd_res="--width=1280 --height=800"
 	else
+		sd_res="--width=1280 --height=800"
 		return
 	fi
 }
@@ -1588,7 +1590,7 @@ create_array(){
 			declare -g -a rows=("${rows[@]}" "$name" "$ip" "$players" "$time" "$stat" "$id" "$ping")
 		fi
 		let lc++
-	done < "$tmp"
+	done < <(cat "$tmp" | sort -k1)
 
 	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp
 }
@@ -1599,8 +1601,9 @@ set_fav(){
 	| jq -r '.data[] .attributes .name')
 	if [[ -z $fav_label ]]; then
 		fav_label=null
+	else
+		fav_label="'$fav_label'"
 	fi
-	echo "[DZGUI] Setting favorite server to '$fav_label'"
 }
 check_unmerged(){
 	if [[ -f ${config_path}.unmerged ]]; then
@@ -1714,7 +1717,6 @@ add_by_id(){
 				mv $config_file ${config_path}dztuirc.old
 				nr=$(awk '/whitelist=/ {print NR}' ${config_path}dztuirc.old)
 				awk -v "var=$new_whitelist" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
-				echo "[DZGUI] Added $id to key 'whitelist'"
 				$steamsafe_zenity --info --title="DZGUI" --text="Added "$id" to:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
 				source $config_file
 				return
@@ -1847,6 +1849,7 @@ initial_setup(){
 	stale_symlinks
 	init_items
 	setup
+	check_news
 	echo "100"
 }
 main(){
