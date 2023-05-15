@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.2.23
+version=3.2.24
 
 aid=221100
 game="dayz"
@@ -1748,7 +1748,8 @@ check_map_count(){
 	if [[ ! -f /etc/sysctl.d/dayz.conf ]]; then
 		$steamsafe_zenity --question --width 500 --title="DZGUI" --cancel-label="Cancel" --ok-label="OK" --text "sudo password required to check system vm map count." 2>/dev/null
 		if [[ $? -eq 0 ]]; then
-			local pass=$($steamsafe_zenity --password)
+			local pass
+			pass=$($steamsafe_zenity --password)
 			[[ $? -eq 1 ]] && exit 1
 			local ct=$(sudo -S <<< "$pass" sh -c "sysctl -q vm.max_map_count | awk -F'= ' '{print \$2}'")
 			local new_ct
