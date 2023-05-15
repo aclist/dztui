@@ -5,6 +5,7 @@
 = DZGUI documentation
 DayZ official/community server graphical launcher for Linux | Last updated: 2023-05-15
 
+Click https://aclist.github.io/dzgui/dzgui_dark.html[here] for dark mode
 
 == What this is
 A GUI version of https://github.com/aclist/dztui[DZTUI] for Linux. 
