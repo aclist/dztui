@@ -5,7 +5,7 @@
 As of this version, to reduce verbosity, the Stable branch will only receive changelog updates for major and minor version increments, 
 rather than for every hotfix. The Testing branch will continue to receive changelog updates for every hotfix under a release candidate.
 
-## Added
+### Added
 - Fetch more inclusive global "players in-game" count
 - List mod directory on installed mods list
 - Detect default Flatpak Steam path
@@ -14,18 +14,19 @@ rather than for every hotfix. The Testing branch will continue to receive change
 - Add description of how to enable hidden folders on GTK2/3
 - Initial logging framework
 
-## Changed
+### Changed
 - Test for wmctrl when enabling full auto mod installation
 - Steam Deck: block toggling full auto mod installation due to extra dependencies needed
 - First-time setup: sudo escalation when checking system map count for the first time
 
-## Fixed
+### Fixed
 - Steam Deck: non-ASCII delimiter causing setup menu to despawn on some devices 
 - Don't add items in My Servers multiple times to array when the list of favorites is paginated
 - Trigger progress dialogs sooner and in sequence to reduce appearance of visual lag
 - First-time setup: break out of dialogs correctly when user backs out
 - First-time setup: break out of automatic path discovery when user specifies a path manually
 - More portable interpreter invocation
+- Properly size down window resolution when returning from server browser
 
 ## [3.2.10] 2023-05-11
 ### Fixed
