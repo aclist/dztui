@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.3.0] 2023-05-16
+
+As of this version, to reduce verbosity, the Stable branch will only receive changelog updates for major and minor version increments, 
+rather than for every hotfix. The Testing branch will continue to receive changelog updates for every hotfix under a release candidate.
+
+## Fixed
+## Added
+## Changed
+
 ## [3.2.10] 2023-05-11
 ### Fixed
 - Return from lockfile function if first-time setup has not been run
