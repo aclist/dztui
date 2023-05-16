@@ -1,11 +1,5 @@
 # Changelog
 
-## [Unreleased] 
-- Clean up logging
-- Standardize dialogs
-- Custom query API
-- Store favorites by IP
-
 ## [3.2.10] 2023-05-11
 ### Fixed
 - Return from lockfile function if first-time setup has not been run
