@@ -1454,7 +1454,7 @@ server_browser(){
 	}
 	fetch > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	total_servers=$(echo "$response" | jq 'length' | numfmt --grouping)
-	players_online=$(curl -Ls "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=221100" \
+	players_online=$(curl -Ls "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=$aid" \
 		| jq '.response.player_count' | numfmt --grouping)
 	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
 	debug_servers
