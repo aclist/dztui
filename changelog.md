@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.4.0-rc.1] 2023-05-16
+### Added
+- Fetch more inclusive global "players in-game" count
+- List mod directory on installed mods list
+- Detect default Flatpak Steam path
+- Dark mode/light mode theme to help file
+- Alpha-sort My Servers list
+- Add description of how to enable hidden folders on GTK2/3
+- Initial logging framework
+
+### Changed
+- Test for wmctrl when enabling full auto mod installation
+- Steam Deck: block toggling full auto mod installation due to extra dependencies needed
+- First-time setup: sudo escalation when checking system map count for the first time
+
+### Fixed
+- Steam Deck: non-ASCII delimiter causing setup menu to despawn on some devices 
+- Don't add items in My Servers multiple times to array when the list of favorites is paginated
+- Trigger progress dialogs sooner and in sequence to reduce appearance of visual lag
+- First-time setup: break out of dialogs correctly when user backs out
+- First-time setup: break out of automatic path discovery when user specifies a path manually
+- More portable interpreter invocation
+
 ## [3.3.0-rc.24] 2023-05-10
 ### Fixed
 - Return from lockfile function if first time setup is not complete
