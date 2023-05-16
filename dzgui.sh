@@ -51,13 +51,13 @@ update_last_seen(){
 	source $config_file
 }
 check_news(){
+	echo "# Checking news"
 	[[ $branch == "stable" ]] && news_url="$stable_url/news"
 	[[ $branch == "testing" ]] && news_url="$testing_url/news"
 	result=$(curl -Ls "$news_url")
 	sum=$(echo -n "$result" | md5sum | awk '{print $1}')
 }
 print_news(){
-	check_news
 	if [[ $sum == $seen_news || -z $result ]]; then
 		hchar=""
 		news=""
@@ -679,10 +679,10 @@ history_table(){
 		res=$(< $meta_file jq -er '.response.servers[]' 2>/dev/null)
 		prepare_ip_list "$meta_file" >> /tmp/dz.hist
 		sleep 0.5s
-	done | $steamsafe_zenity --pulsate --progress --auto-close --title=DZGUI --width=500 --no-cancel 2>/dev/null
+	done | $steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --width=500 --no-cancel 2>/dev/null
 	[[ $? -eq 1 ]] && return
 	while true; do
-	sel=$(cat /tmp/dz.hist | $steamsafe_zenity --width 1200 --height 800 --title=DZGUI --text="Recent servers" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2,5 --separator=%% 2>/dev/null)
+	sel=$(cat /tmp/dz.hist | $steamsafe_zenity --width 1200 --height 800 --title="DZGUI" --text="Recent servers" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2,5 --separator=%% 2>/dev/null)
 	if [[ $? -eq 1 ]]; then
 		return_from_table=1
 		rm /tmp/dz.hist
@@ -926,7 +926,7 @@ delete_or_connect(){
 	if [[ $delete -eq 1 ]]; then
 		server_name=$(echo "$sel" | awk -F"%%" '{print $1}')
 		server_id=$(echo "$sel" | awk -F"%%" '{print $2}')
-		$steamsafe_zenity --question --text="Delete this server? \n$server_name" --title=DZGUI --width=500 2>/dev/null
+		$steamsafe_zenity --question --text="Delete this server? \n$server_name" --title="DZGUI" --width=500 2>/dev/null
 		if [[ $? -eq 0 ]]; then
 			delete_by_id $server_id
 		fi
@@ -984,8 +984,9 @@ list_mods(){
 	else
 		for d in $(find $game_dir/* -maxdepth 1 -type l); do
 			dir=$(basename $d)
-			awk -v d=$dir -F\" '/name/ {printf "%s\t%s\n", $2,d}' "$gamedir"/$d/meta.cpp
-		done | sort
+			awk -v d=$dir -F\" '/name/ {printf "%s\t%s\t", $2,d}' "$gamedir"/$d/meta.cpp
+			printf "%s\n" "$(basename $(readlink -f $game_dir/$dir))"
+		done | sort -k1
 	fi
 }
 fetch_query_ports(){
@@ -1066,7 +1067,7 @@ find_default_path(){
 	echo "ENTER: ${FUNCNAME[0]}" >> /tmp/dzdebug.log
 	discover(){
 		echo "# Searching for Steam"
-		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "$HOME/.var" -o -path \
+		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path \
 		"/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" \
 		-o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
 		-o -regex ".*/Steam/ubuntu12_32$" -print -quit 2>/dev/null | sed 's@/ubuntu12_32@@')
@@ -1074,12 +1075,19 @@ find_default_path(){
 	if [[ $is_steam_deck -eq 1 ]]; then
 		default_steam_path="$HOME/.local/share/Steam"
 	else
-		#default
-		if [[ -d "$HOME/.local/share/Steam" ]]; then
-			default_steam_path="$HOME/.local/share/Steam"
-		#ubuntu
-		elif [[ -d "$HOME/.steam/steam" ]]; then
-			default_steam_path="$HOME/.steam/steam"
+		local def_path
+		local ub_path
+		local flat_path
+		def_path="$HOME/.local/share/Steam"
+		ub_path="$HOME/.steam/steam"
+		flat_path="$HOME/.var/app/com.valvesoftware.Steam/data/Steam"
+
+		if [[ -d "$def_path" ]]; then
+			default_steam_path="$def_path"
+		elif [[ -d "$ub_path" ]]; then
+			default_steam_path="$ub_path"
+		elif [[ -d $flat_path ]]; then
+			default_steam_path="$flat_path"
 		else
 			local res=$(echo -e "Let DZGUI auto-discover Steam path (accurate, slower)\nSelect the Steam path manually (less accurate, faster)" | $steamsafe_zenity --list --column="Choice" --title="DZGUI" --hide-header --text="Steam is not installed in a standard location." $sd_res)
 			case "$res" in
@@ -1096,7 +1104,7 @@ popup(){
 		$steamsafe_zenity --info --text="$1" --title="DZGUI" --width=500 2>/dev/null
 	}
 	case "$1" in
-		100) pop "This feature requires xdotool.";;
+		100) pop "This feature requires xdotool and wmctrl.";;
 		200) pop "This feature is not supported on Gaming Mode.";;
 		300) pop "\nThe Steam console will now open and briefly issue commands to\ndownload the workshop files, then return to the download progress page.\n\nEnsure that the Steam console has keyboard and mouse focus\n(keep hands off keyboard) while the commands are being issued.\n\nDepending on the number if mods, it may take some time to queue the downloads,\nbut if a popup or notification window steals focus, it could obstruct\nthe process." ;;
 		400) pop "Automod install enabled. Auto-downloaded mods will not appear\nin your Steam Workshop subscriptions, but DZGUI will\ntrack the version number of downloaded mods internally\nand trigger an update if necessary." ;;
@@ -1104,12 +1112,13 @@ popup(){
 		600) pop "No preferred servers set." ;;
 		700) pop "Toggled to Flatpak Steam." ;;
 		800) pop "Toggled to native Steam." ;;
+		900) pop "This feature is not supported on Steam Deck."
 	esac
 }
 toggle_console_dl(){
-	[[ $is_steam_deck -eq 1 ]] && test_display_mode
-	[[ $gamemode -eq 1 ]] && { popup 200; return; }
+	[[ $is_steam_deck -eq 1 ]] && { popup 900; return; }
 	[[ ! $(command -v xdotool) ]] && { popup 100; return; }
+	[[ ! $(command -v wmctrl) ]] && { popup 100; return; }
 	mv $config_file ${config_path}dztuirc.old
 	local nr=$(awk '/auto_install=/ {print NR}' ${config_path}dztuirc.old)
 	if [[ $auto_install == "2"  ]]; then
@@ -1280,7 +1289,7 @@ pagination(){
 		printf "| Keyword:  %s " "$search"
 	fi
 	printf "\nReturned: %s %s of %s | " "${#qport[@]}" "$entry" "$total_servers"
-	printf "Players online: %s" "$players_online"
+	printf "Players in-game: %s" "$players_online"
 }
 check_geo_file(){
 	local gzip="$helpers_path/ips.csv.gz"
@@ -1316,7 +1325,6 @@ choose_filters(){
 	fi	
 	[[ -z $sels ]] && return
 	filters=$(echo "$sels" | sed 's/|/, /g;s/ (untick to select from map list)//')
-	echo "[DZGUI] Filters: $filters"
 }
 get_dist(){
 	local given_ip="$1"
@@ -1446,7 +1454,8 @@ server_browser(){
 	}
 	fetch > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	total_servers=$(echo "$response" | jq 'length' | numfmt --grouping)
-	players_online=$(echo "$response" | jq '.[].players' | awk '{s+=$1}END{print s}' | numfmt --grouping)
+	players_online=$(curl -Ls "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=$aid" \
+		| jq '.response.player_count' | numfmt --grouping)
 	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
 	debug_servers
 	local sel=$(munge_servers)
@@ -1454,6 +1463,7 @@ server_browser(){
 		unset filters
 		unset search
 		ret=98
+		sd_res="--width=1280 --height=800"
 		return
 	fi
 	local sel_ip=$(echo "$sel" | awk -F%% '{print $1}')
@@ -1461,7 +1471,9 @@ server_browser(){
 	qport_list="$sel_ip%%$sel_port"
 	if [[ -n "$sel_ip" ]]; then
 		connect "$sel_ip" "ip"
+		sd_res="--width=1280 --height=800"
 	else
+		sd_res="--width=1280 --height=800"
 		return
 	fi
 }
@@ -1504,7 +1516,7 @@ main_menu(){
 		elif [[ $sel == "${items[10]}" ]]; then
 			:
 		elif [[ $sel == "${items[11]}" ]]; then
-			list_mods | sed 's/\t/\n/g' | $steamsafe_zenity --list --column="Mod" --column="Symlink" \
+			list_mods | sed 's/\t/\n/g' | $steamsafe_zenity --list --column="Mod" --column="Symlink" --column="Dir" \
 				--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
 				--print-column="" 2>/dev/null
 		elif [[ $sel == "${items[12]}" ]]; then
@@ -1588,7 +1600,7 @@ create_array(){
 			declare -g -a rows=("${rows[@]}" "$name" "$ip" "$players" "$time" "$stat" "$id" "$ping")
 		fi
 		let lc++
-	done < "$tmp"
+	done < <(cat "$tmp" | sort -k1)
 
 	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp
 }
@@ -1599,8 +1611,9 @@ set_fav(){
 	| jq -r '.data[] .attributes .name')
 	if [[ -z $fav_label ]]; then
 		fav_label=null
+	else
+		fav_label="'$fav_label'"
 	fi
-	echo "[DZGUI] Setting favorite server to '$fav_label'"
 }
 check_unmerged(){
 	if [[ -f ${config_path}.unmerged ]]; then
@@ -1631,7 +1644,6 @@ download_new_version(){
 	if [[ $rc -eq 0 ]]; then
 		echo "[DZGUI] Wrote $upstream to $source_script"
 		chmod +x $source_script
-		#FIXME: doesnt exist yet
 		touch ${config_path}.unmerged
 		echo "100"
 		$steamsafe_zenity --question --width 500 --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
@@ -1714,7 +1726,6 @@ add_by_id(){
 				mv $config_file ${config_path}dztuirc.old
 				nr=$(awk '/whitelist=/ {print NR}' ${config_path}dztuirc.old)
 				awk -v "var=$new_whitelist" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
-				echo "[DZGUI] Added $id to key 'whitelist'"
 				$steamsafe_zenity --info --title="DZGUI" --text="Added "$id" to:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
 				source $config_file
 				return
@@ -1847,6 +1858,7 @@ initial_setup(){
 	stale_symlinks
 	init_items
 	setup
+	check_news
 	echo "100"
 }
 main(){
