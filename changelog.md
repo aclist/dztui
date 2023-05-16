@@ -1,10 +1,5 @@
 # Changelog
 
-## [Unreleased]
-- Clean up logging
-- Custom query API
-- Standardize dialogs
-
 ## [3.3.0-rc.24] 2023-05-10
 ### Fixed
 - Return from lockfile function if first time setup is not complete
