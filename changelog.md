@@ -22,6 +22,7 @@
 - First-time setup: break out of dialogs correctly when user backs out
 - First-time setup: break out of automatic path discovery when user specifies a path manually
 - More portable interpreter invocation
+- Properly size down window resolution when returning from server browser
 
 ## [3.2.10] 2023-05-11
 ### Fixed
