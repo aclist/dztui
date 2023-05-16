@@ -1108,7 +1108,7 @@ console_dl(){
 find_default_path(){
 	discover(){
 		echo "# Searching for Steam"
-		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path "$HOME/.var" -o -path \
+		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path \
 		"/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" \
 		-o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
 		-o -regex ".*/Steam/ubuntu12_32$" -print -quit 2>/dev/null | sed 's@/ubuntu12_32@@')
@@ -1116,12 +1116,19 @@ find_default_path(){
 	if [[ $is_steam_deck -eq 1 ]]; then
 		default_steam_path="$HOME/.local/share/Steam"
 	else
-		#default
-		if [[ -d "$HOME/.local/share/Steam" ]]; then
-			default_steam_path="$HOME/.local/share/Steam"
-		#ubuntu
-		elif [[ -d "$HOME/.steam/steam" ]]; then
-			default_steam_path="$HOME/.steam/steam"
+		local def_path
+		local ub_path
+		local flat_path
+		def_path="$HOME/.local/share/Steam"
+		ub_path="$HOME/.steam/steam"
+		flat_path="$HOME/.var/app/com.valvesoftware.Steam/data/Steam"
+
+		if [[ -d "$def_path" ]]; then
+			default_steam_path="$def_path"
+		elif [[ -d "$ub_path" ]]; then
+			default_steam_path="$ub_path"
+		elif [[ -d $flat_path ]]; then
+			default_steam_path="$flat_path"
 		else
 			local res=$(echo -e "Let DZGUI auto-discover Steam path (accurate, slower)\nSelect the Steam path manually (less accurate, faster)" | $steamsafe_zenity --list --column="Choice" --title="DZGUI" --hide-header --text="Steam is not installed in a standard location." $sd_res)
 			case "$res" in
@@ -1138,7 +1145,7 @@ popup(){
 		$steamsafe_zenity --info --text="$1" --title="DZGUI" --width=500 2>/dev/null
 	}
 	case "$1" in
-		100) pop "This feature requires xdotool.";;
+		100) pop "This feature requires xdotool and wmctrl.";;
 		200) pop "This feature is not supported on Gaming Mode.";;
 		300) pop "\nThe Steam console will now open and briefly issue commands to\ndownload the workshop files, then return to the download progress page.\n\nEnsure that the Steam console has keyboard and mouse focus\n(keep hands off keyboard) while the commands are being issued.\n\nDepending on the number if mods, it may take some time to queue the downloads,\nbut if a popup or notification window steals focus, it could obstruct\nthe process." ;;
 		400) pop "Automod install enabled. Auto-downloaded mods will not appear\nin your Steam Workshop subscriptions, but DZGUI will\ntrack the version number of downloaded mods internally\nand trigger an update if necessary." ;;
@@ -1146,12 +1153,13 @@ popup(){
 		600) pop "No preferred servers set." ;;
 		700) pop "Toggled to Flatpak Steam." ;;
 		800) pop "Toggled to native Steam." ;;
+		900) pop "This feature is not supported on Steam Deck."
 	esac
 }
 toggle_console_dl(){
-	[[ $is_steam_deck -eq 1 ]] && test_display_mode
-	[[ $gamemode -eq 1 ]] && { popup 200; return; }
+	[[ $is_steam_deck -eq 1 ]] && { popup 900; return; }
 	[[ ! $(command -v xdotool) ]] && { popup 100; return; }
+	[[ ! $(command -v wmctrl) ]] && { popup 100; return; }
 	mv $config_file ${config_path}dztuirc.old
 	local nr=$(awk '/auto_install=/ {print NR}' ${config_path}dztuirc.old)
 	if [[ $auto_install == "2"  ]]; then
@@ -1487,7 +1495,7 @@ server_browser(){
 	}
 	fetch > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 	total_servers=$(echo "$response" | jq 'length' | numfmt --grouping)
-	players_online=$(curl -Ls "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=221100" \
+	players_online=$(curl -Ls "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=$aid" \
 		| jq '.response.player_count' | numfmt --grouping)
 	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
 	debug_servers
