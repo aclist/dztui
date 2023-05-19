@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.1
+version=3.3.2
 
 aid=221100
 game="dayz"
@@ -1004,6 +1004,7 @@ connect_to_fav(){
 
 }
 set_header(){
+	print_news
 	[[ $auto_install -eq 2 ]] && install_mode="auto"
 	[[ $auto_install -eq 1 ]] && install_mode="headless"
 	[[ $auto_install -eq 0 ]] && install_mode=manual
@@ -1481,7 +1482,6 @@ mods_disk_size(){
 	printf "Location: %s/steamapps/workshop/content/221100" "$steam_path"
 }
 main_menu(){
-	print_news
 	set_mode
 	while true; do
 		set_header ${FUNCNAME[0]}
@@ -1733,6 +1733,7 @@ setup(){
 	fi
 }
 check_map_count(){
+	[[ $is_steam_deck -eq 1 ]] && return
 	local count=1048576
 	echo "[DZGUI] Checking system map count"
 	if [[ ! -f /etc/sysctl.d/dayz.conf ]]; then
