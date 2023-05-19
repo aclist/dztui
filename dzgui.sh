@@ -79,7 +79,7 @@ changelog(){
 	prefix="This window can be scrolled."
 	echo $prefix
 	echo ""
-	curl -Ls "$md" | awk '/Unreleased/ {flag=1}flag'
+	curl -Ls "$md"
 }
 
 depcheck(){
@@ -115,6 +115,8 @@ items=(
 	"	Help file ⧉"
 	"	Report bug ⧉"
 	"	Forum ⧉"
+	"	NEW: Sponsor ⧉"
+	"	NEW: Hall of fame ⧉"
 	)
 }
 warn(){
@@ -876,35 +878,30 @@ launch(){
 		one_shot_launch=0
 }
 browser(){
-	if [[ -n "$BROWSER" ]]; then
-		"$BROWSER" "$1" 2>/dev/null
-	else
-		xdg-open "$1" 2>/dev/null
+	if [[ $is_steam_deck -eq 1 ]]; then
+		steam steam://openurl/"$1" 2>/dev/null
+	elif [[ $is_steam_deck -eq 0 ]]; then
+		if [[ -n "$BROWSER" ]]; then
+			"$BROWSER" "$1" 2>/dev/null
+		else
+			xdg-open "$1" 2>/dev/null
+		fi
 	fi
 }
 report_bug(){
-	echo "[DZGUI] Opening issues page in browser"
-	if [[ $is_steam_deck -eq 1 ]]; then
-		steam steam://openurl/"$issues_url" 2>/dev/null
-	elif [[ $is_steam_deck -eq 0 ]]; then
-		browser "$issues_url" 2>/dev/null &
-	fi
+	browser "$issues_url"
 }
 forum(){
-	echo "[DZGUI] Opening forum in browser"
-	if [[ $is_steam_deck -eq 1 ]]; then
-		steam steam://openurl/"$forum_url" 2>/dev/null
-	elif [[ $is_steam_deck -eq 0 ]]; then
-		browser "$forum_url" 2>/dev/null &
-	fi
+	browser "$forum_url"
 }
 help_file(){
-	echo "[DZGUI] Opening help file in browser"
-	if [[ $is_steam_deck -eq 1 ]]; then
-		steam steam://openurl/"$help_url" 2>/dev/null
-	elif [[ $is_steam_deck -eq 0 ]]; then
-		browser "$help_url" 2>/dev/null &
-	fi
+	browser "$help_url"
+}
+sponsor(){
+	browser "$sponsor_url"
+}
+hof(){
+	browser "${help_url}#_hall_of_fame"
 }
 set_mode(){
 	if [[ $debug -eq 1 ]]; then
@@ -1006,6 +1003,7 @@ connect_to_fav(){
 
 }
 set_header(){
+	print_news
 	[[ $auto_install -eq 2 ]] && install_mode="auto"
 	[[ $auto_install -eq 1 ]] && install_mode="headless"
 	[[ $auto_install -eq 0 ]] && install_mode=manual
@@ -1518,65 +1516,45 @@ server_browser(){
 		return
 	fi
 }
-
 mods_disk_size(){
 	printf "Total size on disk: %s | " $(du -sh "$game_dir" | awk '{print $1}')
 	printf "%s mods | " $(ls -1 "$game_dir" | wc -l)
 	printf "Location: %s/steamapps/workshop/content/221100" "$steam_path"
 }
 main_menu(){
-	print_news
 	set_mode
 	while true; do
 		set_header ${FUNCNAME[0]}
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
-		if [[ -z $sel ]]; then
-			warn "No item was selected."
-		elif [[ $sel == "${items[0]}" ]]; then
-			:
-		elif [[ $sel == "${items[1]}" ]]; then
-			server_browser
-		elif [[ $sel == "${items[2]}" ]]; then
-			query_and_connect
-		elif [[ $sel == "${items[3]}" ]]; then
-			connect_to_fav
-		elif [[ $sel == "${items[4]}" ]]; then
-			connect_by_ip
-		elif [[ $sel == "${items[5]}" ]]; then
-			history_table
-		elif [[ $sel == "${items[6]}" ]]; then
-			:
-		elif [[ $sel == "${items[7]}" ]]; then
-			add_by_id
-		elif [[ $sel == "${items[8]}" ]]; then
-			add_by_fav
-		elif [[ $sel == "${items[9]}" ]]; then
-			delete=1
-			query_and_connect
-		elif [[ $sel == "${items[10]}" ]]; then
-			:
-		elif [[ $sel == "${items[11]}" ]]; then
-			list_mods | sed 's/\t/\n/g' | $steamsafe_zenity --list --column="Mod" --column="Symlink" --column="Dir" \
-				--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
-				--print-column="" 2>/dev/null
-		elif [[ $sel == "${items[12]}" ]]; then
-			changelog | $steamsafe_zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
-		elif [[ $sel == "${items[13]}" ]]; then
-			options_menu
-			main_menu
-			return
-		elif [[ $sel == "${items[14]}" ]]; then
-			:
-		elif [[ $sel == "${items[15]}" ]]; then
-			help_file
-		elif [[ $sel == "${items[16]}" ]]; then
-			report_bug
-		elif [[ $sel == "${items[17]}" ]]; then
-			forum
-		else
-			warn "This feature is not yet implemented."
-		fi
+		case "$sel" in
+			"") warn "No item was selected." ;;
+			"	Server browser") server_browser ;;
+			"	My servers") query_and_connect ;;
+			"	Quick connect to favorite server") connect_to_fav ;;
+			"	Connect by IP") connect_by_ip ;;
+			"	Recent servers (last 10)") history_table ;;
+			"	Add server by ID") add_by_id ;;
+			"	Add favorite server") add_by_fav ;;
+			"	Change favorite server") add_by_fav ;;
+			"	Delete server") delete=1; query_and_connect ;;
+			"	List installed mods")
+					list_mods | sed 's/\t/\n/g' | $steamsafe_zenity --list --column="Mod" --column="Symlink" --column="Dir" \
+						--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
+						--print-column="" 2>/dev/null
+					;;
+			"	View changelog") changelog | $steamsafe_zenity --text-info $sd_res --title="DZGUI" 2>/dev/null ;;
+			"	Advanced options")
+						options_menu
+						main_menu
+						return
+						;;
+			"	Help file ⧉") help_file ;;
+			"	Report bug ⧉") report_bug ;;
+			"	Forum ⧉") forum ;;
+			"	NEW: Sponsor ⧉") sponsor ;;
+			"	NEW: Hall of fame ⧉") hof ;;
+		esac
 	else
 		return
 	fi
@@ -1795,6 +1773,7 @@ setup(){
 	fi
 }
 check_map_count(){
+	[[ $is_steam_deck -eq 1 ]] && return
 	local count=1048576
 	echo "[DZGUI] Checking system map count"
 	if [[ ! -f /etc/sysctl.d/dayz.conf ]]; then
