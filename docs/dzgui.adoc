@@ -448,3 +448,29 @@ DayZ does not manipulate the game itself and does not contribute to/degrade its 
 If you are experiencing performance degradation, it can be caused by too many mods installed or
 by a server-side problem (underpowered server, misconfiguration, etc.) Contract the server administrator
 for assistance.
+
+== Hall of fame
+
+This section recognizes users who have gone above and beyond in submitting useful bug reports that helped in tracking down critical issues
+or resulted in the elaboration of important features. This list is not exhaustive, and any missing parties are errors of omission, but this does
+not diminish the gratitude I have for their contributions.
+
+.bongjutsu
+
+Consistently one of the first to report emergent bugs and provides clear, detailed ways of replicating the issue.
+
+.dj3hac
+Provided extensive debug information that was instrumental in solving issues with Flatpak Steam.
+
+.jiriks74
+Gives highly relevant information about edge cases, particularly as they concern the Steam beta client, Wayland, desktop environments, and experimental features.
+
+.MatheusLasserr
+Consistently provides constructive, straightforward suggestions about UI and readability improvements.
+
+.scandalouss
+Tracked down several highly obscure but key bugs in the early development of the application that were breaking discovery of mods.
+
+.StevelDusa
+Played a critical role in the elaboration of many of the features we now take for granted by being an early beta tester who not only reported bugs, but 
+helped workshop and brainstorm various ideas that turned into QOL features.
