@@ -61,8 +61,7 @@ This is a one-time check that will not be triggered again once the map count is 
 If you used the automatic method, you can skip to Step 3 below.
 
 [NOTE]
-The map count check prompts for a sudo password. If you are using a Steam Deck and have never set a sudo password,
-you must enter Desktop Mode, invoke `passwd` from Konsole, and type your desired password twice to set it.
+The map count check prompts for a sudo password. If you are using a Steam Deck, this check is not necessary.
 
 This process writes the count to the file `/etc/sysctl.d/dayz.conf`. 
 
