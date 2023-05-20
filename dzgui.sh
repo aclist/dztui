@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.4.0-rc.6
+version=3.4.0-rc.7
 
 aid=221100
 game="dayz"
@@ -468,6 +468,7 @@ symlinks(){
 	readarray -t wdirs < <(find "$workshop_dir"/*/meta.cpp)
 	echo "found ${#wdirs[@]} mods" >> $config_path/dzdebug
 	for (( i = 0; i < ${#wdirs[@]}; i++ )); do
+		echo "# Processing symlink $i of ${#wdirs[@]}"
 		id=$(awk -F"= " '/publishedid/ {print $2}' "${wdirs[$i]}" | awk -F\; '{print $1}')
 		mod=$(awk -F\" '/name/ {print $2}' "${wdirs[$i]}" | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
 		encoded_id=$(encode "$id")
@@ -1658,13 +1659,13 @@ merge_config(){
 
 }
 download_new_version(){
+	echo "# Downloading version $upstream"
 	if [[ $is_steam_deck -eq 1 ]]; then
 		freedesktop_dirs
 	fi
 	source_script=$(realpath "$0")
 	source_dir=$(dirname "$source_script")
 	mv $source_script $source_script.old
-	echo "# Downloading version $upstream"
 	curl -Ls "$version_url" > $source_script
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
