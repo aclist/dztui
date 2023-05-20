@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.4.0-rc.5
+version=3.4.0-rc.6
 
 aid=221100
 game="dayz"
@@ -434,6 +434,7 @@ manual_mod_install(){
 		compare
 		if [[ -z $diff ]]; then
 			passed_mod_check > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+			echo "${FUNCNAME[0]}" >> $config_path/dzdebug
 			launch
 		else
 			return 1
@@ -449,54 +450,45 @@ stale_symlinks(){
 	done
 }
 legacy_symlinks(){
-	echo "ENTERED ${FUNCNAME[0]}" >> $config_path/dzdebug
 	for d in "$game_dir"/*; do
 		if [[ $d =~ @[0-9]+-.+ ]]; then
 			unlink "$d"
 		fi
 	done
-	echo "UNLINKED SYMS" >> $config_path/dzdebug
 	for d in "$workshop_dir"/*; do
-		echo "dir is $d" >> $config_path/dzdebug
 		local id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
-		echo "id is $id" >> $config_path/dzdebug
 		local encoded_id=$(echo "$id" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g')
-		echo "encoded id is $encoded_id" >> $config_path/dzdebug
 		if [[ -h "$game_dir/@$encoded_id" ]]; then
-			echo "found sym, unlinking" >> $config_path/dzdebug
 			unlink "$game_dir/@$encoded_id"
 		fi
 	done
-	echo "FINISHED LEGACY UNLINKING" >> $config_path/dzdebug
 }
 symlinks(){
-	echo "ENTERED ${FUNCNAME[0]}" >> $config_path/dzdebug
-	for d in "$workshop_dir"/*; do
-		echo "dir is $d" >> $config_path/dzdebug
-		id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
-		echo "id is $id" >> $config_path/dzdebug
+	[[ -f $config_path/dzdebug ]] && rm $config_path/dzdebug
+	readarray -t wdirs < <(find "$workshop_dir"/*/meta.cpp)
+	echo "found ${#wdirs[@]} mods" >> $config_path/dzdebug
+	for (( i = 0; i < ${#wdirs[@]}; i++ )); do
+		id=$(awk -F"= " '/publishedid/ {print $2}' "${wdirs[$i]}" | awk -F\; '{print $1}')
+		mod=$(awk -F\" '/name/ {print $2}' "${wdirs[$i]}" | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
 		encoded_id=$(encode "$id")
-		echo "encoded id is $encoded_id" >> $config_path/dzdebug
-		mod=$(awk -F\" '/name/ {print $2}' "$d"/meta.cpp | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
-		echo "mod is $mod" >> $config_path/dzdebug
 		link="@$encoded_id"
-		echo "link is $link" >> $config_path/dzdebug
+		echo "link: $link" >> $config_path/dzdebug
 		if [[ -h "$game_dir/$link" ]]; then
 			echo "link exists" >> $config_path/dzdebug
 			:
 		else
-			ln -fs "$d" "$game_dir/$link"
+			ln -fs "${wdirs[$i]}" "$game_dir/$link"
 			echo "making link" >> $config_path/dzdebug
 		fi
 	done
+	echo "finished symlinks" >> $config_path/dzdebug
 }
 passed_mod_check(){
 	echo "[DZGUI] Passed mod check"
 	echo "# Preparing symlinks"
-	legacy_symlinks
+	#legacy_symlinks
 	symlinks
 	echo "100"
-
 }
 auto_mod_install(){
 	[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running to use this feature."; return; }
@@ -631,6 +623,7 @@ connect(){
 		esac
 	else
 		passed_mod_check > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+		echo "${FUNCNAME[0]}" >> $config_path/dzdebug
 		update_history
 		launch
 	fi
