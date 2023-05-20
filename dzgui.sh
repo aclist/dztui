@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.4.0-rc.2
+version=3.4.0-rc.3
 
 aid=221100
 game="dayz"
@@ -449,11 +449,13 @@ stale_symlinks(){
 	done
 }
 legacy_symlinks(){
+	echo "ENTERED ${FUNCNAME[0]}" >> $HOME/dzdebug
 	for d in "$game_dir"/*; do
 		if [[ $d =~ @[0-9]+-.+ ]]; then
 			unlink "$d"
 		fi
 	done
+	echo "UNLINKED SYMS" >> $HOME/dzdebug
 	for d in "$workshop_dir"/*; do
 		local id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
 		local encoded_id=$(echo "$id" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g')
@@ -461,6 +463,7 @@ legacy_symlinks(){
 			unlink "$game_dir/@$encoded_id"
 		fi
 	done
+	echo "FINISHED LEGACY UNLINKING" >> $HOME/log
 }
 symlinks(){
 	for d in "$workshop_dir"/*; do
@@ -471,7 +474,6 @@ symlinks(){
 		if [[ -h "$game_dir/$link" ]]; then
 			:
 		else
-			printf "[DZGUI] Creating symlink for $mod\n"
 			ln -fs "$d" "$game_dir/$link"
 		fi
 	done
