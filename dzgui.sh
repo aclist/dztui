@@ -670,6 +670,7 @@ prepare_ip_list(){
 	fi
 }
 history_table(){
+	[[ ! -f $hist_file ]] && { pop 1000; return; }
 	[[ -f /tmp/dz.hist ]] && rm /tmp/dz.hist
 	for i in $(cat $hist_file); do
 		echo "# Getting metadata for $i"
@@ -1111,7 +1112,8 @@ popup(){
 		600) pop "No preferred servers set." ;;
 		700) pop "Toggled to Flatpak Steam." ;;
 		800) pop "Toggled to native Steam." ;;
-		900) pop "This feature is not supported on Steam Deck."
+		900) pop "This feature is not supported on Steam Deck." ;;
+		1000) pop "No recent history."
 	esac
 }
 toggle_console_dl(){
