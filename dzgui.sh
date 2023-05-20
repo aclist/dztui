@@ -485,8 +485,6 @@ symlinks(){
 	echo "finished symlinks" >> $config_path/dzdebug
 }
 passed_mod_check(){
-	echo "[DZGUI] Passed mod check"
-	echo "# Preparing symlinks"
 	#legacy_symlinks
 	symlinks
 	echo "100"
