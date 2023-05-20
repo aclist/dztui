@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.4.0-rc.4
+version=3.4.0-rc.5
 
 aid=221100
 game="dayz"
@@ -88,7 +88,7 @@ depcheck(){
 	done
 }
 watcher_deps(){
-	if [[ ! $(command -v wmctrl) ]] || [[ ! $(command -v xdotool) ]]; then
+	if [[ ! $(command -v wmctrl) ]] && [[ ! $(command -v xdotool) ]]; then
 		echo "100"
 		warn "Missing dependency: requires 'wmctrl' and 'xdotool'.\nInstall from your system's package manager."
 		exit 1
@@ -449,36 +449,44 @@ stale_symlinks(){
 	done
 }
 legacy_symlinks(){
-	echo "ENTERED ${FUNCNAME[0]}" >> $HOME/dzdebug
+	echo "ENTERED ${FUNCNAME[0]}" >> $config_path/dzdebug
 	for d in "$game_dir"/*; do
 		if [[ $d =~ @[0-9]+-.+ ]]; then
 			unlink "$d"
 		fi
 	done
-	echo "UNLINKED SYMS" >> $HOME/dzdebug
+	echo "UNLINKED SYMS" >> $config_path/dzdebug
 	for d in "$workshop_dir"/*; do
-		echo "dir is $d" >> $HOME/dzdebug
+		echo "dir is $d" >> $config_path/dzdebug
 		local id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
-		echo "id is $id" >> $HOME/dzdebug
+		echo "id is $id" >> $config_path/dzdebug
 		local encoded_id=$(echo "$id" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g')
-		echo "encoded id is $encoded_id" >> $HOME/dzdebug
+		echo "encoded id is $encoded_id" >> $config_path/dzdebug
 		if [[ -h "$game_dir/@$encoded_id" ]]; then
-			echo "found sym, unlinking" >> $HOME/log
+			echo "found sym, unlinking" >> $config_path/dzdebug
 			unlink "$game_dir/@$encoded_id"
 		fi
 	done
-	echo "FINISHED LEGACY UNLINKING" >> $HOME/log
+	echo "FINISHED LEGACY UNLINKING" >> $config_path/dzdebug
 }
 symlinks(){
+	echo "ENTERED ${FUNCNAME[0]}" >> $config_path/dzdebug
 	for d in "$workshop_dir"/*; do
+		echo "dir is $d" >> $config_path/dzdebug
 		id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
+		echo "id is $id" >> $config_path/dzdebug
 		encoded_id=$(encode "$id")
+		echo "encoded id is $encoded_id" >> $config_path/dzdebug
 		mod=$(awk -F\" '/name/ {print $2}' "$d"/meta.cpp | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
+		echo "mod is $mod" >> $config_path/dzdebug
 		link="@$encoded_id"
+		echo "link is $link" >> $config_path/dzdebug
 		if [[ -h "$game_dir/$link" ]]; then
+			echo "link exists" >> $config_path/dzdebug
 			:
 		else
 			ln -fs "$d" "$game_dir/$link"
+			echo "making link" >> $config_path/dzdebug
 		fi
 	done
 }
