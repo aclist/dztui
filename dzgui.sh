@@ -21,6 +21,7 @@ stable_url="$url_prefix/dzgui"
 testing_url="$url_prefix/testing"
 releases_url="https://github.com/aclist/dztui/releases/download/browser"
 help_url="https://aclist.github.io/dzgui/dzgui"
+sponsor_url="https://github.com/sponsors/aclist"
 freedesktop_path="$HOME/.local/share/applications"
 sd_install_path="$HOME/.local/share/dzgui"
 helpers_path="$sd_install_path/helpers"
@@ -675,6 +676,7 @@ prepare_ip_list(){
 	fi
 }
 history_table(){
+	[[ ! -f $hist_file ]] && { pop 1000; return; }
 	[[ -f /tmp/dz.hist ]] && rm /tmp/dz.hist
 	for i in $(cat $hist_file); do
 		echo "# Getting metadata for $i"
@@ -1157,7 +1159,8 @@ popup(){
 		600) pop "No preferred servers set." ;;
 		700) pop "Toggled to Flatpak Steam." ;;
 		800) pop "Toggled to native Steam." ;;
-		900) pop "This feature is not supported on Steam Deck."
+		900) pop "This feature is not supported on Steam Deck." ;;
+		1000) pop "No recent history."
 	esac
 }
 toggle_console_dl(){
