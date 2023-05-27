@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.4.0-rc.7
+version=3.4.0-rc.8
 
 aid=221100
 game="dayz"
@@ -36,7 +36,7 @@ scmd_url="$testing_url/helpers/scmd.sh"
 vdf2json_url="$testing_url/helpers/vdf2json.py"
 notify_url="$testing_url/helpers/d.html"
 notify_img_url="$testing_url/helpers/d.webp"
-forum_url="https://old.reddit.com/r/dzgui"
+forum_url="https://github.com/aclist/dztui/discussions"
 version_file="$config_path/versions"
 steamsafe_zenity="/usr/bin/zenity"
 
@@ -465,28 +465,21 @@ legacy_symlinks(){
 	done
 }
 symlinks(){
-	[[ -f $config_path/dzdebug ]] && rm $config_path/dzdebug
 	readarray -t wdirs < <(find "$workshop_dir"/*/meta.cpp)
-	echo "found ${#wdirs[@]} mods" >> $config_path/dzdebug
 	for (( i = 0; i < ${#wdirs[@]}; i++ )); do
 		echo "# Processing symlink $i of ${#wdirs[@]}"
 		id=$(awk -F"= " '/publishedid/ {print $2}' "${wdirs[$i]}" | awk -F\; '{print $1}')
 		mod=$(awk -F\" '/name/ {print $2}' "${wdirs[$i]}" | sed -E 's/[^[:alpha:]0-9]+/_/g; s/^_|_$//g')
 		encoded_id=$(encode "$id")
 		link="@$encoded_id"
-		echo "link: $link" >> $config_path/dzdebug
 		if [[ -h "$game_dir/$link" ]]; then
-			echo "link exists" >> $config_path/dzdebug
 			:
 		else
 			ln -fs "${wdirs[$i]}" "$game_dir/$link"
-			echo "making link" >> $config_path/dzdebug
 		fi
 	done
-	echo "finished symlinks" >> $config_path/dzdebug
 }
 passed_mod_check(){
-	#legacy_symlinks
 	symlinks
 	echo "100"
 }
