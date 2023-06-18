@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.2
+version=3.3.3
 
 aid=221100
 game="dayz"
@@ -13,6 +13,7 @@ config_file="${config_path}dztuirc"
 hist_file="${config_path}/history"
 tmp=/tmp/dzgui.tmp
 fifo=/tmp/table.tmp
+debug_log="$PWD/DZGUI_DEBUG.log"
 separator="%%"
 check_config_msg="Check config values and restart."
 issues_url="https://github.com/aclist/dztui/issues"
@@ -52,13 +53,16 @@ update_last_seen(){
 	source $config_file
 }
 check_news(){
+	logger INFO "${FUNCNAME[0]}"
 	echo "# Checking news"
 	[[ $branch == "stable" ]] && news_url="$stable_url/news"
 	[[ $branch == "testing" ]] && news_url="$testing_url/news"
 	result=$(curl -Ls "$news_url")
 	sum=$(echo -n "$result" | md5sum | awk '{print $1}')
+	logger INFO "News: $result"
 }
 print_news(){
+	logger INFO "${FUNCNAME[0]}"
 	if [[ $sum == $seen_news || -z $result ]]; then
 		hchar=""
 		news=""
@@ -89,9 +93,11 @@ depcheck(){
 	done
 }
 watcher_deps(){
+	logger INFO "${FUNCNAME[0]}"
 	if [[ ! $(command -v wmctrl) ]] && [[ ! $(command -v xdotool) ]]; then
 		echo "100"
 		warn "Missing dependency: requires 'wmctrl' or 'xdotool'.\nInstall from your system's package manager."
+		logger ERROR "Missing watcher dependencies"
 		exit 1
 	fi
 }
@@ -127,12 +133,14 @@ info(){
 	$steamsafe_zenity --info --title="DZGUI" --text="$1" --width=500 2>/dev/null
 }
 set_api_params(){
+	logger INFO "${FUNCNAME[0]}"
 	response=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "sort=-players" \
 		-d "filter[game]=$game" -d "filter[ids][whitelist]=$list_of_ids")
 	list_response=$response
 	first_entry=1
 }
 query_api(){
+	logger INFO ${FUNCNAME[0]}
 	echo "# Querying API"
 	#TODO: prevent drawing list if null values returned without API error
 	if [[ $one_shot_launch -eq 1 ]]; then
@@ -232,17 +240,17 @@ freedesktop_dirs(){
 	fi
 }
 find_library_folder(){
-	echo "ENTERED: ${FUNCNAME[0]}" >> /tmp/dzdebug.log
-	echo "RECEIVED ARG: $1" >> /tmp/dzdebug.log
+	logger INFO "${FUNCNAME[0]}"
+	logger INFO "User picked directory: '$1'"
 	steam_path="$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')"
-	echo "STEAM PATH RESOLVED TO: $steam_path" >> /tmp/dzdebug.log
+	logger INFO "Steam path resolved to: $steam_path"
 }
 file_picker(){
-	echo "${FUNCNAME[0]}" >> /tmp/dzdebug.log
+	logger INFO "${FUNCNAME[0]}"
 	local path=$($steamsafe_zenity --file-selection --directory 2>/dev/null)
-	echo "FILE PICKER PATH RESOLVED TO: $path" >> /tmp/dzdebug.log
+	logger INFO "File picker path resolve to: $path"
 	if [[ -z "$path" ]]; then
-		echo "PATH WAS EMPTY" >> /tmp/dzdebug.log
+		logger INFO "Path was empty"
 		return
 	else
 		default_steam_path="$path"
@@ -250,7 +258,7 @@ file_picker(){
 	fi
 }
 create_config(){
-	debug "ENTERED ${FUNCNAME[0]}"
+	logger INFO "${FUNCNAME[0]}"
 	check_pyver
 	write_to_config(){
 		mkdir -p $config_path
@@ -279,15 +287,15 @@ create_config(){
 			warn "Invalid BM API key"
 		else
 			while true; do
-				debug "STEAMSAFEZENITY: $steamsafe_zenity"
+				logger INFO "steamsafe_zenity is $steamsafe_zenity"
 				[[ -n $steam_path ]] && { write_to_config; return; }
 				find_default_path
 				find_library_folder "$default_steam_path"
 				if [[ -z $steam_path ]]; then
-					debug "STEAM PATH WAS EMPTY"
+					logger WARN "Steam path was empty"
 					zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Choose path manually" --cancel-label="Exit"
 					if [[ $? -eq 0 ]]; then
-						debug "USER SELECTED FILE PICKER"
+						logger INFO "User selected file picker"
 						file_picker
 					else
 						exit
@@ -309,14 +317,19 @@ varcheck(){
 	fi
 }
 run_depcheck(){
+	logger INFO "${FUNCNAME[0]}"
 	if [[ -n $(depcheck) ]]; then
 		echo "100"
+		logger ERROR "Missing dependencies, quitting"
 		$steamsafe_zenity --warning --ok-label="Exit" --title="DZGUI" --text="$(depcheck)"
 		exit
 	fi
 }
-debug(){
-	echo "$*" >> /tmp/dzdebug.log
+logger(){
+	local date="$(date "+%F %T")"
+	local tag="$1"
+	local string="$2"
+	printf "[%s] [%s] %s\n" "$date" "$tag" "$string" >> "$debug_log"
 }
 check_pyver(){
 	debug "ENTERED ${FUNCNAME[0]}"
@@ -328,6 +341,7 @@ check_pyver(){
 	fi
 }
 run_varcheck(){
+	logger INFO "${FUNCNAME[0]}"
 	source $config_file
 	workshop_dir="$steam_path/steamapps/workshop/content/$aid"
 	game_dir="$steam_path/steamapps/common/DayZ"
@@ -335,6 +349,7 @@ run_varcheck(){
 		$steamsafe_zenity --question --cancel-label="Exit" --text="Malformed config file. This is probably user error.\nStart first-time setup process again?" --width=500 2>/dev/null
 		code=$?
 		if [[ $code -eq 1 ]]; then
+			logger ERROR "Malformed config vars"
 			exit
 		else
 			create_config
@@ -342,19 +357,17 @@ run_varcheck(){
 	fi
 }
 config(){
-	debug "ENTERED ${FUNCNAME[0]}"
+	logger INFO "${FUNCNAME[0]}"
 	if [[ ! -f $config_file ]]; then
-		debug "CONFIG FILE MISSING"
-		debug "STEAMSAFEZENITY is $steamsafe_zenity"
+		logger WARN "Config file missing"
+		logger INFO "steamsafe_zenity is $steamsafe_zenity"
 		$steamsafe_zenity --width 500 --info --text="Config file not found. Click OK to proceed to first-time setup." 2>/dev/null
 		code=$?
-		debug "RETURN CODE WAS $code"
+		logger INFO "Return code $code"
 		#TODO: prevent progress if user hits ESC
 		if [[ $code -eq 1 ]]; then
-			debug "RECEIVED EXIT CODE 1"
 			exit
 		else
-			debug "CREATING CONFIG"
 			create_config
 		fi
 	else
@@ -445,6 +458,7 @@ encode(){
 	echo "$1" | md5sum | cut -c -8
 }
 stale_symlinks(){
+	logger INFO "${FUNCNAME[0]}"
 	for l in $(find "$game_dir" -xtype l); do
 		unlink $l
 	done
@@ -905,11 +919,13 @@ hof(){
 	browser "${help_url}#_hall_of_fame"
 }
 set_mode(){
+	logger INFO "${FUNCNAME[0]}"
 	if [[ $debug -eq 1 ]]; then
 		mode=debug
 	else
 		mode=normal
 	fi
+	logger INFO "Mode is $mode"
 }
 delete_by_id(){
 	new_whitelist="whitelist=\"$(echo "$whitelist" | sed "s/,$server_id$//;s/^$server_id,//;s/,$server_id,/,/;s/^$server_id$//")\""
@@ -1004,6 +1020,8 @@ connect_to_fav(){
 
 }
 set_header(){
+	logger INFO "${FUNCNAME[0]}"
+	logger INFO "Header mode is $1"
 	print_news
 	[[ $auto_install -eq 2 ]] && install_mode="auto"
 	[[ $auto_install -eq 1 ]] && install_mode="headless"
@@ -1063,7 +1081,7 @@ console_dl(){
 	done
 }
 find_default_path(){
-	echo "ENTER: ${FUNCNAME[0]}" >> /tmp/dzdebug.log
+	logger INFO "${FUNCNAME[0]}"
 	discover(){
 		echo "# Searching for Steam"
 		default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path \
@@ -1181,7 +1199,6 @@ options_menu(){
 		"Generate debug log")
 			source_script=$(realpath "$0")
 			source_dir=$(dirname "$source_script")
-			generate_log > "$source_dir/DZGUI.log"
 			printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
 			$steamsafe_zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
 			;;
@@ -1407,7 +1424,6 @@ munge_servers(){
 	fi
 }
 debug_servers(){
-	[[ -f $debug_log ]] && rm $debug_log
 	if [[ -n $steam_api ]]; then
 		exists=true
 	else
@@ -1419,19 +1435,6 @@ debug_servers(){
 	debug_res=$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api")
 	debug_len=$(echo "$debug_res" | jq '[.response.servers[]]|length')
 	[[ -z $debug_len ]] && debug_len=0
-	cat <<-DOC > $debug_log
-	======START DEBUG======
-	Key exists: $exists
-	First char: $first_char
-	Last char: $last_char
-	Key length: $key_len
-	======Short query======
-	Expected: 10
-	Found: $debug_len
-	Response follows---->
-	$debug_res
-	======END DEBUG=======
-	DOC
 }
 server_browser(){
 	check_steam_api
@@ -1455,7 +1458,6 @@ server_browser(){
 	total_servers=$(echo "$response" | jq 'length' | numfmt --grouping)
 	players_online=$(curl -Ls "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=$aid" \
 		| jq '.response.player_count' | numfmt --grouping)
-	debug_log="$HOME/.local/share/dzgui/DEBUG.log"
 	debug_servers
 	local sel=$(munge_servers)
 	if [[ -z $sel ]]; then
@@ -1482,42 +1484,46 @@ mods_disk_size(){
 	printf "Location: %s/steamapps/workshop/content/221100" "$steam_path"
 }
 main_menu(){
+	logger INFO "${FUNCNAME[0]}"
+	logger INFO "Setting mode"
 	set_mode
 	while true; do
 		set_header ${FUNCNAME[0]}
-	rc=$?
-	if [[ $rc -eq 0 ]]; then
-		case "$sel" in
-			"") warn "No item was selected." ;;
-			"	Server browser") server_browser ;;
-			"	My servers") query_and_connect ;;
-			"	Quick connect to favorite server") connect_to_fav ;;
-			"	Connect by IP") connect_by_ip ;;
-			"	Recent servers (last 10)") history_table ;;
-			"	Add server by ID") add_by_id ;;
-			"	Add favorite server") add_by_fav ;;
-			"	Change favorite server") add_by_fav ;;
-			"	Delete server") delete=1; query_and_connect ;;
-			"	List installed mods")
-					list_mods | sed 's/\t/\n/g' | $steamsafe_zenity --list --column="Mod" --column="Symlink" --column="Dir" \
-						--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
-						--print-column="" 2>/dev/null
-					;;
-			"	View changelog") changelog | $steamsafe_zenity --text-info $sd_res --title="DZGUI" 2>/dev/null ;;
-			"	Advanced options")
-						options_menu
-						main_menu
-						return
+		rc=$?
+		logger INFO "set_header rc is $rc"
+		if [[ $rc -eq 0 ]]; then
+			case "$sel" in
+				"") warn "No item was selected." ;;
+				"	Server browser") server_browser ;;
+				"	My servers") query_and_connect ;;
+				"	Quick connect to favorite server") connect_to_fav ;;
+				"	Connect by IP") connect_by_ip ;;
+				"	Recent servers (last 10)") history_table ;;
+				"	Add server by ID") add_by_id ;;
+				"	Add favorite server") add_by_fav ;;
+				"	Change favorite server") add_by_fav ;;
+				"	Delete server") delete=1; query_and_connect ;;
+				"	List installed mods")
+						list_mods | sed 's/\t/\n/g' | $steamsafe_zenity --list --column="Mod" --column="Symlink" --column="Dir" \
+							--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
+							--print-column="" 2>/dev/null
 						;;
-			"	Help file ⧉") help_file ;;
-			"	Report bug ⧉") report_bug ;;
-			"	Forum ⧉") forum ;;
-			"	NEW: Sponsor ⧉") sponsor ;;
-			"	NEW: Hall of fame ⧉") hof ;;
-		esac
-	else
-		return
-	fi
+				"	View changelog") changelog | $steamsafe_zenity --text-info $sd_res --title="DZGUI" 2>/dev/null ;;
+				"	Advanced options")
+							options_menu
+							main_menu
+							return
+							;;
+				"	Help file ⧉") help_file ;;
+				"	Report bug ⧉") report_bug ;;
+				"	Forum ⧉") forum ;;
+				"	NEW: Sponsor ⧉") sponsor ;;
+				"	NEW: Hall of fame ⧉") hof ;;
+			esac
+		else
+			logger INFO "Returning from main menu"
+			return
+		fi
 	done
 }
 page_through(){
@@ -1584,6 +1590,7 @@ create_array(){
 	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp
 }
 set_fav(){
+	logger INFO "${FUNCNAME[0]}"
 	echo "[DZGUI] Querying favorite server"
 	query_api
 	fav_label=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "filter[game]=$game" -d "filter[ids][whitelist]=$fav" \
@@ -1593,8 +1600,10 @@ set_fav(){
 	else
 		fav_label="'$fav_label'"
 	fi
+	logger INFO "Fav label is $fav_label"
 }
 check_unmerged(){
+	logger INFO "${FUNCNAME[0]}"
 	if [[ -f ${config_path}.unmerged ]]; then
 		printf "[DZGUI] Found new config format, merging changes\n"
 		merge_config
@@ -1642,12 +1651,15 @@ download_new_version(){
 
 }
 check_branch(){
+	logger INFO "${FUNCNAME[0]}"
 	if [[ $branch == "stable" ]]; then
 		version_url="$stable_url/dzgui.sh"
 	elif [[ $branch == "testing" ]]; then
 		version_url="$testing_url/dzgui.sh"
 	fi
+	logger INFO "Branch is $branch"
 	upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
+	logger INFO "Upstream version is $version"
 }
 enforce_dl(){
 	download_new_version > >($steamsafe_zenity --progress --pulsate --auto-close --no-cancel --width=500)
@@ -1663,15 +1675,18 @@ prompt_dl(){
 	fi
 }
 check_version(){
+	logger INFO "${FUNCNAME[0]}"
 	[[ -f $config_file ]] && source $config_file
 	[[ -z $branch ]] && branch="stable"
 	check_branch
 	[[ ! -f "$freedesktop_path/dzgui.desktop" ]] && freedesktop_dirs
 	if [[ $version == $upstream ]]; then
+		logger INFO "Local version is same as upstream"
 		check_unmerged
 	else
 #		echo "100"
 		echo "[DZGUI] Upstream ($upstream) != local ($version)"
+		logger INFO "Local and remote version mismatch"
 		if [[ $enforce_dl -eq 1 ]]; then
 			enforce_dl
 		else
@@ -1680,12 +1695,15 @@ check_version(){
 	fi
 }
 check_architecture(){
+	logger INFO "${FUNCNAME[0]}"
 	cpu=$(cat /proc/cpuinfo | grep "AMD Custom APU 0405")
 	if [[ -n "$cpu" ]]; then
 		is_steam_deck=1
+		logger INFO "Setting architecture to 'Steam Deck'"
 		echo "[DZGUI] Setting architecture to 'Steam Deck'"
 	else
 		is_steam_deck=0
+		logger INFO "Setting architecture to 'desktop'"
 		echo "[DZGUI] Setting architecture to 'desktop'"
 	fi
 }
@@ -1727,14 +1745,17 @@ toggle_debug(){
 
 }
 setup(){
+	logger INFO "${FUNCNAME[0]}"
 	if [[ -n $fav ]]; then
 		set_fav
 		items[8]="	Change favorite server"
 	fi
 }
 check_map_count(){
+	logger INFO "${FUNCNAME[0]}"
 	[[ $is_steam_deck -eq 1 ]] && return
 	local count=1048576
+	logger INFO "Checking system map count"
 	echo "[DZGUI] Checking system map count"
 	if [[ ! -f /etc/sysctl.d/dayz.conf ]]; then
 		$steamsafe_zenity --question --width 500 --title="DZGUI" --cancel-label="Cancel" --ok-label="OK" --text "sudo password required to check system vm map count." 2>/dev/null
@@ -1795,6 +1816,7 @@ lock(){
 	fi
 }
 fetch_helpers(){
+	logger INFO "${FUNCNAME[0]}"
 	mkdir -p "$helpers_path"
 	[[ ! -f "$helpers_path/vdf2json.py" ]] && curl -Ls "$vdf2json_url" > "$helpers_path/vdf2json.py"
 }
@@ -1807,11 +1829,13 @@ update_steam_cmd(){
 	awk -v "var=$new_cmd" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
 }
 steam_deps(){
+	logger INFO "${FUNCNAME[0]}"
 	local flatpak steam
 	[[ $(command -v flatpak) ]] && flatpak=$(flatpak list | grep valvesoftware.Steam)
 	steam=$(command -v steam)
 	if [[ -z "$steam" ]] && [[ -z "$flatpak" ]]; then
 		warn "Requires Steam or Flatpak Steam"
+		logger ERROR "Steam was missing"
 		exit
 	elif [[ -n "$steam" ]] && [[ -n "$flatpak" ]]; then
 		toggle_steam=1
@@ -1823,6 +1847,7 @@ steam_deps(){
 	else
 		steam_cmd="flatpak run com.valvesoftware.Steam"
 	fi
+	logger INFO "steam_cmd set to $steam_cmd"
 }
 initial_setup(){
 	echo "# Initial setup"
@@ -1849,4 +1874,5 @@ main(){
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh
 }
 parent=$(cat /proc/$PPID/comm)
+[[ -f "$debug_log" ]] && rm "$debug_log"
 main
