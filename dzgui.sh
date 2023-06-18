@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.3
+version=3.3.4
 
 aid=221100
 game="dayz"
@@ -1760,16 +1760,23 @@ check_map_count(){
 	echo "[DZGUI] Checking system map count"
 	if [[ ! -f /etc/sysctl.d/dayz.conf ]]; then
 		$steamsafe_zenity --question --width 500 --title="DZGUI" --cancel-label="Cancel" --ok-label="OK" --text "sudo password required to check system vm map count." 2>/dev/null
-		if [[ $? -eq 0 ]]; then
+		local rc=$?
+		logger INFO "Return code is $rc"
+		if [[ $rc -eq 0 ]]; then
 			local pass
+			logger INFO "Prompting user for sudo escalation"
 			pass=$($steamsafe_zenity --password)
-			[[ $? -eq 1 ]] && exit 1
+			local rc	
+			logger INFO "Return code is $rc"
+			[[ $rc -eq 1 ]] && exit 1
 			local ct=$(sudo -S <<< "$pass" sh -c "sysctl -q vm.max_map_count | awk -F'= ' '{print \$2}'")
 			local new_ct
 			[[ $ct -lt $count ]] && ct=$count
+			logger INFO "Updating map count"
 			sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=$ct' > /etc/sysctl.d/dayz.conf"
 			sudo sysctl -p /etc/sysctl.d/dayz.conf
 		else
+			logger INFO "Zenity dialog failed or user exit"
 			exit 1
 		fi
 	fi
