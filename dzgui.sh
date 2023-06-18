@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.4
+version=3.3.5
 
 aid=221100
 game="dayz"
@@ -1759,7 +1759,7 @@ check_map_count(){
 	logger INFO "Checking system map count"
 	echo "[DZGUI] Checking system map count"
 	if [[ ! -f /etc/sysctl.d/dayz.conf ]]; then
-		$steamsafe_zenity --question --width 500 --title="DZGUI" --cancel-label="Cancel" --ok-label="OK" --text "sudo password required to check system vm map count." 2>/dev/null
+		$steamsafe_zenity --question --width=500 --title="DZGUI" --cancel-label="Cancel" --ok-label="OK" --text "sudo password required to check system vm map count."
 		local rc=$?
 		logger INFO "Return code is $rc"
 		if [[ $rc -eq 0 ]]; then
