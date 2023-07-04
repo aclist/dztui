@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.5
+version=3.3.6
 
 aid=221100
 game="dayz"
@@ -361,7 +361,7 @@ config(){
 	if [[ ! -f $config_file ]]; then
 		logger WARN "Config file missing"
 		logger INFO "steamsafe_zenity is $steamsafe_zenity"
-		$steamsafe_zenity --width 500 --info --text="Config file not found. Click OK to proceed to first-time setup." 2>/dev/null
+		$steamsafe_zenity --width=500 --info --text="Config file not found. Click OK to proceed to first-time setup." 2>/dev/null
 		code=$?
 		logger INFO "Return code $code"
 		#TODO: prevent progress if user hits ESC
@@ -500,7 +500,7 @@ passed_mod_check(){
 
 }
 auto_mod_install(){
-	[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running to use this feature."; return; }
+	#[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running to use this feature."; return; }
 	popup 300
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
@@ -881,12 +881,12 @@ launch(){
 			source_dir=$(dirname "$source_script")
 			echo "$launch_options" > "$source_dir"/options.log
 			echo "[DZGUI] Wrote launch options to $source_dir/options.log"
-			$steamsafe_zenity --info --width 500 --title="DZGUI" --text="Wrote launch options to \n$source_dir/options.log" 2>/dev/null
+			$steamsafe_zenity --info --width=500 --title="DZGUI" --text="Wrote launch options to \n$source_dir/options.log" 2>/dev/null
 		fi
 
 	else
 		echo "[DZGUI] All OK. Launching DayZ"
-		$steamsafe_zenity --width 500 --title="DZGUI" --info --text="Launch conditions satisfied.\nDayZ will now launch after clicking [OK]." 2>/dev/null
+		$steamsafe_zenity --width=500 --title="DZGUI" --info --text="Launch conditions satisfied.\nDayZ will now launch after clicking [OK]." 2>/dev/null
 		$steam_cmd -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro -name=$name \"-mod=$mods\"
 		exit
 	fi
@@ -1201,7 +1201,7 @@ options_menu(){
 			source_script=$(realpath "$0")
 			source_dir=$(dirname "$source_script")
 			printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
-			$steamsafe_zenity --info --width 500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
+			$steamsafe_zenity --info --width=500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
 			;;
 		Toggle[[:space:]]auto*) toggle_console_dl ;;
 		"Force update local mods")
@@ -1220,7 +1220,7 @@ query_and_connect(){
 		parse_json
 		create_array
 	}
-	q | $steamsafe_zenity --width 500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
+	q | $steamsafe_zenity --width=500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
 	rc=$?
 	if [[ $rc -eq 1 ]]; then
 		:
@@ -1617,7 +1617,7 @@ merge_config(){
 	[[ -z $staging_dir ]] && staging_dir="/tmp"
 	write_config > $config_file
 	printf "[DZGUI] Wrote new config file to %sdztuirc\n" $config_path
-	$steamsafe_zenity --info --width 500 --title="DZGUI" --text="Wrote new config format to \n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
+	$steamsafe_zenity --info --width=500 --title="DZGUI" --text="Wrote new config format to \n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
 
 }
 download_new_version(){
@@ -1635,7 +1635,7 @@ download_new_version(){
 		chmod +x $source_script
 		touch ${config_path}.unmerged
 		echo "100"
-		$steamsafe_zenity --question --width 500 --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
+		$steamsafe_zenity --question --width=500 --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
 		code=$?
 		if [[ $code -eq 0 ]]; then
 			changelog | $steamsafe_zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
