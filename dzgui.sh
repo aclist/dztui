@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.6
+version=3.3.7
 
 aid=221100
 game="dayz"
@@ -504,8 +504,8 @@ auto_mod_install(){
 	popup 300
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
-		calc_mod_sizes
-		local total_size=$(numfmt --to=iec $totalmodsize)
+		#calc_mod_sizes
+		#local total_size=$(numfmt --to=iec $totalmodsize)
 		log="$default_steam_path/logs/content_log.txt"
 		[[ -f "/tmp/dz.status" ]] && rm "/tmp/dz.status"
 		touch "/tmp/dz.status"
@@ -722,7 +722,7 @@ history_table(){
 
 ip_table(){
 	while true; do
-	sel=$(prepare_ip_list "$meta_file" | $steamsafe_zenity --width 1200 --height 800 --text="Multiple maps found at this server. Select map from the list below" --title="DZGUI" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2 --separator=%% 2>/dev/null)
+	sel=$(prepare_ip_list "$meta_file" | $steamsafe_zenity --width 1200 --height 800 --text="One or more maps found at this server. Select map from the list below" --title="DZGUI" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2 --separator=%% 2>/dev/null)
 	if [[ $? -eq 1 ]]; then
 		return_from_table=1
 		return
@@ -1064,19 +1064,49 @@ generate_log(){
 	$(list_mods)
 	DOC
 }
-console_dl(){
-	readarray -t modids <<< "$@"
+focus_beta_client(){
 	steam steam://open/console 2>/dev/null 1>&2 &&
 	sleep 1s
+	wid(){
+		#wmctrl -ilx | awk 'tolower($3) == "steam.steam"' | grep 'Steam$' | awk '{print $1}'
+		wmctrl -ilx | awk '$3 == "steamwebhelper.steam" {print $1}'
+	}
+	until [[ -n $(wid) ]]; do
+		:
+	done
+	wmctrl -ia $(wid)
+	sleep 0.1s
+	wid=$(xdotool getactivewindow)
+	echo wid is $wid
+	local geo=$(xdotool getwindowgeometry $wid)
+	local pos=$(<<< "$geo" awk 'NR==2 {print $2}' | sed 's/,/ /')
+	local dim=$(<<< "$geo" awk 'NR==3 {print $2}' | sed 's/x/ /')
+	local pos1=$(<<< "$pos" awk '{print $1}')
+	local pos2=$(<<< "$pos" awk '{print $2}')
+	local dim1=$(<<< "$dim" awk '{print $1}')
+	local dim2=$(<<< "$dim" awk '{print $2}')
+	local dim1=$(((dim1/2)+pos1))
+	local dim2=$(((dim2/2)+pos2))
+	echo moving mouse
+	xdotool mousemove $dim1 $dim2
+	xdotool click 1
+	sleep 0.5s
+	xdotool key Tab
+}
+console_dl(){
+	readarray -t modids <<< "$@"
+	focus_beta_client
+#	steam steam://open/console 2>/dev/null 1>&2 &&
+#	sleep 1s
 	#https://github.com/jordansissel/xdotool/issues/67
 	#https://dwm.suckless.org/patches/current_desktop/
-	local wid=$(xdotool search --onlyvisible --name Steam)
+#	local wid=$(xdotool search --onlyvisible --name Steam)
 	#xdotool windowactivate $wid
 	sleep 1.5s
 	for i in "${modids[@]}"; do
 		xdotool type --delay 0 "workshop_download_item $aid $i"
 		sleep 0.5s
-		xdotool key --window $wid Return
+		xdotool key Return
 		sleep 0.5s
 	done
 }
