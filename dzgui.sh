@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.7
+version=3.3.8
 
 aid=221100
 game="dayz"
@@ -332,9 +332,7 @@ logger(){
 	printf "[%s] [%s] %s\n" "$date" "$tag" "$string" >> "$debug_log"
 }
 check_pyver(){
-	debug "ENTERED ${FUNCNAME[0]}"
 	pyver=$(python3 --version | awk '{print $2}')
-	debug "PYVER is $pyver"
 	if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]]; then
 		warn "Requires python >=3.0" &&
 		exit
@@ -1906,7 +1904,19 @@ initial_setup(){
 }
 main(){
 	lock
-	initial_setup > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --no-cancel --width=500 2>/dev/null)
+	local zenv=$(zenity --version)
+	case $zenv in
+		"3.91.0")
+			initial_setup
+			;;
+		"")
+			logger "Missing zenity"
+			exit
+			;;
+		*)
+			initial_setup > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --no-cancel --width=500 2>/dev/null)
+			;;
+	esac
 	main_menu
 	#TODO: tech debt: cruddy handling for steam forking
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh
