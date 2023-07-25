@@ -1902,18 +1902,27 @@ initial_setup(){
 	check_news
 	echo "100"
 }
+test_zenity_version(){
+	local current="$1"
+	local cutoff="3.91.0"
+	if [[ "$(printf '%s\n' "$cutoff" "$current" | sort -V | head -n1)" == "$cutoff" ]]; then
+		logger INFO "zenity version greater than or equal to $cutoff"
+		echo greater
+	else
+		logger INFO "zenity version lesser than $cutoff"
+		echo lesser
+	fi
+}
 main(){
 	lock
-	local zenv=$(zenity --version)
-	case $zenv in
-		"3.91.0")
+	local zenv=$(zenity --version 2>/dev/null)
+	[[ -z $zenv ]] && { logger "Missing zenity"; exit; }
+	local res=$(test_zenity_version $zenv)
+	case $res in
+		"greater")
 			initial_setup
 			;;
-		"")
-			logger "Missing zenity"
-			exit
-			;;
-		*)
+		"lesser")
 			initial_setup > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --no-cancel --width=500 2>/dev/null)
 			;;
 	esac
