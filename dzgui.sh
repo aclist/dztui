@@ -1090,6 +1090,15 @@ focus_beta_client(){
 	sleep 0.5s
 	xdotool key Tab
 }
+is_beta(){
+	#TODO: refactor legacy handling methods
+	local dir="$default_steam_path/package"
+	if [[ -f $dir/beta ]]; then
+		echo 0
+	else
+		echo 1
+	fi
+}
 console_dl(){
 	readarray -t modids <<< "$@"
 	focus_beta_client
