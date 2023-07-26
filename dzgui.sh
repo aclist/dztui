@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.9
+version=3.3.10
 
 aid=221100
 game="dayz"
@@ -1385,7 +1385,7 @@ get_dist(){
 		echo "$dist"
 	else
 		local dist=$($km_helper "$local_lat" "$local_lon" "$remote_lat" "$remote_lon")
-		printf "%05.0f %s" "$dist" "km"
+		LC_NUMERIC=C printf "%05.0f %s" "$dist" "km"
 	fi
 }
 prepare_filters(){
