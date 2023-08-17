@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.7
+version=3.3.11
 
 aid=221100
 game="dayz"
@@ -332,9 +332,7 @@ logger(){
 	printf "[%s] [%s] %s\n" "$date" "$tag" "$string" >> "$debug_log"
 }
 check_pyver(){
-	debug "ENTERED ${FUNCNAME[0]}"
 	pyver=$(python3 --version | awk '{print $2}')
-	debug "PYVER is $pyver"
 	if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]]; then
 		warn "Requires python >=3.0" &&
 		exit
@@ -1208,7 +1206,7 @@ options_menu(){
 	debug_list=(
 		"Toggle branch"
 		"Toggle debug mode"
-		"Generate debug log"
+		"Output system info"
 		"Toggle auto mod install [$auto_hr]"
 		)
 	#TODO: tech debt: drop old flags
@@ -1227,11 +1225,12 @@ options_menu(){
 			check_version
 			;;
 		"Toggle debug mode") toggle_debug ;;
-		"Generate debug log")
+		"Output system info")
 			source_script=$(realpath "$0")
 			source_dir=$(dirname "$source_script")
-			printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
+			generate_log > "$source_dir/DZGUI.log"
 			$steamsafe_zenity --info --width=500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
+			printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
 			;;
 		Toggle[[:space:]]auto*) toggle_console_dl ;;
 		"Force update local mods")
@@ -1387,7 +1386,7 @@ get_dist(){
 		echo "$dist"
 	else
 		local dist=$($km_helper "$local_lat" "$local_lon" "$remote_lat" "$remote_lon")
-		printf "%05.0f %s" "$dist" "km"
+		LC_NUMERIC=C printf "%05.0f %s" "$dist" "km"
 	fi
 }
 prepare_filters(){
@@ -1904,9 +1903,30 @@ initial_setup(){
 	check_news
 	echo "100"
 }
+test_zenity_version(){
+	local current="$1"
+	local cutoff="3.91.0"
+	if [[ "$(printf '%s\n' "$cutoff" "$current" | sort -V | head -n1)" == "$cutoff" ]]; then
+		logger INFO "zenity version greater than or equal to $cutoff"
+		echo greater
+	else
+		logger INFO "zenity version lesser than $cutoff"
+		echo lesser
+	fi
+}
 main(){
 	lock
-	initial_setup > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --no-cancel --width=500 2>/dev/null)
+	local zenv=$(zenity --version 2>/dev/null)
+	[[ -z $zenv ]] && { logger "Missing zenity"; exit; }
+	local res=$(test_zenity_version $zenv)
+	case $res in
+		"greater")
+			initial_setup
+			;;
+		"lesser")
+			initial_setup > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --no-cancel --width=500 2>/dev/null)
+			;;
+	esac
 	main_menu
 	#TODO: tech debt: cruddy handling for steam forking
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh
