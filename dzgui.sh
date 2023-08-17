@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.10
+version=3.3.11
 
 aid=221100
 game="dayz"
@@ -1206,7 +1206,7 @@ options_menu(){
 	debug_list=(
 		"Toggle branch"
 		"Toggle debug mode"
-		"Generate debug log"
+		"Output system info"
 		"Toggle auto mod install [$auto_hr]"
 		)
 	#TODO: tech debt: drop old flags
@@ -1225,11 +1225,12 @@ options_menu(){
 			check_version
 			;;
 		"Toggle debug mode") toggle_debug ;;
-		"Generate debug log")
+		"Output system info")
 			source_script=$(realpath "$0")
 			source_dir=$(dirname "$source_script")
-			printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
+			generate_log > "$source_dir/DZGUI.log"
 			$steamsafe_zenity --info --width=500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
+			printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
 			;;
 		Toggle[[:space:]]auto*) toggle_console_dl ;;
 		"Force update local mods")
