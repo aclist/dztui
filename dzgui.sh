@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.11
+version=3.3.12
 
 aid=221100
 game="dayz"
@@ -122,8 +122,8 @@ items=(
 	"	Help file ⧉"
 	"	Report bug ⧉"
 	"	Forum ⧉"
-	"	NEW: Sponsor ⧉"
-	"	NEW: Hall of fame ⧉"
+	"	Sponsor ⧉"
+	"	Hall of fame ⧉"
 	)
 }
 warn(){
