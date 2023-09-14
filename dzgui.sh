@@ -1912,7 +1912,7 @@ initial_setup(){
 }
 test_zenity_version(){
 	local current="$1"
-	local cutoff="3.91.0"
+	local cutoff="3.99.1"
 	if [[ "$(printf '%s\n' "$cutoff" "$current" | sort -V | head -n1)" == "$cutoff" ]]; then
 		logger INFO "zenity version greater than or equal to $cutoff"
 		echo greater
@@ -1926,14 +1926,7 @@ main(){
 	local zenv=$(zenity --version 2>/dev/null)
 	[[ -z $zenv ]] && { logger "Missing zenity"; exit; }
 	local res=$(test_zenity_version $zenv)
-	case $res in
-		"greater")
-			initial_setup
-			;;
-		"lesser")
-			initial_setup > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --no-cancel --width=500 2>/dev/null)
-			;;
-	esac
+	initial_setup > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --no-cancel --width=500 2>/dev/null)
 	main_menu
 	#TODO: tech debt: cruddy handling for steam forking
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh
