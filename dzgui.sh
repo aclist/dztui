@@ -1075,7 +1075,6 @@ focus_beta_client(){
 	wmctrl -ia $(wid)
 	sleep 0.1s
 	wid=$(xdotool getactivewindow)
-	echo wid is $wid
 	local geo=$(xdotool getwindowgeometry $wid)
 	local pos=$(<<< "$geo" awk 'NR==2 {print $2}' | sed 's/,/ /')
 	local dim=$(<<< "$geo" awk 'NR==3 {print $2}' | sed 's/x/ /')
@@ -1085,7 +1084,6 @@ focus_beta_client(){
 	local dim2=$(<<< "$dim" awk '{print $2}')
 	local dim1=$(((dim1/2)+pos1))
 	local dim2=$(((dim2/2)+pos2))
-	echo moving mouse
 	xdotool mousemove $dim1 $dim2
 	xdotool click 1
 	sleep 0.5s
@@ -1509,8 +1507,8 @@ server_browser(){
 	fi
 }
 mods_disk_size(){
-	printf "Total size on disk: %s | " $(du -sh "$game_dir" | awk '{print $1}')
-	printf "%s mods | " $(ls -1 "$game_dir" | wc -l)
+	printf "Total size on disk: %s | " $(du -sh "$workshop_dir" | awk '{print $1}')
+	printf "%s mods | " $(ls -1 "$workshop_dir" | wc -l)
 	printf "Location: %s/steamapps/workshop/content/221100" "$steam_path"
 }
 main_menu(){
