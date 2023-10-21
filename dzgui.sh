@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.15
+version=3.3.16
 
 aid=221100
 game="dayz"
@@ -1062,13 +1062,13 @@ generate_log(){
 	DOC
 }
 focus_beta_client(){
-	steam steam://open/library &&
+	steam steam://open/library 2>/dev/null 1>&2 &&
 	steam steam://open/console 2>/dev/null 1>&2 &&
 	sleep 1s
 	wid(){
 		wmctrl -ilx |\
 			awk 'tolower($3) == "steamwebhelper.steam"' |\
-			grep "Steam Games List" |\
+			awk '$5 ~ /^Steam|Steam Games List/' |\
 			awk '{print $1}'
 	}
 	until [[ -n $(wid) ]]; do
