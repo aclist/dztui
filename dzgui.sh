@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.14
+version=3.3.15
 
 aid=221100
 game="dayz"
@@ -498,7 +498,6 @@ passed_mod_check(){
 
 }
 auto_mod_install(){
-	#[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running to use this feature."; return; }
 	popup 300
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
@@ -1063,11 +1062,14 @@ generate_log(){
 	DOC
 }
 focus_beta_client(){
+	steam steam://open/library &&
 	steam steam://open/console 2>/dev/null 1>&2 &&
 	sleep 1s
 	wid(){
-		#wmctrl -ilx | awk 'tolower($3) == "steam.steam"' | grep 'Steam$' | awk '{print $1}'
-		wmctrl -ilx | awk '$3 == "steamwebhelper.steam" {print $1}'
+		wmctrl -ilx |\
+			awk 'tolower($3) == "steamwebhelper.steam"' |\
+			grep "Steam Games List" |\
+			awk '{print $1}'
 	}
 	until [[ -n $(wid) ]]; do
 		:
@@ -1174,7 +1176,6 @@ toggle_console_dl(){
 	fi
 	local flip_state="auto_install=\"$auto_install\""
 	awk -v "var=$flip_state" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
-	printf "[DZGUI] Set mod install to '$auto_install'\n"
 	source $config_file
 }
 force_update_mods(){
@@ -1356,7 +1357,7 @@ check_geo_file(){
 		echo "100"
 		}
 		run > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
-	fi 
+	fi
 }
 choose_filters(){
 	if [[ $is_steam_deck -eq 0 ]]; then
@@ -1366,7 +1367,7 @@ choose_filters(){
 	if [[ $sels =~ Keyword ]]; then
 		search=$($steamsafe_zenity --entry --text="Search (case insensitive)" --width=500 --title="DZGUI" 2>/dev/null | awk '{print tolower($0)}')
 		[[ -z $search ]] && { ret=97; return; }
-	fi	
+	fi
 	[[ -z $sels ]] && return
 	filters=$(echo "$sels" | sed 's/|/, /g;s/ (untick to select from map list)//')
 }
