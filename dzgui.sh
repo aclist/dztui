@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.4.0-rc.9
+version=3.4.0-rc.10
 
 aid=221100
 game="dayz"
@@ -93,9 +93,11 @@ depcheck(){
 	done
 }
 watcher_deps(){
+	logger INFO "${FUNCNAME[0]}"
 	if [[ ! $(command -v wmctrl) ]] && [[ ! $(command -v xdotool) ]]; then
 		echo "100"
-		warn "Missing dependency: requires 'wmctrl' and 'xdotool'.\nInstall from your system's package manager."
+		warn "Missing dependency: requires 'wmctrl' or 'xdotool'.\nInstall from your system's package manager."
+		logger ERROR "Missing watcher dependencies"
 		exit 1
 	fi
 }
@@ -120,8 +122,8 @@ items=(
 	"	Help file ⧉"
 	"	Report bug ⧉"
 	"	Forum ⧉"
-	"	NEW: Sponsor ⧉"
-	"	NEW: Hall of fame ⧉"
+	"	Sponsor ⧉"
+	"	Hall of fame ⧉"
 	)
 }
 warn(){
@@ -496,7 +498,6 @@ passed_mod_check(){
 
 }
 auto_mod_install(){
-	#[[ -z $(is_steam_running) ]] && { $steamsafe_zenity --info --text "Steam must be running to use this feature."; return; }
 	popup 300
 	rc=$?
 	if [[ $rc -eq 0 ]]; then
@@ -680,7 +681,6 @@ prepare_ip_list(){
 	fi
 }
 history_table(){
-	[[ ! -f $hist_file ]] && { pop 1000; return; }
 	[[ -f /tmp/dz.hist ]] && rm /tmp/dz.hist
 	for i in $(cat $hist_file); do
 		echo "# Getting metadata for $i"
@@ -1062,11 +1062,14 @@ generate_log(){
 	DOC
 }
 focus_beta_client(){
+	steam steam://open/library &&
 	steam steam://open/console 2>/dev/null 1>&2 &&
 	sleep 1s
 	wid(){
-		#wmctrl -ilx | awk 'tolower($3) == "steam.steam"' | grep 'Steam$' | awk '{print $1}'
-		wmctrl -ilx | awk '$3 == "steamwebhelper.steam" {print $1}'
+		wmctrl -ilx |\
+			awk 'tolower($3) == "steamwebhelper.steam"' |\
+			grep "Steam Games List" |\
+			awk '{print $1}'
 	}
 	until [[ -n $(wid) ]]; do
 		:
@@ -1074,7 +1077,6 @@ focus_beta_client(){
 	wmctrl -ia $(wid)
 	sleep 0.1s
 	wid=$(xdotool getactivewindow)
-	echo wid is $wid
 	local geo=$(xdotool getwindowgeometry $wid)
 	local pos=$(<<< "$geo" awk 'NR==2 {print $2}' | sed 's/,/ /')
 	local dim=$(<<< "$geo" awk 'NR==3 {print $2}' | sed 's/x/ /')
@@ -1084,20 +1086,10 @@ focus_beta_client(){
 	local dim2=$(<<< "$dim" awk '{print $2}')
 	local dim1=$(((dim1/2)+pos1))
 	local dim2=$(((dim2/2)+pos2))
-	echo moving mouse
 	xdotool mousemove $dim1 $dim2
 	xdotool click 1
 	sleep 0.5s
 	xdotool key Tab
-}
-is_beta(){
-	#TODO: refactor legacy handling methods
-	local dir="$default_steam_path/package"
-	if [[ -f $dir/beta ]]; then
-		echo 0
-	else
-		echo 1
-	fi
 }
 console_dl(){
 	readarray -t modids <<< "$@"
@@ -1184,7 +1176,6 @@ toggle_console_dl(){
 	fi
 	local flip_state="auto_install=\"$auto_install\""
 	awk -v "var=$flip_state" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
-	printf "[DZGUI] Set mod install to '$auto_install'\n"
 	source $config_file
 }
 force_update_mods(){
@@ -1214,7 +1205,7 @@ options_menu(){
 	debug_list=(
 		"Toggle branch"
 		"Toggle debug mode"
-		"Generate debug log"
+		"Output system info"
 		"Toggle auto mod install [$auto_hr]"
 		)
 	#TODO: tech debt: drop old flags
@@ -1233,11 +1224,12 @@ options_menu(){
 			check_version
 			;;
 		"Toggle debug mode") toggle_debug ;;
-		"Generate debug log")
+		"Output system info")
 			source_script=$(realpath "$0")
 			source_dir=$(dirname "$source_script")
-			printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
+			generate_log > "$source_dir/DZGUI.log"
 			$steamsafe_zenity --info --width=500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
+			printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
 			;;
 		Toggle[[:space:]]auto*) toggle_console_dl ;;
 		"Force update local mods")
@@ -1365,7 +1357,7 @@ check_geo_file(){
 		echo "100"
 		}
 		run > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
-	fi 
+	fi
 }
 choose_filters(){
 	if [[ $is_steam_deck -eq 0 ]]; then
@@ -1375,7 +1367,7 @@ choose_filters(){
 	if [[ $sels =~ Keyword ]]; then
 		search=$($steamsafe_zenity --entry --text="Search (case insensitive)" --width=500 --title="DZGUI" 2>/dev/null | awk '{print tolower($0)}')
 		[[ -z $search ]] && { ret=97; return; }
-	fi	
+	fi
 	[[ -z $sels ]] && return
 	filters=$(echo "$sels" | sed 's/|/, /g;s/ (untick to select from map list)//')
 }
@@ -1393,7 +1385,7 @@ get_dist(){
 		echo "$dist"
 	else
 		local dist=$($km_helper "$local_lat" "$local_lon" "$remote_lat" "$remote_lon")
-		printf "%05.0f %s" "$dist" "km"
+		LC_NUMERIC=C printf "%05.0f %s" "$dist" "km"
 	fi
 }
 prepare_filters(){
@@ -1516,8 +1508,8 @@ server_browser(){
 	fi
 }
 mods_disk_size(){
-	printf "Total size on disk: %s | " $(du -sh "$game_dir" | awk '{print $1}')
-	printf "%s mods | " $(ls -1 "$game_dir" | wc -l)
+	printf "Total size on disk: %s | " $(du -sh "$workshop_dir" | awk '{print $1}')
+	printf "%s mods | " $(ls -1 "$workshop_dir" | wc -l)
 	printf "Location: %s/steamapps/workshop/content/221100" "$steam_path"
 }
 main_menu(){
