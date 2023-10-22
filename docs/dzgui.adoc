@@ -103,7 +103,7 @@ echo 'vm.max_map_count=1048576' | sudo tee /etc/sysctl.d/dayz.conf
 
 === First-time launch
 
-0. It is always advised to have Steam running in the background. DayZ is meant to run "on top of" Steam.
+0. It is always advised to have Steam running in the background. DZGUI is meant to run "on top of" Steam.
 
 1. DZGUI can be launched one of two ways. 
 
