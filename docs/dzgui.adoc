@@ -3,7 +3,7 @@
 :stylesheet: custom.css
 
 = DZGUI documentation
-DayZ official/community server graphical launcher for Linux | Last updated: 2023-05-15
+DayZ official/community server graphical launcher for Linux | Last updated: {d}
 
 Click https://aclist.github.io/dzgui/dzgui_dark.html[here] for dark mode
 
@@ -61,8 +61,7 @@ This is a one-time check that will not be triggered again once the map count is 
 If you used the automatic method, you can skip to Step 3 below.
 
 [NOTE]
-The map count check prompts for a sudo password. If you are using a Steam Deck and have never set a sudo password,
-you must enter Desktop Mode, invoke `passwd` from Konsole, and type your desired password twice to set it.
+The map count check prompts for a sudo password. If you are using a Steam Deck, this check is not necessary.
 
 This process writes the count to the file `/etc/sysctl.d/dayz.conf`. 
 
@@ -104,7 +103,7 @@ echo 'vm.max_map_count=1048576' | sudo tee /etc/sysctl.d/dayz.conf
 
 === First-time launch
 
-0. It is always advised to have Steam running in the background. DayZ is meant to run "on top of" Steam.
+0. It is always advised to have Steam running in the background. DZGUI is meant to run "on top of" Steam.
 
 1. DZGUI can be launched one of two ways. 
 
