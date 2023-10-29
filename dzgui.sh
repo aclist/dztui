@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.16
+version=3.3.17
 
 aid=221100
 game="dayz"
@@ -1298,7 +1298,7 @@ local_latlon(){
 	if [[ -z $(command -v dig) ]]; then
 		local local_ip=$(curl -Ls "https://ipecho.net/plain")
 	else
-		local local_ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+		local local_ip=$(dig -4 +short myip.opendns.com @resolver1.opendns.com)
 	fi
 	local url="http://ip-api.com/json/$local_ip" 
 	local res=$(curl -Ls "$url" | jq -r '"\(.lat),\(.lon)"')
