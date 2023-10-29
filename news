@@ -1,1 +1,1 @@
-NEWS: If you are using Fedora 38, please update to zenity-3.99.1-1 to use DZGUI.
+NEWS: Fix: use IPV4 when polling server coordinates
