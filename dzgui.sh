@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.4.0-rc.11
+version=3.4.0-rc.12
 
 aid=221100
 game="dayz"
@@ -696,17 +696,17 @@ history_table(){
 	done | $steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --width=500 --no-cancel 2>/dev/null
 	[[ $? -eq 1 ]] && return
 	while true; do
-	sel=$(cat /tmp/dz.hist | $steamsafe_zenity --width 1200 --height 800 --title="DZGUI" --text="Recent servers" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2,5 --separator=%% 2>/dev/null)
-	if [[ $? -eq 1 ]]; then
-		return_from_table=1
-		rm /tmp/dz.hist
-		return
-	fi
+		sel=$(cat /tmp/dz.hist | $steamsafe_zenity --width 1200 --height 800 --title="DZGUI" --text="Recent servers" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2,5 --separator=%% 2>/dev/null)
+		if [[ $? -eq 1 ]]; then
+			return_from_table=1
+			rm /tmp/dz.hist
+			return
+		fi
 		if [[ -z $sel ]]; then
 			echo "No selection"
 		else
-			local addr="$(echo "$sel" | awk -F"%%" '{print $1}')"
-			local qport="$(echo "$sel" | awk -F"%%" '{print $2}')"
+			local addr="$(<<< "$sel" awk -F"%%" '{print $1}')"
+			local qport="$(<<< "$sel" awk -F"%%" '{print $2}')"
 			local ip=$(awk -F: '{print $1}' <<< $addr)
 			local gameport=$(awk -F: '{print $2}' <<< $addr)
 			local sa_ip=$(echo "$ip:$gameport%%$qport")
@@ -752,8 +752,8 @@ fetch_ip_metadata(){
 #(^127\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)
 #}
 test_steam_api(){
-	local code=$(curl -ILs "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api" \
-		| grep -E "^HTTP")
+	local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api"
+	local code=$(curl -ILs "$url" | grep -E "^HTTP")
 	[[ $code =~ 403 ]] && echo 1
 	[[ $code =~ 200 ]] && echo 0
 }
@@ -1158,7 +1158,8 @@ popup(){
 		700) pop "Toggled to Flatpak Steam." ;;
 		800) pop "Toggled to native Steam." ;;
 		900) pop "This feature is not supported on Steam Deck." ;;
-		1000) pop "No recent history."
+		1000) pop "No recent history." ;;
+		1100) pop "No results found." ;;
 	esac
 }
 toggle_console_dl(){
@@ -1298,9 +1299,9 @@ local_latlon(){
 	if [[ -z $(command -v dig) ]]; then
 		local local_ip=$(curl -Ls "https://ipecho.net/plain")
 	else
-		local local_ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+		local local_ip=$(dig -4 +short myip.opendns.com @resolver1.opendns.com)
 	fi
-	local url="http://ip-api.com/json/$local_ip" 
+	local url="http://ip-api.com/json/$local_ip"
 	local res=$(curl -Ls "$url" | jq -r '"\(.lat),\(.lon)"')
 	local_lat=$(echo "$res" | awk -F, '{print $1}')
 	local_lon=$(echo "$res" | awk -F, '{print $2}')
@@ -1369,7 +1370,7 @@ choose_filters(){
 		[[ -z $search ]] && { ret=97; return; }
 	fi
 	[[ -z $sels ]] && return
-	filters=$(echo "$sels" | sed 's/|/, /g;s/ (untick to select from map list)//')
+	echo "$sels" | sed 's/|/, /g;s/ (untick to select from map list)//'
 }
 get_dist(){
 	local given_ip="$1"
@@ -1406,9 +1407,11 @@ write_fifo(){
 	for((i=0;i<${#qport[@]};i++)); do
 		printf  "%s\n%s\n%s\n%03d\n%03d\n%s\n%s:%s\n%s\n" "${map[$i]}" "${name[$i]}" "${gametime[$i]}" \
 		"${players[$i]}" "${max[$i]}" "$(get_dist ${addr[$i]})" "${addr[$i]}" "${gameport[$i]}" "${qport[$i]}" >> $fifo
-		done 
+	done
 }
 munge_servers(){
+	local sels="$1"
+	local response="$(cat /tmp/dzservers)"
 	if [[ ! "$sels" =~ "All maps" ]]; then
 		filter_maps > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
 		disabled+=("All maps")
@@ -1453,42 +1456,47 @@ munge_servers(){
 	fi
 }
 debug_servers(){
-	if [[ -n $steam_api ]]; then
-		exists=true
-	else
-		exists=false
-	fi
-	key_len=${#steam_api}
-	first_char=${steam_api:0:1}
-	last_char=${steam_api:0-1}
 	debug_res=$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api")
-	debug_len=$(echo "$debug_res" | jq '[.response.servers[]]|length')
-	[[ -z $debug_len ]] && debug_len=0
+	local len=$(<<< "$debug_res" jq '[.response.servers[]]|length')
+	if [[ $len -eq 0 ]]; then
+		return 1
+	else
+		return 0
+	fi
+}
+pdialog(){
+	$steamsafe_zenity --progress --pulsate --auto-close --width=500 2>/dev/null
 }
 server_browser(){
-	check_steam_api
-	[[ $? -eq 1 ]] && return
-
-	unset ret
-	file=$(mktemp)
-	local limit=20000
-	local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=$limit&key=$steam_api"
-	check_geo_file
-	local_latlon
-	choose_filters
-	[[ -z $sels ]] && return
+	setup(){
+		echo "# Checking Steam API"
+		check_steam_api
+		[[ $? -eq 1 ]] && return
+		unset ret
+		file=$(mktemp)
+		echo "# Checking geolocation file"
+		check_geo_file
+		echo "# Calculating server distance"
+		local_latlon
+	}
+	setup > >(pdialog)
+	local filters=$(choose_filters)
+	[[ -z $filters ]] && return
 	[[ $ret -eq 97 ]] && return
 	#TODO: some error handling here
 	fetch(){
+		local limit=20000
+		local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=$limit&key=$steam_api"
 		echo "# Getting server list"
-		response=$(curl -Ls "$url" | jq -r '.response.servers')
+		curl -Ls "$url" | jq -r '.response.servers' > /tmp/dzservers
 	}
-	fetch > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
-	total_servers=$(echo "$response" | jq 'length' | numfmt --grouping)
+	fetch > >(pdialog)
+	total_servers=$(< /tmp/dzservers jq 'length' | numfmt --grouping)
 	players_online=$(curl -Ls "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=$aid" \
 		| jq '.response.player_count' | numfmt --grouping)
 	debug_servers
-	local sel=$(munge_servers)
+	[[ $? -eq 1 ]] && { popup 1100; return 1; }
+	local sel=$(munge_servers "$filters")
 	if [[ -z $sel ]]; then
 		unset filters
 		unset search
@@ -1496,16 +1504,12 @@ server_browser(){
 		sd_res="--width=1280 --height=800"
 		return
 	fi
-	local sel_ip=$(echo "$sel" | awk -F%% '{print $1}')
-	local sel_port=$(echo "$sel" | awk -F%% '{print $2}')
+	local sel_ip=$(<<< "$sel" awk -F%% '{print $1}')
+	local sel_port=$(<<< "$sel" awk -F%% '{print $2}')
 	qport_list="$sel_ip%%$sel_port"
-	if [[ -n "$sel_ip" ]]; then
-		connect "$sel_ip" "ip"
-		sd_res="--width=1280 --height=800"
-	else
-		sd_res="--width=1280 --height=800"
-		return
-	fi
+	sd_res="--width=1280 --height=800"
+	[[ -z "$sel_ip" ]] && return
+	connect "$sel_ip" "ip"
 }
 mods_disk_size(){
 	printf "Total size on disk: %s | " $(du -sh "$workshop_dir" | awk '{print $1}')
@@ -1546,8 +1550,8 @@ main_menu(){
 				"	Help file ⧉") help_file ;;
 				"	Report bug ⧉") report_bug ;;
 				"	Forum ⧉") forum ;;
-				"	NEW: Sponsor ⧉") sponsor ;;
-				"	NEW: Hall of fame ⧉") hof ;;
+				"	Sponsor ⧉") sponsor ;;
+				"	Hall of fame ⧉") hof ;;
 			esac
 		else
 			logger INFO "Returning from main menu"
