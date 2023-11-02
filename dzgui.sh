@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.17
+version=3.3.18
 
 aid=221100
 game="dayz"
@@ -1546,8 +1546,8 @@ main_menu(){
 				"	Help file ⧉") help_file ;;
 				"	Report bug ⧉") report_bug ;;
 				"	Forum ⧉") forum ;;
-				"	NEW: Sponsor ⧉") sponsor ;;
-				"	NEW: Hall of fame ⧉") hof ;;
+				"	Sponsor ⧉") sponsor ;;
+				"	Hall of fame ⧉") hof ;;
 			esac
 		else
 			logger INFO "Returning from main menu"
