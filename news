@@ -1,1 +1,1 @@
-NEWS: Fix: use IPV4 when polling server coordinates
+NEWS: Fedora 38 users: a bug in a Fedora package is causing menu dialogs to crash. This has been reported to GNOME developers.
