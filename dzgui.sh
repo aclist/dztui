@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.0-rc.5
+version=4.0.0-rc.6
 
 aid=221100
 game="dayz"
@@ -1736,8 +1736,8 @@ check_architecture(){
 		logger INFO "Setting architecture to 'Steam Deck'"
         [[ $is_steam_deck -eq 1 ]] && test_display_mode
         if [[ $gamemode -eq 1 ]]; then
-            popup 1400
-            return 1
+            popup 1400 &&
+            exit 1
         fi
 	else
 		is_steam_deck=0
