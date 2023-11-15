@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.0-rc.2
+version=4.0.0-rc.3
 
 aid=221100
 game="dayz"
@@ -1822,13 +1822,13 @@ pdialog(){
 	$steamsafe_zenity --progress --pulsate --auto-close --title="DZGUI" --width=500 2>/dev/null
 }
 edialog(){
-    $steamsafe_zenity --entry --text="$1" --title="DZGUI" 2>/dev/null
+    $steamsafe_zenity --entry --text="$1" --width=500 --title="DZGUI" 2>/dev/null
 }
 tdialog(){
-    $steamsafe_zenity --info --text="$1" --title="DZGUI" 2>/dev/null
+    $steamsafe_zenity --info --text="$1" --width=500 --title="DZGUI" 2>/dev/null
 }
 qdialog(){
-    $steamsafe_zenity --question --text="$1" --title="DZGUI" 2>/dev/null
+    $steamsafe_zenity --question --text="$1" --width=500 --title="DZGUI" 2>/dev/null
 }
 add_by_id(){
     local mode="$1"
