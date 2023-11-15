@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.0-rc.1
+version=4.0.0-rc.2
 
 aid=221100
 game="dayz"
@@ -1739,9 +1739,6 @@ check_architecture(){
 		logger INFO "Setting architecture to 'desktop'"
 	fi
 }
-log(){
-    echo "$@" >> $HOME/log
-}
 print_ip_list(){
 	for ((i=0; i<${#ip_list[@]}; ++i)); do
 		printf "\t\"%s\"\n" ${ip_list[$i]}
@@ -1992,8 +1989,9 @@ fetch_dzq(){
 fetch_query(){
 	[[ -f $helpers_path/query.py ]] && return
 	local author="aclist"
-	local repo="dztui"
-	local url="https://raw.githubusercontent.com/$author/$repo/helpers/query.py"
+	local repo="$branch"
+	local url="https://raw.githubusercontent.com/$author/dztui/$repo/helpers/query.py"
+    local real="https://raw.githubusercontent.com/aclist/dztui/testing/helpers/query.py"
 	curl -Ls "$url" > "$helpers_path/query.py"
 }
 fetch_helpers(){
