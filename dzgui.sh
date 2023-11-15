@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.0-rc.3
+version=4.0.0-rc.4
 
 aid=221100
 game="dayz"
@@ -2058,7 +2058,7 @@ main(){
 	lock
 	local zenv=$(zenity --version 2>/dev/null)
 	[[ -z $zenv ]] && { echo "Failed to find zenity"; logger "Missing zenity"; exit 1; }
-	initial_setup > >(pdialog)
+	rnitial_setup > >(pdialog)
 	main_menu
 	#TODO: tech debt: cruddy handling for steam forking
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh
