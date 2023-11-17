@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.0-rc.6
+version=4.0.0-rc.7
 
 aid=221100
 game="dayz"
@@ -1650,6 +1650,8 @@ check_unmerged(){
 }
 merge_config(){
 	source $config_file
+    legacy_fav
+    legacy_ids
 	[[ -z $staging_dir ]] && staging_dir="/tmp"
     update_config
 	tdialog "Wrote new config format to \n${config_file}\nIf errors occur, you can restore the file:\n${config_file}.old"
@@ -1719,7 +1721,6 @@ check_version(){
 		logger INFO "Local version is same as upstream"
 		check_unmerged
 	else
-		echo "[DZGUI] Upstream ($upstream) != local ($version)"
 		logger INFO "Local and remote version mismatch"
 		if [[ $enforce_dl -eq 1 ]]; then
 			enforce_dl
@@ -1759,8 +1760,6 @@ legacy_fav(){
     source $config_file
     [[ -z $fav ]] && return
     local res=$(map_fav_to_ip "$fav")
-    #TODO: mapping legacy fav updates label
-    #fav_label="$res"
     source $config_file
 }
 legacy_ids(){
@@ -2044,8 +2043,6 @@ initial_setup(){
 	steam_deps
 	run_varcheck
     migrate_files
-    legacy_fav
-    legacy_ids
 	stale_symlinks
 	init_items
 	setup
