@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.0-rc.8
+version=4.0.0-rc.9
 
 aid=221100
 game="dayz"
@@ -82,7 +82,7 @@ changelog(){
                 mdbranch="testing"
                 ;;
         esac
-        local md="https://raw.githubusercontent.com/aclist/dztui/${mdbranch}/changelog.md"
+        local md="https://raw.githubusercontent.com/aclist/dztui/${mdbranch}/CHANGELOG.md"
         prefix="This window can be scrolled."
         echo $prefix
         echo ""

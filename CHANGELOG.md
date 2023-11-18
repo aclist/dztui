@@ -1,6 +1,6 @@
 # Changelog
 
-## [4.0.0-rc.1] 2023-11-15
+## [4.0.0] 2023-11-15
 
 Hello players, this is a major version update which overhauls many of DZGUI's underlying systems to improve responsiveness of the application and make menus more intuitive to interact with. It should be considerably more difficult if not impossible to inadvertently crash a dialog, and nested dialogs should behave in a more expected fashion, such as when going back and forth between menus or changing options dynamically within a given menu.
 
@@ -14,6 +14,7 @@ If you encounter problems, please report them via the appropriate channels and I
 - Change in game name: dynamically change your profile name via the Advanced Options menu
 - Connect by ID: supply a Battlemetrics ID to connect to a server; this can be used in lieu of the IP
 - Add by IP: supply a standard IP to add a server to your list; this can be used as a more direct way of saving servers
+- Filter by 1PP and 3PP in the server browser
 - Save connected server to favorites: prior to connecting, asks the user if they want to save this server for future use
 - Generate additional output when generating system logs
 
