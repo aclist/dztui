@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.0-rc.7
+version=4.0.0-rc.8
 
 aid=221100
 game="dayz"
@@ -815,7 +815,7 @@ launch(){
     source $config_file
 	mods=$(concat_mods)
     if [[ ! "$ip:$gameport:$qport" == "$fav_server" ]] && [[ ! ${ip_list[@]} =~ "$ip:$gameport:$qport" ]]; then
-        qdialog "Before connecting, add this server to your favorites?"
+        qdialog "Before connecting, add this server to My Servers?"
         if [[ $? -eq 0 ]]; then
             ip_list+=("$ip:$gameport:$qport")
             update_config
@@ -1314,6 +1314,12 @@ query_and_connect(){
 	[[ $? -eq 1 ]] && return
 	populate "$switch"
 }
+exclude_fpp(){
+    response=$(<<< "$response" jq '[.[]|select(.gametype|split(",")|any(. == "no3rd")|not)]')
+}
+exclude_tpp(){
+    response=$(<<< "$response" jq '[.[]|select(.gametype|split(",")|any(. == "no3rd"))]')
+}
 exclude_full(){
 	response=$(echo "$response" | jq '[.[]|select(.players!=.max_players)]')
 }
@@ -1420,7 +1426,7 @@ choose_filters(){
 	if [[ $is_steam_deck -eq 0 ]]; then
 		sd_res="--width=1920 --height=1080"
 	fi
-	sels=$($steamsafe_zenity --title="DZGUI" --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" TRUE "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
+	sels=$($steamsafe_zenity --title="DZGUI" --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" TRUE "1PP" TRUE "3PP" False "Empty" False "Full" TRUE "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
 	if [[ $sels =~ Keyword ]]; then
 		local search
         while true; do
@@ -1436,13 +1442,13 @@ choose_filters(){
 }
 get_dist(){
 	local given_ip="$1"
-	local network="$(echo "$given_ip" | awk -F. '{OFS="."}{print $1"."$2}')"
+	local network="$(<<< "$given_ip" awk -F. '{OFS="."}{print $1"."$2}')"
 	local binary=$(grep -E "^$network\." $geo_file)
-	local three=$(echo $given_ip | awk -F. '{print $3}')
-	local host=$(echo $given_ip | awk -F. '{print $4}')
-	local res=$(echo "$binary" | awk -F[.,] -v three=$three -v host=$host '$3 <=three && $7 >= three{if($3>three || ($3==three && $4 > host) || $7 < three || ($7==three && $8 < host)){next}{print}}' | awk -F, '{print $7,$8}')
-	local remote_lat=$(echo "$res" | awk '{print $1}')
-	local remote_lon=$(echo "$res" | awk '{print $2}')
+	local three=$(<<< $given_ip awk -F. '{print $3}')
+	local host=$(<<< $given_ip awk -F. '{print $4}')
+	local res=$(<<< "$binary" awk -F[.,] -v three=$three -v host=$host '$3 <=three && $7 >= three{if($3>three || ($3==three && $4 > host) || $7 < three || ($7==three && $8 < host)){next}{print}}' | awk -F, '{print $7,$8}')
+	local remote_lat=$(<<< "$res" awk '{print $1}')
+	local remote_lon=$(<<< "$res" awk '{print $2}')
 	if [[ -z $remote_lat ]]; then
 		local dist="Unknown"
 		echo "$dist"
@@ -1460,6 +1466,8 @@ prepare_filters(){
 	[[ ! "$sels" =~ "Nighttime" ]] && { exclude_nighttime; disabled+=("Nighttime") ; }
 	[[ ! "$sels" =~ "Low population" ]] && { exclude_lowpop; disabled+=("Low-pop") ; }
 	[[ ! "$sels" =~ "Non-ASCII titles" ]] && { exclude_nonascii; disabled+=("Non-ASCII") ; }
+	[[ ! "$sels" =~ "1PP" ]] && { exclude_fpp; disabled+=("FPP") ; }
+	[[ ! "$sels" =~ "3PP" ]] && { exclude_tpp; disabled+=("TPP") ; }
 	[[ -n "$search" ]] && keyword_filter
 	strip_null
 }
@@ -1469,9 +1477,12 @@ munge_servers(){
     write_fifo(){
         [[ -p $fifo ]] && rm $fifo
         mkfifo $fifo
+        local dist
         for((i=0;i<${#qport[@]};i++)); do
-            printf  "%s\n%s\n%s\n%03d\n%03d\n%s\n%s:%s\n%s\n" "${map[$i]}" "${name[$i]}" "${gametime[$i]}" \
-            "${players[$i]}" "${max[$i]}" "$(get_dist ${addr[$i]})" "${addr[$i]}" "${gameport[$i]}" "${qport[$i]}" >> $fifo
+            dist=$(get_dist ${addr[$i]})
+
+            printf  "%s\n%s\n%s\n%s\n%03d\n%03d\n%s\n%s:%s\n%s\n" "${name[$i]}" "${map[$i]}" "${fpp[$i]}" "${gametime[$i]}" \
+            "${players[$i]}" "${max[$i]}" "$dist" "${addr[$i]}" "${gameport[$i]}" "${qport[$i]}" >> $fifo
         done
     }
 	response="$(cat /tmp/dz.servers)"
@@ -1487,20 +1498,22 @@ munge_servers(){
 		$steamsafe_zenity --error --text="No matching servers" 2>/dev/null
 		return
 	fi
-	local addr=$(echo "$response" | jq -r '.[].addr' | awk -F: '{print $1}')
-	local gameport=$(echo "$response" | jq -r '.[].gameport')
-	local qport=$(echo "$response" | jq -r '.[].addr' | awk -F: '{print $2}')
-	#jq bug #1788, raw output cannot be used with ASCII
-	local name=$(echo "$response" | jq -a '.[].name' | sed 's/\\u[0-9a-z]\{4\}//g;s/^"//;s/"$//')
-	local players=$(echo "$response" | jq -r '.[].players')
-	local max=$(echo "$response" | jq -r '.[].max_players')
-	local map=$(echo "$response" | jq -r '.[].map|if type == "string" then ascii_downcase else . end')
-	local gametime=$(echo "$response" | jq -r '.[].gametype' | grep -oE '[0-9]{2}:[0-9]{2}$')
+	#jq bug #1788, raw output (-r) cannot be used with ASCII
+	local name=$(<<< "$response" jq -a '.[].name' | sed 's/\\u[0-9a-z]\{4\}//g;s/^"//;s/"$//')
+	local map=$(<<< "$response" jq -r '.[].map|if type == "string" then ascii_downcase else "null" end')
+    local gametime=$(<<< "$response" jq -r '.[]|(if .gametype == null then "null" else .gametype end)|scan("[0-9]{2}:[0-9]{2}$")')
+    local fpp=$(<<< "$response" jq -r '.[].gametype|split(",")|if any(. == "no3rd") then "1PP" else "3PP" end')
+	local players=$(<<< "$response" jq -r '.[].players')
+	local max=$(<<< "$response" jq -r '.[].max_players')
+	local addr=$(<<< "$response" jq -r '.[].addr|split(":")[0]')
+	local gameport=$(<<< "$response" jq -r '.[]|(if .gameport == null then "null" else .gameport end)')
+	local qport=$(<<< "$response" jq -r '.[].addr|split(":")[1]')
 
 	readarray -t qport <<< $qport
 	readarray -t gameport <<< $gameport
 	readarray -t addr <<< $addr
 	readarray -t name <<< $name
+	readarray -t fpp <<< $fpp
 	readarray -t players <<< $players
 	readarray -t map <<< $map
 	readarray -t max <<< $max
@@ -1511,7 +1524,7 @@ munge_servers(){
 	fi
 	write_fifo &
 	pid=$!
-	local sel=$($steamsafe_zenity --text="$(pagination)" --title="DZGUI" --list --column=Map --column=Name --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=2,7,8 --separator=%% 2>/dev/null < <(while true; do cat $fifo; done))
+	local sel=$($steamsafe_zenity --text="$(pagination)" --title="DZGUI" --list --column=Name --column=Map --column=PP --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=1,8,9 --separator=%% 2>/dev/null < <(while true; do cat $fifo; done))
 	if [[ -z $sel ]]; then
 		rm $fifo
 		kill -9 $pid 2>/dev/null
@@ -1556,14 +1569,14 @@ server_browser(){
 	[[ $? -eq 1 ]] && { popup 1100; return 1; }
 
     echo "100"
-	local sel=$(munge_servers "$filters" "$keywords")
-	if [[ -z $sel ]]; then
-		unset filters
-		unset search
-		ret=98
-		sd_res="--width=1280 --height=800"
-		return 1
-	fi
+    local sel=$(munge_servers "$filters" "$keywords")
+    if [[ -z $sel ]]; then
+        unset filters
+        unset search
+        ret=98
+        sd_res="--width=1280 --height=800"
+        return 1
+    fi
 
     readarray -t address < <(format_table_results "$sel")
     local ip="${address[1]}"
@@ -1571,7 +1584,7 @@ server_browser(){
     local qport="${address[3]}"
     unset address
 
-	connect "$ip" "$gameport" "$qport"
+    connect "$ip" "$gameport" "$qport"
 	sd_res="--width=1280 --height=800"
 }
 mods_disk_size(){
