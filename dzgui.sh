@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.0-rc.11
+version=4.1.0-rc.1
 
 aid=221100
 game="dayz"
@@ -1009,7 +1009,6 @@ toggle_branch(){
 	fi
 	flip_branch="branch=\"$branch\""
 	awk -v "var=$flip_branch" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
-	printf "[DZGUI] Toggled branch to '$branch'\n"
 	source $config_file
 }
 generate_log(){
@@ -2005,11 +2004,10 @@ fetch_dzq(){
 	curl -Ls "$url" > $helpers_path/a2s/$repo.py
 }
 fetch_query(){
-	[[ -f $helpers_path/query.py ]] && return
+    [[ $(md5sum $helpers_path/query.py | awk '{print $1}') == "7cbae12ae68b526e7ff376b638123cc7" ]] && return
 	local author="aclist"
-	local repo="$branch"
+	local repo="dzgui"
 	local url="https://raw.githubusercontent.com/$author/dztui/$repo/helpers/query.py"
-    local real="https://raw.githubusercontent.com/aclist/dztui/testing/helpers/query.py"
 	curl -Ls "$url" > "$helpers_path/query.py"
 }
 fetch_helpers(){
@@ -2023,6 +2021,35 @@ fetch_helpers(){
 update_steam_cmd(){
 	preferred_client="$steam_cmd"
     update_config
+}
+steam_deps(){
+	logger INFO "${FUNCNAME[0]}"
+	local flatpak steam
+	[[ $(command -v flatpak) ]] && flatpak=$(flatpak list | grep valvesoftware.Steam)
+	steam=$(command -v steam)
+	if [[ -z "$steam" ]] && [[ -z "$flatpak" ]]; then
+		warn "Requires Steam or Flatpak Steam"
+		logger ERROR "Steam was missing"
+		exit
+	elif [[ -n "$steam" ]] && [[ -n "$flatpak" ]]; then
+		toggle_steam=1
+		steam_cmd="steam"
+		[[ -n $preferred_client ]] && steam_cmd="$preferred_client"
+		[[ -z $preferred_client ]] && update_steam_cmd
+	elif [[ -n "$steam" ]]; then
+		steam_cmd="steam"
+	else
+		steam_cmd="flatpak run com.valvesoftware.Steam"
+	fi
+	logger INFO "steam_cmd set to $steam_cmd"
+}
+update_steam_cmd(){
+	local new_cmd
+	preferred_client="$steam_cmd"
+	new_cmd="preferred_client=\"$preferred_client\""
+	mv $config_file ${config_path}dztuirc.old
+	nr=$(awk '/preferred_client=/ {print NR}' ${config_path}dztuirc.old)
+	awk -v "var=$new_cmd" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
 }
 steam_deps(){
 	logger INFO "${FUNCNAME[0]}"

@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.0.2] 2023-11-22
+## Fixed
+- Query helper not loading: fixed a remote link pointing to the wrong destination and added a checksum verification to ensure file is present
+
+## [4.0.1] 2023-11-22
+## Fixed
+- Emergency hotfix to remove build artifacts leaking into main script: if you updated DZGUI from 3.3.18 to 4.0.0 between 2023-11-22 15:00:02 and 2023-11-22 15:03:37 GMT, there is a small chance it will be unable to launch correctly. If so, please follow the instructions on the manual to reinstall.
+
 ## [4.0.0] 2023-11-22
 
 Hello players, this is a major version update which overhauls many of DZGUI's underlying systems to improve responsiveness of the application and make menus more intuitive to interact with. It should be considerably more difficult, if not impossible, to inadvertently crash a dialog, and nested dialogs should behave in a more expected fashion, such as when going back and forth between menus or changing options dynamically within a given menu.
