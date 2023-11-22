@@ -1007,7 +1007,6 @@ toggle_branch(){
 	fi
 	flip_branch="branch=\"$branch\""
 	awk -v "var=$flip_branch" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
-	printf "[DZGUI] Toggled branch to '$branch'\n"
 	source $config_file
 }
 generate_log(){
