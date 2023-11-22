@@ -8,6 +8,8 @@ In addition, with this update we are querying servers directly. The net benefit 
 
 As part of this change, version 4.0.0 introduces the ability to connect to or add servers to your list based on either ID or IP. Previously, you could only connect by IP and add by IP, but now you can connect by IP/ID or add by IP/ID. If you choose the ID method, this will be translated into an IP seamlessly in the background. Similarly, favorite servers are now stored using the full IP rather than the ID. Due to the variety of systems and methods for connecting to servers, the application was carrying around and converting server IPs, IDs, and other formats back and forth, creating unnecessary complexity. By normalizing everything to an IP basis, maintainability should be more consistent. When upgrading to this version, your old favorites lists will be updated automatically to the new IP method. Note that as a result of this change, we must purge old history lists ("Recent Servers"), but everything else should carry over as before.
 
+If you encounter any problems with this new release or with the migration of configs, please do not hesitate to submit a bug report.
+
 Attention Fedora 38 users: problems with upstream GNOME packages causing crashes have been reported to GNOME development and a fix has been issued. You have the choice of compiling the zenity package 
 from source or waiting until the latest version is merged into Fedora's package manager.
 
