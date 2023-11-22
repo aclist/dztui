@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.0-rc.10
+version=4.0.0-rc.11
 
 aid=221100
 game="dayz"
@@ -811,7 +811,7 @@ launch(){
     local qport="$3"
     source $config_file
 	mods=$(concat_mods)
-    if [[ ! "$ip:$gameport:$qport" == "$fav_server" ]] && [[ ! ${ip_list[@]} =~ "$ip:$gameport:$qport" ]]; then
+    if [[ ! ${ip_list[@]} =~ "$ip:$gameport:$qport" ]]; then
         qdialog "Before connecting, add this server to My Servers?"
         if [[ $? -eq 0 ]]; then
             ip_list+=("$ip:$gameport:$qport")
@@ -877,7 +877,9 @@ delete_by_ip(){
             unset ip_list[$i]
         fi
     done
-    readarray -t ip_list <<< "${ip_list[@]}"
+    if [[ ${#ip_list} -gt 0 ]]; then
+        readarray -t ip_list < <(printf "%s\n" "${ip_list[@]}")
+    fi
     update_config
     info "Removed $to_delete from:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old"
 }
@@ -912,9 +914,11 @@ delete_or_connect(){
             local str="^$ip:$gameport$"
             local nr=$(awk -v v="$str" '$1 ~ v {print NR}' $tmp)
             local st=$((nr-1))
-            local en=$((st+6))
+            local en=$((st+5))
             sed -i "${st},${en}d" $tmp
-
+           # if [[ ${#ip_list[@]} -eq 0 ]]; then
+           #     return 1
+           # fi
             ;;
 	    "connect"|"history")
     		connect "$ip" "$gameport" "$qport"
@@ -976,6 +980,7 @@ set_header(){
 	[[ $auto_install -eq 0 ]] && install_mode=manual
     case "$switch" in
         "delete")
+        [[ -z $(< $tmp) ]] && return 1
         sel=$(< $tmp $steamsafe_zenity $sd_res --list $cols --title="DZGUI" \
         --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
         --separator="$separator" --print-column=1,2,6 --ok-label="Delete" 2>/dev/null)
@@ -1756,9 +1761,8 @@ check_architecture(){
 	fi
 }
 print_ip_list(){
-	for ((i=0; i<${#ip_list[@]}; ++i)); do
-		printf "\t\"%s\"\n" ${ip_list[$i]}
-	done
+    [[ ${#ip_list} -eq 0 ]] &&  return
+    printf "\t\"%s\"\n" "${ip_list[@]}"
 }
 migrate_files(){
     if [[ ! -f $config_path/dztuirc.oldapi ]]; then
@@ -1805,7 +1809,7 @@ map_id_to_ip(){
     for i in $ip; do
         if [[ ${ip_list[@]} =~ $i ]]; then
             [[ ! $len -eq 1 ]] && continue
-            warn "This server is already in your favorites"
+            warn "This server is already in your list"
             return 2
         fi
         ip_list+=("$i")
@@ -1884,7 +1888,7 @@ add_by_id(){
                         echo "$ip"
                         return 0
                     fi
-                    tdialog "Added $ip:$qport to:\n${config_path}dztuirc\nIf errors occurred, you can restore the file:\n${config_path}dztuirc.old"
+                    tdialog "Added $ip to:\n${config_path}dztuirc\nIf errors occurred, you can restore the file:\n${config_path}dztuirc.old"
                     return 0
                     ;;
             esac
