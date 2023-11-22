@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-curl "https://raw.githubusercontent.com/aclist/dztui/main/dzgui.sh" > dzgui.sh
+curl "https://raw.githubusercontent.com/aclist/dztui/dzgui/dzgui.sh" > dzgui.sh
 chmod +x dzgui.sh
 xdg_file="$HOME/.local/share/applications/dzgui.desktop"
 share="$HOME/.local/share/dzgui"
