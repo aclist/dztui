@@ -285,7 +285,6 @@ Set branch flag to 'stable' if no config file present
 
 ### Changed
 - Prompt user to restart first-time setup if broken config is found
->>>>>>> c293fcd8c5136b6578f519b2f400d45bc01335cc
 
 ## [2.3.0] 2022-07-18
 ### Added
