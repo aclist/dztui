@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=3.3.18
+version=4.0.0
 
 aid=221100
 game="dayz"
@@ -10,7 +10,7 @@ api="https://api.battlemetrics.com/servers"
 sd_res="--width=1280 --height=800"
 config_path="$HOME/.config/dztui/"
 config_file="${config_path}dztuirc"
-hist_file="${config_path}/history"
+hist_file="${config_path}history"
 tmp=/tmp/dzgui.tmp
 fifo=/tmp/table.tmp
 debug_log="$PWD/DZGUI_DEBUG.log"
@@ -35,21 +35,15 @@ db_file="$releases_url/ips.csv.gz"
 sums_url="$stable_url/helpers/sums.md5"
 scmd_url="$stable_url/helpers/scmd.sh"
 vdf2json_url="$stable_url/helpers/vdf2json.py"
-notify_url="$stable_url/helpers/d.html"
-notify_img_url="$stable_url/helpers/d.webp"
 forum_url="https://github.com/aclist/dztui/discussions"
 version_file="$config_path/versions"
 steamsafe_zenity="/usr/bin/zenity"
-
-#TODO: prevent connecting to offline servers
-#TODO: abstract zenity title params and dimensions
 
 update_last_seen(){
 	mv $config_file ${config_path}dztuirc.old
 	nr=$(awk '/seen_news=/ {print NR}' ${config_path}dztuirc.old)
 	seen_news="seen_news=\"$sum\""
 	awk -v "var=$seen_news" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
-	printf "[DZGUI] Updated last seen news item to '$sum'\n"
 	source $config_file
 }
 check_news(){
@@ -57,7 +51,7 @@ check_news(){
 	echo "# Checking news"
 	[[ $branch == "stable" ]] && news_url="$stable_url/news"
 	[[ $branch == "testing" ]] && news_url="$testing_url/news"
-	result=$(curl -Ls "$news_url")
+	local result=$(curl -Ls "$news_url")
 	sum=$(echo -n "$result" | md5sum | awk '{print $1}')
 	logger INFO "News: $result"
 }
@@ -74,17 +68,25 @@ print_news(){
 }
 
 declare -A deps
-deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [$steamsafe_zenity]="3.42.1")
+deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [$steamsafe_zenity]="3.42.1" [fold]="9.0")
 changelog(){
-	if [[ $branch == "stable" ]]; then
-		md="https://raw.githubusercontent.com/aclist/dztui/dzgui/changelog.md"
-	else
-		md="https://raw.githubusercontent.com/aclist/dztui/testing/changelog.md"
-	fi
-	prefix="This window can be scrolled."
-	echo $prefix
-	echo ""
-	curl -Ls "$md"
+	build(){
+        local mdbranch
+        case "$branch" in
+            "stable")
+                mdbranch="dzgui"
+                ;;
+            *)
+                mdbranch="testing"
+                ;;
+        esac
+        local md="https://raw.githubusercontent.com/aclist/dztui/${mdbranch}/CHANGELOG.md"
+        prefix="This window can be scrolled."
+        echo $prefix
+        echo ""
+        curl -Ls "$md"
+    }
+	build | $steamsafe_zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
 }
 
 depcheck(){
@@ -103,15 +105,18 @@ watcher_deps(){
 }
 init_items(){
 	#array order determines menu selector; this is destructive
+    #change favorite index affects setup() and add_by_fav()
 items=(
 	"[Connect]"
 	"	Server browser"
 	"	My servers"
 	"	Quick connect to favorite server"
+	"	Connect by ID"
 	"	Connect by IP"
 	"	Recent servers (last 10)"
 	"[Manage servers]"
 	"	Add server by ID"
+	"	Add server by IP"
 	"	Add favorite server"
 	"	Delete server"
 	"[Options]"
@@ -139,33 +144,6 @@ set_api_params(){
 	list_response=$response
 	first_entry=1
 }
-query_api(){
-	logger INFO ${FUNCNAME[0]}
-	echo "# Querying API"
-	#TODO: prevent drawing list if null values returned without API error
-	if [[ $one_shot_launch -eq 1 ]]; then
-		list_of_ids="$fav"
-	else
-		list_of_ids="$whitelist"
-	fi
-	set_api_params
-	if [[ "$(jq -r 'keys[]' <<< "$response")" == "errors" ]]; then
-		code=$(jq -r '.errors[] .status' <<< $response)
-		#TODO: fix granular api codes
-		if [[ $code -eq 401 ]]; then
-			warn "Error $code: malformed API key"
-			return
-		elif [[ $code -eq 500 ]]; then
-			warn "Error $code: malformed server list"
-			return
-		fi
-
-	fi
-	if [[ -z $(echo $response | jq '.data[]') ]]; then
-		warn "95: API returned empty response. Check config file."
-		return
-	fi
-}
 write_config(){
 cat	<<-END
 #Path to DayZ installation
@@ -174,11 +152,16 @@ steam_path="$steam_path"
 #Your unique API key
 api_key="$api_key"
 
-#Comma-separated list of server IDs
-whitelist="$whitelist"
+#Favorited server IP:PORT array
+ip_list=(
+    $(print_ip_list)
+)
 
 #Favorite server to fast-connect to (limit one)
-fav="$fav"
+fav_server="$fav_server"
+
+#Favorite server label (human readable)
+fav_label="$fav_label"
 
 #Custom player name (optional, required by some servers)
 name="$name"
@@ -194,9 +177,6 @@ seen_news="$seen_news"
 
 #Steam API key
 steam_api="$steam_api"
-
-#Terminal emulator
-term="$term"
 
 #Auto-install mods
 auto_install="$auto_install"
@@ -227,7 +207,6 @@ Categories=Game
 freedesktop_dirs(){
 	mkdir -p "$sd_install_path"
 	mkdir -p "$freedesktop_path"
-	#TODO: update url
 	curl -s "$version_url" > "$sd_install_path/dzgui.sh"
 	chmod +x "$sd_install_path/dzgui.sh"
 	img_url="$stable_url/images"
@@ -265,46 +244,51 @@ create_config(){
 		write_config > $config_file
 		info "Config file created at $config_file."
 		source $config_file
-		return
 	}
 	while true; do
-		player_input="$($steamsafe_zenity --forms --add-entry="Player name (required for some servers)" --add-entry="BattleMetrics API key" --add-entry="Steam API key" --title="DZGUI" --text="DZGUI" $sd_res --separator="@" 2>/dev/null)"
+		player_input="$($steamsafe_zenity --forms --add-entry="Player name (required for some servers)" --add-entry="Steam API key" --add-entry="BattleMetrics API key (optional)" --title="DZGUI" --text="DZGUI" $sd_res --separator="@" 2>/dev/null)"
 		#explicitly setting IFS crashes $steamsafe_zenity in loop
 		#and mapfile does not support high ascii delimiters
 		#so split fields with newline
 		readarray -t args < <(echo "$player_input" | sed 's/@/\n/g')
 		name="${args[0]}"
-		api_key="${args[1]}"
-		steam_api="${args[2]}"
+		steam_api="${args[1]}"
+		api_key="${args[2]}"
 
 		[[ -z $player_input ]] && exit
-		if [[ -z $api_key ]] || [[ -z $steam_api ]]; then
-			warn "API key cannot be empty"
-		#TODO: test BM key
+		if [[ -z $steam_api ]]; then
+			warn "Steam API key cannot be empty"
+            continue
 		elif [[ $(test_steam_api) -eq 1 ]]; then
 			warn "Invalid Steam API key"
-		elif [[ $(test_bm_api) -eq 1 ]]; then
+            continue
+        fi
+		if [[ -n $api_key ]] && [[ $(test_bm_api $api_key) -eq 1 ]]; then
 			warn "Invalid BM API key"
-		else
-			while true; do
-				logger INFO "steamsafe_zenity is $steamsafe_zenity"
-				[[ -n $steam_path ]] && { write_to_config; return; }
-				find_default_path
-				find_library_folder "$default_steam_path"
-				if [[ -z $steam_path ]]; then
-					logger WARN "Steam path was empty"
-					zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Choose path manually" --cancel-label="Exit"
-					if [[ $? -eq 0 ]]; then
-						logger INFO "User selected file picker"
-						file_picker
-					else
-						exit
-					fi
-				else
-					write_to_config
-				fi
-			done
-		fi
+            continue
+        fi
+        while true; do
+            logger INFO "steamsafe_zenity is $steamsafe_zenity"
+            if [[ -n $steam_path ]]; then
+                write_to_config
+                return
+            fi
+            find_default_path
+            find_library_folder "$default_steam_path"
+            if [[ -z $steam_path ]]; then
+                logger WARN "Steam path was empty"
+                zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Choose path manually" --cancel-label="Exit"
+                if [[ $? -eq 0 ]]; then
+                    logger INFO "User selected file picker"
+                    file_picker
+                else
+                    exit
+                fi
+            else
+                write_to_config
+                return
+            fi
+        done
 	done
 
 }
@@ -312,7 +296,7 @@ err(){
 	printf "[ERROR] %s\n" "$1"
 }
 varcheck(){
-	if [[ -z $api_key ]] || [[ ! -d $steam_path ]] || [[ ! -d $game_dir ]]; then
+	if [[ ! -d $steam_path ]] || [[ ! -d $game_dir ]]; then
 		echo 1
 	fi
 }
@@ -388,69 +372,65 @@ steam_deck_mods(){
 		compare
 	done
 }
-calc_mod_sizes(){
-	for i in "$diff"; do
-	local mods+=$(grep -w "$i" /tmp/modsizes | awk '{print $1}')
-	done
-	totalmodsize=$(echo -e "${mods[@]}" | awk '{s+=$1}END{print s}')
-}
 test_display_mode(){
 	pgrep -a gamescope | grep -q "generate-drm-mode"
 	[[ $? -eq 0 ]] && gamemode=1
 }
 foreground(){
 	if [[ $(command -v wmctrl) ]]; then
-		wmctrl -a "DZG Watcher"
+    	wmctrl -a "DZG Watcher"
 	else
-		
 		local window_id=$(xdotool search --name "DZG Watcher")
 		xdotool windowactivate $window_id
 	fi
 }
 manual_mod_install(){
+    local ip="$1"
+    local gameport="$2"
+
 	[[ $is_steam_deck -eq 1 ]] && test_display_mode
 	if [[ $gamemode -eq 1 ]]; then
-		steam_deck_mods
-	else
-		local ex="/tmp/dzc.tmp"
-		[[ -f $ex ]] && rm $ex
-		watcher(){	
-		readarray -t stage_mods <<< "$diff"
-		for((i=0;i<${#stage_mods[@]};i++)); do
-			[[ -f $ex ]] && return 1
-			local downloads_dir="$steam_path/steamapps/workshop/downloads/$aid"
-			local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
-			$steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}"
-			echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
-			sleep 1s
-			foreground
-			until [[ -d $downloads_dir/${stage_mods[$i]} ]]; do
-				[[ -f $ex ]] && return 1
-				sleep 0.1s
-				if [[ -d $workshop_dir/${stage_mods[$i]} ]]; then
-					break
-				fi
-			done
-			foreground
-			echo "# Steam is downloading ${stage_mods[$i]} (mod $((i+1)) of ${#stage_mods[@]})"
-			until [[ -d $workshop_dir/${stage_mods[$i]} ]]; do
-				[[ -f $ex ]] && return 1
-				sleep 0.1s
-			done
-			foreground
-			echo "# ${stage_mods[$i]} moved to mods dir"
-		done
-		echo "100"
-		}
-		watcher > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZG Watcher" --width=500 2>/dev/null; rc=$?; [[ $rc -eq 1 ]] && touch $ex)
-		compare
-		if [[ -z $diff ]]; then
-			passed_mod_check > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
-			launch
-		else
-			return 1
-		fi
+        popup 1400
+        return
 	fi
+    local ex="/tmp/dzc.tmp"
+    [[ -f $ex ]] && rm $ex
+    watcher(){	
+    readarray -t stage_mods <<< "$diff"
+    for((i=0;i<${#stage_mods[@]};i++)); do
+        [[ -f $ex ]] && return 1
+        local downloads_dir="$steam_path/steamapps/workshop/downloads/$aid"
+        local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
+        $steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}"
+        echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
+        sleep 1s
+        foreground
+        until [[ -d $downloads_dir/${stage_mods[$i]} ]]; do
+            [[ -f $ex ]] && return 1
+            sleep 0.1s
+            if [[ -d $workshop_dir/${stage_mods[$i]} ]]; then
+                break
+            fi
+        done
+        foreground
+        echo "# Steam is downloading ${stage_mods[$i]} (mod $((i+1)) of ${#stage_mods[@]})"
+        until [[ -d $workshop_dir/${stage_mods[$i]} ]]; do
+            [[ -f $ex ]] && return 1
+            sleep 0.1s
+        done
+        foreground
+        echo "# ${stage_mods[$i]} moved to mods dir"
+    done
+    echo "100"
+    }
+    watcher > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZG Watcher" --width=500 2>/dev/null; rc=$?; [[ $rc -eq 1 ]] && touch $ex)
+    compare
+    if [[ -z $diff ]]; then
+        passed_mod_check > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+        launch "$ip" "$gameport"
+    else
+        return 1
+    fi
 }
 encode(){
 	echo "$1" | md5sum | cut -c -8
@@ -498,34 +478,33 @@ passed_mod_check(){
 
 }
 auto_mod_install(){
+    local ip="$1"
+    local gameport="$2"
 	popup 300
 	rc=$?
-	if [[ $rc -eq 0 ]]; then
-		#calc_mod_sizes
-		#local total_size=$(numfmt --to=iec $totalmodsize)
-		log="$default_steam_path/logs/content_log.txt"
-		[[ -f "/tmp/dz.status" ]] && rm "/tmp/dz.status"
-		touch "/tmp/dz.status"
-		console_dl "$diff" &&
-		$steam_cmd steam://open/downloads && 2>/dev/null 1>&2
-		win=$(xdotool search --name "DZG Watcher")
-		xdotool windowactivate $win
-		until [[ -z $(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort)) ]]; do
-			local missing=$(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort) | wc -l)
-			echo "# Downloaded $((${#modids[@]}-missing)) of ${#modids[@]} mods. ESC cancels"
-		done | $steamsafe_zenity --pulsate --progress --title="DZG Watcher" --auto-close --no-cancel --width=500 2>/dev/null
-		compare
-		[[ $force_update -eq 1 ]] && { unset force_update; return; }
-		if [[ -z $diff ]]; then
-			check_timestamps
-			passed_mod_check > >($steamsafe_zenity --pulsate --progress --title="DZGUI" --auto-close --width=500 2>/dev/null)
-			launch
-		else
-			manual_mod_install
-		fi
-	else
-		manual_mod_install
-	fi
+	if [[ $rc -eq 1 ]]; then
+        manual_mod_install "$ip" "$gameport"
+        return
+    fi
+    log="$default_steam_path/logs/content_log.txt"
+    [[ -f "/tmp/dz.status" ]] && rm "/tmp/dz.status"
+    touch "/tmp/dz.status"
+    console_dl "$diff" &&
+    $steam_cmd steam://open/downloads && 2>/dev/null 1>&2
+    foreground
+    until [[ -z $(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort)) ]]; do
+        local missing=$(comm -23 <(printf "%s\n" "${modids[@]}" | sort) <(ls -1 $workshop_dir | sort) | wc -l)
+        echo "# Downloaded $((${#modids[@]}-missing)) of ${#modids[@]} mods. ESC cancels"
+    done | $steamsafe_zenity --pulsate --progress --title="DZG Watcher" --auto-close --no-cancel --width=500 2>/dev/null
+    compare
+    [[ $force_update -eq 1 ]] && { unset force_update; return; }
+    if [[ -z $diff ]]; then
+        check_timestamps
+        passed_mod_check > >($steamsafe_zenity --pulsate --progress --title="DZGUI" --auto-close --width=500 2>/dev/null)
+        launch "$ip" "$gameport"
+    else
+        manual_mod_install "$ip" "$gameport"
+    fi
 }
 get_local_stamps(){
 	concat(){
@@ -575,6 +554,7 @@ check_timestamps(){
 	fi
 }
 merge_modlists(){
+    echo "# Aligning modlists"
 	[[ $force_update -eq 1 ]] && echo "# Checking mod versions"
 	check_timestamps
 	if [[ -z "$diff" ]] && [[ ${#needs_update[@]} -gt 0 ]]; then
@@ -589,162 +569,96 @@ merge_modlists(){
 	[[ $force_update -eq 1 ]] && echo "100"
 }
 update_history(){
-	[[ -n $(grep "$ip" $hist_file) ]] && return
+    local ip="$1"
+    local gameport="$2"
+    local qport="$3"
+	[[ -n $(grep "$ip:$gameport:$qport" $hist_file) ]] && return
 	if [[ -f $hist_file ]]; then
 		old=$(tail -n9 "$hist_file")
 		old="$old\n"
 	fi
-	echo -e "${old}${ip}" > "$hist_file"
-}
-is_steam_running(){
-	xdotool search --onlyvisible --name "Steam"
+	echo -e "${old}${ip}:${gameport}:${qport}" > "$hist_file"
 }
 connect(){
-	#TODO: sanitize/validate input
-	readarray -t qport_arr <<< "$qport_list"
-	if [[ -z ${qport_arr[@]} ]]; then
-		err "98: Failed to obtain query ports"
-		return
-	fi
-	ip=$(echo "$1" | awk -F"$separator" '{print $1}')
-	bid=$(echo "$1" | awk -F"$separator" '{print $2}')
-	if [[ $2 == "ip" ]]; then
-		fetch_mods_sa "$ip" > >($steamsafe_zenity --pulsate --progress --auto-close --no-cancel --width=500 2>/dev/null)
-	else
-		fetch_mods "$bid"
-	fi
-	if [[ $ret -eq 96 ]]; then
-	       unset ret
-	       return
-	fi
-	validate_mods
+	local ip=$1
+	local gameport=$2
+    local qport=$3
+    logger INFO "Querying $ip:$gameport:$qport"
+    connect_dialog(){
+        echo "# Querying modlist"
+        local remote
+        remote=$(a2s "$ip" "$qport" rules)
+        if [[ $? -eq 1 ]]; then
+            echo "100"
+            popup 1200
+            return 1
+        fi
+        logger INFO "Server returned modlist: $(<<< $remote tr '\n' ' ')"
+        echo "# Checking for defunct mods"
+        query_defunct "$remote"
+    }
+    (connect_dialog "$ip" "$qport") | pdialog
 	rc=$?
 	[[ $rc -eq 1 ]] && return
-	compare
-	[[ $auto_install -eq 2 ]] && merge_modlists
+	readarray -t newlist < /tmp/dz.modlist
+    compare
+    [[ $auto_install -eq 2 ]] && merge_modlists > >(pdialog)
 	if [[ -n $diff ]]; then
 		case $auto_install in
-			1|2) auto_mod_install ;;
-			*) manual_mod_install ;;
+			1|2) auto_mod_install "$ip" "$gameport" ;;
+			*) manual_mod_install "$ip" "$gameport" ;;
 		esac
 	else
-		passed_mod_check > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
-		update_history
-		launch
+		passed_mod_check > >(pdialog)
+		update_history "$ip" "$gameport" "$qport"
+		launch "$ip" "$gameport" "$qport"
 	fi
 }
-fetch_mods(){
-	remote_mods=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d filter[ids][whitelist]="$1" -d "sort=-players" \
-	| jq -r '.data[] .attributes .details .modIds[]')
-}
-fetch_mods_sa(){
-	sa_ip=$(echo "$1" | awk -F: '{print $1}')
-	for i in ${qport_arr[@]}; do
-		if [[ -n $(echo "$i" | awk -v ip=$ip '$0 ~ ip') ]]; then
-			sa_port=$(echo $i | awk -v ip=$ip -F$separator '$0 ~ ip {print $2}')
-		fi
-	done
-	echo "[DZGUI] Querying modlist on ${sa_ip}:${sa_port}"
-	echo "# Querying modlist on ${sa_ip}:${sa_port}"
-	local response=$(curl -Ls "https://dayzsalauncher.com/api/v1/query/$sa_ip/$sa_port")
-	local status=$(echo "$response" | jq '.status')
-	if [[ $status -eq 1 ]]; then
-		echo "100"
-		err "97: Failed to fetch modlist"
-		$steamsafe_zenity --error --title="DZGUI" --width=500 --text="[ERROR] 97: Failed to fetch modlist" 2>/dev/null &&
-		ret=96
-		return
-	fi
-	remote_mods=$(echo "$response" | jq -r '.result.mods[].steamWorkshopId')
-	qport_arr=()
+update_config(){
+    mv $config_file ${config_file}.old
+    write_config > $config_file
+    source $config_file
 }
 prepare_ip_list(){
-	ct=$(< "$1" jq '[.response.servers[]]|length' 2>/dev/null)
-	#old servers may become stale and return nothing
+    local res="$1"
+	local ct=$(<<< "$res" jq '[.response.servers[]]|length' 2>/dev/null)
 	if [[ -n $ct ]]; then
 		for((i=0;i<$ct;i++));do
-			name=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].name')
-			addr=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].addr')
-			ip=$(echo "$addr" | awk -F: '{print $1}')
-			local qport=$(awk -F: '{print $2}' <<< $addr)
-			players=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].players')
-			max_players=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].max_players')
-			gameport=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].gameport')
-			ip_port=$(echo "$ip:$gameport")
-			time=$(< $json jq --arg i $i -r '[.servers[]][($i|tonumber)].gametype' | grep -oP '(?<!\d)\d{2}:\d{2}(?!\d)')
+            readarray -t json_arr < <(<<< $res jq --arg i $i -r '[.response.servers[]][($i|tonumber)]|"\(.name)\n\(.addr)\n\(.players)\n\(.max_players)\n\(.gameport)\n\(.gametype)"')
+            local name=${json_arr[0]}
+            local addr=${json_arr[1]}
+            local ip=$(<<< $addr awk -F: '{print $1}')
+            local qport=$(<<< $addr awk -F: '{print $2}')
+            local current=${json_arr[2]}
+            local max=${json_arr[3]}
+            local players="${current}/${max}"
+            local gameport="${json_arr[4]}"
+            local gametime="${json_arr[5]}"
+            gametime=$(<<< "$gametime" grep -o '[0-9][0-9]:[0-9][0-9]')
+
 			echo "$name"
-			echo "$ip_port"
-			echo "$players/$max_players"
-			echo "$time"
+			echo "${ip}:${gameport}"
+			echo "$players"
+			echo "$gametime"
 			echo "$qport"
 		done
 	fi
 }
-history_table(){
-	[[ -f /tmp/dz.hist ]] && rm /tmp/dz.hist
-	for i in $(cat $hist_file); do
-		echo "# Getting metadata for $i"
-		local meta_file=$(mktemp)
-		source $config_file
-		local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100\gameaddr\\$i&key=$steam_api"
-		curl -Ls "$url" > $meta_file
-		json=$(mktemp)
-		< $meta_file jq '.response' > $json
-		res=$(< $meta_file jq -er '.response.servers[]' 2>/dev/null)
-		prepare_ip_list "$meta_file" >> /tmp/dz.hist
-		sleep 0.5s
-	done | $steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --width=500 --no-cancel 2>/dev/null
-	[[ $? -eq 1 ]] && return
-	while true; do
-	sel=$(cat /tmp/dz.hist | $steamsafe_zenity --width 1200 --height 800 --title="DZGUI" --text="Recent servers" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2,5 --separator=%% 2>/dev/null)
-	if [[ $? -eq 1 ]]; then
-		return_from_table=1
-		rm /tmp/dz.hist
-		return
-	fi
-		if [[ -z $sel ]]; then
-			echo "No selection"
-		else
-			local addr="$(echo "$sel" | awk -F"%%" '{print $1}')"
-			local qport="$(echo "$sel" | awk -F"%%" '{print $2}')"
-			local ip=$(awk -F: '{print $1}' <<< $addr)
-			local gameport=$(awk -F: '{print $2}' <<< $addr)
-			local sa_ip=$(echo "$ip:$gameport%%$qport")
-			qport_list="$sa_ip"
-			connect "$sel" "ip"
-		fi
-	done
-	rm /tmp/dz.hist
-}
-
 ip_table(){
+    local sel
+    local res="$1"
 	while true; do
-	sel=$(prepare_ip_list "$meta_file" | $steamsafe_zenity --width 1200 --height 800 --text="One or more maps found at this server. Select map from the list below" --title="DZGUI" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=2 --separator=%% 2>/dev/null)
-	if [[ $? -eq 1 ]]; then
-		return_from_table=1
-		return
-	fi
-		if [[ -z $sel ]]; then
-			echo "No selection"
-		else
-			local gameport="$(echo "$sel" | awk -F: '{print $2}')"
-			local ip="$(echo "$sel" | awk -F: '{print $1}')"
-			local addr=$(< $json jq -r --arg gameport $gameport '.servers[]|select(.gameport == ($gameport|tonumber)).addr')
-			local qport=$(echo "$addr" | awk -F: '{print $2}')
-			local sa_ip=$(echo "$ip:$gameport%%$qport")
-			qport_list="$sa_ip"
-			connect "$sel" "ip"
-		fi
+        sel=$(prepare_ip_list "$res" | $steamsafe_zenity --width 1200 --height 800 --text="Multiple maps found at this server. Select map from the list below" --title="DZGUI" --list --column=Name --column=IP --column=Players --column=Gametime --column=Qport --print-column=1,2,5 --separator=%% 2>/dev/null)
+        [[ $? -eq 1 ]] && return 1
+        echo "$sel"
+        return 0
 	done
 }
 fetch_ip_metadata(){
-	meta_file=$(mktemp)
+    local ip="$1"
 	source $config_file
-	url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100\gameaddr\\$ip&key=$steam_api"
-	curl -Ls "$url" > $meta_file
-	json=$(mktemp)
-	< $meta_file jq '.response' > $json
-	res=$(< $meta_file jq -er '.response.servers[]' 2>/dev/null)
+	local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100\gameaddr\\$ip&key=$steam_api"
+	curl -Ls "$url"
 }
 
 #TODO: local servers
@@ -752,17 +666,18 @@ fetch_ip_metadata(){
 #(^127\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)
 #}
 test_steam_api(){
-	local code=$(curl -ILs "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api" \
-		| grep -E "^HTTP")
+	local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api"
+	local code=$(curl -ILs "$url" | grep -E "^HTTP")
 	[[ $code =~ 403 ]] && echo 1
 	[[ $code =~ 200 ]] && echo 0
 }
 test_bm_api(){
+    local api_key="$1"
+    [[ -z $api_key ]] && return 1
 	local code=$(curl -ILs "$api" -H "Authorization: Bearer "$api_key"" -G \
 		-d "filter[game]=$game" | grep -E "^HTTP")
 	[[ $code =~ 401 ]] && echo 1
 	[[ $code =~ 200 ]] && echo 0
-	
 }
 add_steam_api(){
 		[[ $(test_steam_api) -eq 1 ]] && return 1
@@ -790,56 +705,82 @@ check_steam_api(){
 validate_ip(){
 	echo "$1" | grep -qP '^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$'
 }
+connect_by_id(){
+    local ip
+    ip=$(add_by_id "connect")
+    [[ $? -eq 1 ]] && return
+    readarray -t address < <(format_config_address "$ip")
+    local ip="${address[0]}"
+    local gameport="${address[1]}"
+    local qport="${address[2]}"
+    unset address
+
+    connect "$ip" "$gameport" "$qport"
+}
 connect_by_ip(){
+    local sel
+    sel=$(parse_ips)
+    [[ -z $sel ]] && return
+
+    readarray -t address < <(format_table_results "$sel")
+    local ip="${address[1]}"
+    local gameport="${address[2]}"
+    local qport="${address[3]}"
+
+    connect "$ip" "$gameport" "$qport"
+}
+parse_ips(){
 	source $config_file
 	check_steam_api
 	[[ $? -eq 1 ]] && return
-	while true; do
-		if [[ $return_from_table -eq 1 ]]; then
-			return_from_table=0
-			return
-		fi
-		ip=$($steamsafe_zenity --entry --text="Enter server IP (omit port)" --title="DZGUI" 2>/dev/null)
-		[[ $? -eq 1 ]] && return
-		if validate_ip "$ip"; then
-			fetch_ip_metadata
-			if [[ ! $? -eq 0 ]]; then
-				warn "[ERROR] 96: Failed to retrieve IP metadata. Check IP or API key and try again."
-				echo "[DZGUI] 96: Failed to retrieve IP metadata"
-			else
-				ip_table
-			fi
-		else
-			continue
-		fi
-	done
-}
-fetch_mods(){
-	remote_mods=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d filter[ids][whitelist]="$1" -d "sort=-players" \
-	| jq -r '.data[] .attributes .details .modIds[]')
+    while true; do
+        local ip
+        ip=$($steamsafe_zenity --entry --text="Enter server IP (omit port)" --title="DZGUI" 2>/dev/null)
+        [[ $? -eq 1 ]] && return 1
+        [[ $ip =~ ':' ]] && continue
+        if validate_ip "$ip"; then
+            local res
+            res=$(fetch_ip_metadata "$ip")
+            if [[ ! $? -eq 0 ]] || [[ $(<<< $res jq '.response|length') -eq 0 ]]; then
+                warn "Failed to retrieve IP metadata. Check IP or API key and try again."
+                return 1
+            fi
+            local ct=$(<<< "$res" jq '.response.servers|length')
+            if [[ $ct -eq 1 ]]; then
+                local name=$(<<< $res jq -r '.response.servers[].name')
+                local address=$(<<< $res jq -r '.response.servers[].addr')
+                local ip=$(<<< "$address" awk -F: '{print $1}')
+                local qport=$(<<< "$address" awk -F: '{print $2}')
+                local gameport=$(<<< $res jq -r '.response.servers[].gameport')
+                echo "${name}%%${ip}:${gameport}%%${qport}"
+                return 0
+            fi
+            ip_table "$res"
+            return 0
+        else
+            warn "Invalid IP"
+        fi
+    done
 }
 query_defunct(){
-	max=${#modlist[@]}
+	readarray -t modlist <<< "$@"
+	local max=${#modlist[@]}
 	concat(){
-	for ((i=0;i<$max;i++)); do
-	   echo "publishedfileids[$i]=${modlist[$i]}&"
-	done | awk '{print}' ORS=''
+		for ((i=0;i<$max;i++)); do
+			echo "publishedfileids[$i]=${modlist[$i]}&"
+		done | awk '{print}' ORS=''
 	}
 	payload(){
 		echo -e "itemcount=${max}&$(concat)"
 	}
 	post(){
-		curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded" -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
+		curl -s \
+        -X POST \
+        -H "Content-Type:application/x-www-form-urlencoded"\
+        -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
 	}
-	result=$(post | jq -r '.[].publishedfiledetails[] | select(.result==1) | "\(.file_size) \(.publishedfileid)"')
-	echo "$result" > /tmp/modsizes
-	readarray -t newlist <<< $(echo -e "$result" | awk '{print $2}')
-}
-validate_mods(){
-	url="https://steamcommunity.com/sharedfiles/filedetails/?id="
-	newlist=()
-	readarray -t modlist <<< $remote_mods
-	query_defunct
+	local result=$(post | jq -r '.[].publishedfiledetails[] | select(.result==1) | "\(.file_size) \(.publishedfileid)"')
+    <<< "$result" awk '{print $2}' > /tmp/dz.modlist
 }
 server_modlist(){
 	for i in "${newlist[@]}"; do
@@ -854,22 +795,29 @@ installed_mods(){
 	ls -1 "$workshop_dir"
 }
 concat_mods(){
-	if [[ -z ${remote_mods[@]} ]]; then
-		return 1
-	else
-		readarray -t serv <<< "$(server_modlist)"
-		for i in "${serv[@]}"; do
-			id=$(awk -F"= " '/publishedid/ {print $2}' "$workshop_dir"/$i/meta.cpp | awk -F\; '{print $1}')
-			encoded_id=$(encode $id)
-			link="@$encoded_id;"
-			echo -e "$link"
-		done | tr -d '\n' | perl -ple 'chop'
-	fi
+    readarray -t serv <<< "$(server_modlist)"
+    for i in "${serv[@]}"; do
+        id=$(awk -F"= " '/publishedid/ {print $2}' "$workshop_dir"/$i/meta.cpp | awk -F\; '{print $1}')
+        encoded_id=$(encode $id)
+        link="@$encoded_id;"
+        echo -e "$link"
+    done | tr -d '\n' | perl -ple 'chop'
 }
 launch(){
+    local ip="$1"
+    local gameport="$2"
+    local qport="$3"
+    source $config_file
 	mods=$(concat_mods)
+    if [[ ! ${ip_list[@]} =~ "$ip:$gameport:$qport" ]]; then
+        qdialog "Before connecting, add this server to My Servers?"
+        if [[ $? -eq 0 ]]; then
+            ip_list+=("$ip:$gameport:$qport")
+            update_config
+        fi
+    fi
 	if [[ $debug -eq 1 ]]; then
-		launch_options="$steam_cmd -applaunch $aid -connect=$ip -nolauncher -nosplash -name=$name -skipintro \"-mod=$mods\""
+		launch_options="$steam_cmd -applaunch $aid -connect=$ip:$gameport -nolauncher -nosplash -name=$name -skipintro \"-mod=$mods\""
 		print_launch_options="$(printf "This is a dry run.\nThese options would have been used to launch the game:\n\n$launch_options\n" | fold -w 60)"
 		$steamsafe_zenity --question --title="DZGUI" --ok-label="Write to file" --cancel-label="Back"\
 			--text="$print_launch_options" 2>/dev/null
@@ -880,14 +828,10 @@ launch(){
 			echo "[DZGUI] Wrote launch options to $source_dir/options.log"
 			$steamsafe_zenity --info --width=500 --title="DZGUI" --text="Wrote launch options to \n$source_dir/options.log" 2>/dev/null
 		fi
-
 	else
-		echo "[DZGUI] All OK. Launching DayZ"
 		$steamsafe_zenity --width=500 --title="DZGUI" --info --text="Launch conditions satisfied.\nDayZ will now launch after clicking [OK]." 2>/dev/null
-		$steam_cmd -applaunch $aid -connect=$ip -nolauncher -nosplash -skipintro -name=$name \"-mod=$mods\"
-		exit
+		$steam_cmd -applaunch $aid -connect=$ip:$gameport -nolauncher -nosplash -skipintro -name=$name \"-mod=$mods\"
 	fi
-		one_shot_launch=0
 }
 browser(){
 	if [[ $is_steam_deck -eq 1 ]]; then
@@ -924,68 +868,75 @@ set_mode(){
 	fi
 	logger INFO "Mode is $mode"
 }
-delete_by_id(){
-	new_whitelist="whitelist=\"$(echo "$whitelist" | sed "s/,$server_id$//;s/^$server_id,//;s/,$server_id,/,/;s/^$server_id$//")\""
-	mv $config_file ${config_path}dztuirc.old
-	nr=$(awk '/whitelist=/ {print NR}' ${config_path}dztuirc.old)
-	awk -v "var=$new_whitelist" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
-	echo "[DZGUI] Removed $server_id from key 'whitelist'"
-	$steamsafe_zenity --info --title="DZGUI" --text="Removed "$server_id" from:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
-	source $config_file
+delete_by_ip(){
+    local to_delete="$1"
+    for (( i=0; i<${#ip_list[@]}; ++i )); do
+        if [[ ${ip_list[$i]} == "$to_delete" ]]; then
+            unset ip_list[$i]
+        fi
+    done
+    if [[ ${#ip_list} -gt 0 ]]; then
+        readarray -t ip_list < <(printf "%s\n" "${ip_list[@]}")
+    fi
+    update_config
+    info "Removed $to_delete from:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old"
+}
+format_table_results(){
+    local sel="$1"
+	local name=$(<<< "$sel" awk -F"%%" '{print $1}')
+	local address=$(<<< "$sel" awk -F"%%" '{print $2}')
+	local ip=$(<<< "$address" awk -F":" '{print $1}')
+	local gameport=$(<<< "$address" awk -F":" '{print $2}')
+	local qport=$(<<< "$sel" awk -F"%%" '{print $3}')
+    printf "%s\n%s\n%s\n%s\n" "$name" "$ip" "$gameport" "$qport"
 }
 delete_or_connect(){
-	if [[ $delete -eq 1 ]]; then
-		server_name=$(echo "$sel" | awk -F"%%" '{print $1}')
-		server_id=$(echo "$sel" | awk -F"%%" '{print $2}')
-		$steamsafe_zenity --question --text="Delete this server? \n$server_name" --title="DZGUI" --width=500 2>/dev/null
-		if [[ $? -eq 0 ]]; then
-			delete_by_id $server_id
-		fi
-		source $config_file
-		unset delete
-	else
-		local lookup_ip=$(echo "$sel" | awk -F: '{print $1}')
-		ip=$lookup_ip
-		fetch_ip_metadata
-		if [[ ! $? -eq 0 ]]; then
-			warn "[ERROR] 96: Failed to retrieve IP metadata. Check IP or API key and try again."
-			echo "[DZGUI] 96: Failed to retrieve IP metadata"
-		else
-			local jad=$(echo "$res" | jq -r '.addr')
-			if [[ $(<<< "$jad" wc -l ) -gt 1 ]]; then
-				ip_table
-			elif [[ $(<<< "$jad" wc -l ) -eq 1 ]]; then
-				local gameport="$(echo "$res" | jq -r '.gameport')"
-				local ip="$(echo "$jad" | awk -F: '{print $1}')"
-				local qport=$(echo "$jad" | awk -F: '{print $2}')
-				local sa_ip=$(echo "$ip:$gameport%%$qport")
-				qport_list="$sa_ip"
-				local sel="$ip:$gameport%%$qport"
-				connect "$sel" "ip"
-			fi
-		fi
-	fi
+    local sel="$1"
+    local mode="$2"
+
+    readarray -t address < <(format_table_results "$sel")
+    local server_name="${address[0]}"
+    local ip="${address[1]}"
+    local gameport="${address[2]}"
+    local qport="${address[3]}"
+    unset address
+
+	case "$mode" in
+        "delete")
+            qdialog "Delete this server?\n$server_name"
+            [[ $? -eq 1 ]] && return
+
+            delete_by_ip "$ip:$gameport:$qport"
+            source $config_file
+
+            local str="^$ip:$gameport$"
+            local nr=$(awk -v v="$str" '$1 ~ v {print NR}' $tmp)
+            local st=$((nr-1))
+            local en=$((st+5))
+            sed -i "${st},${en}d" $tmp
+           # if [[ ${#ip_list[@]} -eq 0 ]]; then
+           #     return 1
+           # fi
+            ;;
+	    "connect"|"history")
+    		connect "$ip" "$gameport" "$qport"
+            return
+    esac
 }
 populate(){
+    local switch="$1"
 	while true; do
-		if [[ $delete -eq 1 ]]; then
-			cols="--column="Server" --column="ID""
-			set_header "delete"
-		else
-			cols="--column="Server" --column="IP" --column="Players" --column="Gametime" --column="Status" --column="ID" --column="Ping""
-			set_header ${FUNCNAME[0]}
-		fi
+		cols="--column="Server" --column="IP" --column="Players" --column="Gametime" --column="Distance" --column="Qport""
+        set_header "$switch"
 		rc=$?
 		if [[ $rc -eq 0 ]]; then
 			if [[ -z $sel ]]; then
 				warn "No item was selected."
 			else
-				delete_or_connect
-				return
+				delete_or_connect "$sel" "$switch"
 			fi
 		else
-			delete=0
-			return
+			return 1
 		fi
 	done
 }
@@ -1000,39 +951,51 @@ list_mods(){
 		done | sort -k1
 	fi
 }
-fetch_query_ports(){
-	qport_list=$(echo "$response" | jq -r '.data[] .attributes | "\(.ip):\(.port)%%\(.portQuery)"')
-}
 connect_to_fav(){
-	if [[ -n $fav ]]; then
-		one_shot_launch=1
-		query_api
-		fetch_query_ports
-		echo "[DZGUI] Attempting connection to $fav_label"
-		connect "$qport_list" "ip"
-		one_shot_launch=0
-	else
-		warn "93: No fav server configured"
-	fi
+    #TODO: test with broken/bogus fav
+    #TODO: test backing out of connection dialogs
+	logger INFO "${FUNCNAME[0]}"
 
+    local fav="$1"
+    [[ -z $fav ]] && { popup 1300; return; }
+
+    readarray -t address < <(format_config_address "$fav")
+    local ip="${address[0]}"
+    local gameport="${address[1]}"
+    local qport="${address[2]}"
+
+    unset address
+    connect "$ip" "$gameport" "$qport"
+    [[ $? -eq 1 ]] && return 1
 }
 set_header(){
+    local switch="$1"
 	logger INFO "${FUNCNAME[0]}"
 	logger INFO "Header mode is $1"
 	print_news
 	[[ $auto_install -eq 2 ]] && install_mode="auto"
 	[[ $auto_install -eq 1 ]] && install_mode="headless"
 	[[ $auto_install -eq 0 ]] && install_mode=manual
-	if [[ $1 == "delete" ]]; then
-		sel=$(cat $tmp | $steamsafe_zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
-			--separator="$separator" --print-column=1,2 --ok-label="Delete" 2>/dev/null)
-	elif [[ $1 == "populate" ]]; then
-		sel=$(cat $tmp | $steamsafe_zenity $sd_res --list $cols --title="DZGUI" --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
-			--separator="$separator" --print-column=2,6 2>/dev/null)
-	elif [[ $1 == "main_menu" ]]; then
-		sel=$($steamsafe_zenity $sd_res --list --title="DZGUI" --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
-		--cancel-label="Exit" --ok-label="Select" --column="Select launch option" --hide-header "${items[@]}" 2>/dev/null)
-	fi
+    case "$switch" in
+        "delete")
+        [[ -z $(< $tmp) ]] && return 1
+        sel=$(< $tmp $steamsafe_zenity $sd_res --list $cols --title="DZGUI" \
+        --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
+        --separator="$separator" --print-column=1,2,6 --ok-label="Delete" 2>/dev/null)
+        ;;
+
+        "connect"|"history")
+        sel=$(< $tmp $steamsafe_zenity $sd_res --list $cols --title="DZGUI" \
+        --text="DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
+        --separator="$separator" --print-column=1,2,6 --ok-label="Connect" 2>/dev/null)
+        ;;
+
+        "main_menu")
+        sel=$($steamsafe_zenity $sd_res --list --title="DZGUI" \
+        --text="${news}DZGUI $version | Mode: $mode | Branch: $branch | Mods: $install_mode | Fav: $fav_label" \
+        --cancel-label="Exit" --ok-label="Select" --column="Select launch option" --hide-header "${items[@]}" 2>/dev/null)
+        ;;
+    esac
 }
 toggle_branch(){
 	mv $config_file ${config_path}dztuirc.old
@@ -1049,9 +1012,12 @@ toggle_branch(){
 }
 generate_log(){
 	cat <<-DOC
-	Linux: $(uname -mrs)
+	Distro: $(< /etc/os-release grep -w NAME | awk -F\" '{print $2}')
+	Kernel: $(uname -mrs)
 	Version: $version
 	Branch: $branch
+	Mode: $mode
+	Auto: $auto_hr
 	Whitelist: $whitelist
 	Steam path: $steam_path
 	Workshop path: $workshop_dir
@@ -1094,12 +1060,6 @@ focus_beta_client(){
 console_dl(){
 	readarray -t modids <<< "$@"
 	focus_beta_client
-#	steam steam://open/console 2>/dev/null 1>&2 &&
-#	sleep 1s
-	#https://github.com/jordansissel/xdotool/issues/67
-	#https://dwm.suckless.org/patches/current_desktop/
-#	local wid=$(xdotool search --onlyvisible --name Steam)
-	#xdotool windowactivate $wid
 	sleep 1.5s
 	for i in "${modids[@]}"; do
 		xdotool type --delay 0 "workshop_download_item $aid $i"
@@ -1144,6 +1104,9 @@ find_default_path(){
 		fi
 	fi
 }
+fold_message(){
+	echo "$1" | fold -s -w40
+}
 popup(){
 	pop(){
 		$steamsafe_zenity --info --text="$1" --title="DZGUI" --width=500 2>/dev/null
@@ -1151,14 +1114,18 @@ popup(){
 	case "$1" in
 		100) pop "This feature requires xdotool and wmctrl.";;
 		200) pop "This feature is not supported on Gaming Mode.";;
-		300) pop "\nThe Steam console will now open and briefly issue commands to\ndownload the workshop files, then return to the download progress page.\n\nEnsure that the Steam console has keyboard and mouse focus\n(keep hands off keyboard) while the commands are being issued.\n\nDepending on the number if mods, it may take some time to queue the downloads,\nbut if a popup or notification window steals focus, it could obstruct\nthe process." ;;
-		400) pop "Automod install enabled. Auto-downloaded mods will not appear\nin your Steam Workshop subscriptions, but DZGUI will\ntrack the version number of downloaded mods internally\nand trigger an update if necessary." ;;
-		500) pop "Automod install disabled.\nSwitched to manual mode." ;;
+		300) pop "$(fold_message 'The Steam console will now open and briefly issue commands to download the workshop files, then return to the download progress page. Ensure that the Steam console has keyboard and mouse focus (keep hands off keyboard) while the commands are being issued. Depending on the number if mods, it may take some time to queue the downloads. If a popup or notification window steals focus, it could obstruct the process.')" ;;
+		400) pop "$(fold_message 'Automod install enabled. Auto-downloaded mods will not appear in your Steam Workshop subscriptions, but DZGUI will track the version number of downloaded mods internally and trigger an update if necessary.')" ;;
+		500) pop "$(fold_message 'Automod install disabled. Switched to manual mode.')" ;;
 		600) pop "No preferred servers set." ;;
 		700) pop "Toggled to Flatpak Steam." ;;
 		800) pop "Toggled to native Steam." ;;
 		900) pop "This feature is not supported on Steam Deck." ;;
-		1000) pop "No recent history."
+		1000) pop "No recent history." ;;
+		1100) pop "No results found." ;;
+		1200) pop "Timed out. Server may be temporarily offline or not responding to queries." ;;
+        1300) pop "No favorite server configured." ;;
+        1400) pop "DZGUI must be run in Desktop Mode on Steam Deck." ;;
 	esac
 }
 toggle_console_dl(){
@@ -1198,63 +1165,160 @@ toggle_steam_binary(){
 	esac
 }
 options_menu(){
-	case "$auto_install" in
-		0|1|"") auto_hr="OFF"; ;;
-		2) auto_hr="ON"; ;;
-	esac
-	debug_list=(
-		"Toggle branch"
-		"Toggle debug mode"
-		"Output system info"
-		"Toggle auto mod install [$auto_hr]"
-		)
-	#TODO: tech debt: drop old flags
-	[[ $auto_install -eq 2 ]] || [[ $auto_install -eq 1 ]] && debug_list+=("Force update local mods")
-	case "$steam_cmd" in
-		steam) steam_hr=Steam ;;
-		flatpak*) steam_hr=Flatpak ;;
-	esac
-	[[ $toggle_steam -eq 1 ]] && debug_list+=("Toggle native Steam or Flatpak [$steam_hr]")
-	debug_sel=$($steamsafe_zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
-	[[ -z $debug_sel ]] && return
-	case "$debug_sel" in
-		"Toggle branch")
-			enforce_dl=1
-			toggle_branch &&
-			check_version
-			;;
-		"Toggle debug mode") toggle_debug ;;
-		"Output system info")
-			source_script=$(realpath "$0")
-			source_dir=$(dirname "$source_script")
-			generate_log > "$source_dir/DZGUI.log"
-			$steamsafe_zenity --info --width=500 --title="DZGUI" --text="Wrote log file to \n$source_dir/log" 2>/dev/null
-			printf "[DZGUI] Wrote log file to %s/log\n" "$source_dir"
-			;;
-		Toggle[[:space:]]auto*) toggle_console_dl ;;
-		"Force update local mods")
-			force_update=1
-			force_update_mods
-			merge_modlists > >($steamsafe_zenity --pulsate --progress --no-cancel --auto-close --title="DZGUI" --width=500 2>/dev/null)
-			auto_mod_install
-			;;
-		Toggle[[:space:]]native*) toggle_steam_binary ;;
-	esac
+    init_options_list(){
+        source $config_file
+        set_mode
+        case "$auto_install" in
+            0|1|"") auto_hr="OFF"; ;;
+            2) auto_hr="ON"; ;;
+        esac
+        [[ -z $name ]] && name="null"
+        debug_list=(
+            "Toggle branch [current: $branch]"
+            "Toggle debug mode [current: $mode]"
+            "Toggle auto mod install [current: $auto_hr]"
+            "Change player name [current: $name]"
+            "Output system info"
+            )
+        #TODO: tech debt: drop old flags
+        [[ $auto_install -eq 2 ]] || [[ $auto_install -eq 1 ]] && debug_list+=("Force update local mods")
+        case "$steam_cmd" in
+            steam) steam_hr=Steam ;;
+            flatpak*) steam_hr=Flatpak ;;
+        esac
+        [[ $toggle_steam -eq 1 ]] && debug_list+=("Toggle native Steam or Flatpak [$steam_hr]")
+    }
+    while true; do
+        init_options_list
+        debug_sel=$($steamsafe_zenity --list --width=1280 --height=800 --column="Options" --title="DZGUI" --hide-header "${debug_list[@]}" 2>/dev/null)
+        [[ -z $debug_sel ]] && return
+        case "$debug_sel" in
+            Toggle[[:space:]]branch*)
+                enforce_dl=1
+                toggle_branch &&
+                check_version
+                ;;
+            Toggle[[:space:]]debug*) toggle_debug ;;
+            "Output system info")
+                    source_script=$(realpath "$0")
+                    source_dir=$(dirname "$source_script")
+                output(){
+                    echo "# Generating log"
+                    generate_log > "$source_dir/DZGUI.log"
+                }
+                (output) | pdialog
+                [[ $? -eq 1 ]] && return
+                info_dialog "Wrote log file to: $source_dir/DZGUI.log"
+                ;;
+            Toggle[[:space:]]auto*) toggle_console_dl ;;
+            "Force update local mods")
+                force_update=1
+                force_update_mods
+                (merge_modlists) | pdialog
+                auto_mod_install
+                ;;
+            Toggle[[:space:]]native*) toggle_steam_binary ;;
+            Change[[:space:]]player[[:space:]]name*) change_name
+            ;;
+        esac
+    done
+}
+info_dialog(){
+    local title="DZGUI"
+    $steamsafe_zenity --info --width=500 --title="$title" --text="$1" 2>/dev/null
+}
+a2s(){
+    local ip="$1"
+    local qport="$2"
+    local mode="$3"
+    python3 $helpers_path/query.py "$ip" "$qport" "$mode"
+}
+format_config_address(){
+    local address="$1"
+    parse(){
+        local ind="$1"
+        <<< $address awk -F: "{print \$$ind}"
+    }
+    local ip=$(parse 1)
+    local gameport=$(parse 2)
+    local qport=$(parse 3)
+    printf "%s\n%s\n%s" "$ip" "$gameport" "$qport"
 }
 query_and_connect(){
-	[[ -z $whitelist ]] && { popup 600; return; }
-	q(){
-		query_api
-		parse_json
-		create_array
-	}
-	q | $steamsafe_zenity --width=500 --progress --pulsate --title="DZGUI" --auto-close 2>/dev/null
-	rc=$?
-	if [[ $rc -eq 1 ]]; then
-		:
-	else
-		populate
-	fi
+    source $config_file
+    local switch="$1"
+    local ips="$2"
+    case "$switch" in
+        "history")
+            if [[ -z $2 ]]; then
+                warn "No recent servers in history"
+                return 1
+            fi
+            readarray -t ip_arr <<< "$ips"
+            ;;
+        "connect"|"delete")
+            if [[ ${#ip_list[@]} -eq 0 ]]; then
+                warn "No servers currently saved"
+                return 1
+            fi
+            ips="$(printf "%s\n" "${ip_list[@]}")"
+            readarray -t ip_arr <<< "$ips"
+            ;;
+    esac
+	[[ ${#ip_arr[@]} -lt 1 ]] && { popup 600; return; }
+    > $tmp
+    q(){
+    for (( i = 0; i < ${#ip_arr[@]}; ++i )); do
+
+        local address="${ip_arr[$i]}"
+        readarray -t address < <(format_config_address "$address")
+        local ip="${address[0]}"
+        local gameport="${address[1]}"
+        local qport="${address[2]}"
+        unset address
+
+        local info
+        echo "# Querying $ip:$qport"
+        info=$(a2s "$ip" "$qport" info)
+        [[ $? -eq 1 ]] && continue
+        local keywords=$(<<< $info jq -r '.keywords')
+        local vars=("name" "address" "count" "time" "dist" "qport")
+        for j in ${vars[@]}; do
+            local -n var=$j
+            case "$j" in
+                "time")
+                    var=$(<<< "$keywords" grep -o '[0-9][0-9]:[0-9][0-9]')
+                    ;;
+                "name")
+                    var=$(<<< "$info" jq -r --arg arg $j '.[$arg]')
+                    if [[ "${#var}" -gt 50 ]]; then
+        			    var="$(<<< "$var" awk '{print substr($0,1,50) "..."}')"
+                    fi
+                    ;;
+                "dist")
+                    check_geo_file
+                    local_latlon
+                    var=$(get_dist $(<<< $address awk -F: '{print $1}'))
+                    ;;
+                *)
+                    var=$(<<< "$info" jq -r --arg arg $j '.[$arg]')
+                    ;;
+            esac
+            printf "%s\n" "$var" >> $tmp
+        done
+            unset $j
+    done
+    }
+
+	(q) | pdialog
+	[[ $? -eq 1 ]] && return
+	populate "$switch"
+}
+exclude_fpp(){
+    response=$(<<< "$response" jq '[.[]|select(.gametype|split(",")|any(. == "no3rd")|not)]')
+}
+exclude_tpp(){
+    response=$(<<< "$response" jq '[.[]|select(.gametype|split(",")|any(. == "no3rd"))]')
 }
 exclude_full(){
 	response=$(echo "$response" | jq '[.[]|select(.players!=.max_players)]')
@@ -1300,7 +1364,7 @@ local_latlon(){
 	else
 		local local_ip=$(dig -4 +short myip.opendns.com @resolver1.opendns.com)
 	fi
-	local url="http://ip-api.com/json/$local_ip" 
+	local url="http://ip-api.com/json/$local_ip"
 	local res=$(curl -Ls "$url" | jq -r '"\(.lat),\(.lon)"')
 	local_lat=$(echo "$res" | awk -F, '{print $1}')
 	local_lon=$(echo "$res" | awk -F, '{print $2}')
@@ -1343,43 +1407,48 @@ check_geo_file(){
 	md5sum -c "$sums_path" 2>/dev/null 1>&2
 	local res=$?
 	cd $OLDPWD
-	if [[ $res -eq 1 ]]; then
-		run(){
-		mkdir -p "$helpers_path"
-		echo "# Fetching new geolocation DB"
-		curl -Ls "$db_file" > "$gzip"
-		echo "# Extracting coordinates"
-		#force overwrite
-		gunzip -f "$gzip"
-		echo "# Preparing helper file"
-		curl -Ls "$km_helper_url" > "$km_helper"
-		chmod +x $km_helper
-		echo "100"
-		}
-		run > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
-	fi
+    [[ $res -eq 0 ]] && return
+    update(){
+        mkdir -p "$helpers_path"
+        echo "# Fetching new geolocation DB"
+        curl -Ls "$db_file" > "$gzip"
+        echo "# Extracting coordinates"
+        #force overwrite
+        gunzip -f "$gzip"
+        echo "# Preparing helper file"
+        curl -Ls "$km_helper_url" > "$km_helper"
+        chmod +x $km_helper
+        echo "100"
+    }
+    update > >(pdialog)
 }
 choose_filters(){
 	if [[ $is_steam_deck -eq 0 ]]; then
 		sd_res="--width=1920 --height=1080"
 	fi
-	sels=$($steamsafe_zenity --title="DZGUI" --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" False "Empty" False "Full" TRUE "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
+	sels=$($steamsafe_zenity --title="DZGUI" --text="Server search" --list --checklist --column "Check" --column "Option" --hide-header TRUE "All maps (untick to select from map list)" TRUE "Daytime" TRUE "Nighttime" TRUE "1PP" TRUE "3PP" False "Empty" False "Full" TRUE "Low population" FALSE "Non-ASCII titles" FALSE "Keyword search" $sd_res 2>/dev/null)
 	if [[ $sels =~ Keyword ]]; then
-		search=$($steamsafe_zenity --entry --text="Search (case insensitive)" --width=500 --title="DZGUI" 2>/dev/null | awk '{print tolower($0)}')
-		[[ -z $search ]] && { ret=97; return; }
+		local search
+        while true; do
+            search=$($steamsafe_zenity --entry --text="Search (case insensitive)" --width=500 --title="DZGUI" 2>/dev/null | awk '{print tolower($0)}')
+            [[ $? -eq 1 ]] && return 1
+            [[ -z $search ]] && warn "Cannot submit an empty keyword"
+            [[ -n $search ]] && break
+        done
 	fi
 	[[ -z $sels ]] && return
-	filters=$(echo "$sels" | sed 's/|/, /g;s/ (untick to select from map list)//')
+	echo "$sels" | sed 's/|/, /g;s/ (untick to select from map list)//'
+    echo "$search"
 }
 get_dist(){
 	local given_ip="$1"
-	local network="$(echo "$given_ip" | awk -F. '{OFS="."}{print $1"."$2}')"
+	local network="$(<<< "$given_ip" awk -F. '{OFS="."}{print $1"."$2}')"
 	local binary=$(grep -E "^$network\." $geo_file)
-	local three=$(echo $given_ip | awk -F. '{print $3}')
-	local host=$(echo $given_ip | awk -F. '{print $4}')
-	local res=$(echo "$binary" | awk -F[.,] -v three=$three -v host=$host '$3 <=three && $7 >= three{if($3>three || ($3==three && $4 > host) || $7 < three || ($7==three && $8 < host)){next}{print}}' | awk -F, '{print $7,$8}')
-	local remote_lat=$(echo "$res" | awk '{print $1}')
-	local remote_lon=$(echo "$res" | awk '{print $2}')
+	local three=$(<<< $given_ip awk -F. '{print $3}')
+	local host=$(<<< $given_ip awk -F. '{print $4}')
+	local res=$(<<< "$binary" awk -F[.,] -v three=$three -v host=$host '$3 <=three && $7 >= three{if($3>three || ($3==three && $4 > host) || $7 < three || ($7==three && $8 < host)){next}{print}}' | awk -F, '{print $7,$8}')
+	local remote_lat=$(<<< "$res" awk '{print $1}')
+	local remote_lon=$(<<< "$res" awk '{print $2}')
 	if [[ -z $remote_lat ]]; then
 		local dist="Unknown"
 		echo "$dist"
@@ -1389,63 +1458,77 @@ get_dist(){
 	fi
 }
 prepare_filters(){
-	echo "# Filtering list"
+    local sels="$1"
+    local search="$2"
 	[[ ! "$sels" =~ "Full" ]] && { exclude_full; disabled+=("Full") ; }
 	[[ ! "$sels" =~ "Empty" ]] && { exclude_empty; disabled+=("Empty") ; }
 	[[ ! "$sels" =~ "Daytime" ]] && { exclude_daytime; disabled+=("Daytime") ; }
 	[[ ! "$sels" =~ "Nighttime" ]] && { exclude_nighttime; disabled+=("Nighttime") ; }
 	[[ ! "$sels" =~ "Low population" ]] && { exclude_lowpop; disabled+=("Low-pop") ; }
 	[[ ! "$sels" =~ "Non-ASCII titles" ]] && { exclude_nonascii; disabled+=("Non-ASCII") ; }
+	[[ ! "$sels" =~ "1PP" ]] && { exclude_fpp; disabled+=("FPP") ; }
+	[[ ! "$sels" =~ "3PP" ]] && { exclude_tpp; disabled+=("TPP") ; }
 	[[ -n "$search" ]] && keyword_filter
 	strip_null
-	echo "100"
-}
-write_fifo(){
-	[[ -p $fifo ]] && rm $fifo
-	mkfifo $fifo
-	for((i=0;i<${#qport[@]};i++)); do
-		printf  "%s\n%s\n%s\n%03d\n%03d\n%s\n%s:%s\n%s\n" "${map[$i]}" "${name[$i]}" "${gametime[$i]}" \
-		"${players[$i]}" "${max[$i]}" "$(get_dist ${addr[$i]})" "${addr[$i]}" "${gameport[$i]}" "${qport[$i]}" >> $fifo
-		done 
 }
 munge_servers(){
+    local sels="$1"
+    local search="$2"
+    write_fifo(){
+        [[ -p $fifo ]] && rm $fifo
+        mkfifo $fifo
+        local dist
+        for((i=0;i<${#qport[@]};i++)); do
+            dist=$(get_dist ${addr[$i]})
+
+            printf  "%s\n%s\n%s\n%s\n%03d\n%03d\n%s\n%s:%s\n%s\n" "${name[$i]}" "${map[$i]}" "${fpp[$i]}" "${gametime[$i]}" \
+            "${players[$i]}" "${max[$i]}" "$dist" "${addr[$i]}" "${gameport[$i]}" "${qport[$i]}" >> $fifo
+        done
+    }
+	response="$(cat /tmp/dz.servers)"
 	if [[ ! "$sels" =~ "All maps" ]]; then
-		filter_maps > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+		filter_maps > >(pdialog)
+        [[ $? -eq 1 ]] && return
 		disabled+=("All maps")
 	fi
 	[[ $ret -eq 97 ]] && return
-	prepare_filters > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
+	prepare_filters "$sels" "$search"
+    [[ $? -eq 1 ]] && return
 	if [[ $(echo "$response" | jq 'length') -eq 0 ]]; then
 		$steamsafe_zenity --error --text="No matching servers" 2>/dev/null
 		return
 	fi
-	local addr=$(echo "$response" | jq -r '.[].addr' | awk -F: '{print $1}')
-	local gameport=$(echo "$response" | jq -r '.[].gameport')
-	local qport=$(echo "$response" | jq -r '.[].addr' | awk -F: '{print $2}')
-	#jq bug #1788, raw output cannot be used with ASCII
-	local name=$(echo "$response" | jq -a '.[].name' | sed 's/\\u[0-9a-z]\{4\}//g;s/^"//;s/"$//')
-	local players=$(echo "$response" | jq -r '.[].players')
-	local max=$(echo "$response" | jq -r '.[].max_players')
-	local map=$(echo "$response" | jq -r '.[].map|ascii_downcase')
-	local gametime=$(echo "$response" | jq -r '.[].gametype' | grep -oE '[0-9]{2}:[0-9]{2}$')
+	#jq bug #1788, raw output (-r) cannot be used with ASCII
+	local name=$(<<< "$response" jq -a '.[].name' | sed 's/\\u[0-9a-z]\{4\}//g;s/^"//;s/"$//')
+	local map=$(<<< "$response" jq -r '.[].map|if type == "string" then ascii_downcase else "null" end')
+    local gametime=$(<<< "$response" jq -r '.[]|(if .gametype == null then "null" else .gametype end)|scan("[0-9]{2}:[0-9]{2}$")')
+    local fpp=$(<<< "$response" jq -r '.[].gametype|split(",")|if any(. == "no3rd") then "1PP" else "3PP" end')
+	local players=$(<<< "$response" jq -r '.[].players')
+	local max=$(<<< "$response" jq -r '.[].max_players')
+	local addr=$(<<< "$response" jq -r '.[].addr|split(":")[0]')
+	local gameport=$(<<< "$response" jq -r '.[]|(if .gameport == null then "null" else .gameport end)')
+	local qport=$(<<< "$response" jq -r '.[].addr|split(":")[1]')
+
 	readarray -t qport <<< $qport
 	readarray -t gameport <<< $gameport
 	readarray -t addr <<< $addr
 	readarray -t name <<< $name
+	readarray -t fpp <<< $fpp
 	readarray -t players <<< $players
 	readarray -t map <<< $map
 	readarray -t max <<< $max
 	readarray -t gametime <<< $gametime
+
 	if [[ $is_steam_deck -eq 0 ]]; then
 		sd_res="--width=1920 --height=1080"
 	fi
-	
 	write_fifo &
 	pid=$!
-	local sel=$($steamsafe_zenity --text="$(pagination)" --title="DZGUI" --list --column=Map --column=Name --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=7,8 --separator=%% 2>/dev/null < <(while true; do cat $fifo; done))
+	local sel=$($steamsafe_zenity --text="$(pagination)" --title="DZGUI" --list --column=Name --column=Map --column=PP --column=Gametime --column=Players --column=Max --column=Distance --column=IP --column=Qport $sd_res --print-column=1,8,9 --separator=%% 2>/dev/null < <(while true; do cat $fifo; done))
 	if [[ -z $sel ]]; then
 		rm $fifo
-		kill -9 $pid
+		kill -9 $pid 2>/dev/null
+        return 1
 	else
 		rm $fifo
 		kill -9 $pid
@@ -1453,59 +1536,56 @@ munge_servers(){
 	fi
 }
 debug_servers(){
-	if [[ -n $steam_api ]]; then
-		exists=true
-	else
-		exists=false
-	fi
-	key_len=${#steam_api}
-	first_char=${steam_api:0:1}
-	last_char=${steam_api:0-1}
 	debug_res=$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api")
-	debug_len=$(echo "$debug_res" | jq '[.response.servers[]]|length')
-	[[ -z $debug_len ]] && debug_len=0
+	local len=$(<<< "$debug_res" jq '[.response.servers[]]|length')
+	if [[ $len -eq 0 ]]; then
+		return 1
+	else
+		return 0
+	fi
 }
 server_browser(){
-	check_steam_api
-	[[ $? -eq 1 ]] && return
-
-	unset ret
-	file=$(mktemp)
-	local limit=20000
-	local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=$limit&key=$steam_api"
-	check_geo_file
-	local_latlon
-	choose_filters
-	[[ -z $sels ]] && return
+    unset ret
+    local filters="$(<<< "$1" awk 'NR==1 {print $0}')"
+    local keywords="$(<<< "$1" awk 'NR==2 {print $0}')"
+    echo "# Checking Steam API"
+    check_steam_api
+    [[ $? -eq 1 ]] && return
+    echo "# Checking geolocation file"
+    check_geo_file
+    echo "# Calculating server distances"
+    local_latlon
 	[[ $ret -eq 97 ]] && return
-	#TODO: some error handling here
-	fetch(){
-		echo "# Getting server list"
-		response=$(curl -Ls "$url" | jq -r '.response.servers')
-	}
-	fetch > >($steamsafe_zenity --pulsate --progress --auto-close --width=500 2>/dev/null)
-	total_servers=$(echo "$response" | jq 'length' | numfmt --grouping)
+
+    local limit=20000
+    local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=$limit&key=$steam_api"
+
+    echo "# Getting server list"
+    curl -Ls "$url" | jq -r '.response.servers' > /tmp/dz.servers
+	total_servers=$(< /tmp/dz.servers jq 'length' | numfmt --grouping)
 	players_online=$(curl -Ls "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=$aid" \
 		| jq '.response.player_count' | numfmt --grouping)
 	debug_servers
-	local sel=$(munge_servers)
-	if [[ -z $sel ]]; then
-		unset filters
-		unset search
-		ret=98
-		sd_res="--width=1280 --height=800"
-		return
-	fi
-	local sel_ip=$(echo "$sel" | awk -F%% '{print $1}')
-	local sel_port=$(echo "$sel" | awk -F%% '{print $2}')
-	qport_list="$sel_ip%%$sel_port"
-	if [[ -n "$sel_ip" ]]; then
-		connect "$sel_ip" "ip"
-		sd_res="--width=1280 --height=800"
-	else
-		sd_res="--width=1280 --height=800"
-		return
-	fi
+	[[ $? -eq 1 ]] && { popup 1100; return 1; }
+
+    echo "100"
+    local sel=$(munge_servers "$filters" "$keywords")
+    if [[ -z $sel ]]; then
+        unset filters
+        unset search
+        ret=98
+        sd_res="--width=1280 --height=800"
+        return 1
+    fi
+
+    readarray -t address < <(format_table_results "$sel")
+    local ip="${address[1]}"
+    local gameport="${address[2]}"
+    local qport="${address[3]}"
+    unset address
+
+    connect "$ip" "$gameport" "$qport"
+	sd_res="--width=1280 --height=800"
 }
 mods_disk_size(){
 	printf "Total size on disk: %s | " $(du -sh "$workshop_dir" | awk '{print $1}')
@@ -1517,27 +1597,32 @@ main_menu(){
 	logger INFO "Setting mode"
 	set_mode
 	while true; do
-		set_header ${FUNCNAME[0]}
+		set_header "main_menu"
 		rc=$?
 		logger INFO "set_header rc is $rc"
 		if [[ $rc -eq 0 ]]; then
 			case "$sel" in
 				"") warn "No item was selected." ;;
-				"	Server browser") server_browser ;;
-				"	My servers") query_and_connect ;;
-				"	Quick connect to favorite server") connect_to_fav ;;
+				"	Server browser") 
+                        local filters=$(choose_filters)
+                        [[ -z $filters ]] && continue
+                        (server_browser "$filters") | pdialog ;;
+				"	My servers") query_and_connect "connect" ;;
+				"	Quick connect to favorite server") connect_to_fav "$fav_server" ;;
+				"	Connect by ID") connect_by_id ;;
 				"	Connect by IP") connect_by_ip ;;
-				"	Recent servers (last 10)") history_table ;;
+				"	Recent servers (last 10)") query_and_connect "history" "$(cat $hist_file)" ;;
 				"	Add server by ID") add_by_id ;;
+				"	Add server by IP") add_by_ip ;;
 				"	Add favorite server") add_by_fav ;;
 				"	Change favorite server") add_by_fav ;;
-				"	Delete server") delete=1; query_and_connect ;;
+				"	Delete server") query_and_connect "delete" ;;
 				"	List installed mods")
 						list_mods | sed 's/\t/\n/g' | $steamsafe_zenity --list --column="Mod" --column="Symlink" --column="Dir" \
 							--title="DZGUI" $sd_res --text="$(mods_disk_size)" \
 							--print-column="" 2>/dev/null
 						;;
-				"	View changelog") changelog | $steamsafe_zenity --text-info $sd_res --title="DZGUI" 2>/dev/null ;;
+				"	View changelog") changelog ;;
 				"	Advanced options")
 							options_menu
 							main_menu
@@ -1555,98 +1640,34 @@ main_menu(){
 		fi
 	done
 }
-page_through(){
-	list_response=$(curl -s "$page")
-	list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
-	idarr+=("$list")
-	parse_json
-}
-parse_json(){
-	echo "# Parsing servers"
-	page=$(echo "$list_response" | jq -r '.links.next?')
-	if [[ $first_entry -eq 1 ]]; then
-		local list=$(echo "$list_response" | jq -r '.data[] .attributes | "\(.name)\t\(.ip):\(.port)\t\(.players)/\(.maxPlayers)\t\(.details.time)\t\(.status)\t\(.id)"')
-		idarr+=("$list")
-		first_entry=0
-	fi
-	if [[ "$page" != "null" ]]; then
-		page_through
-	else
-		printf "%s\n" "${idarr[@]}" > $tmp
-		idarr=()
-		fetch_query_ports
-	fi
-}
-check_ping(){
-	ping_ip=$(echo "$1" | awk -F'\t' '{print $2}' | awk -F: '{print $1}')
-	ms=$(ping -c 1 -W 1 "$ping_ip" | awk -Ftime= '/time=/ {print $2}')
-	if [[ -z $ms ]]; then
-		echo "Timeout"
-	else	
-		echo "$ms"
-	fi
-}
-create_array(){
-	rows=()
-	#TODO: improve error handling for null values
-	lc=1
-	while read line; do
-		name=$(echo "$line" | awk -F'\t' '{print $1}')
-		#truncate names
-		if [[ $(echo "$name" | wc -m) -gt 50 ]]; then
-			name="$(echo "$name" | awk '{print substr($0,1,50) "..."}')"
-		else
-			:
-		fi
-		ip=$(echo "$line" | awk -F'\t' '{print $2}')
-		players=$(echo "$line" | awk -F'\t' '{print $3}')
-		time=$(echo "$line" | awk -F'\t' '{print $4}')
-		stat=$(echo "$line" | awk -F'\t' '{print $5}')
-
-		#TODO: probe offline return codes
-		id=$(echo "$line" | awk -F'\t' '{print $6}')
-		tc=$(awk 'END{print NR}' $tmp)
-		if [[ $delete -eq 1 ]]; then
-			declare -g -a rows=("${rows[@]}" "$name" "$id")
-		else
-			echo "# Checking ping: $lc/$tc"
-			ping=$(check_ping "$line")
-			declare -g -a rows=("${rows[@]}" "$name" "$ip" "$players" "$time" "$stat" "$id" "$ping")
-		fi
-		let lc++
-	done < <(cat "$tmp" | sort -k1)
-
-	for i in "${rows[@]}"; do echo -e "$i"; done > $tmp
-}
 set_fav(){
+    local fav="$1"
 	logger INFO "${FUNCNAME[0]}"
-	echo "[DZGUI] Querying favorite server"
-	query_api
-	fav_label=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" -G -d "filter[game]=$game" -d "filter[ids][whitelist]=$fav" \
-	| jq -r '.data[] .attributes .name')
-	if [[ -z $fav_label ]]; then
-		fav_label=null
-	else
-		fav_label="'$fav_label'"
-	fi
-	logger INFO "Fav label is $fav_label"
+
+    readarray -t address < <(format_config_address "$fav")
+    local ip="${address[0]}"
+    local gameport="${address[1]}"
+    local qport="${address[2]}"
+    unset address
+
+    local info=$(a2s "$ip" "$qport" info)
+    local name=$(<<< $info jq -r '.name')
+    echo "'$name'"
 }
 check_unmerged(){
 	logger INFO "${FUNCNAME[0]}"
 	if [[ -f ${config_path}.unmerged ]]; then
-		printf "[DZGUI] Found new config format, merging changes\n"
 		merge_config
 		rm ${config_path}.unmerged
 	fi
 }
 merge_config(){
 	source $config_file
-	mv $config_file ${config_path}dztuirc.old
+    legacy_fav
+    legacy_ids
 	[[ -z $staging_dir ]] && staging_dir="/tmp"
-	write_config > $config_file
-	printf "[DZGUI] Wrote new config file to %sdztuirc\n" $config_path
-	$steamsafe_zenity --info --width=500 --title="DZGUI" --text="Wrote new config format to \n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
-
+    update_config
+	tdialog "Wrote new config format to \n${config_file}\nIf errors occur, you can restore the file:\n${config_file}.old"
 }
 download_new_version(){
 	if [[ $is_steam_deck -eq 1 ]]; then
@@ -1666,7 +1687,7 @@ download_new_version(){
 		$steamsafe_zenity --question --width=500 --title="DZGUI" --text "DZGUI $upstream successfully downloaded.\nTo view the changelog, select Changelog.\nTo use the new version, select Exit and restart." --ok-label="Changelog" --cancel-label="Exit" 2>/dev/null
 		code=$?
 		if [[ $code -eq 0 ]]; then
-			changelog | $steamsafe_zenity --text-info $sd_res --title="DZGUI" 2>/dev/null
+            changelog
 			exit
 		elif [[ $code -eq 1 ]]; then
 			exit
@@ -1691,7 +1712,7 @@ check_branch(){
 	logger INFO "Upstream version is $version"
 }
 enforce_dl(){
-	download_new_version > >($steamsafe_zenity --progress --pulsate --auto-close --no-cancel --width=500)
+	download_new_version > >(pdialog)
 }
 prompt_dl(){
 	$steamsafe_zenity --question --title="DZGUI" --text "Version conflict.\n\nYour branch:\t\t\t$branch\nYour version:\t\t\t$version\nUpstream version:\t\t$upstream\n\nVersion updates introduce important bug fixes and are encouraged.\n\nAttempt to download latest version?" --width=500 --ok-label="Yes" --cancel-label="No" 2>/dev/null
@@ -1700,7 +1721,7 @@ prompt_dl(){
 		return
 	else
 		echo "100"
-		download_new_version > >($steamsafe_zenity --progress --pulsate --auto-close --no-cancel --width=500)
+		download_new_version > >(pdialog)
 	fi
 }
 check_version(){
@@ -1713,8 +1734,6 @@ check_version(){
 		logger INFO "Local version is same as upstream"
 		check_unmerged
 	else
-#		echo "100"
-		echo "[DZGUI] Upstream ($upstream) != local ($version)"
 		logger INFO "Local and remote version mismatch"
 		if [[ $enforce_dl -eq 1 ]]; then
 			enforce_dl
@@ -1729,56 +1748,167 @@ check_architecture(){
 	if [[ -n "$cpu" ]]; then
 		is_steam_deck=1
 		logger INFO "Setting architecture to 'Steam Deck'"
-		echo "[DZGUI] Setting architecture to 'Steam Deck'"
+        [[ $is_steam_deck -eq 1 ]] && test_display_mode
+        if [[ $gamemode -eq 1 ]]; then
+            popup 1400 &&
+            exit 1
+        fi
 	else
 		is_steam_deck=0
 		logger INFO "Setting architecture to 'desktop'"
-		echo "[DZGUI] Setting architecture to 'desktop'"
 	fi
 }
+print_ip_list(){
+    [[ ${#ip_list} -eq 0 ]] &&  return
+    printf "\t\"%s\"\n" "${ip_list[@]}"
+}
+migrate_files(){
+    if [[ ! -f $config_path/dztuirc.oldapi ]]; then
+        cp $config_file $config_path/dztuirc.oldapi
+        rm $hist_file
+    fi
+}
+legacy_fav(){
+    source $config_file
+    [[ -z $fav ]] && return
+    local res=$(map_fav_to_ip "$fav")
+    source $config_file
+}
+legacy_ids(){
+    source $config_file
+    [[ -z $whitelist ]] && return
+    local res=$(map_id_to_ip "$whitelist")
+    source $config_file
+}
+map_fav_to_ip(){
+    local to_add="$1"
+	fav_server=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" \
+        -G -d "sort=-players" \
+        -d "filter[game]=$game" \
+        -d "filter[ids][whitelist]=$to_add" \
+        | jq -r '.data[].attributes|"\(.ip):\(.port):\(.portQuery)"')
+    update_config
+    fav_label=$(set_fav "$fav_server")
+}
+map_id_to_ip(){
+    local to_add="$1"
+    local mode="$2"
+	local res=$(curl -s "$api" -H "Authorization: Bearer "$api_key"" \
+        -G -d "sort=-players" \
+        -d "filter[game]=$game" \
+        -d "filter[ids][whitelist]=$to_add")
+    local len=$(<<< "$res" jq '.data|length')
+    [[ $len -eq 0 ]] && return 1
+    local ip=$(<<< "$res" jq -r '.data[].attributes|"\(.ip):\(.port):\(.portQuery)"')
+    if [[ $mode == "connect" ]]; then
+        echo "$ip"
+        return 0
+    fi
+    for i in $ip; do
+        if [[ ${ip_list[@]} =~ $i ]]; then
+            [[ ! $len -eq 1 ]] && continue
+            warn "This server is already in your list"
+            return 2
+        fi
+        ip_list+=("$i")
+        update_config
+    done
+        echo $i
+}
+add_by_ip(){
+    local sel=$(parse_ips)
+    [[ -z $sel ]] && return
+
+    readarray -t address < <(format_table_results "$sel")
+    local ip="${address[1]}"
+    local gameport="${address[2]}"
+    local qport="${address[3]}"
+    unset address
+
+    if [[ ${ip_list[@]} =~ "$ip:$gameport:$qport" ]]; then
+        warn "This server is already in your favorites"
+        return
+    fi
+
+    ip_list+=("$ip:$gameport:$qport")
+    update_config
+    info "Added $ip:$gameport:$qport to:\n${config_path}dztuirc\nIf errors occurred, you can restore the file:\n${config_path}dztuirc.old"
+}
+pdialog(){
+	$steamsafe_zenity --progress --pulsate --auto-close --title="DZGUI" --width=500 2>/dev/null
+}
+edialog(){
+    $steamsafe_zenity --entry --text="$1" --width=500 --title="DZGUI" 2>/dev/null
+}
+tdialog(){
+    $steamsafe_zenity --info --text="$1" --width=500 --title="DZGUI" 2>/dev/null
+}
+qdialog(){
+    $steamsafe_zenity --question --text="$1" --width=500 --title="DZGUI" 2>/dev/null
+}
 add_by_id(){
-	#FIXME: prevent redundant creation of existent IDs (for neatness)
+    local mode="$1"
+    if [[ -z $api_key ]]; then
+        qdialog "Requires Battlemetrics API key. Set one now?"
+        [[ $? -eq 1 ]] && return 1
+        while true; do
+            api_key=$(edialog "Battlemetrics API key")
+            [[ $? -eq 1 ]] && return 1
+            [[ -z $api_key ]] && { warn "Invalid API key"; continue; }
+            if [[ $(test_bm_api $api_key) -eq 1 ]]; then
+                warn "Invalid API key"
+                unset api_key
+                continue
+            fi
+            update_config
+            break
+        done
+    fi
 	while true; do
-		id=$($steamsafe_zenity --entry --text="Enter server ID" --title="DZGUI" 2>/dev/null)
-		rc=$?
-		if [[ $rc -eq 1 ]]; then
-			return
-		else
-			if [[ ! $id =~ ^[0-9]+$ ]]; then
-				$steamsafe_zenity --warning --title="DZGUI" --text="Invalid ID" 2>/dev/null
-			else
-				[[ -z $whitelist ]] && new_whitelist="whitelist=\"$id\""
-				[[ -n $whitelist ]] && new_whitelist="whitelist=\"$whitelist,$id\""
-				mv $config_file ${config_path}dztuirc.old
-				nr=$(awk '/whitelist=/ {print NR}' ${config_path}dztuirc.old)
-				awk -v "var=$new_whitelist" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
-				$steamsafe_zenity --info --title="DZGUI" --text="Added "$id" to:\n${config_path}dztuirc\nIf errors occur, you can restore the file:\n${config_path}dztuirc.old" --width=500 2>/dev/null
-				source $config_file
-				return
-			fi
-		fi
+		local id
+        id=$(edialog "Enter server ID")
+		[[ $? -eq 1 ]] && return 1
+        if [[ ! $id =~ ^[0-9]+$ ]]; then
+            warn "Invalid ID"
+        else
+            local ip
+            ip=$(map_id_to_ip "$id" "$mode")
+            case "$?" in
+                1)
+                    warn "Invalid ID"
+                    continue
+                    ;;
+                2)
+                    continue
+                    ;;
+                *)
+                    if [[ $mode == "connect" ]]; then
+                        echo "$ip"
+                        return 0
+                    fi
+                    tdialog "Added $ip to:\n${config_path}dztuirc\nIf errors occurred, you can restore the file:\n${config_path}dztuirc.old"
+                    return 0
+                    ;;
+            esac
+        fi
 	done
 }
 toggle_debug(){
-	mv $config_file ${config_path}dztuirc.old
-	nr=$(awk '/debug=/ {print NR}' ${config_path}dztuirc.old)
 	if [[ $debug -eq 1 ]]; then
 		debug=0
 	else
 		debug=1
 	fi
-	flip_debug="debug=\"$debug\""
-	awk -v "var=$flip_debug" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
-	printf "[DZGUI] Toggled debug flag to '$debug'\n"
-	source $config_file
+    update_config
 
 }
 setup(){
 	logger INFO "${FUNCNAME[0]}"
-	if [[ -n $fav ]]; then
-		set_fav
-		items[8]="	Change favorite server"
-	fi
+	[[ -z $fav_server ]] && return
+    items[10]="	Change favorite server"
+    [[ -n $fav_label ]] && return
+    fav_label=$(set_fav $fav_server)
+    update_config
 }
 check_map_count(){
 	logger INFO "${FUNCNAME[0]}"
@@ -1809,29 +1939,31 @@ check_map_count(){
 		fi
 	fi
 }
+change_name(){
+    while true; do
+        local name=$($steamsafe_zenity --entry --text="Enter desired in-game name" --title="DZGUI" 2>/dev/null)
+        [[ -z "${name//[[:blank:]]/}" ]] && continue
+        update_config
+        info "Changed name to: '$name'.\nIf errors occur, you can restore the file '${config_path}dztuirc.old'."
+        return
+    done
+}
 add_by_fav(){
-while true; do
-	fav_id=$($steamsafe_zenity --entry --text="Enter server ID" --title="DZGUI" 2>/dev/null)
-	rc=$?
-	if [[ $rc -eq 1 ]]; then
-		return
-	else
-		if [[ ! $fav_id =~ ^[0-9]+$ ]]; then
-			$steamsafe_zenity --warning --title="DZGUI" --text="Invalid ID"
-		else
-			new_fav="fav=\"$fav_id\""
-			mv $config_file ${config_path}dztuirc.old
-			nr=$(awk '/fav=/ {print NR}' ${config_path}dztuirc.old)
-			awk -v "var=$new_fav" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
-			echo "[DZGUI] Added $fav_id to key 'fav'"
-			$steamsafe_zenity --info --title="DZGUI" --text="Added "$fav_id" to:\n${config_path}dztuirc\nIf errors occurred, you can restore the file:\n${config_path}dztuirc.old" 2>/dev/null
-			source $config_file
-			set_fav
-			items[8]="	Change favorite server"
-			return
-		fi
-	fi
-done
+    local sel=$(parse_ips)
+    [[ -z $sel ]] && return
+
+    readarray -t address < <(format_table_results "$sel")
+    local ip="${address[1]}"
+    local gameport="${address[2]}"
+    local qport="${address[3]}"
+    unset address
+    fav_server="$ip:$gameport:$qport"
+    fav_label=$(set_fav "$fav_server")
+
+    update_config
+    info "Added $fav_server to:\n${config_path}dztuirc\nIf errors occurred, you can restore the file:\n${config_path}dztuirc.old"
+
+    items[10]="	Change favorite server"
 }
 lock(){
 	[[ ! -d $config_path ]] && return
@@ -1842,8 +1974,7 @@ lock(){
 	ps -p $pid -o pid= >/dev/null 2>&1
 	res=$?
 	if [[ $res -eq 0 ]]; then
-		echo "[DZGUI] Already running ($pid)"
-		$steamsafe_zenity --info --text="DZGUI already running (pid $pid)" --width=500 --title="DZGUI" 2>/dev/null
+        info "DZGUI already running ($pid)"
 		exit
 	elif [[ $pid == $$ ]]; then
 		:
@@ -1851,18 +1982,45 @@ lock(){
 		echo $$ > ${config_path}.lockfile
 	fi
 }
+fetch_a2s(){
+	[[ -d $helpers_path/a2s ]] && return
+	local sha=c7590ffa9a6d0c6912e17ceeab15b832a1090640
+	local author="yepoleb"
+	local repo="python-a2s"
+	local url="https://github.com/$author/$repo/tarball/$sha"
+	local prefix="${author^}-$repo-${sha:0:7}"
+	local file="$prefix.tar.gz"
+	curl -Ls "$url" > "$helpers_path/$file"
+	tar xf "$helpers_path/$file" -C "$helpers_path" "$prefix/a2s" --strip=1
+	rm "$helpers_path/$file"
+}
+fetch_dzq(){
+	[[ -f $helpers_path/dayzquery.py ]] && return
+	local sha=ccc4f71b48610a1885706c9d92638dbd8ca012a5
+	local author="yepoleb"
+	local repo="dayzquery"
+	local url="https://raw.githubusercontent.com/$author/$repo/$sha/$repo.py"
+	curl -Ls "$url" > $helpers_path/a2s/$repo.py
+}
+fetch_query(){
+	[[ -f $helpers_path/query.py ]] && return
+	local author="aclist"
+	local repo="$branch"
+	local url="https://raw.githubusercontent.com/$author/dztui/$repo/helpers/query.py"
+    local real="https://raw.githubusercontent.com/aclist/dztui/testing/helpers/query.py"
+	curl -Ls "$url" > "$helpers_path/query.py"
+}
 fetch_helpers(){
 	logger INFO "${FUNCNAME[0]}"
 	mkdir -p "$helpers_path"
 	[[ ! -f "$helpers_path/vdf2json.py" ]] && curl -Ls "$vdf2json_url" > "$helpers_path/vdf2json.py"
+    fetch_a2s
+    fetch_dzq
+    fetch_query
 }
 update_steam_cmd(){
-	local new_cmd
 	preferred_client="$steam_cmd"
-	new_cmd="preferred_client=\"$preferred_client\""
-	mv $config_file ${config_path}dztuirc.old
-	nr=$(awk '/preferred_client=/ {print NR}' ${config_path}dztuirc.old)
-	awk -v "var=$new_cmd" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > ${config_path}dztuirc
+    update_config
 }
 steam_deps(){
 	logger INFO "${FUNCNAME[0]}"
@@ -1896,33 +2054,22 @@ initial_setup(){
 	config
 	steam_deps
 	run_varcheck
+    migrate_files
 	stale_symlinks
 	init_items
 	setup
 	check_news
 	echo "100"
 }
-test_zenity_version(){
-	local current="$1"
-	local cutoff="3.99.1"
-	if [[ "$(printf '%s\n' "$cutoff" "$current" | sort -V | head -n1)" == "$cutoff" ]]; then
-		logger INFO "zenity version greater than or equal to $cutoff"
-		echo greater
-	else
-		logger INFO "zenity version lesser than $cutoff"
-		echo lesser
-	fi
-}
 main(){
+    local parent=$(cat /proc/$PPID/comm)
+    [[ -f "$debug_log" ]] && rm "$debug_log"
 	lock
 	local zenv=$(zenity --version 2>/dev/null)
-	[[ -z $zenv ]] && { logger "Missing zenity"; exit; }
-	local res=$(test_zenity_version $zenv)
-	initial_setup > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZGUI" --no-cancel --width=500 2>/dev/null)
+	[[ -z $zenv ]] && { echo "Failed to find zenity"; logger "Missing zenity"; exit 1; }
+	initial_setup > >(pdialog)
 	main_menu
 	#TODO: tech debt: cruddy handling for steam forking
 	[[ $? -eq 1 ]] && pkill -f dzgui.sh
 }
-parent=$(cat /proc/$PPID/comm)
-[[ -f "$debug_log" ]] && rm "$debug_log"
 main
