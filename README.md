@@ -1,26 +1,19 @@
 ## What this is
+DZGUI is a GUI version of [DZTUI](https://github.com/aclist/dztui/tree/dztui) for Linux. 
 
-A GUI version of [DZTUI](https://githubom/aclist/dztui) for Linux. Used to list official and community server details and quick connect to preferred servers by staging mods and concatenating launch options automatically.  
+Note: development of DZTUI has stopped and has been replaced with DZGUI.
 
 DZGUI allows you to connect to both official and modded/community DayZ servers on Linux and provides a graphical interface for doing so. This overcomes certain limitations in the Linux client and helps prepare the game to launch by doing the following:
 
-1. Display server metadata in a table (server name, player count, ping, current gametime, distance, IP)
-2. Find and prepare mods being requested by the server (choose from manual or automatic installation)
-3. Concatenate launch options to pass to Steam
+1. Search for and display server metadata in a table (server name, player count, ping, current gametime, distance, IP)
+2. Add/delete/manage favorite servers by IP or ID
+3. Find and prepare mods being requested by the server (choose from manual or automatic installation)
+4. Concatenate launch options to pass to Steam
+
+Other options include the ability to connect by IP or ID or  set a favorite server.
 
 ## Setup and usage
 
 Refer to the [manual](https://aclist.github.io/dzgui/dzgui.html) for installation and setup instructions, a feature-by-feature breakdown, and Steam integration tutorials.
 
-![Alt text](example.png)
-
-## Attribution
-A subset of geolocation data was sourced from DB-IP under a Creative Commons Attribution 4.0 International License.
-
-## Acknowledgments
-Special thanks to the following users for going above and beyond in beta testing and finding obscure bugs.
-
-- fossean
-- scandalouss
-- SteveIDusa
-- The_Axelrod
+![Alt text](/images/example.png)
