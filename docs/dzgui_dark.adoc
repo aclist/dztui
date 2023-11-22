@@ -435,23 +435,22 @@ Uses xdg-open to open the https://aclist.github.io/dzgui/dzgui#_hall_of_fame[Hal
 == Config file key/value pairs
 Under normal usage, these values are populated and toggled automatically in-app. This config file is partially compatible with DZTUI.
 
-
 [%autowidth]
 |===
 |Key|Value
 
 |`api_key`|the API key generated at BattleMetrics. See <<Setup>>
-|`whitelist`|comma-separated list of server IDs from BattleMetrics; integer-values only
+|`auto_install`|permissible values are 0, 1, and 2. These are set internally depending on if the user enabled auto mod installation
+|`branch`|by default, set to `stable`; set to `testing` to fetch the testing branch
+|`debug`|by default, set to 0; set to `1` to print launch options that would have been run, instead of actually connecting (used for troubleshooting and submitting bug reports)
+|`default_steam_path`|the path to the default Steam client installation
+|`ip_list`|array of server addresses; a concatenation of the IP/GamePort/Queryport
 |`fav_server`|server to display in the `Fav` field and to quick-connect to (must be one only); a concatenation of the IP/Gameport/Queryport
 |`fav_label`|the human-readable name of the fav server set above
 |`name`|a custom "handle" name used to identify the player on a server (required by some servers)
-|`debug`|by default, set to 0; set to `1` to print launch options that would have been run, instead of actually connecting (used for troubleshooting and submitting bug reports)
-|`branch`|by default, set to `stable`; set to `testing` to fetch the testing branch
-|`seen_news`|stores a hash of the news item last seen by the client. This is used to suppress news messages until a new one is posted
-|`auto_install`|permissible values are 0, 1, and 2. These are set internally depending on if the user enabled auto mod installation
-|`staging_dir`|a directory used to stage mods while downloading. This feature is deprecated and is no longer user-configurable
-|`default_steam_path`|the path to the default Steam client installation
 |`preferred_client`|whether the user prefers native Steam or Flatpak. This value is only set if concurrent installations are found on the system
+|`seen_news`|stores a hash of the news item last seen by the client. This is used to suppress news messages until a new one is posted
+|`staging_dir`|a directory used to stage mods while downloading. This feature is deprecated and is no longer user-configurable
 |===
 
 == Troubleshooting/FAQ
