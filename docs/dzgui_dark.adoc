@@ -3,7 +3,7 @@
 :stylesheet: dark.css
 
 = DZGUI documentation
-DayZ official/community server graphical launcher for Linux | Last updated: 2023-05-15
+DayZ official/community server graphical launcher for Linux | Last updated: {d}
 
 Click https://aclist.github.io/dzgui/dzgui.html[here] for light mode
 
