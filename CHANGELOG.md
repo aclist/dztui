@@ -38,7 +38,7 @@ from source or waiting until the latest version is merged into Fedora's package 
 - Omit null servers from list: servers that time out or send an empty response are now omitted entirely from the My Servers list, as they will not return meaningful metadata unless they are online.  
   The My Servers list thus shows online and accessible servers
 
-## [3.4.0-rc.1] 2023-05-16
+## [3.3.0] 2023-05-16
 ### Added
 - Fetch more inclusive global "players in-game" count
 - List mod directory on installed mods list
@@ -60,440 +60,232 @@ from source or waiting until the latest version is merged into Fedora's package 
 - First-time setup: break out of dialogs correctly when user backs out
 - First-time setup: break out of automatic path discovery when user specifies a path manually
 - More portable interpreter invocation
+- Properly size down window resolution when returning from server browser
 
-## [3.3.0-rc.24] 2023-05-10
+## [3.2.10] 2023-05-11
 ### Fixed
-- Return from lockfile function if first time setup is not complete
+- Return from lockfile function if first-time setup has not been run
+- Sanitize inputs when using file picker
+- Require both wmctrl and xdotool
 
-## [3.3.0-rc.23] 2023-05-10
-### Fixed
-- Display correct players in-game count
+## [3.2.9] 2023-05-10
 ### Changed
-- Make file picker method more robust
+- Reword button to "Choose path manually" instead of "Retry"
 
-## [3.3.0-rc.22] 2023-05-10
+## [3.2.7] 2023-05-10
 ### Changed
-- Display canonical dir name of mods in list installed mods menu
+- Better sudo escalation within zenity dialogs if vm map count is too small
 
-## [3.3.0-rc.21] 2023-05-10
+## [3.2.6] 2023-05-10
 ### Fixed
-- Hardening of beta client targeting function to avoid false positives
+- Don't parse Flatpak symlinks when setting up default Steam path
 
-## [3.3.0-rc.20] 2023-05-09
-### Changed
-- Use same WM_CLASS targeting method for beta and stable clients
-
-## [3.3.0-rc.19] 2023-05-09
+## [3.2.5] 2023-05-07
 ### Fixed
-- Case folding when targeting WM_CLASS
+- Require sudo when checking vm map count
 
-## [3.3.0-rc.18] 2023-05-09
-### Changed
-- More robust targeting of Steam client
-- Change method of issuing console commands to Beta client
-
-## [3.3.0-rc.17] 2023-05-07
-### Fixed
-- Use sudo when checking vm map count (#61)
-
-## [3.3.0-rc.16] 2023-05-06
-### Fixed
-- Steam beta console not focusing (#60)
-
-## [3.3.0-rc.15] 2023-02-22
+## [3.2.4] 2023-03-01
 ### Fixed
 - BM API returning stale query port and preventing fetching modlist
 
-## [3.3.0-rc.12] 2023-01-19
+## [3.2.3] 2023-02-17
 ### Fixed
-- Don't check mod version timestamps if no mods installed
-- Don't continuously force popup to top of stack
-- Fix for repeated key input in console
-- Split merged modlist correctly on newline
-### Added
-- Parameterize native/Flatpak steam selection
-- Toggle native/Flatpak steam from options menu
-- Clarify popup wording
+- sysctl map count value not being loaded immediately after setting
+- Application terminating when user declines to update map count value
+- Erroneous stderror output when flatpak is not installed
 
-## [3.3.0-rc.11] 2023-01-01
+## [3.2.0] 2023-01-19
+### Added
+- Support Flatpak version of Steam
+
+## [3.1.8] 2023-01-18
 ### Fixed
-- History menu not parsing ports correctly
+- Progress window blocking rest of window stack
+- Bug when updating old mods if automod set to ON
+
+## [3.1.7] 2023-01-06
+### Fixed
+- Hotfix for xdotool repeating input
+
+## [3.1.6] 2023-01-01
+### Changed
+- Tick low pop servers by default
+
+## [3.1.5] 2023-01-01
+### Fixed
 - Validate BM key on initial setup
+- Fix history menu not parsing query ports correctly
 ### Changed
 - More permissive Steam client discovery for tiling WMs
-- Reset minor version (was 1 ahead)
 
-## [3.3.0-rc.2] 2022-12-10
-### Changed
-- Clarify low pop server count
-- Tick low pop server option by default
-
-## [3.3.0-rc.1] 2022-12-06
+## [3.1.4] 2022-12-10
 ### Fixed
-- Merge Python version hotfix from stable branch
+- Issue #43: Hotfix for workspace-driven WMs
 
-## [3.2.1-rc.1] 2022-12-03
-### Changed
-- Dropped legacy headless mode logic and refactor against new automod method
-
-## [3.1.0-rc.21] 2022-12-03
-### Added
-- File picker error handling
-
-## [3.1.0-rc.20] 2022-12-02
+## [3.1.3] 2022-12-06
 ### Fixed
-- Include /run in auto-discovery routine
+- Explicitly require Python 3
 
-## [3.1.0-rc.19] 2022-12-02
+## [3.1.1-2] 2022-12-03
 ### Fixed
-- Use Steam-safe local zenity version
+- Fix lockfile path
 
-## [3.1.0-rc.18] 2022-12-01
-### Added
-- Thousands separator to player counts
-### Dropped
-- Removed deprecated functions
-
-## [3.1.0-rc.17] 2022-11-28
-### Changed
-- Explicitly check Python version
-
-## [3.1.0-rc.16] 2022-11-25
-### Fixed
-- Hotfix for server modlists returning multiples of same mod
-
-## [3.1.0-rc.15] 2022-11-24
-### Fixed
-- Faster path discovery on initial setup
-- Handle whitelist deletion when only one entry present
-- Return to main menu from recent servers list
-- Unset delete menu flags after deletion
-### Added
-- Add python to deps
-- Add Steam API key requirement to initial setup
-### Dropped
-- Drop mandatory server IDs on initial setup
-- Old functions and files pertaining to headless mode
-### Changed
-- Allow My Servers list to be initially empty
-
-## [3.1.0-rc.14] 2022-11-24
-### Changed
-- Rename "History" to "Recent"
-
-## [3.1.0-rc.13] 2022-11-24
-### Fixed
-- Prevent downloading mods if Steam is not running
-- Suppress "force refresh mods" option if automods is disabled
-
-## [3.1.0-rc.12] 2022-11-22
-### Changed
-- Updated menu labels
-
-## [3.1.0-rc.11] 2022-11-21
+## [3.1.0] 2022-12-03
 ### Added
 - Recent connect history
-- Force refresh local mods
-### Changed
-- More verbose messages regarding automod installation
+- Simple, OS-agnostic automod installation
+- Track local mod versions
+- Force update local mods option
+- Added python to dependencies
+- File-picker driven path discovery on initial setup
 ### Dropped
-- Headless mode
+- Headless mod installation
+- Drop server ID field requirement on initial setup
+### Changed
+- Clean up main menu options
+- Enforce Steam API key on initial setup
+- More accurate path discovery on initial setup
+- Add thousands separator to player counts in server browser
+### Fixed
+- Initial setup dialog causing early crash
+- Improved error handling on initial setup to avoid malformed config files
+- Delete server menu not clearing when returning to main menu
+- Handle whitelist deletion when only one entry present
+- Include path to drives under /run in path discovery
+- Use Steam-safe local zenity version
 
-## [3.1.0-rc.10] 2022-11-09
+## [3.0.7] 2022-11-25
+### Fixed
+- Hotfix for server reporting multiple versions of same mod
+
+## [3.0.6] 2022-11-09
 ### Changed
 - More verbose logs
-- Rename log file for clarity
 
-## [3.1.0-rc.8] 2022-10-26
-### Changed
-- Foreground mod progress watcher
-
-## [3.1.0-rc.7] 2022-10-25
-### Changed
-- Simplify mod progress watcher
-
-## [3.1.0-rc.6] 2022-10-25
+## [3.0.5] 2022-10-27
 ### Fixed
-- Download mod metadata
+- Properly create .desktop file on desktop PCs
 
-## [3.1.0-rc.5] 2022-10-25
+## [3.0.3-4] 2022-10-16
+### Fixed
+- Steam Deck path discovery on first-time setup
+
+## [3.0.2] 2022-10-12
+### Fixed
+- Size of certain popups on Steam Deck
+
+## [3.0.1] 2022-10-12
+### Fixed
+- Initial popup size on Steam Deck
+
+## [3.0.0] 2022-10-12
 ### Added
-- Versioning for automods
-### Fixed
-- Restore manual mode watcher file
-
-## [3.1.0-rc.4] 2022-10-23
-### Added
-- Automod v.2 method
-
-## [3.1.0-rc.3] 2022-10-16
-### Added
-- Backend preparation
-
-## [3.1.0-rc.1-2] 2022-10-16
-### Fixed
-- Steam Deck path discovery
-
-## [3.0.0-testing] 2022-10-12
-### Changed
-- Increment major version
-
-## [2.8.0-rc.9] 2022-10-11
-### Changed
-- Reordered main menu elements
-
-## [2.8.0-rc.8] 2022-10-11
-### Changed
-- Changed notification title
-
-## [2.8.0-rc.7] 2022-10-11
-### Changed
-- Reword menu option
-### Fixed
-- Redirect stderr on popup
-
-## [2.8.0-rc.6] 2022-10-11
+- Foreground progress of manual mod subscriptions
+- Automatic mod helper through steamcmd
+- Forum link
+- Enforce Steam API
 ### Dropped
-- Stop using BM for query ports
-### Added
-- Deprecation warning/enforced Steam API
-
-## [2.8.0-rc.5] 2022-10-11
-### Fixed
-- Width of some popups on Steam Deck
-
-## [2.8.0-rc.4] 2022-10-11
+- Stop retrieving extra metadata from BM
 ### Changed
-- Abstract news urls
-- Clarify dependency warning
-
-## [2.8.0-rc.3] 2022-10-11
-### Added
-- Add forums link
-
-## [2.8.0-rc.2] 2022-10-07
-### Added
-- Backend preparation for automods
-
-## [2.8.0-rc.1] 2022-10-06
+- Reorder main menu
+- More verbose error messages
+- Better abstraction of URLs
 ### Fixed
-- Bug with normal mode not launching after closing progress bar
+- Width and text of some popups on Steam Deck
 
-## [2.7.0-rc.26] 2022-10-04
+## [2.7.2] 2022-10-07
 ### Fixed
-- Delete server list array not being emptied when going back to main menu
+- Fix internal URL
 
+## [2.7.1] 2022-10-05
+### Fixed
+- Game launch not kicking off after symlink creation
+
+## [2.7.0] 2022-10-04
 ### Added
-- Progress bars when downloading updates
+- Server browser and geolocation algorithm
+- More verbose error codes
+- Additional progress bar setup and destruction throughout the application
+- Additional API response validation
+### Fixed
+- Encapsulate title strings to prevent leaky arguments in title bars
+- Remove erroneous slow boot process if first-time setup was already complete
+- Delete server list not emptying when returning to main menu
 ### Changed
-- Group main menu categories
-### Fixed
-- Encapsulate window strings to prevent arguments leaking into title
-- Remove extraneous download process that was slowing down startup
+- Group main menu entries in advance of future functionality
+- Better abstraction of paths
+- Clarification of certain options and errors
 
-## [2.7.0-rc.23] 2022-10-03
+## [2.6.3] 2022-10-02
 ### Fixed
-- More robust error handling for API keys
+- Hotfix for connect-to-fav not getting modlist
 
-## [2.7.0-rc.22] 2022-10-02
+## [2.6.2] 2022-10-02
 ### Fixed
-- Merge stable branch hotfixes
+- Hotfix for BM API returning malformed publishedfileids
 
-## [2.7.0-rc.21] 2022-10-01
+## [2.6.1] 2022-09-25
 ### Fixed
-- Clarify some menu messages and behavior
+- Freedesktop shortcut errors
 
-## [2.7.0-rc.20] 2022-09-29
+## [2.6.0] 2022-09-05
 ### Added
-- List total disk size used on mods list
+- Connect by IP method
 
-## [2.7.0-rc.19] 2022-09-26
+## [2.5.1] 2022-08-17
 ### Fixed
-- Strip text from "all maps" option in header
+- Hotfix for malformed paths during first-time setup
 
-## [2.7.0-rc.18] 2022-09-26
+## [2.5.0] 2022-08-16
+### Added
+- Lockfile: prevent concurrent instances of DZGUI from being opened
+
 ### Changed
-- Move lockfile check earlier in pipeline
-- Reword "All maps" filter option
+- Faster path discovery on first-time setup
+
 ### Fixed
-- Store player and server count sooner
+- Symlink collision on servers with many mods
+- API response pagination for large server lists
 
-## [2.7.0-rc.16-17] 2022-09-26
-### Changed
-- Clean up error logging and progress bars
-
-## [2.7.0-rc.15] 2022-09-25
-### Fixed
-- Return selection from server function
-
-## [2.7.0-rc.14] 2022-09-25
-### Fixed
-- Suppress progress dialog when new version available
-
-## [2.7.0-rc.13] 2022-09-25
-### Fixed
-- Restore broken headers
-### Added
-- More verbose logging
-
-## [2.7.0-rc.12] 2022-09-24
-### Changed
-- More verbose logging, error codes
- 
-## [2.7.0-rc.11] 2022-09-24
-### Added
-- Add debug code to troubleshoot API responses
-
-## [2.7.0-rc.10] 2022-09-23
-### Fixed
-- Server list not appearing when launching script through Steam
-
-## [2.7.0-rc.9] 2022-09-22
-### Added
-- Add alternative IP query method
- 
-## [2.7.0-rc.8] 2022-09-15
-### Dropped
-- Drop Python dependency
-
-## [2.7.0-rc.7] 2022-09-14
-### Added
-- Verify IP table checksums when starting
-### Changed
-- Switch to C for helper logic
-### Fixed
-- Error handling for obscure servers returning no modlist
-
-## [2.7.0-rc.6] 2022-09-13
-### Added
-- Add number of maps found to map select menu
-### Fixed
-- Strip Unicode spaces in server titles
-
-## [2.7.0-rc.5] 2022-09-13
-### Changed
-- Improve server distance algorithm
-### Fixed
-- Strip Unicode spaces in server titles
-
-## [2.7.0-rc.2 to 4] 2022-09-13
-### Changed
-- Retooling data in header
-
-## [2.7.0-rc.1] 2022-09-12
-### Added
-- Initial server browser prototype
-
-## [2.6.0-rc.5] 2022-09-03
-### Fixed
-- Make variable local
-
-## [2.6.0-rc.4] 2022-09-03
-### Fixed
-- Use alternate API for direct IP queries
-
-## [2.6.0-rc.3] 2022-09-03
-### Changed
-- Revert to legacy API method
-
-## [2.6.0-rc.2] 2022-08-31
-### Added
-- Validate Steam API key
-
-## [2.6.0-rc.1] 2022-08-16
-### Added
-- Connect to server by IP
-
-## [2.5.0-rc.2] 2022-08-14
-### Fixed
-- Hotfix for server list responses with no next page cursor breaking table
-
-## [2.5.0-rc.1] 2022-08-14
-### Changed
-- More performant path discovery, skip extraneous prompts
-
-## [2.4.2-rc.5] 2022-08-13
-### Fixed
-- Cleaned typos and removed debug code
-
-## [2.4.2-rc.4] 2022-08-13
-### Fixed
-- Clean up legacy symlinks
-
-## [2.4.2-rc.3] 2022-08-13
-### Fixed
-- Alternate symlink method to prevent collisions in IDs
-
-## [2.4.2-rc.2] 2022-08-10
-### Fixed
-- Pass correct query ports to modlist function
-
-## [2.4.2-rc.1] 2022-08-10
-### Fixed
-- Page though API results to list >10 servers
-
-## [2.4.1-testing] 2022-08-09
+## [2.4.1] 2022-08-09
 ### Fixed
 - Hotfix for progress bar breaking table when >9 servers in list
 
-## [2.4.0-rc.10 - 2.4.0-rc.14] 2022-08-05
-### Fixed
-- Miscellaneous backend changes to test deployment of shortcuts to Steam Deck
-
-## [2.4.0-rc.9] 2022-08-05
+## [2.4.0] 2022-08-07
 ### Added
-- Steam Deck artwork
+- Delete server command added to main menu
+- Write log to file for bug reports
+- Prompt to permanently increase map count size
+- Dependency check for Steam
+- Cover artwork
+- News backend for OTA updates
+- Clean up stale symlinks when checking mods
 
-## [2.4.0-rc.8] 2022-08-04
 ### Fixed
-- Prevent word splitting of CPU result
-- Correct path for writing .desktop files
-
-## [2.4.0-rc.7] 2022-08-04
-### Fixed
-- Prevent user from entering invalid entries on first-time setup
+- Minify long mod launch params for servers with launch params breaking the upper limit
+- Port DZTUI method of handling legacy symlinks
+- Prevent user from entering invalid data on first-time setup
 - Prompt to re-run first-time setup if config is malformed
 - Better handling of field output from table
-### Added
-- Prototype .desktop file for Steam Deck
-- Generate bug report logs summarizing local settings
-### Dropped
-- Deprecated functions
+- Better Steam Deck detection and handling
+- Prevent garbage in error messages
+- Miscellaneous backend improvements
 
-## [2.4.0-rc.5] 2022-07-31
-### Dropped
-- Drop download prompt for branch toggle
-
-## [2.4.0-rc.4] 2022-07-31
-### Fixed
-- Source seen_news and debug values when writing new config file
-
-## [2.4.0-rc.3] 2022-07-31
-### Fixed
-- Populate branch value correctly when staging config file
-
-## [2.4.0-rc.2] 2022-07-31
-### Fixed
+### Changed
 - Enforce download when switching branches
 
-## [2.4.0-rc.1] 2022-07-24
-### Added
-- Dependency check for Steam
-- Delete server from list
-- News backend for critical updates
-- Prompt to permanently update sysctl map count
-- Clean up stale symlinks if mods were deleted
-- Backported DZTUI mod listing method (includes symlinks)
-- Backported DZTUI method of encoding symlinks when handling large number of mods 
-- Write dry-run launch options to file when in debug mode
+## [2.3.2] 2022-08-04
 ### Fixed
-- Prevent garbage in dependency check messages
-- Send browser to background when opening links
+Set branch flag to 'stable' if no config file present
+
+## [2.3.1] 2022-08-04
+### Fixed
+- Improved error handling of first-time setup fields
+- Interpolate config file values for debug, branch when writing file
+
 ### Changed
-- Couple connect to fav and normal connect to same query function for maintainability
-- Revert to old issues page index
-- Hide header on unneeded pages
-- Better detection of Steam Deck
+- Prompt user to restart first-time setup if broken config is found
+>>>>>>> c293fcd8c5136b6578f519b2f400d45bc01335cc
 
 ## [2.3.0] 2022-07-18
 ### Added
