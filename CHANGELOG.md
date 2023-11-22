@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.2] 2023-11-22
+## Fixed
+- Query helper not loading: fixed a remote link pointing to the wrong destination and added a checksum verification to ensure file is present
+
 ## [4.0.1] 2023-11-22
 ## Fixed
 - Emergency hotfix to remove build artifacts leaking into main script: if you updated DZGUI from 3.3.18 to 4.0.0 between 2023-11-22 15:00:02 and 2023-11-22 15:03:37 GMT, there is a small chance it will be unable to launch correctly. If so, please follow the instructions on the manual to reinstall.
