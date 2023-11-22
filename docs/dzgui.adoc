@@ -164,7 +164,7 @@ Steam Deck: you must switch to "Desktop Mode" and launch Steam from the desktop.
 [start=2]
 2. Select **Add a Game** > **Add a Non-Steam Game** from the lower left-hand corner.
 
-image::https://github.com/aclist/dztui/raw/testing/images/tutorial/01.png[01,500]
+image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/01.png[01,500]
 
 [start=3]
 3. Navigate to `$HOME/.local/share/applications/` and select `dzgui.desktop`
@@ -193,7 +193,7 @@ Updating the artwork:
 
 1. Navigate to the app's details page and right-click the blank image header at the top.
 
-image::https://github.com/aclist/dztui/raw/testing/images/tutorial/03.png[03,700]
+image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/03.png[03,700]
 
 [start=2]
 2. Select **Set Custom Background**
@@ -201,12 +201,12 @@ image::https://github.com/aclist/dztui/raw/testing/images/tutorial/03.png[03,700
 4. Navigate to the artwork path described above and select `hero.png`.
 5. Next, right-click the image background and select **Set Custom Logo**. 
 
-image::https://github.com/aclist/dztui/raw/testing/images/tutorial/04.png[04,700]
+image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/04.png[04,700]
 
 [start=5]
 5. Navigate to the same path and select `logo.png`. Notice that this removes the redundant app name that occluded the image.
 
-image::https://github.com/aclist/dztui/raw/testing/images/tutorial/05.png[05,700]
+image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/05.png[05,700]
 
 [start=6]
 6. Next, navigate to your Library index (looks like a bookshelf of cover art) and find the DZGUI app. 
@@ -214,12 +214,12 @@ image::https://github.com/aclist/dztui/raw/testing/images/tutorial/05.png[05,700
 [start=7]
 7. Right-click its cover and select **Manage** > **Set custom artwork**.
 
-image::https://github.com/aclist/dztui/raw/testing/images/tutorial/06.png[06,700]
+image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/06.png[06,700]
 
 [start=8]
 8. Navigate to the same path and select `grid.png`. The final result:
 
-image::https://github.com/aclist/dztui/raw/testing/images/tutorial/07.png[07,700]
+image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/07.png[07,700]
 
 
 === Updating the app

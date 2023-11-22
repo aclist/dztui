@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.0-rc.9
+version=4.0.0-rc.10
 
 aid=221100
 game="dayz"
@@ -179,9 +179,6 @@ seen_news="$seen_news"
 
 #Steam API key
 steam_api="$steam_api"
-
-#Terminal emulator
-term="$term"
 
 #Auto-install mods
 auto_install="$auto_install"
