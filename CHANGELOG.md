@@ -1,14 +1,11 @@
 # Changelog
 
-## [4.0.0] 2023-11-15
+## [4.0.0] 2023-11-22
 
 Hello players, this is a major version update which overhauls many of DZGUI's underlying systems to improve responsiveness of the application and make menus more intuitive to interact with. It should 
-be considerably more difficult, if not impossible, to inadvertently crash a dialog, and nested dialogs should behave in a more expected fashion, such as when going back and forth between menus or 
-changing options dynamically within a given menu.
+be considerably more difficult, if not impossible, to inadvertently crash a dialog, and nested dialogs should behave in a more expected fashion, such as when going back and forth between menus or changing options dynamically within a given menu.
 
-In addition, with this update we are querying servers directly. The net benefit of this is that results will returned faster, bootup is faster, and it also paves the way for future features like 
-connecting to servers on a LAN. The Battlemetrics API is now entirely optional and can be skipped during the setup process. However, if you have already set up a BM API key, you can continue using it 
-if you want to query or add servers by ID instead of IP.
+In addition, with this update we are querying servers directly. The net benefit of this is that results will returned faster, bootup is faster, and it also paves the way for future features like connecting to servers on a LAN. The Battlemetrics API is now entirely optional and can be skipped during the setup process. However, if you have already set up a BM API key, you can continue using it if you want to query or add servers by ID instead of IP.
 
 As part of this change, version 4.0.0 introduces the ability to connect to or add servers to your list based on either ID or IP. Previously, you could only connect by IP and add by IP, but now you can connect by IP/ID or add by IP/ID. If you choose the ID method, this will be translated into an IP seamlessly in the background. Similarly, favorite servers are now stored using the full IP rather than the ID. Due to the variety of systems and methods for connecting to servers, the application was carrying around and converting server IPs, IDs, and other formats back and forth, creating unnecessary complexity. By normalizing everything to an IP basis, maintainability should be more consistent. When upgrading to this version, your old favorites lists will be updated automatically to the new IP method. Note that as a result of this change, we must purge old history lists ("Recent Servers"), but everything else should carry over as before.
 
