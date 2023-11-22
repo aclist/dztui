@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.1
+version=4.0.2
 
 aid=221100
 game="dayz"
@@ -2002,11 +2002,10 @@ fetch_dzq(){
 	curl -Ls "$url" > $helpers_path/a2s/$repo.py
 }
 fetch_query(){
-	[[ -f $helpers_path/query.py ]] && return
+    [[ $(md5sum $helpers_path/query.py | awk '{print $1}') == "7cbae12ae68b526e7ff376b638123cc7" ]] && return
 	local author="aclist"
-	local repo="$branch"
+	local repo="dzgui"
 	local url="https://raw.githubusercontent.com/$author/dztui/$repo/helpers/query.py"
-    local real="https://raw.githubusercontent.com/aclist/dztui/testing/helpers/query.py"
 	curl -Ls "$url" > "$helpers_path/query.py"
 }
 fetch_helpers(){
