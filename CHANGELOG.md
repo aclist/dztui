@@ -2,8 +2,7 @@
 
 ## [4.0.0] 2023-11-22
 
-Hello players, this is a major version update which overhauls many of DZGUI's underlying systems to improve responsiveness of the application and make menus more intuitive to interact with. It should 
-be considerably more difficult, if not impossible, to inadvertently crash a dialog, and nested dialogs should behave in a more expected fashion, such as when going back and forth between menus or changing options dynamically within a given menu.
+Hello players, this is a major version update which overhauls many of DZGUI's underlying systems to improve responsiveness of the application and make menus more intuitive to interact with. It should be considerably more difficult, if not impossible, to inadvertently crash a dialog, and nested dialogs should behave in a more expected fashion, such as when going back and forth between menus or changing options dynamically within a given menu.
 
 In addition, with this update we are querying servers directly. The net benefit of this is that results will returned faster, bootup is faster, and it also paves the way for future features like connecting to servers on a LAN. The Battlemetrics API is now entirely optional and can be skipped during the setup process. However, if you have already set up a BM API key, you can continue using it if you want to query or add servers by ID instead of IP.
 
