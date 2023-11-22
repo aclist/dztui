@@ -34,7 +34,7 @@ If any dependencies are missing when the application starts, it will warn you, s
 Automatic method: generic OS (skip to step 3 below when complete)
 
 ```
-curl -s "https://raw.githubusercontent.com/aclist/dztui/main/install.sh" | bash
+curl -s "https://raw.githubusercontent.com/aclist/dztui/dzgui/install.sh" | bash
 ```
 
 Automatic method: nix-based systems (contributed by lelgenio)
