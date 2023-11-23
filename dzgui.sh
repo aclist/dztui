@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.3
+version=4.0.4
 
 aid=221100
 game="dayz"
@@ -2004,7 +2004,9 @@ fetch_dzq(){
 fetch_query(){
     local sum="d52ff070b5bb36ace2fce2d914479f47"
     local file="$helpers_path/query.py"
-    [[ -f $file ]] && [[ $(md5sum $file | awk '{print $1}') == $sum ]] && return
+    if [[ -f $file ]] && [[ $(md5sum $file | awk '{print $1}') == $sum ]]; then
+        return
+    fi
 	local author="aclist"
 	local repo="dzgui"
 	local url="https://raw.githubusercontent.com/$author/dztui/$repo/helpers/query.py"
