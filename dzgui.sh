@@ -316,9 +316,10 @@ logger(){
 	printf "[%s] [%s] %s\n" "$date" "$tag" "$string" >> "$debug_log"
 }
 check_pyver(){
-	pyver=$(python3 --version | awk '{print $2}')
-	if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]]; then
-		warn "Requires python >=3.0" &&
+	local pyver=$(python3 --version | awk '{print $2}')
+    local minor=$(<<< $pyver awk -F. '{print $2}')
+	if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]] || [[ $minor -lt 10 ]]; then
+		warn "Requires python >=3.10" &&
 		exit
 	fi
 }
@@ -2003,7 +2004,7 @@ fetch_dzq(){
 	curl -Ls "$url" > $helpers_path/a2s/$repo.py
 }
 fetch_query(){
-    local sum="d52ff070b5bb36ace2fce2d914479f47"
+    local sum="7cbae12ae68b526e7ff376b638123cc7"
     local file="$helpers_path/query.py"
     if [[ -f $file ]] && [[ $(md5sum $file | awk '{print $1}') == $sum ]]; then
         return
@@ -2078,6 +2079,7 @@ steam_deps(){
 initial_setup(){
 	echo "# Initial setup"
 	run_depcheck
+	check_pyver
 	watcher_deps
 	check_architecture
 	check_version
