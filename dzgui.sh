@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.2
+version=4.0.3
 
 aid=221100
 game="dayz"
