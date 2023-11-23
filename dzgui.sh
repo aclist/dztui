@@ -1125,7 +1125,7 @@ popup(){
 		1100) pop "No results found." ;;
 		1200) pop "Timed out. Server may be temporarily offline or not responding to queries." ;;
         1300) pop "No favorite server configured." ;;
-        1400) pop "DZGUI must be run in Desktop Mode on Steam Deck." ;;
+        1400) pop "DZGUI must be run in Desktop Mode on Steam Deck, preferably via the desktop shortcut." ;;
 	esac
 }
 toggle_console_dl(){
