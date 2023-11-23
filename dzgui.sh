@@ -1017,7 +1017,8 @@ generate_log(){
 	Branch: $branch
 	Mode: $mode
 	Auto: $auto_hr
-	Whitelist: $whitelist
+	Servers:
+    $(print_ip_list)
 	Steam path: $steam_path
 	Workshop path: $workshop_dir
 	Game path: $game_dir
