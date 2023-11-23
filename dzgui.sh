@@ -2002,7 +2002,9 @@ fetch_dzq(){
 	curl -Ls "$url" > $helpers_path/a2s/$repo.py
 }
 fetch_query(){
-    [[ $(md5sum $helpers_path/query.py | awk '{print $1}') == "7cbae12ae68b526e7ff376b638123cc7" ]] && return
+    local sum="d52ff070b5bb36ace2fce2d914479f47"
+    local file="$helpers_path/query.py"
+    [[ -f $file ]] && [[ $(md5sum $file | awk '{print $1}') == $sum ]] && return
 	local author="aclist"
 	local repo="dzgui"
 	local url="https://raw.githubusercontent.com/$author/dztui/$repo/helpers/query.py"

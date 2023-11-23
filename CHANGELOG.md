@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.3] 2023-11-22
+## Fixed
+- Query helper: backwards compatibility for pre-2021 versions of Python 3
+
 ## [4.0.2] 2023-11-22
 ## Fixed
 - Query helper not loading: fixed a remote link pointing to the wrong destination and added a checksum verification to ensure file is present

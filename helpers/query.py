@@ -40,11 +40,16 @@ def get_rules(ip, qport):
     except:
         sys.exit(1)
 
+def switch(case):
+    if case == "info":
+        get_info(ip, qport)
+    elif case == "rules":
+        get_rules(ip, qport)
+    else:
+        sys.exit(1)
+
 ip = sys.argv[1]
 qport = sys.argv[2]
 mode = sys.argv[3]
-match mode:
-    case "info":
-        get_info(ip, qport)
-    case "rules":
-        get_rules(ip, qport)
+
+switch(mode)
