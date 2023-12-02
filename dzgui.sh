@@ -375,7 +375,11 @@ steam_deck_mods(){
 }
 test_display_mode(){
 	pgrep -a gamescope | grep -q "generate-drm-mode"
-	[[ $? -eq 0 ]] && gamemode=1
+	if [[ $? -eq 0 ]]; then
+        echo gm
+    else
+        echo dm
+    fi
 }
 foreground(){
 	if [[ $(command -v wmctrl) ]]; then
@@ -389,11 +393,6 @@ manual_mod_install(){
     local ip="$1"
     local gameport="$2"
 
-	[[ $is_steam_deck -eq 1 ]] && test_display_mode
-	if [[ $gamemode -eq 1 ]]; then
-        popup 1400
-        return
-	fi
     local ex="/tmp/dzc.tmp"
     [[ -f $ex ]] && rm $ex
     watcher(){	
@@ -605,6 +604,10 @@ connect(){
     compare
     [[ $auto_install -eq 2 ]] && merge_modlists > >(pdialog)
 	if [[ -n $diff ]]; then
+        if [[ $is_steam_deck -eq 1 ]] && [[ $(test_display_mode) == "gm" ]]; then
+            popup 1400
+            return 1
+        fi
 		case $auto_install in
 			1|2) auto_mod_install "$ip" "$gameport" ;;
 			*) manual_mod_install "$ip" "$gameport" ;;
@@ -662,10 +665,9 @@ fetch_ip_metadata(){
 	curl -Ls "$url"
 }
 
-#TODO: local servers
-#local_ip(){
-#(^127\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)
-#}
+validate_local_ip(){
+    <<< "$1" grep -qP '(^127.\d+.\d+.\d+:\d+$)|(^10\.\d+.\d+.\d+:\d+$)|(^172\.1[6-9]\.\d+.\d+:\d+$)|(^172\.2[0-9]\.\d+.\d+:\d+$)|(^172\.3[0-1]\.\d+.\d+:\d+$)|(^192\.168\.\d+.\d+:\d+$)'
+}
 test_steam_api(){
 	local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api"
 	local code=$(curl -ILs "$url" | grep -E "^HTTP")
@@ -731,35 +733,50 @@ connect_by_ip(){
     connect "$ip" "$gameport" "$qport"
 }
 parse_ips(){
+    local res
 	source $config_file
 	check_steam_api
 	[[ $? -eq 1 ]] && return
     while true; do
         local ip
-        ip=$($steamsafe_zenity --entry --text="Enter server IP (omit port)" --title="DZGUI" 2>/dev/null)
+        ip=$(edialog "Enter server IP (for LAN servers, include query port in IP:PORT format)")
         [[ $? -eq 1 ]] && return 1
-        [[ $ip =~ ':' ]] && continue
-        if validate_ip "$ip"; then
-            local res
-            res=$(fetch_ip_metadata "$ip")
-            if [[ ! $? -eq 0 ]] || [[ $(<<< $res jq '.response|length') -eq 0 ]]; then
-                warn "Failed to retrieve IP metadata. Check IP or API key and try again."
-                return 1
+        if [[ $ip =~ ':' ]]; then
+            if ! validate_local_ip "$ip"; then
+                warn "Invalid local IP. Check IP:PORT combination and try again."
+                continue
             fi
-            local ct=$(<<< "$res" jq '.response.servers|length')
-            if [[ $ct -eq 1 ]]; then
-                local name=$(<<< $res jq -r '.response.servers[].name')
-                local address=$(<<< $res jq -r '.response.servers[].addr')
-                local ip=$(<<< "$address" awk -F: '{print $1}')
-                local qport=$(<<< "$address" awk -F: '{print $2}')
-                local gameport=$(<<< $res jq -r '.response.servers[].gameport')
-                echo "${name}%%${ip}:${gameport}%%${qport}"
-                return 0
+            local lan_ip=$(<<< $ip awk -F: '{print $1}')
+            local lan_qport=$(<<< $ip awk -F: '{print $2}')
+            res=$(a2s $lan_ip $lan_qport info)
+            if [[ ! $? -eq 0 ]] || [[ $(<<< $res jq '.response|length') -eq 0 ]]; then
+                warn "Failed to retrieve server metadata. Check IP:PORT combination and try again."
+                return 1
             fi
             ip_table "$res"
             return 0
         else
-            warn "Invalid IP"
+            if validate_ip "$ip"; then
+                res=$(fetch_ip_metadata "$ip")
+                if [[ ! $? -eq 0 ]] || [[ $(<<< $res jq '.response|length') -eq 0 ]]; then
+                    warn "Failed to retrieve server metadata. Check IP or API key and try again."
+                    return 1
+                fi
+                local ct=$(<<< "$res" jq '.response.servers|length')
+                if [[ $ct -eq 1 ]]; then
+                    local name=$(<<< $res jq -r '.response.servers[].name')
+                    local address=$(<<< $res jq -r '.response.servers[].addr')
+                    local ip=$(<<< "$address" awk -F: '{print $1}')
+                    local qport=$(<<< "$address" awk -F: '{print $2}')
+                    local gameport=$(<<< $res jq -r '.response.servers[].gameport')
+                    echo "${name}%%${ip}:${gameport}%%${qport}"
+                    return 0
+                fi
+                ip_table "$res"
+                return 0
+            else
+                warn "Invalid IP"
+            fi
         fi
     done
 }
@@ -953,8 +970,6 @@ list_mods(){
 	fi
 }
 connect_to_fav(){
-    #TODO: test with broken/bogus fav
-    #TODO: test backing out of connection dialogs
 	logger INFO "${FUNCNAME[0]}"
 
     local fav="$1"
@@ -1126,7 +1141,7 @@ popup(){
 		1100) pop "No results found." ;;
 		1200) pop "Timed out. Server may be temporarily offline or not responding to queries." ;;
         1300) pop "No favorite server configured." ;;
-        1400) pop "DZGUI must be run in Desktop Mode on Steam Deck, preferably via the desktop shortcut." ;;
+        1400) pop "To install missing mods, run DZGUI via Desktop Mode on Steam Deck, preferably via the desktop shortcut." ;;
 	esac
 }
 toggle_console_dl(){
@@ -1431,7 +1446,7 @@ choose_filters(){
 	if [[ $sels =~ Keyword ]]; then
 		local search
         while true; do
-            search=$($steamsafe_zenity --entry --text="Search (case insensitive)" --width=500 --title="DZGUI" 2>/dev/null | awk '{print tolower($0)}')
+            search=$(edialog "Search (case insensitive)" | awk '{print tolower($0)}')
             [[ $? -eq 1 ]] && return 1
             [[ -z $search ]] && warn "Cannot submit an empty keyword"
             [[ -n $search ]] && break
@@ -1749,11 +1764,6 @@ check_architecture(){
 	if [[ -n "$cpu" ]]; then
 		is_steam_deck=1
 		logger INFO "Setting architecture to 'Steam Deck'"
-        [[ $is_steam_deck -eq 1 ]] && test_display_mode
-        if [[ $gamemode -eq 1 ]]; then
-            popup 1400 &&
-            exit 1
-        fi
 	else
 		is_steam_deck=0
 		logger INFO "Setting architecture to 'desktop'"
@@ -1839,7 +1849,11 @@ pdialog(){
 	$steamsafe_zenity --progress --pulsate --auto-close --title="DZGUI" --width=500 2>/dev/null
 }
 edialog(){
-    $steamsafe_zenity --entry --text="$1" --width=500 --title="DZGUI" 2>/dev/null
+    if [[ $is_steam_deck -eq 1 ]] && [[ $(test_display_mode) == "gm" ]]; then
+        kdialog --inputbox "$1" --title "DZGUI" --geometry 500 2>/dev/null
+    else
+        $steamsafe_zenity --entry --text="$1" --width=500 --title="DZGUI" 2>/dev/null
+    fi
 }
 tdialog(){
     $steamsafe_zenity --info --text="$1" --width=500 --title="DZGUI" 2>/dev/null
