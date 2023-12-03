@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.1.0 2023-12-03
+## Added
+- Virtual keyboard support for text entry fields on Steam Deck Game Mode
+- Validate LAN server IPs
+
+#### 4.0.4 2023-12-23
+## Fixed
+- Enforce version check for Python versions before 3.10
+
 ## [4.0.3] 2023-11-22
 ## Fixed
 - Query helper: backwards compatibility for pre-2021 versions of Python 3
