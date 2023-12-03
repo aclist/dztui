@@ -43,6 +43,7 @@ def get_rules(ip, qport):
 ip = sys.argv[1]
 qport = sys.argv[2]
 mode = sys.argv[3]
+
 match mode:
     case "info":
         get_info(ip, qport)
