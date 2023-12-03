@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.0.4
+version=4.1.0.rc-3
 
 aid=221100
 game="dayz"
@@ -32,9 +32,9 @@ sums_path="$helpers_path/sums.md5"
 scmd_file="$helpers_path/scmd.sh"
 km_helper_url="$releases_url/latlon"
 db_file="$releases_url/ips.csv.gz"
-sums_url="$stable_url/helpers/sums.md5"
-scmd_url="$stable_url/helpers/scmd.sh"
-vdf2json_url="$stable_url/helpers/vdf2json.py"
+sums_url="$testing_url/helpers/sums.md5"
+scmd_url="$testing_url/helpers/scmd.sh"
+vdf2json_url="$testing_url/helpers/vdf2json.py"
 forum_url="https://github.com/aclist/dztui/discussions"
 version_file="$config_path/versions"
 steamsafe_zenity="/usr/bin/zenity"
@@ -132,6 +132,7 @@ items=(
 	)
 }
 warn(){
+    logger WARN "$1"
 	$steamsafe_zenity --info --title="DZGUI" --text="$1" --width=500 --icon-name="dialog-warning" 2>/dev/null
 }
 info(){
@@ -209,7 +210,7 @@ freedesktop_dirs(){
 	mkdir -p "$freedesktop_path"
 	curl -s "$version_url" > "$sd_install_path/dzgui.sh"
 	chmod +x "$sd_install_path/dzgui.sh"
-	img_url="$stable_url/images"
+	img_url="$testing_url/images"
 	for i in dzgui grid.png hero.png logo.png; do
 		curl -s "$img_url/$i" > "$sd_install_path/$i"
 	done
