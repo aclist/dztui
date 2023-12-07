@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.1.0.rc-4
+version=4.1.0.rc-5
 
 aid=221100
 game="dayz"
@@ -749,13 +749,15 @@ parse_ips(){
             fi
             local lan_ip=$(<<< $ip awk -F: '{print $1}')
             local lan_qport=$(<<< $ip awk -F: '{print $2}')
+            logger INFO "Given LAN IP was $lan_ip"
+            logger INFO "Given LAN port was $lan_qport"
+            logger INFO "LAN response follows"
             res=$(a2s $lan_ip $lan_qport info)
-            logger INFO "Local LAN response follows"
-            logger INFO "$res"
             if [[ ! $? -eq 0 ]] || [[ $(<<< $res jq '.response|length') -eq 0 ]]; then
                 warn "Failed to retrieve server metadata. Check IP:PORT combination and try again."
                 return 1
             fi
+            logger INFO "$res"
             ip_table "$res"
             return 0
         else
@@ -1250,6 +1252,7 @@ a2s(){
     local ip="$1"
     local qport="$2"
     local mode="$3"
+    logger A2S "Querying '$ip:$qport' with mode '$mode'"
     python3 $helpers_path/query.py "$ip" "$qport" "$mode"
 }
 format_config_address(){
