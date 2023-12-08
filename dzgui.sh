@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.1.0.rc-5
+version=4.1.0.rc-6
 
 aid=221100
 game="dayz"
@@ -753,7 +753,7 @@ parse_ips(){
             logger INFO "Given LAN port was $lan_qport"
             logger INFO "LAN response follows"
             res=$(a2s $lan_ip $lan_qport info)
-            if [[ ! $? -eq 0 ]] || [[ $(<<< $res jq '.response|length') -eq 0 ]]; then
+            if [[ ! $? -eq 0 ]] || [[ $(<<< $res jq 'length') -eq 0 ]]; then
                 warn "Failed to retrieve server metadata. Check IP:PORT combination and try again."
                 return 1
             fi
