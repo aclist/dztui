@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.1.0.rc-6
+version=4.1.0.rc-7
 
 aid=221100
 game="dayz"
@@ -751,14 +751,18 @@ parse_ips(){
             local lan_qport=$(<<< $ip awk -F: '{print $2}')
             logger INFO "Given LAN IP was $lan_ip"
             logger INFO "Given LAN port was $lan_qport"
-            logger INFO "LAN response follows"
             res=$(a2s $lan_ip $lan_qport info)
             if [[ ! $? -eq 0 ]] || [[ $(<<< $res jq 'length') -eq 0 ]]; then
                 warn "Failed to retrieve server metadata. Check IP:PORT combination and try again."
                 return 1
             fi
             logger INFO "$res"
-            ip_table "$res"
+            local name=$(<<< $res jq -r '.address')
+            local ip=$(<<< $address awk -F: '{print $1}')
+            local gameport=$(<<< $address awk -F: '{print $2}')
+            local qport=$(<<< $res jq '.qport')
+            logger INFO "Found '${name}' at ${ip}:${gameport}:${qport}"
+            echo "${name}%%${ip}:${gameport}%%${qport}"
             return 0
         else
             if validate_ip "$ip"; then
