@@ -757,7 +757,8 @@ parse_ips(){
                 return 1
             fi
             logger INFO "$res"
-            local name=$(<<< $res jq -r '.address')
+            local name=$(<<< $res jq -r '.name')
+            local address=$(<<< $res jq -r '.address')
             local ip=$(<<< $address awk -F: '{print $1}')
             local gameport=$(<<< $address awk -F: '{print $2}')
             local qport=$(<<< $res jq '.qport')
