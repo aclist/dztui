@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -o pipefail
-version=4.1.0.rc-7
+version=4.1.0.rc-8
 
 aid=221100
 game="dayz"
@@ -761,7 +761,7 @@ parse_ips(){
             local address=$(<<< $res jq -r '.address')
             local ip=$(<<< $address awk -F: '{print $1}')
             local gameport=$(<<< $address awk -F: '{print $2}')
-            local qport=$(<<< $res jq '.qport')
+            local qport=$(<<< $res jq -r '.qport')
             logger INFO "Found '${name}' at ${ip}:${gameport}:${qport}"
             echo "${name}%%${ip}:${gameport}%%${qport}"
             return 0
