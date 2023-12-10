@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.4] 2023-11-23
+## Fixed
+- Fetch correct checksums for query helper
+
 ## [4.0.3] 2023-11-22
 ## Fixed
 - Query helper: backwards compatibility for pre-2021 versions of Python 3
