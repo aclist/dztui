@@ -1,25 +1,26 @@
 # Changelog
 
-## 4.1.0 2023-12-03
-## Added
+## [4.1.0] 2023-12-03
+### Added
 - Virtual keyboard support for text entry fields on Steam Deck Game Mode
-- Validate LAN server IPs
+- Validate and connect to LAN server IPs
 
-#### 4.0.4 2023-12-23
-## Fixed
+## [4.0.4] 2023-12-23
+### Fixed
 - Enforce version check for Python versions before 3.10
 
 ## [4.0.3] 2023-11-22
-## Fixed
+### Fixed
 - Query helper: backwards compatibility for pre-2021 versions of Python 3
 
 ## [4.0.2] 2023-11-22
-## Fixed
+### Fixed
 - Query helper not loading: fixed a remote link pointing to the wrong destination and added a checksum verification to ensure file is present
 
 ## [4.0.1] 2023-11-22
-## Fixed
-- Emergency hotfix to remove build artifacts leaking into main script: if you updated DZGUI from 3.3.18 to 4.0.0 between 2023-11-22 15:00:02 and 2023-11-22 15:03:37 GMT, there is a small chance it will be unable to launch correctly. If so, please follow the instructions on the manual to reinstall.
+### Fixed
+- Emergency hotfix to remove build artifacts leaking into main script: if you updated DZGUI from 3.3.18 to 4.0.0 between 2023-11-22 15:00:02 and 2023-11-22 15:03:37 GMT, there is a small chance it 
+  will be unable to launch correctly. If so, please follow the instructions on the manual to reinstall.
 
 ## [4.0.0] 2023-11-22
 
@@ -34,7 +35,7 @@ If you encounter any problems with this new release or with the migration of con
 Attention Fedora 38 users: problems with upstream GNOME packages causing crashes have been reported to GNOME development and a fix has been issued. You have the choice of compiling the zenity package 
 from source or waiting until the latest version is merged into Fedora's package manager.
 
-## Added
+### Added
 - Change in game name: dynamically change your profile name via the Advanced Options menu
 - Connect by ID: supply a Battlemetrics ID to connect to a server; this can be used in lieu of the IP
 - Add by IP: supply a standard IP to add a server to your list; this can be used as a more direct way of saving servers
@@ -42,7 +43,7 @@ from source or waiting until the latest version is merged into Fedora's package 
 - Save connected server to favorites: prior to connecting, asks the user if they want to save this server for future use
 - Generate additional output when generating system logs
 
-## Fixed
+### Fixed
 - Rare cases where the keyword filter would not filter server results correctly
 - Handling of dialog exit signals: made it much more difficult to crash the application in rare cases when spamming input or returning from menus
 - Update menus in place: when toggling options in the Advanced Options menu, displays the current state/mode of the option for better readability into what option is currently enabled
@@ -51,7 +52,7 @@ from source or waiting until the latest version is merged into Fedora's package 
 - Fixed a rare case where dialogs would spawn twice during first-time setup
 - Properly remain inside of menus when looping where it would make sense to do so : e.g., Delete Servers list, Advanced Options
 
-## Changed
+### Changed
 - Query servers directly to reduce API hops: initial bootup and subsequent server queries should be considerably faster
 - Store complete IP:Port instead of server IDs
 - Make Battlemetrics API key optional: this is only used for the 'Connect by ID' and 'Add server by ID' methods and is not required. If you prefer, you can simply connect/add by IP.
