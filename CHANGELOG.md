@@ -19,8 +19,7 @@
 
 ## [4.0.1] 2023-11-22
 ### Fixed
-- Emergency hotfix to remove build artifacts leaking into main script: if you updated DZGUI from 3.3.18 to 4.0.0 between 2023-11-22 15:00:02 and 2023-11-22 15:03:37 GMT, there is a small chance it 
-  will be unable to launch correctly. If so, please follow the instructions on the manual to reinstall.
+- Emergency hotfix to remove build artifacts leaking into main script: if you updated DZGUI from 3.3.18 to 4.0.0 between 2023-11-22 15:00:02 and 2023-11-22 15:03:37 GMT, there is a small chance it will be unable to launch correctly. If so, please follow the instructions on the manual to reinstall.
 
 ## [4.0.0] 2023-11-22
 
