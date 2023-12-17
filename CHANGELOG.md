@@ -1,6 +1,11 @@
 # Changelog
 
 ## [4.1.0] 2023-12-03
+
+This update adds support for DayZ servers running on a local area network. To connect or add to your server list, supply the server IP and query port in the format IP:PORT.
+
+Support for Steam Deck Game Mode has also been restored, with a new dialog format that allows for virtual keyboard input. This should allow you to enter text in form fields by activating the Steam button + X. In addition, you can unlock the mouse and keyboard input when launching DZGUI through Steam by using an internal binding provided by Steam Deck: long-press the three dots button on the right of the device for three seconds to toggle the input state. This allows you to use mouse and keyboard-style bindings on Game Mode and vice versa.
+
 ### Added
 - Virtual keyboard support for text entry fields on Steam Deck Game Mode
 - Validate and connect to LAN server IPs
@@ -19,8 +24,7 @@
 
 ## [4.0.1] 2023-11-22
 ### Fixed
-- Emergency hotfix to remove build artifacts leaking into main script: if you updated DZGUI from 3.3.18 to 4.0.0 between 2023-11-22 15:00:02 and 2023-11-22 15:03:37 GMT, there is a small chance it 
-  will be unable to launch correctly. If so, please follow the instructions on the manual to reinstall.
+- Emergency hotfix to remove build artifacts leaking into main script: if you updated DZGUI from 3.3.18 to 4.0.0 between 2023-11-22 15:00:02 and 2023-11-22 15:03:37 GMT, there is a small chance it will be unable to launch correctly. If so, please follow the instructions on the manual to reinstall.
 
 ## [4.0.0] 2023-11-22
 
