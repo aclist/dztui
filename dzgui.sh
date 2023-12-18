@@ -40,31 +40,33 @@ version_file="$config_path/versions"
 steamsafe_zenity="/usr/bin/zenity"
 
 update_last_seen(){
-	mv $config_file ${config_path}dztuirc.old
-	nr=$(awk '/seen_news=/ {print NR}' ${config_path}dztuirc.old)
-	seen_news="seen_news=\"$sum\""
-	awk -v "var=$seen_news" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
-	source $config_file
+    local news_sum="$1"
+    seen_news="$news_sum"
+    update_config
 }
 check_news(){
 	logger INFO "${FUNCNAME[0]}"
-	echo "# Checking news"
 	[[ $branch == "stable" ]] && news_url="$stable_url/news"
 	[[ $branch == "testing" ]] && news_url="$testing_url/news"
 	local result=$(curl -Ls "$news_url")
-	sum=$(echo -n "$result" | md5sum | awk '{print $1}')
+	local sum=$(echo -n "$result" | md5sum | awk '{print $1}')
+    printf "%s\n%s\n" "$result" "$sum"
 	logger INFO "News: $result"
 }
 print_news(){
+    readarray -t news_result < <(check_news)
+    local news_marquee=${news_result[0]}
+    local news_sum=${news_result[1]}
+    local hchar
+    local news
 	logger INFO "${FUNCNAME[0]}"
-	if [[ $sum == $seen_news || -z $result ]]; then
-		hchar=""
-		news=""
-	else
-		hchar="─"
-		news="$result\n$(awk -v var="$hchar" 'BEGIN{for(c=0;c<90;c++) printf var;}')\n"
-		update_last_seen
-	fi
+	if [[ $news_sum == $seen_news ]] || [[ -z $news_marquee ]]; then
+        return 1
+    fi
+    hchar="─"
+    news="$news_marquee\n$(awk -v var="$hchar" 'BEGIN{for(c=0;c<90;c++) printf var;}')\n"
+    update_last_seen "$news_sum"
+    echo "$news"
 }
 
 declare -A deps
@@ -998,7 +1000,8 @@ set_header(){
     local switch="$1"
 	logger INFO "${FUNCNAME[0]}"
 	logger INFO "Header mode is $1"
-	print_news
+	local news
+    news=$(print_news)
 	[[ $auto_install -eq 2 ]] && install_mode="auto"
 	[[ $auto_install -eq 1 ]] && install_mode="headless"
 	[[ $auto_install -eq 0 ]] && install_mode=manual
@@ -2117,7 +2120,6 @@ initial_setup(){
 	stale_symlinks
 	init_items
 	setup
-	check_news
 	echo "100"
 }
 main(){

@@ -1,6 +1,11 @@
 # Changelog
 
-## [4.1.0] 2023-12-03
+## [4.1.1] 2023-12-18
+### Fixed
+
+- News marquee not showing
+
+## [4.1.0] 2023-12-17
 
 This update adds support for DayZ servers running on a local area network. To connect or add to your server list, supply the server IP and query port in the format IP:PORT.
 
