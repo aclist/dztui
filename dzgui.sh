@@ -41,11 +41,8 @@ steamsafe_zenity="/usr/bin/zenity"
 
 update_last_seen(){
     local news_sum="$1"
-	mv $config_file ${config_path}dztuirc.old
-	nr=$(awk '/seen_news=/ {print NR}' ${config_path}dztuirc.old)
-	seen_news="seen_news=\"$news_sum\""
-	awk -v "var=$seen_news" -v "nr=$nr" 'NR==nr {$0=var}{print}' ${config_path}dztuirc.old > $config_file
-	source $config_file
+    seen_news="$news_sum"
+    update_config
 }
 check_news(){
 	logger INFO "${FUNCNAME[0]}"
