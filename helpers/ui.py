@@ -518,7 +518,7 @@ class ButtonBox(Gtk.Box):
             button = Gtk.Button(label=side_button)
             if is_steam_deck is True:
                 button.set_size_request(10, 10)
-            else
+            else:
                 button.set_size_request(50,50)
             button.set_opacity(0.6)
             self.buttons.append(button)
