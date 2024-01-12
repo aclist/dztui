@@ -702,8 +702,8 @@ format_version_url(){
 }
 download_new_version(){
     local version_url="$(format_version_url)"
-    mv "$src_path" "$src_path.old"
-    curl -Ls "$version_url" > "$src_path"
+    curl -L "$version_url" > /tmp/dzg.new
+    mv /tmp/dzg.new "$src_path"
     rc=$?
     if [[ $rc -eq 0 ]]; then
         dl_changelog
