@@ -739,8 +739,8 @@ toggle(){
                 branch="stable"
             fi
             update_config
+            download_new_version
             return 255
-#            download_new_version
             ;;
         Toggle[[:space:]]mod[[:space:]]install[[:space:]]mode)
             if [[ -z $auto_install ]]; then
