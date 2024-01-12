@@ -442,7 +442,8 @@ migrate_files(){
         cp $config_file $config_path/dztuirc.oldapi
     fi
     logger INFO "Migrated old API file"
-    [[ -f $hist_file ]] && rm $hist_file
+    [[ ! -f $hist_file ]] && return
+    rm $hist_file
     logger INFO "Wiped old history file"
 }
 stale_symlinks(){
