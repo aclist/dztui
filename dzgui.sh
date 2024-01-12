@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.0.0.rc-8
+version=5.0.0.rc-9
 
 #CONSTANTS
 aid=221100
@@ -232,7 +232,6 @@ watcher_deps(){
     logger INFO "Found DZG Watcher dependencies"
 }
 format_version_url(){
-    echo FORMAT
     case "$branch" in
         "stable")
             version_url="$stable_url/dzgui.sh"
