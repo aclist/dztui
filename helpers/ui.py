@@ -15,7 +15,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.8
+# 5.0.0-rc.10
 app_name = "DZGUI"
 
 cache = {}
@@ -1479,7 +1479,7 @@ def toggle_signal(owner, widget, func_name, bool):
 class App(Gtk.Application):
     def __init__(self):
 
-        _isd = sys.argv[4]
+        _isd = int(sys.argv[4])
         if _isd == 1:
             is_steam_deck = True
         else:
