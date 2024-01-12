@@ -15,7 +15,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.7
+# 5.0.0-rc.8
 app_name = "DZGUI"
 
 cache = {}
@@ -1262,6 +1262,7 @@ def KeysDialog(parent, text, mode):
     Ctrl-q: quit
     Enter/Space/Double click: select row item
     Up, Down: navigate through row items
+    ?: open this dialog
 
     <b>Button navigation</b>
     Right: jump from main view to side buttons
