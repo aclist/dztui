@@ -73,7 +73,6 @@ releases_url="$gh_prefix/$author/$repo/releases/download/browser"
 km_helper_url="$releases_url/latlon"
 db_file="$releases_url/ips.csv.gz"
 sums_url="$stable_url/helpers/sums.md5"
-vdf2json_url="$stable_url/helpers/vdf2json.py"
 #TODO: move adoc to index
 help_url="https://$author.github.io/dzgui/dzgui"
 forum_url="$gh_prefix/$author/$repo/discussions"

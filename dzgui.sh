@@ -63,9 +63,6 @@ testing_url="$url_prefix/testing"
 releases_url="https://github.com/$author/$repo/releases/download/browser"
 km_helper_url="$releases_url/latlon"
 geo_file_url="$releases_url/ips.csv.gz"
-#TODO: move adoc to index
-help_url="https://$author.github.io/dzgui/dzgui"
-sponsor_url="https://github.com/sponsors/$author"
 
 logger(){
     local date="$(date "+%F %T,%3N")"
