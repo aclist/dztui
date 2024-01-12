@@ -706,6 +706,7 @@ download_new_version(){
     curl -Ls "$version_url" > "$src_path"
     rc=$?
     if [[ $rc -eq 0 ]]; then
+        dl_changelog
         logger INFO "Wrote new version to $src_path"
         chmod +x "$src_path"
         touch "${config_path}.unmerged"
@@ -718,7 +719,6 @@ download_new_version(){
         logger WARN "curl failed to fetch new version. Rolling back"
         return 1
     fi
-    dl_changelog
 }
 dl_changelog(){
     local mdbranch
