@@ -2,7 +2,6 @@
 set -o pipefail
 
 version="4.2.0.rc-1"
-src_path=$(realpath "$0")
 
 #CONSTANTS
 aid=221100
@@ -729,8 +728,9 @@ create_config(){
     done
 }
 varcheck(){
+    local msg="Config file '$config_file' missing. Start first-time setup now?"
+    local msg2="The Steam paths set in your config file appear to be invalid. Restart first-time setup now?"
     if [[ ! -f $config_file ]]; then
-        local msg="Config file '$config_file' missing. Start first-time setup now?"
         qdialog "$msg" "Yes" "Exit"
         if [[ $? -eq 1 ]]; then
             logger CRITICAL "Config file missing, but user aborted setup"
@@ -742,15 +742,19 @@ varcheck(){
     local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
     local game_dir="$steam_path/steamapps/common/DayZ"
     if [[ ! -d $steam_path ]] || [[ ! -d $game_dir ]]; then
-        logger WARN "DayZ path resolved to $game_dir"
-        logger WARN "Workshop path resolved to $workshop_dir"
-        pdialog "$msg"
+        logger WARN "DayZ path resolved to '$game_dir'"
+        logger WARN "Workshop path resolved to '$workshop_dir'"
+        qdialog "$msg2" "Yes" "Exit"
         if [[ $? -eq 1 ]]; then
             logger CRITICAL "Malformed Steam path, but user aborted setup"
             exit 1
         fi
         create_config
         return 0
+    fi
+    if [[ $src_path != $(realpath "$0") ]]; then
+        src_path=$(realpath "$0")
+        update_config
     fi
 }
 is_dzg_downloading(){
