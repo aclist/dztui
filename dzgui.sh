@@ -795,8 +795,8 @@ main(){
     local news=$(check_news)
 
     printf "All OK. Kicking off UI...\n"
-    [[ -n $news ]] && python3 "ui.py" "--init-ui" "$news" "$version"
-    [[ -z $news ]] && python3 "ui.py" "--init-ui" "null" "$version"
+    [[ -n $news ]] && python3 "$ui_helper" "--init-ui" "$news" "$version"
+    [[ -z $news ]] && python3 "$ui_helper" "--init-ui" "null" "$version"
 }
 main
 #TODO: tech debt: cruddy handling for steam forking
