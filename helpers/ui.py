@@ -1344,7 +1344,7 @@ class ModDialog(GenericDialog):
         path = pathlist[0]
         tree_iter = model.get_iter(path)
         mod_id = model.get_value(tree_iter, 1)
-        call_out(treeview, "open_workshop_page", mod_id)
+        subprocess.Popen(['/usr/bin/env', 'bash', funcs, "open_workshop_page", mod_id])
 
 class EntryDialog(GenericDialog):
     def __init__(self, parent, text, mode, link):
