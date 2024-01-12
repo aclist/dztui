@@ -803,8 +803,8 @@ main(){
     local news=$(check_news)
 
     printf "All OK. Kicking off UI...\n"
-    [[ -n $news ]] && python3 "$ui_helper" "--init-ui" "$news" "$version"
-    [[ -z $news ]] && python3 "$ui_helper" "--init-ui" "null" "$version"
+    [[ -z $news ]] && news="null"
+    python3 "$ui_helper" "--init-ui" "$news" "$version" "$is_steam_deck"
 }
 main
 #TODO: tech debt: cruddy handling for steam forking
