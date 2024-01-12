@@ -1399,7 +1399,7 @@ class Grid(Gtk.Grid):
 
         _news = sys.argv[2]
         self._version = "%s %s" %(app_name, sys.argv[3])
-        _isd = sys.argv[4]
+        _isd = int(sys.argv[4])
 
         if _isd == 1:
             is_steam_deck = True
