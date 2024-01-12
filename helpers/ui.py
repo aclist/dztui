@@ -15,7 +15,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.1
+# 5.0.0-rc.7
 app_name = "DZGUI"
 
 cache = {}
@@ -434,7 +434,7 @@ def reinit_checks():
 
 
 class OuterWindow(Gtk.Window):
-    def __init__(self):
+    def __init__(self, is_steam_deck):
         super().__init__()
 
         self.connect("destroy", self.halt_proc_and_quit)
@@ -447,7 +447,7 @@ class OuterWindow(Gtk.Window):
         app > win > grid > scrollable > treeview [row/server/mod store]
         app > win > grid > vbox > buttonbox > filterpanel > combo [map store]
         """
-        self.grid = Grid()
+        self.grid = Grid(is_steam_deck)
         self.add(self.grid)
         self.hb = AppHeaderBar()
         self.set_titlebar(self.hb)
@@ -1391,7 +1391,7 @@ class EntryDialog(GenericDialog):
 
 
 class Grid(Gtk.Grid):
-    def __init__(self):
+    def __init__(self, is_steam_deck):
         super().__init__()
         Gtk.Grid()
         self.set_column_homogeneous(True)
@@ -1399,12 +1399,6 @@ class Grid(Gtk.Grid):
 
         _news = sys.argv[2]
         self._version = "%s %s" %(app_name, sys.argv[3])
-        _isd = int(sys.argv[4])
-
-        if _isd == 1:
-            is_steam_deck = True
-        else:
-            is_steam_deck = False
 
         if _news != "null":
             self.news = NewsHeader(_news)
@@ -1484,9 +1478,16 @@ def toggle_signal(owner, widget, func_name, bool):
 class App(Gtk.Application):
     def __init__(self):
 
-        self.win = OuterWindow()
+        _isd = sys.argv[4]
+        if _isd == 1:
+            is_steam_deck = True
+        else:
+            is_steam_deck = False
 
-        self.win.fullscreen()
+        self.win = OuterWindow(is_steam_deck)
+
+        if is_steam_deck == 1:
+            self.win.fullscreen()
 
         accel = Gtk.AccelGroup()
         accel.connect(Gdk.KEY_q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE, self._halt_window_subprocess)
