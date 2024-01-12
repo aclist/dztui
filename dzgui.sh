@@ -315,7 +315,6 @@ check_version(){
     fi
 }
 download_new_version(){
-    # function differs slightly in helper file due to return codes
     local version_url="$(format_version_url)"
     mv "$src_path" "$src_path.old"
     curl -Ls "$version_url" > "$src_path"
@@ -407,7 +406,7 @@ qdialog(){
     $steamsafe_zenity --question --text="$1" --ok-label="$ok" --cancel-label="$cancel" "${zenity_flags[@]}"
 }
 pdialog(){
-    $steamsafe_zenity --progress --pulsate --auto-close "${zenity_flags[@]}"
+    $steamsafe_zenity --progress --pulsate --auto-close "${zenity_flags[@]}" --text="$1"
 }
 fdialog(){
     $steamsafe_zenity --warning --ok-label="Exit" --text="$1" "${zenity_flags[@]}"
@@ -789,7 +788,7 @@ initial_setup(){
     steam_deps
     migrate_files
     stale_symlinks
-    fetch_helpers
+    fetch_helpers > >(pdialog "Fetching additional helper files")
     local_latlon
     is_steam_running
     is_dzg_downloading
