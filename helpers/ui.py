@@ -1398,8 +1398,8 @@ class Grid(Gtk.Grid):
         #self.set_row_homogeneous(True)
 
         _news = sys.argv[2]
-        _isd = sys.argv[3]
         self._version = "%s %s" %(app_name, sys.argv[3])
+        _isd = sys.argv[4]
 
         if _isd == 1:
             is_steam_deck = True
