@@ -1487,7 +1487,6 @@ class App(Gtk.Application):
         self.win = OuterWindow()
 
         self.win.fullscreen()
-        #self.win.set_keep_below(True)
 
         accel = Gtk.AccelGroup()
         accel.connect(Gdk.KEY_q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE, self._halt_window_subprocess)
@@ -1525,6 +1524,8 @@ class FilterPanel(Gtk.Box):
         self.keyword_entry.set_placeholder_text("Filter by keyword")
         self.keyword_entry.connect("activate", self._on_keyword_enter)
         self.keyword_entry.connect("key-press-event", self._on_esc_pressed)
+        self.keyword_entry.connect("focus-in-event", self._on_keyword_focused)
+        self.keyword_entry.connect("focus-out-event", self._on_keyword_unfocused)
 
         renderer_text = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
         self.maps_combo = Gtk.ComboBox.new_with_model(map_store)
@@ -1545,6 +1546,16 @@ class FilterPanel(Gtk.Box):
             self.pack_start(checks[i], False, False, True)
 
         self.pack_start(self.debug_toggle, False, False, 0)
+
+    def _on_keyword_unfocused(self, widget):
+        print("user unfocused keyword field")
+        win = self.get_outer_window()
+        win.set_keep_below(False)
+
+    def _on_keyword_focused(self, widget):
+        print("user focused keyword field")
+        win = self.get_outer_window()
+        win.set_keep_below(True)
 
     def _on_button_toggled(self, button, command):
         transient_parent = self.get_outer_window()
@@ -1577,6 +1588,8 @@ class FilterPanel(Gtk.Box):
         return outer_window
 
     def _on_keyword_enter(self, keyword_entry):
+        win = self.get_outer_window()
+        win.set_keep_below(False)
         keyword = keyword_entry.get_text()
         old_keyword = keyword_filter[0].split(delimiter)[1]
         if keyword == old_keyword:
