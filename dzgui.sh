@@ -545,10 +545,11 @@ fetch_helpers_by_sum(){
         file="$i"
         sum="${sums[$i]}"
         full_path="$helpers_path/$file"
-        if [[ -f "$full_path" ]] && [[ $(get_hash "$helpers_path/$file") == $sum ]]; then
+        cur_sum=$(get_hash "$helpers_path/$file")
+        if [[ -f "$full_path" ]] && [[ $cur_sum == $sum ]]; then
             logger INFO "'$file' is current"
         else
-            logger WARN "File '$full_path' checksum != '$sum'"
+            logger WARN "File '$full_path' checksum '$cur_sum' != '$sum'"
             curl -Ls "$url" > "$full_path/$file"
             if [[ ! $? -eq 0 ]]; then
                 raise_error_and_quit "Failed to fetch the file '$file'. Possible timeout?"
