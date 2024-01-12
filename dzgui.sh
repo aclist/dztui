@@ -315,11 +315,13 @@ check_version(){
     fi
 }
 download_new_version(){
+    # function differs slightly in helper file due to return codes
     local version_url="$(format_version_url)"
     mv "$src_path" "$src_path.old"
     curl -Ls "$version_url" > "$src_path"
     rc=$?
     if [[ $rc -eq 0 ]]; then
+        dl_changelog
         logger INFO "Wrote new version to $src_path"
         chmod +x "$src_path"
         touch "${config_path}.unmerged"
@@ -332,7 +334,6 @@ download_new_version(){
         fdialog "Failed to download the new version. Restoring old version"
         return 1
     fi
-    dl_changelog
 }
 prompt_dl(){
     _text(){
