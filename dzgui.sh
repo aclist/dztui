@@ -529,17 +529,20 @@ fetch_helpers_by_sum(){
         ["ui.py"]="8c430f1465995cbd98f4ad8e2580a79d"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="b04a0e34141e4e11da0a061802a822e3"
+        ["funcs"]="3aae486ae5097fa9b7349df1dfd25734"
     )
     local author="aclist"
     local repo="dztui"
     local branch="$branch"
-    local url="https://raw.githubusercontent.com/$author/$repo/$branch/helpers/$file"
+    local file
+    local sum
+    local full_path
 
     for i in "${!sums[@]}"; do
         file="$i"
         sum="${sums[$i]}"
         full_path="$helpers_path/$file"
+        url="https://raw.githubusercontent.com/$author/$repo/$branch/helpers/$file"
         if [[ -f "$full_path" ]] && [[ $(get_hash "$full_path") == $sum ]]; then
             logger INFO "'$file' is current"
         else
@@ -548,9 +551,9 @@ fetch_helpers_by_sum(){
             if [[ ! $? -eq 0 ]]; then
                 raise_error_and_quit "Failed to fetch the file '$file'. Possible timeout?"
             fi
+            logger INFO "Updated '$full_path' to sum '$sum'"
         fi
         [[ $file == "funcs" ]] && chmod +x "$full_path"
-        logger INFO "Updated '$full_path' to sum '$sum'"
     done
     return 0
 }

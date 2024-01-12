@@ -739,7 +739,8 @@ toggle(){
                 branch="stable"
             fi
             update_config
-            download_new_version
+            return 255
+#            download_new_version
             ;;
         Toggle[[:space:]]mod[[:space:]]install[[:space:]]mode)
             if [[ -z $auto_install ]]; then
@@ -764,6 +765,7 @@ toggle(){
             fi
     esac
     update_config
+    return 90
 
 }
 add_to_favs(){
@@ -771,6 +773,7 @@ add_to_favs(){
     ip_list+=("$record")
     update_config
     logger INFO "Added the record $record to saved servers"
+    return 90
 }
 remove_from_history(){
     shift
@@ -799,6 +802,7 @@ remove_from_favs(){
     local cache="$(< "$_cache_my_servers")"
     <<< "$cache" grep -v -P "$r$" > $_cache_my_servers
     logger INFO "Removed the record $record from saved servers"
+    return 90
 }
 update_favs_from_table(){
     local context="$1"
@@ -815,12 +819,6 @@ update_config(){
     [[ -z $branch ]] && branch="stable"
     mv $config_file ${config_file}.old
     write_config > $config_file
-    if [[ $? -eq 0 ]]; then
-        printf "Updated config file"
-        return 90
-    else
-        return 1
-    fi
     logger INFO "Updated config file at '$config_file'"
 }
 validate_ip(){
@@ -874,6 +872,7 @@ update_config_val(){
     declare -n nr=$key
     nr="$value"
     update_config
+    return 90
 }
 show_log(){
     < "$debug_log" sed 's/Keyword␞/Keyword/'
