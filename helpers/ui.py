@@ -118,9 +118,9 @@ filters = {
     "Night": True,
     "Empty": False,
     "Full": False,
-    "Low population": True,
+    "Low pop": True,
     "Non-ASCII": False,
-    "Duplicate names": False
+    "Duplicate": False
 }
 side_buttons = [
     "Connect",
@@ -441,6 +441,7 @@ class OuterWindow(Gtk.Window):
         self.connect("delete-event", self.halt_proc_and_quit)
         # Deprecated in GTK 4.0
         self.set_border_width(10)
+        self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
 
         """
         app > win > grid > scrollable > treeview [row/server/mod store]
@@ -462,31 +463,39 @@ class OuterWindow(Gtk.Window):
 
 
 class ScrollableTree(Gtk.ScrolledWindow):
-    def __init__(self):
+    def __init__(self, is_steam_deck):
         super().__init__()
+        #self.set_propagate_natural_height(False)
         self.set_vexpand(False)
 
-        self.treeview = TreeView()
+        self.treeview = TreeView(is_steam_deck)
         self.add(self.treeview)
 
 
 class RightPanel(Gtk.Box):
-    def __init__(self):
+    def __init__(self, is_steam_deck):
         super().__init__(spacing=6)
         self.set_orientation(Gtk.Orientation.VERTICAL)
 
-        self.button_vbox = ButtonBox()
+        self.button_vbox = ButtonBox(is_steam_deck)
         self.filters_vbox = FilterPanel()
         toggle_signal(self.filters_vbox, self.filters_vbox.maps_combo, '_on_map_changed', False)
 
         self.pack_start(self.button_vbox, False, False, 0)
         self.pack_start(self.filters_vbox, False, False, 0)
 
-        self.question_label = Gtk.Label(label="Type ? for keybindings")
-        self.question_label.set_ellipsize(Pango.EllipsizeMode.END)
-        self.question_label.set_margin_top(100)
-        self.question_label.set_margin_start(10)
-        self.pack_start(self.question_label, False, True, 0)
+        self.question_button = Gtk.Button(label="?")
+        #TODO: too big on top
+        self.question_button.set_margin_top(10)
+        self.question_button.set_margin_start(50)
+        self.question_button.set_margin_end(50)
+#        set_surrounding_margins(self.question_label, 50)
+        self.pack_start(self.question_button, False, True, 0)
+        self.question_button.connect("clicked", self._on_button_clicked)
+
+    def _on_button_clicked(self, button):
+        grid = self.get_parent()
+        grid.scrollable_treelist.treeview.spawn_keys_dialog(button)
 
     def set_filter_visibility(self, bool):
         self.filters_vbox.set_visible(bool)
@@ -499,7 +508,7 @@ class RightPanel(Gtk.Box):
 
 
 class ButtonBox(Gtk.Box):
-    def __init__(self):
+    def __init__(self, is_steam_deck):
         super().__init__(spacing=6)
         self.set_orientation(Gtk.Orientation.VERTICAL)
         set_surrounding_margins(self, 10)
@@ -507,7 +516,7 @@ class ButtonBox(Gtk.Box):
         self.buttons = list()
         for side_button in side_buttons:
             button = Gtk.Button(label=side_button)
-            button.set_size_request(100, 100)
+            button.set_size_request(50, 50)
             button.set_opacity(0.6)
             self.buttons.append(button)
             button.connect("clicked", self._on_selection_button_clicked)
@@ -556,7 +565,7 @@ class ButtonBox(Gtk.Box):
 
         if context == "Exit":
             logger.info("Normal user exit")
-            sys.exit(1)
+            Gtk.main_quit()
         cols = treeview.get_columns()
 
         if len(cols) > 1:
@@ -609,7 +618,7 @@ class CalcDist(multiprocessing.Process):
 class TreeView(Gtk.TreeView):
     __gsignals__ = {"on_distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())}
 
-    def __init__(self):
+    def __init__(self, is_steam_deck):
         super().__init__()
 
         self.queue = multiprocessing.Queue()
@@ -631,7 +640,8 @@ class TreeView(Gtk.TreeView):
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             self.append_column(column)
             # TODO: change font size on the fly
-            # renderer.set_property("size-points", 20)
+            if is_steam_deck is True:
+                renderer.set_property("size-points", 20)
 
         self.connect("row-activated", self._on_row_activated)
         self.connect("key-press-event", self._on_keypress)
@@ -788,6 +798,12 @@ class TreeView(Gtk.TreeView):
             tooltip = format_metadata(row_sel)
             grid.update_statusbar(tooltip)
 
+    def spawn_keys_dialog(self, widget):
+        diag = KeysDialog(self.get_outer_window(), '', "Keybindings")
+        diag.run()
+        diag.destroy()
+        self.grab_focus()
+
     def _on_keypress_main_menu(self, treeview, event):
         window = self.get_outer_window()
         grid = self.get_outer_grid()
@@ -796,9 +812,7 @@ class TreeView(Gtk.TreeView):
                 grid.right_panel.focus_button_box()
             case Gdk.KEY_question:
                 if event.state is Gdk.ModifierType.SHIFT_MASK:
-                    diag = KeysDialog(window, '', "Keybindings")
-                    diag.run()
-                    diag.destroy()
+                    self.spawn_keys_dialog(None)
             case Gdk.KEY_f:
                 if event.state is Gdk.ModifierType.CONTROL_MASK:
                     return True
@@ -902,11 +916,11 @@ class TreeView(Gtk.TreeView):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             column.set_sort_column_id(i)
-            """Prevent columns from auto-adjusting"""
+            #"""Prevent columns from auto-adjusting"""
             if ("Name" in column_title):
                 column.set_fixed_width(800)
-            if (column_title == "Map"):
-                column.set_fixed_width(300)
+            #if (column_title == "Map"):
+            #    column.set_fixed_width(300)
             self.append_column(column)
 
         self.update_first_col(mode)
@@ -962,8 +976,8 @@ class TreeView(Gtk.TreeView):
                 if i == 3:
                     column.set_cell_data_func(renderer, self._format_float, func_data=None)
             column.set_sort_column_id(i)
-            if (column_title == "Name"):
-                column.set_fixed_width(600)
+            #if (column_title == "Name"):
+            #    column.set_fixed_width(600)
             self.append_column(column)
 
         if mode == "List installed mods":
@@ -1380,16 +1394,23 @@ class Grid(Gtk.Grid):
         self.set_column_homogeneous(True)
         #self.set_row_homogeneous(True)
 
-        self.scrollable_treelist = ScrollableTree()
-        self.scrollable_treelist.set_vexpand(True)
-        self.right_panel = RightPanel()
-
         _news = sys.argv[2]
+        _isd = sys.argv[3]
         self._version = "%s %s" %(app_name, sys.argv[3])
+
+        if _isd == 1:
+            is_steam_deck = True
+        else:
+            is_steam_deck = False
 
         if _news != "null":
             self.news = NewsHeader(_news)
             self.attach(self.news, 0, -1, 8, 10)
+
+        self.scrollable_treelist = ScrollableTree(is_steam_deck)
+        self.scrollable_treelist.set_vexpand(True)
+        self.right_panel = RightPanel(is_steam_deck)
+
 
         self.bar = Gtk.Statusbar()
         self.scrollable_treelist.treeview.connect("on_distcalc_started", self._on_calclat_started)
@@ -1464,7 +1485,8 @@ class App(Gtk.Application):
 
         # TODO: steam deck
         # self.win.set_size_request(1280,800)
-        self.win.fullscreen()
+        #self.win.fullscreen()
+        self.win.set_keep_below(True)
 
         accel = Gtk.AccelGroup()
         accel.connect(Gdk.KEY_q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE, self._halt_window_subprocess)
