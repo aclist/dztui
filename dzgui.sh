@@ -530,7 +530,7 @@ fetch_helpers_by_sum(){
         ["ui.py"]="8c430f1465995cbd98f4ad8e2580a79d"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="3aae486ae5097fa9b7349df1dfd25734"
+        ["funcs"]="7cab1604d9a614bdbb324db756c68fd9"
     )
     local author="aclist"
     local repo="dztui"
