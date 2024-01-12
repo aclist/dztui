@@ -516,7 +516,10 @@ class ButtonBox(Gtk.Box):
         self.buttons = list()
         for side_button in side_buttons:
             button = Gtk.Button(label=side_button)
-            button.set_size_request(50, 50)
+            if is_steam_deck is True:
+                button.set_size_request(10, 10)
+            else
+                button.set_size_request(50,50)
             button.set_opacity(0.6)
             self.buttons.append(button)
             button.connect("clicked", self._on_selection_button_clicked)
@@ -1483,10 +1486,8 @@ class App(Gtk.Application):
 
         self.win = OuterWindow()
 
-        # TODO: steam deck
-        # self.win.set_size_request(1280,800)
-        #self.win.fullscreen()
-        self.win.set_keep_below(True)
+        self.win.fullscreen()
+        #self.win.set_keep_below(True)
 
         accel = Gtk.AccelGroup()
         accel.connect(Gdk.KEY_q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE, self._halt_window_subprocess)

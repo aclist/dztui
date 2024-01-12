@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.0.0.rc-2
+version=5.0.0.rc-3
 
 #CONSTANTS
 aid=221100
@@ -316,8 +316,10 @@ check_version(){
 }
 download_new_version(){
     local version_url="$(format_version_url)"
+    logger INFO "Version URL is '$version_url'"
+    logger INFO "$src_path"
     mv "$src_path" "$src_path.old"
-    curl -Ls "$version_url" > "$src_path"
+    curl -L "$version_url" > "$src_path" 2>$debug_log
     rc=$?
     if [[ $rc -eq 0 ]]; then
         dl_changelog
