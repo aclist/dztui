@@ -15,7 +15,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.14
+# 5.0.0-rc.15
 app_name = "DZGUI"
 
 cache = {}
@@ -451,7 +451,7 @@ class OuterWindow(Gtk.Window):
         self.add(self.grid)
         self.hb = AppHeaderBar()
 
-        if is_steam_deck is 1:
+        if is_steam_deck is True:
             self.maximize()
             self.set_decorated(False)
         else:
