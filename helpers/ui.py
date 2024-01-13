@@ -15,7 +15,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.12
+# 5.0.0-rc.13
 app_name = "DZGUI"
 
 cache = {}
@@ -450,7 +450,12 @@ class OuterWindow(Gtk.Window):
         self.grid = Grid(is_steam_deck)
         self.add(self.grid)
         self.hb = AppHeaderBar()
-        self.set_titlebar(self.hb)
+
+        if is_steam_deck is not 1:
+            self.set_titlebar(self.hb)
+        if is_steam_deck is 1:
+            self.maximize()
+            self.set_decorated(False)
 
         # Hide FilterPanel on main menu
         self.show_all()
@@ -933,6 +938,7 @@ class TreeView(Gtk.TreeView):
             toggle_signal(self.get_outer_grid().right_panel.filters_vbox, check, '_on_check_toggle', True)
         toggle_signal(self, self, '_on_keypress', True)
 
+        self.get_parent().set_vexpand(False)
         wait_dialog = GenericDialog(transient_parent, "Fetching server metadata", "WAIT")
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background, args=(wait_dialog, mode))
@@ -1297,7 +1303,6 @@ class ModDialog(GenericDialog):
 
         self.scrollable = Gtk.ScrolledWindow()
         self.view = Gtk.TreeView()
-        self.scrollable.set_vexpand(True)
         self.scrollable.add(self.view)
         set_surrounding_margins(self.scrollable, 20)
 
@@ -1407,7 +1412,7 @@ class Grid(Gtk.Grid):
         self.scrollable_treelist = ScrollableTree(is_steam_deck)
         if is_steam_deck is True:
             self.scrollable_treelist.set_hexpand(False)
-            self.scrollable_treelist.set_vexpand(False)
+            self.scrollable_treelist.set_vexpand(True)
         else:
             self.scrollable_treelist.set_hexpand(True)
             self.scrollable_treelist.set_vexpand(True)
@@ -1426,9 +1431,9 @@ class Grid(Gtk.Grid):
         self.update_right_statusbar()
 
         if is_steam_deck is True:
-            self.attach(self.scrollable_treelist, 0, 0, 5, 3)
-            self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 5, 1)
-            self.attach_next_to(self.right_panel, self.scrollable_treelist, Gtk.PositionType.RIGHT, 3, 1)
+            self.attach(self.scrollable_treelist, 0, 0, 4, 1)
+            self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 4, 1)
+            self.attach_next_to(self.right_panel, self.scrollable_treelist, Gtk.PositionType.RIGHT, 1, 1)
         else:
             self.attach(self.scrollable_treelist, 0, 0, 7, 5)
             self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 7, 1)
