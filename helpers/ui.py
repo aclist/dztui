@@ -15,7 +15,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.16
+# 5.0.0-rc.17
 app_name = "DZGUI"
 
 cache = {}
@@ -489,13 +489,13 @@ class RightPanel(Gtk.Box):
         self.pack_start(self.filters_vbox, False, False, 0)
 
         self.question_button = Gtk.Button(label="?")
-        #TODO: too big on top
         self.question_button.set_margin_top(10)
         self.question_button.set_margin_start(50)
         self.question_button.set_margin_end(50)
-#        set_surrounding_margins(self.question_label, 50)
-        self.pack_start(self.question_button, False, True, 0)
         self.question_button.connect("clicked", self._on_button_clicked)
+        set_surrounding_margins(self.question_label, 50)
+        if is_steam_deck is False:
+            self.pack_start(self.question_button, False, True, 0)
 
     def _on_button_clicked(self, button):
         grid = self.get_parent()

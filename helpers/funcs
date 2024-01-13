@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-16
+version=5.0.0.rc-17
 
 #CONSTANTS
 aid=221100
@@ -723,7 +723,7 @@ dl_changelog(){
     local mdbranch
     local file="CHANGELOG.md"
     [[ $branch == "stable" ]] && mdbranch="dzgui"
-    [[ $branch == "" ]] && mdbranch="testing"
+    [[ $branch == "testing" ]] && mdbranch="testing"
     local md="https://raw.githubusercontent.com/$author/$repo/${mdbranch}/$file"
     curl -Ls "$md" > "$state_path/$file"
 }
@@ -1162,7 +1162,7 @@ manual_mod_install(){
     if [[ -z $diff ]]; then
         launch "$ip" "$gameport" "$sanitized_mods"
     else
-        printf "Some mods may have failed to download. Try connecting again to resync"
+        printf "Some mods may have failed to download. Try connecting again to resync."
         exit 1
     fi
 }
