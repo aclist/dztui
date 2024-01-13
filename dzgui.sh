@@ -527,7 +527,7 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="16db16b6fba95758e866ee955b573f01"
+        ["ui.py"]="5b614859376857b3579dbc7fd1db783d"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["funcs"]="d9b0e6fa68314c18ac7aad565645948f"

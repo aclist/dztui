@@ -15,7 +15,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.11
+# 5.0.0-rc.12
 app_name = "DZGUI"
 
 cache = {}
@@ -1496,9 +1496,6 @@ class App(Gtk.Application):
             is_steam_deck = False
 
         self.win = OuterWindow(is_steam_deck)
-
-        if is_steam_deck == 1:
-            self.win.fullscreen()
 
         accel = Gtk.AccelGroup()
         accel.connect(Gdk.KEY_q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE, self._halt_window_subprocess)
