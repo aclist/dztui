@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-17
+version=5.0.0.rc-18
 
 #CONSTANTS
 aid=221100
@@ -528,7 +528,8 @@ sanitize(){
 }
 parse_server_json(){
     local response="$1"
-    <<< "$response" jq -r '
+    # some servers pad SOH in name
+    <<< "$response" sed 's/\\u0001//g' | jq -r '
     .[]|"\(.name)␞" +
     "\(.map|if type == "string" then ascii_downcase else "null" end)␞" +
     "\(if .gametype == null then "null" else (.gametype|split(",")|if any(. == "no3rd") then "1PP" else "3PP" end) end)␞" +
