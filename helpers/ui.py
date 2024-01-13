@@ -15,7 +15,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.15
+# 5.0.0-rc.16
 app_name = "DZGUI"
 
 cache = {}
@@ -471,7 +471,6 @@ class ScrollableTree(Gtk.ScrolledWindow):
     def __init__(self, is_steam_deck):
         super().__init__()
         #self.set_propagate_natural_height(False)
-        self.set_vexpand(False)
 
         self.treeview = TreeView(is_steam_deck)
         self.add(self.treeview)
@@ -938,7 +937,6 @@ class TreeView(Gtk.TreeView):
             toggle_signal(self.get_outer_grid().right_panel.filters_vbox, check, '_on_check_toggle', True)
         toggle_signal(self, self, '_on_keypress', True)
 
-        self.get_parent().set_vexpand(False)
         wait_dialog = GenericDialog(transient_parent, "Fetching server metadata", "WAIT")
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background, args=(wait_dialog, mode))
