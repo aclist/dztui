@@ -15,7 +15,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.13
+# 5.0.0-rc.14
 app_name = "DZGUI"
 
 cache = {}
@@ -451,11 +451,11 @@ class OuterWindow(Gtk.Window):
         self.add(self.grid)
         self.hb = AppHeaderBar()
 
-        if is_steam_deck is not 1:
-            self.set_titlebar(self.hb)
         if is_steam_deck is 1:
             self.maximize()
             self.set_decorated(False)
+        else:
+            self.set_titlebar(self.hb)
 
         # Hide FilterPanel on main menu
         self.show_all()
