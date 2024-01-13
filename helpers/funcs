@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-19
+version=5.0.0.rc-20
 
 #CONSTANTS
 aid=221100
@@ -298,33 +298,6 @@ list_mods(){
 }
 installed_mods(){
     ls -1 "$workshop_dir"
-}
-open_url(){
-    local context="$1"
-    local url
-    case "$context" in
-        "Help file ⧉")
-            url="$help_url"
-            ;;
-        "Report a bug ⧉")
-            url="$issues_url"
-            ;;
-        "Forum ⧉")
-            url="$forum_url"
-            ;;
-        "Sponsor ⧉")
-            url="$sponsor_url"
-            ;;
-        "Hall of fame ⧉")
-            url="${help_url}#_hall_of_fame"
-            ;;
-    esac
-
-    if [[ -n "$BROWSER" ]]; then
-        "$BROWSER" "$url" 2>/dev/null
-        return
-    fi
-    xdg-open "$url" 2>/dev/null
 }
 local_latlon(){
     local url="http://ip-api.com/json/$local_ip"
@@ -897,10 +870,25 @@ open_link(){
         "Open Battlemetrics API page")
             url="$battlemetrics_api_url"
             ;;
+        "Help file ⧉")
+            url="$help_url"
+            ;;
+        "Report a bug ⧉")
+            url="$issues_url"
+            ;;
+        "Forum ⧉")
+            url="$forum_url"
+            ;;
+        "Sponsor ⧉")
+            url="$sponsor_url"
+            ;;
+        "Hall of fame ⧉")
+            url="${help_url}#_hall_of_fame"
+            ;;
     esac
 
-#if [[ $is_steam_deck -eq 1 ]]; then
-#$steam_cmd steam://openurl/"$1" 2>/dev/null
+    #if [[ $is_steam_deck -eq 1 ]]; then
+    #$steam_cmd steam://openurl/"$1" 2>/dev/null
     if [[ -n "$BROWSER" ]]; then
         logger INFO "Opening '$url' in '$BROWSER'"
         "$BROWSER" "$url"
