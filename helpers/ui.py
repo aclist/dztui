@@ -1396,12 +1396,12 @@ class Grid(Gtk.Grid):
         self.set_column_homogeneous(True)
         #self.set_row_homogeneous(True)
 
-        _news = sys.argv[2]
         self._version = "%s %s" %(app_name, sys.argv[3])
+        _news = sys.argv[2]
 
         if _news != "null":
             self.news = NewsHeader(_news)
-            self.attach(self.news, 0, -1, 8, 10)
+            #self.attach(self.news, 0, -1, 8, 10)
 
         self.scrollable_treelist = ScrollableTree(is_steam_deck)
         if is_steam_deck is True:

@@ -527,7 +527,7 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="62731f2c617f11c057c43951283807b5"
+        ["ui.py"]="5e1d2af6cdd122d810de01a2252d1839"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["funcs"]="73898be7185d77ccdc67ace906a7db2c"
@@ -552,7 +552,7 @@ fetch_helpers_by_sum(){
             if [[ ! $? -eq 0 ]]; then
                 raise_error_and_quit "Failed to fetch the file '$file'. Possible timeout?"
             fi
-            if [[ $(get_hash) $full_path != $sum ]]; then
+            if [[ $(get_hash $full_path) != $sum ]]; then
                 logger WARN "Downloaded new '$file', but checksum != '$sum'"
             fi
             logger INFO "Updated '$full_path' to sum '$sum'"
