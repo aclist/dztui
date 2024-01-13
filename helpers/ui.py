@@ -15,7 +15,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.18
+# 5.0.0-rc.19
 app_name = "DZGUI"
 
 cache = {}
@@ -493,7 +493,7 @@ class RightPanel(Gtk.Box):
         self.question_button.set_margin_start(50)
         self.question_button.set_margin_end(50)
         self.question_button.connect("clicked", self._on_button_clicked)
-        set_surrounding_margins(self.question_label, 50)
+        set_surrounding_margins(self.question_button, 50)
         if is_steam_deck is False:
             self.pack_start(self.question_button, False, True, 0)
 
