@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.0.0.rc-20
+version=5.0.0.rc-21
 
 #CONSTANTS
 aid=221100
@@ -527,10 +527,10 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="62133c6c603584a283e86b4629c9c5aa"
+        ["ui.py"]="62731f2c617f11c057c43951283807b5"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="8b5f43cb3647d96ffdcb8ce17822e104"
+        ["funcs"]="73898be7185d77ccdc67ace906a7db2c"
     )
     local author="aclist"
     local repo="dztui"
@@ -772,6 +772,12 @@ is_steam_running(){
         return 0
     fi
 }
+test_connection(){
+    ping -c1 -4 github.com 1>/dev/null 2>&1
+    if [[ ! $? -eq 0 ]]; then
+        raise_error_and_quit "DZGUI requires an active Internet connection, but no connection could be established. The remote may be down."
+    fi
+}
 initial_setup(){
     setup_dirs
     setup_state_files
@@ -780,6 +786,7 @@ initial_setup(){
     test_gobject
     watcher_deps
     check_architecture
+    test_connection
     varcheck
     source "$config_file"
     lock
