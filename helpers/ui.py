@@ -15,7 +15,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.10
+# 5.0.0-rc.11
 app_name = "DZGUI"
 
 cache = {}
@@ -123,7 +123,7 @@ filters = {
     "Duplicate": False
 }
 side_buttons = [
-    "Connect",
+    "Main menu",
     "Manage",
     "Options",
     "Help",
@@ -584,7 +584,7 @@ class ButtonBox(Gtk.Box):
 
         match context:
             case 'Manage': self._populate(manage)
-            case 'Connect': self._populate(connect)
+            case 'Main menu': self._populate(connect)
             case 'Options': self._populate(options)
             case 'Help': self._populate(help)
 
@@ -637,7 +637,7 @@ class TreeView(Gtk.TreeView):
         self.set_model(row_store)
 
         for i, column_title in enumerate(
-            ["Connect"]
+            ["Main menu"]
         ):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
@@ -1394,7 +1394,6 @@ class EntryDialog(GenericDialog):
 class Grid(Gtk.Grid):
     def __init__(self, is_steam_deck):
         super().__init__()
-        Gtk.Grid()
         self.set_column_homogeneous(True)
         #self.set_row_homogeneous(True)
 
@@ -1406,7 +1405,13 @@ class Grid(Gtk.Grid):
             self.attach(self.news, 0, -1, 8, 10)
 
         self.scrollable_treelist = ScrollableTree(is_steam_deck)
-        self.scrollable_treelist.set_vexpand(True)
+        if is_steam_deck is True:
+            self.scrollable_treelist.set_hexpand(False)
+            self.scrollable_treelist.set_vexpand(False)
+        else:
+            self.scrollable_treelist.set_hexpand(True)
+            self.scrollable_treelist.set_vexpand(True)
+
         self.right_panel = RightPanel(is_steam_deck)
 
 
@@ -1420,9 +1425,14 @@ class Grid(Gtk.Grid):
         self.bar.add(self.status_right_label)
         self.update_right_statusbar()
 
-        self.attach(self.scrollable_treelist, 0, 0, 8, 10)
-        self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 8, 1)
-        self.attach_next_to(self.right_panel, self.scrollable_treelist, Gtk.PositionType.RIGHT, 1, 1)
+        if is_steam_deck is True:
+            self.attach(self.scrollable_treelist, 0, 0, 5, 3)
+            self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 5, 1)
+            self.attach_next_to(self.right_panel, self.scrollable_treelist, Gtk.PositionType.RIGHT, 3, 1)
+        else:
+            self.attach(self.scrollable_treelist, 0, 0, 7, 5)
+            self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 7, 1)
+            self.attach_next_to(self.right_panel, self.scrollable_treelist, Gtk.PositionType.RIGHT, 1, 1)
 
     def update_right_statusbar(self):
         config_vals.clear()
@@ -1526,8 +1536,6 @@ class FilterPanel(Gtk.Box):
         self.keyword_entry.set_placeholder_text("Filter by keyword")
         self.keyword_entry.connect("activate", self._on_keyword_enter)
         self.keyword_entry.connect("key-press-event", self._on_esc_pressed)
-        self.keyword_entry.connect("focus-in-event", self._on_keyword_focused)
-        self.keyword_entry.connect("focus-out-event", self._on_keyword_unfocused)
 
         renderer_text = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
         self.maps_combo = Gtk.ComboBox.new_with_model(map_store)
@@ -1548,16 +1556,6 @@ class FilterPanel(Gtk.Box):
             self.pack_start(checks[i], False, False, True)
 
         self.pack_start(self.debug_toggle, False, False, 0)
-
-    def _on_keyword_unfocused(self, widget):
-        print("user unfocused keyword field")
-        win = self.get_outer_window()
-        win.set_keep_below(False)
-
-    def _on_keyword_focused(self, widget):
-        print("user focused keyword field")
-        win = self.get_outer_window()
-        win.set_keep_below(True)
 
     def _on_button_toggled(self, button, command):
         transient_parent = self.get_outer_window()
