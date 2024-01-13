@@ -552,6 +552,9 @@ fetch_helpers_by_sum(){
             if [[ ! $? -eq 0 ]]; then
                 raise_error_and_quit "Failed to fetch the file '$file'. Possible timeout?"
             fi
+            if [[ $(get_hash) $full_path != $sum ]]; then
+                logger WARN "Downloaded new '$file', but checksum != '$sum'"
+            fi
             logger INFO "Updated '$full_path' to sum '$sum'"
         fi
         [[ $file == "funcs" ]] && chmod +x "$full_path"
