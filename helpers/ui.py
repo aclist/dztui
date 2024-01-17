@@ -1163,16 +1163,6 @@ class AppHeaderBar(Gtk.HeaderBar):
         self.set_show_close_button(True)
 
 
-class NewsHeader(Gtk.Box):
-    def __init__(self, news):
-        super().__init__()
-        Gtk.Box(spacing=1)
-        self.set_valign(Gtk.Align.START)
-        news_label = Gtk.Label(label=news)
-        news_label.set_ellipsize(Pango.EllipsizeMode.END)
-        self.pack_start(news_label, False, False, 0)
-
-
 class GenericDialog(Gtk.MessageDialog):
     def __init__(self, parent, text, mode):
 
@@ -1396,12 +1386,7 @@ class Grid(Gtk.Grid):
         self.set_column_homogeneous(True)
         #self.set_row_homogeneous(True)
 
-        self._version = "%s %s" %(app_name, sys.argv[3])
-        _news = sys.argv[2]
-
-        if _news != "null":
-            self.news = NewsHeader(_news)
-            #self.attach(self.news, 0, -1, 8, 10)
+        self._version = "%s %s" %(app_name, sys.argv[2])
 
         self.scrollable_treelist = ScrollableTree(is_steam_deck)
         if is_steam_deck is True:
@@ -1488,7 +1473,7 @@ def toggle_signal(owner, widget, func_name, bool):
 class App(Gtk.Application):
     def __init__(self):
 
-        _isd = int(sys.argv[4])
+        _isd = int(sys.argv[3])
         if _isd == 1:
             is_steam_deck = True
         else:

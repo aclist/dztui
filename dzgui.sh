@@ -527,7 +527,7 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="5e1d2af6cdd122d810de01a2252d1839"
+        ["ui.py"]="980b2363ff51c6d5b53573823413de35"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["funcs"]="73898be7185d77ccdc67ace906a7db2c"
@@ -778,7 +778,11 @@ is_steam_running(){
 test_connection(){
     ping -c1 -4 github.com 1>/dev/null 2>&1
     if [[ ! $? -eq 0 ]]; then
-        raise_error_and_quit "DZGUI requires an active Internet connection, but no connection could be established. The remote may be down."
+        raise_error_and_quit "No connection could be established to the remote server (github.com)."
+    fi
+    ping -c1 -4 api.steampowered.com 1>/dev/null 2>&1
+    if [[ ! $? -eq 0 ]]; then
+        raise_error_and_quit "No connection could be established to the remote server (steampowered.com)."
     fi
 }
 initial_setup(){
@@ -811,11 +815,9 @@ main(){
 
     printf "Initializing setup...\n"
     initial_setup
-    local news=$(check_news)
 
     printf "All OK. Kicking off UI...\n"
-    [[ -z $news ]] && news="null"
-    python3 "$ui_helper" "--init-ui" "$news" "$version" "$is_steam_deck"
+    python3 "$ui_helper" "--init-ui" "$version" "$is_steam_deck"
 }
 main
 #TODO: tech debt: cruddy handling for steam forking
