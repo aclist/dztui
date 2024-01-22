@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.0.0.rc-22
+version=5.0.0.rc-23
 
 #CONSTANTS
 aid=221100
@@ -63,6 +63,15 @@ releases_url="https://github.com/$author/$repo/releases/download/browser"
 km_helper_url="$releases_url/latlon"
 geo_file_url="$releases_url/ips.csv.gz"
 
+set_im_module(){
+    pgrep -a gamescope | grep -q "generate-drm-mode"
+    if [[ $? -eq 0 ]]; then
+        GTK_IM_MODULE=""
+        logger INFO "Detected Steam Deck (Game Mode), unsetting GTK_IM_MODULE"
+    else
+        return
+    fi
+}
 logger(){
     local date="$(date "+%F %T,%3N")"
     local tag="$1"
@@ -812,6 +821,7 @@ initial_setup(){
 main(){
     local zenv=$(zenity --version 2>/dev/null)
     [[ -z $zenv ]] && { echo "Requires zenity <= 3.44.1"; exit 1; }
+    set_im_module
 
     printf "Initializing setup...\n"
     initial_setup
