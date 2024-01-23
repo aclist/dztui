@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-23
+version=5.0.0.rc-24
 
 #CONSTANTS
 aid=221100
@@ -1150,10 +1150,10 @@ check_timestamps(){
         return 1
     fi
     local aligned=$(<<< "$local_stamps" jq -r '.response.publishedfiledetails[]|"\(.publishedfileid),\(.time_updated)"')
-    readarray -t remote_ids < <(<<< "$aligned" awk -F, '{print $1}'
-    readarray -t remote_times < <(<<< "$aligned" awk -F, '{print $2}'
-    readarray -t old_ids < <(< $version_file awk -F, '{print 1}'
-    readarray -t old_times < <(< $version_file awk -F, '{print 2}'
+    readarray -t remote_ids < <(<<< "$aligned" awk -F, '{print $1}')
+    readarray -t remote_times < <(<<< "$aligned" awk -F, '{print $2}')
+    readarray -t old_ids < <(< $version_file awk -F, '{print 1}')
+    readarray -t old_times < <(< $version_file awk -F, '{print 2}')
 
     if [[ ! -f $versions_file ]]; then
         logger INFO "No prior versions file found, creating"
