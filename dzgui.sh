@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.0.0.rc-24
+version=5.0.0.rc-25
 
 #CONSTANTS
 aid=221100
@@ -449,8 +449,8 @@ steam_deps(){
 migrate_files(){
     if [[ ! -f $config_path/dztuirc.oldapi ]]; then
         cp $config_file $config_path/dztuirc.oldapi
+        logger INFO "Migrated old API file"
     fi
-    logger INFO "Migrated old API file"
     [[ ! -f $hist_file ]] && return
     rm $hist_file
     logger INFO "Wiped old history file"
@@ -536,10 +536,10 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="569a966fd97eddb8f4d0139364f161b2"
+        ["ui.py"]="52005a27aa00eb2801068b08838eb58f"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="f290a5d7c16f6ac2a124b78ed473f9ac"
+        ["funcs"]="2668e6d1df5cb68e35202471228bb1fc"
     )
     local author="aclist"
     local repo="dztui"
@@ -554,7 +554,7 @@ fetch_helpers_by_sum(){
         full_path="$helpers_path/$file"
         url="https://raw.githubusercontent.com/$author/$repo/$branch/helpers/$file"
         if [[ -f "$full_path" ]] && [[ $(get_hash "$full_path") == $sum ]]; then
-            logger INFO "'$file' is current"
+            logger INFO "$file is current"
         else
             logger WARN "File '$full_path' checksum != '$sum'"
             curl -Ls "$url" > "$full_path"
