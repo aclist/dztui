@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-22
+version=5.0.0.rc-23
 
 #CONSTANTS
 aid=221100
@@ -1024,17 +1024,10 @@ try_connect(){
 
     logger INFO "Connection attempt for $ip:$qport"
     update_history "$record"
-    #
-    if [[ -n $auto_install ]]; then
-        #TODO: remove when ready
-        printf "Auto install mode currently disabled"
-        return 1
+
+    if [[ -z $auto_install ]]; then
+        diff=$(merge_modlists "$diff")
     fi
-    #TODO: publishedfileid,timestamp
-    #if [[ -z $auto_install ]]; then
-    #    merge_modlists
-    #fi
-    #
     if [[ -n $diff ]]; then
         if [[ $is_steam_deck -eq 1 ]] && [[ $(test_display_mode) == "gm" ]]; then
             printf "Use Desktop Mode to download mods on Steam Deck"
@@ -1046,6 +1039,165 @@ try_connect(){
         esac
     else
         launch "$ip" "$gameport" "$sanitized_mods"
+    fi
+}
+focus_beta_client(){
+    _wid(){
+        wmctrl -ilx |\
+            awk 'tolower($3) == "steamwebhelper.steam"' |\
+            awk '$5 ~ /^Steam|Steam Games List/' |\
+            awk '{print $1}'
+        }
+    $steam_cmd steam://open/library 2>/dev/null 1>&2 &&
+    $steam_cmd steam://open/console 2>/dev/null 1>&2 &&
+    sleep 1s
+    until [[ -n $(_wid) ]]; do
+        sleep 0.1s
+    done
+    wmctrl -ia $(_wid)
+    sleep 0.1s
+
+    local wid=$(xdotool getactivewindow)
+    local geo=$(xdotool getwindowgeometry $wid)
+    local pos=$(<<< "$geo" awk 'NR==2 {print $2}' | sed 's/,/ /')
+    local dim=$(<<< "$geo" awk 'NR==3 {print $2}' | sed 's/x/ /')
+    local pos1=$(<<< "$pos" awk '{print $1}')
+    local pos2=$(<<< "$pos" awk '{print $2}')
+    local dim1=$(<<< "$dim" awk '{print $1}')
+    local dim2=$(<<< "$dim" awk '{print $2}')
+    local dim1=$(((dim1/2)+pos1))
+    local dim2=$(((dim2/2)+pos2))
+
+    xdotool mousemove $dim1 $dim2
+    xdotool click 1
+    sleep 0.5s
+    xdotool key Tab
+}
+auto_mod_install(){
+    local ip="$1"
+    local gameport="$2"
+    local diff="$3"
+    local sanitized_mods="$4"
+
+    console_dl "$diff" &&
+    $steam_cmd steam://open/downloads
+
+    until [[ -z $(compare $diff) ]]; do
+        local missing=$(compare $diff | wc -l)
+        echo "# Downloaded $((${#modids[@]}-missing)) of ${#modids[@]} mods. ESC cancels"
+    done | $steamsafe_zenity --pulsate --progress --title="DZG Watcher" --auto-close --no-cancel --width=500 2>/dev/null
+
+    local diff=$(compare "$sanitized_mods")
+
+    if [[ -z $diff ]]; then
+        #wipe old version file and replace with latest stamps
+        rm "$versions_file"
+        check_timestamps
+        logger INFO "Local modlist matches remote, initiating launch request"
+        launch "$ip" "$gameport" "$sanitized_mods"
+    fi
+}
+force_update(){
+    rm "$versions_file"
+    local update=$(check_timestamps)
+    console_dl "$update" &&
+    $steam_cmd steam://open/downloads
+}
+console_dl(){
+    readarray -t modids <<< "$@"
+    focus_beta_client
+    sleep 1.5s
+    for i in "${modids[@]}"; do
+        xdotool type --delay 0 "workshop_download_item $aid $i"
+        sleep 0.5s
+        xdotool key Return
+        sleep 0.5s
+    done
+}
+get_local_stamps(){
+    local modlist="$1"
+    local max="${#modlist[@]}"
+    _concat(){
+        for ((i=0;i<$max;i++)); do
+            echo "publishedfileids[$i]=${modlist[$i]}&"
+        done | awk '{print}' ORS=''
+    }
+    _payload(){
+        echo -e "itemcount=${max}&$(_concat)"
+    }
+    _post(){
+        curl -s -X POST \
+            -H "Content-Type:application/x-www-form-urlencoded" \
+            -d "$(_payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
+        }
+
+    _post
+}
+update_stamps(){
+    readarray stamps <<< "$1"
+    for((i=0;i<${#stamps[@]};i++)); do
+        printf "%s\n" "${stamps[$i]}" >> $versions_file
+    done
+}
+check_timestamps(){
+    readarray -t local_modlist < <(ls -1 $workshop_dir)
+    local max=${#local_modlist[@]}
+    logger INFO "Local mod count: $max"
+    [[ $max -eq 0 ]] && return 1
+    local local_stamps=$(get_local_stamps "${local_modlist[@]}")
+    if [[ -z $local_stamps ]]; then
+        logger WARN "Timestamp query returned empty response"
+        return 1
+    fi
+    local aligned=$(<<< "$local_stamps" jq -r '.response.publishedfiledetails[]|"\(.publishedfileid),\(.time_updated)"')
+    readarray -t remote_ids < <(<<< "$aligned" awk -F, '{print $1}'
+    readarray -t remote_times < <(<<< "$aligned" awk -F, '{print $2}'
+    readarray -t old_ids < <(< $version_file awk -F, '{print 1}'
+    readarray -t old_times < <(< $version_file awk -F, '{print 2}'
+
+    if [[ ! -f $versions_file ]]; then
+        logger INFO "No prior versions file found, creating"
+        update_stamps "$aligned"
+        #force refresh all mods if versions file was missing
+        printf "%s\n" "${old_ids[$@]}"
+        return 0
+    fi
+
+    declare -A remote_version
+    declare -A local_version
+
+    for((i = 0; i < ${remote_ids[@]}; ++i)); do
+        remote_version[$remote_ids[$i]]=${remote_times[$i]}
+    done
+    #TODO: if flag is update all
+    #fetch list again and write all new stamps into it
+
+    needs_update=()
+    for((i=0;i<${#old_ids[@]};i++)); do
+        local id=${old_ids[$i]}
+        local time=${old_times[$i]}
+        if [[ $time != ${remote_version[$id]} ]]; then
+                logger WARN "Mod '$id' timestamp '$time' != '${remote_version[$id]}'"
+                needs_update+=($id)
+                #awk -v var=$id -v var2=$time '$1 == var {$2=var2;print $1","$2; next;};{print}' "$version_file" > "$version_file.new" &&
+                #mv "$versions_file.new" "$version_file"
+                #TODO: but what if they cancel
+                #TODO: update timestamps AFTER downloading
+        fi
+    done
+    echo "${needs_update[@]}"
+}
+merge_modlists(){
+    local diff="$1"
+    readarray -t needs_update < <(check_timestamps)
+    if [[ ${#needs_update[@]} -eq 0]]; then
+        echo "$diff"
+        return 0
+    fi
+    if [[ -z "$diff" ]] && [[ ${#needs_update[@]} -gt 0 ]]; then
+        printf "%s\n" "${needs_update[@]}"
+    else
+        printf "%s\n%s\n" "$diff" "${needs_update[@]}"
     fi
 }
 concat_mods(){
@@ -1087,6 +1239,7 @@ launch(){
     fi
     echo "$concat" > "$_cache_launch"
     echo "$ip:$gameport" > "$_cache_address"
+    logger INFO "Saved launch params: '$concat'"
     printf "Launch conditions satisfied. DayZ will now launch after you confirm this dialog."
     return 100
 }
@@ -1095,13 +1248,16 @@ final_handshake(){
     local saved_address=$(< "$_cache_address")
     local res=$(is_dayz_running)
     if [[ $res -eq 1 ]]; then
+        logger WARN "DayZ appears to already be running"
         printf "Is DayZ already running? DZGUI cannot launch DayZ if another process is using it."
         return 1
     fi
+    logger INFO "Kicking off Steam launch"
     $steam_cmd -applaunch $aid -connect=$saved_address -nolauncher -nosplash -skipintro -name=$name \"-mod=$saved_mods\" &
     until [[ $(is_dayz_running) -eq 1 ]]; do
         sleep 0.1s
     done
+    logger INFO "Caught DayZ process"
     return 6
 }
 manual_mod_install(){
