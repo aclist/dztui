@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-26
+version=5.0.0.rc-27
 
 #CONSTANTS
 aid=221100
@@ -362,7 +362,7 @@ get_unique_maps(){
     < "$filter_file" awk -F$separator '{print $2}' | sort -u
 }
 query_config(){
-    local key="$1"
+    [[ -n $2 ]] && local key=$2
     keys=(
         "branch"
         "debug"
@@ -1026,6 +1026,7 @@ try_connect(){
     update_history "$record"
 
     if [[ -n $auto_install ]]; then
+        logger INFO "Merging modlists"
         diff=$(merge_modlists "$diff")
     fi
     if [[ -n $diff ]]; then
@@ -1167,7 +1168,7 @@ check_timestamps(){
     declare -A local_version
 
     for((i = 0; i < ${remote_ids[@]}; ++i)); do
-        remote_version[$remote_ids[$i]]=${remote_times[$i]}
+        remote_version[${remote_ids[$i]}]=${remote_times[$i]}
     done
 
     needs_update=()

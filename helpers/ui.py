@@ -15,7 +15,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.26
+# 5.0.0-rc.27
 app_name = "DZGUI"
 
 cache = {}
@@ -1526,6 +1526,8 @@ class FilterPanel(Gtk.Box):
         self.maps_combo.connect("key-press-event", self._on_esc_pressed)
 
         self.debug_toggle = Gtk.ToggleButton(label="Debug mode")
+        if query_config(None, "debug")[0] == '1':
+            self.debug_toggle.set_active(True)
         self.debug_toggle.connect("toggled", self._on_button_toggled, "Toggle debug mode")
         set_surrounding_margins(self.debug_toggle, 10)
 
