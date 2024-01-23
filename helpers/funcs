@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-25
+version=5.0.0.rc-26
 
 #CONSTANTS
 aid=221100
@@ -1025,7 +1025,7 @@ try_connect(){
     logger INFO "Connection attempt for $ip:$qport"
     update_history "$record"
 
-    if [[ -z $auto_install ]]; then
+    if [[ -n $auto_install ]]; then
         diff=$(merge_modlists "$diff")
     fi
     if [[ -n $diff ]]; then
@@ -1169,8 +1169,6 @@ check_timestamps(){
     for((i = 0; i < ${remote_ids[@]}; ++i)); do
         remote_version[$remote_ids[$i]]=${remote_times[$i]}
     done
-    #TODO: if flag is update all
-    #fetch list again and write all new stamps into it
 
     needs_update=()
     for((i=0;i<${#old_ids[@]};i++)); do
@@ -1179,10 +1177,6 @@ check_timestamps(){
         if [[ $time != ${remote_version[$id]} ]]; then
                 logger WARN "Mod '$id' timestamp '$time' != '${remote_version[$id]}'"
                 needs_update+=($id)
-                #awk -v var=$id -v var2=$time '$1 == var {$2=var2;print $1","$2; next;};{print}' "$version_file" > "$version_file.new" &&
-                #mv "$versions_file.new" "$version_file"
-                #TODO: but what if they cancel
-                #TODO: update timestamps AFTER downloading
         fi
     done
     echo "${needs_update[@]}"

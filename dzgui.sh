@@ -536,10 +536,10 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="52005a27aa00eb2801068b08838eb58f"
+        ["ui.py"]="4dc76532cd01c221755e59e803456b57"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="2668e6d1df5cb68e35202471228bb1fc"
+        ["funcs"]="a41432675455a4983c7ba6d2e6681f05"
     )
     local author="aclist"
     local repo="dztui"
