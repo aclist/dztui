@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-29
+version=5.0.0.rc-30
 
 #CONSTANTS
 aid=221100
@@ -1080,7 +1080,7 @@ auto_mod_install(){
         echo "# Downloaded $(($total-missing)) of $total mods. ESC cancels"
     done | $steamsafe_zenity --pulsate --progress --title="DZG Watcher" --auto-close --no-cancel --width=500 2>/dev/null
     if [[ ! $? -eq 0 ]]; then
-        echo "User canceled connect process. Steam may have mods pending for download."
+        echo "User aborted connect process. Steam may have mods pending for download."
         exit 1
     fi
 
@@ -1103,7 +1103,8 @@ force_update(){
     local update=$(check_timestamps)
     console_dl "$update" &&
     $steam_cmd steam://open/downloads
-    return 8
+    echo "Finished requesting mod updates. Steam may have some mods pending for download."
+    return 0
 }
 console_dl(){
     readarray -t modids <<< "$@"

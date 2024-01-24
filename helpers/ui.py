@@ -16,7 +16,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.29
+# 5.0.0-rc.30
 app_name = "DZGUI"
 
 cache = {}
@@ -283,13 +283,11 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
         case 0:
             # success with notice popup
             spawn_dialog(transient_parent, msg, "NOTIFY")
-            pass
         case 1:
             # error with notice popup
             if msg == "":
                 msg = "Something went wrong"
             spawn_dialog(transient_parent, msg, "NOTIFY")
-            pass
         case 2:
             # warn and recurse (e.g. validation failed)
             spawn_dialog(transient_parent, msg, "NOTIFY")
@@ -308,12 +306,6 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
         case 6:
             # return silently
             pass
-        case 7:
-            msg = "Some mods may have failed to download. Try connecting again to resync."
-            spawn_dialog(transient_parent, msg, "NOTIFY")
-        case 8:
-            msg = "Finished requesting mod updates. Steam may have mods pending for download."
-            spawn_dialog(transient_parent, msg, "NOTIFY")
         case 90:
             # used to update configs and metadata in-place
             treeview = transient_parent.grid.scrollable_treelist.treeview
@@ -1010,7 +1002,9 @@ class TreeView(Gtk.TreeView):
         def load():
             dialog.destroy()
             transient = self.get_outer_window()
-            process_shell_return_code(transient, proc.stdout, proc.returncode, record)
+            out = proc.stdout.splitlines()
+            msg = out[-1]
+            process_shell_return_code(transient, msg, proc.returncode, record)
 
         proc = call_out(self, "Connect from table", record)
         GLib.idle_add(load)
