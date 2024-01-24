@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-28
+version=5.0.0.rc-29
 
 #CONSTANTS
 aid=221100
@@ -160,15 +160,6 @@ validate_and_connect(){
             logger INFO "Record resolved to $record"
     esac
     try_connect "$record"
-}
-force_update(){
-    if [[ ! $auto_install -eq 1 ]]; then
-        printf "Only available when mod auto-install is ON"
-        return 1
-    fi
-    #TODO: force update
-    printf "Currently does nothing"
-    return 0
 }
 map_id_to_ip(){
     local id="$1"
@@ -1084,12 +1075,13 @@ auto_mod_install(){
     $steam_cmd steam://open/downloads
 
     local total=$(<<< "$diff" wc -l)
-    until [[ -z $(compare $diff) ]]; do
-        local missing=$(compare $diff | wc -l)
+    until [[ -z $(compare "$diff") ]]; do
+        local missing=$(compare "$diff" | wc -l)
         echo "# Downloaded $(($total-missing)) of $total mods. ESC cancels"
     done | $steamsafe_zenity --pulsate --progress --title="DZG Watcher" --auto-close --no-cancel --width=500 2>/dev/null
     if [[ ! $? -eq 0 ]]; then
-        exit 7
+        echo "User canceled connect process. Steam may have mods pending for download."
+        exit 1
     fi
 
     local diff=$(compare "$sanitized_mods")
@@ -1103,10 +1095,15 @@ auto_mod_install(){
     fi
 }
 force_update(){
+    if [[ ! $auto_install -eq 1 ]]; then
+        printf "Only available when mod auto-install is ON"
+        return 1
+    fi
     rm "$versions_file"
     local update=$(check_timestamps)
     console_dl "$update" &&
     $steam_cmd steam://open/downloads
+    return 8
 }
 console_dl(){
     readarray -t modids <<< "$@"
@@ -1157,21 +1154,21 @@ check_timestamps(){
     local aligned=$(<<< "$local_stamps" jq -r '.response.publishedfiledetails[]|"\(.publishedfileid),\(.time_updated)"')
     readarray -t remote_ids < <(<<< "$aligned" awk -F, '{print $1}')
     readarray -t remote_times < <(<<< "$aligned" awk -F, '{print $2}')
-    readarray -t old_ids < <(< $versions_file awk -F, '{print 1}')
-    readarray -t old_times < <(< $versions_file awk -F, '{print 2}')
+    readarray -t old_ids < <(< $versions_file awk -F, '{print $1}')
+    readarray -t old_times < <(< $versions_file awk -F, '{print $2}')
 
     if [[ ! -f $versions_file ]]; then
         logger INFO "No prior versions file found, creating"
         update_stamps "$aligned"
         #force refresh all mods if versions file was missing
-        printf "%s\n" "${old_ids[$@]}"
+        printf "%s\n" "${remote_ids[$@]}"
         return 0
     fi
 
     declare -A remote_version
     declare -A local_version
 
-    for((i = 0; i < ${remote_ids[@]}; ++i)); do
+    for((i = 0; i < ${#remote_ids[@]}; ++i)); do
         remote_version[${remote_ids[$i]}]=${remote_times[$i]}
     done
 
@@ -1184,7 +1181,7 @@ check_timestamps(){
                 needs_update+=($id)
         fi
     done
-    echo "${needs_update[@]}"
+    printf "%s\n" "${needs_update[@]}"
 }
 merge_modlists(){
     local diff="$1"
@@ -1196,7 +1193,8 @@ merge_modlists(){
     if [[ -z "$diff" ]] && [[ ${#needs_update[@]} -gt 0 ]]; then
         printf "%s\n" "${needs_update[@]}"
     else
-        printf "%s\n%s\n" "$diff" "${needs_update[@]}"
+        printf "%s\n" "$diff"
+        printf "%s\n" "${needs_update[@]}"
     fi
 }
 concat_mods(){

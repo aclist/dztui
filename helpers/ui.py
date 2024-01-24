@@ -16,7 +16,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.28
+# 5.0.0-rc.29
 app_name = "DZGUI"
 
 cache = {}
@@ -309,10 +309,11 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
             # return silently
             pass
         case 7:
-            # catch zenity dialog cancel and rewrite message
-            msg = "User canceled connect process. Steam may have mods pending for download."
+            msg = "Some mods may have failed to download. Try connecting again to resync."
             spawn_dialog(transient_parent, msg, "NOTIFY")
-
+        case 8:
+            msg = "Finished requesting mod updates. Steam may have mods pending for download."
+            spawn_dialog(transient_parent, msg, "NOTIFY")
         case 90:
             # used to update configs and metadata in-place
             treeview = transient_parent.grid.scrollable_treelist.treeview
