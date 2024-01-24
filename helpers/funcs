@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-27
+version=5.0.0.rc-28
 
 #CONSTANTS
 aid=221100
@@ -1071,8 +1071,8 @@ focus_beta_client(){
 
     xdotool mousemove $dim1 $dim2
     xdotool click 1
-    sleep 0.5s
-    xdotool key Tab
+    $steam_cmd steam://open/library 2>/dev/null 1>&2 &&
+    $steam_cmd steam://open/console 2>/dev/null 1>&2
 }
 auto_mod_install(){
     local ip="$1"
@@ -1083,10 +1083,14 @@ auto_mod_install(){
     console_dl "$diff" &&
     $steam_cmd steam://open/downloads
 
+    local total=$(<<< "$diff" wc -l)
     until [[ -z $(compare $diff) ]]; do
         local missing=$(compare $diff | wc -l)
-        echo "# Downloaded $((${#modids[@]}-missing)) of ${#modids[@]} mods. ESC cancels"
+        echo "# Downloaded $(($total-missing)) of $total mods. ESC cancels"
     done | $steamsafe_zenity --pulsate --progress --title="DZG Watcher" --auto-close --no-cancel --width=500 2>/dev/null
+    if [[ ! $? -eq 0 ]]; then
+        exit 7
+    fi
 
     local diff=$(compare "$sanitized_mods")
 
@@ -1116,11 +1120,11 @@ console_dl(){
     done
 }
 get_local_stamps(){
-    local modlist="$1"
+    readarray -t modlist < <(printf "%s\n" "$@")
     local max="${#modlist[@]}"
     _concat(){
         for ((i=0;i<$max;i++)); do
-            echo "publishedfileids[$i]=${modlist[$i]}&"
+            printf "publishedfileids[$i]=${modlist[$i]}&"
         done | awk '{print}' ORS=''
     }
     _payload(){
@@ -1135,7 +1139,7 @@ get_local_stamps(){
     _post
 }
 update_stamps(){
-    readarray stamps <<< "$1"
+    readarray -t stamps <<< "$1"
     for((i=0;i<${#stamps[@]};i++)); do
         printf "%s\n" "${stamps[$i]}" >> $versions_file
     done
@@ -1153,8 +1157,8 @@ check_timestamps(){
     local aligned=$(<<< "$local_stamps" jq -r '.response.publishedfiledetails[]|"\(.publishedfileid),\(.time_updated)"')
     readarray -t remote_ids < <(<<< "$aligned" awk -F, '{print $1}')
     readarray -t remote_times < <(<<< "$aligned" awk -F, '{print $2}')
-    readarray -t old_ids < <(< $version_file awk -F, '{print 1}')
-    readarray -t old_times < <(< $version_file awk -F, '{print 2}')
+    readarray -t old_ids < <(< $versions_file awk -F, '{print 1}')
+    readarray -t old_times < <(< $versions_file awk -F, '{print 2}')
 
     if [[ ! -f $versions_file ]]; then
         logger INFO "No prior versions file found, creating"

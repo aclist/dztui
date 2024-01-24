@@ -8,6 +8,7 @@ import multiprocessing
 import re
 import subprocess
 import sys
+import textwrap
 import threading
 import time
 
@@ -15,7 +16,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.27
+# 5.0.0-rc.28
 app_name = "DZGUI"
 
 cache = {}
@@ -307,6 +308,11 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
         case 6:
             # return silently
             pass
+        case 7:
+            # catch zenity dialog cancel and rewrite message
+            msg = "User canceled connect process. Steam may have mods pending for download."
+            spawn_dialog(transient_parent, msg, "NOTIFY")
+
         case 90:
             # used to update configs and metadata in-place
             treeview = transient_parent.grid.scrollable_treelist.treeview
@@ -1198,7 +1204,7 @@ class GenericDialog(Gtk.MessageDialog):
             flags=0,
             message_type=dialog_type,
             text=header_text,
-            secondary_text=text,
+            secondary_text=textwrap.fill(text, 50),
             buttons=button_type,
             title=app_name,
             modal=True,
