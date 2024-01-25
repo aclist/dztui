@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-30
+version=5.0.0.rc-31
 
 #CONSTANTS
 aid=221100
@@ -367,6 +367,7 @@ query_config(){
             echo "${!key}"
             return 0
         else
+            echo ""
             return 1
         fi
     fi
