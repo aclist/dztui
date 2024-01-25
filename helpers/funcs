@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-32
+version=5.0.0.rc-33
 
 #CONSTANTS
 aid=221100
@@ -1187,6 +1187,10 @@ check_timestamps(){
 }
 merge_modlists(){
     local diff="$1"
+    _sort(){
+        printf "%s\n" "$diff"
+        printf "%s\n" "${needs_update[@]}"
+    }
     readarray -t needs_update < <(check_timestamps)
     if [[ ${#needs_update[@]} -eq 0 ]]; then
         echo "$diff"
@@ -1195,8 +1199,8 @@ merge_modlists(){
     if [[ -z "$diff" ]] && [[ ${#needs_update[@]} -gt 0 ]]; then
         printf "%s\n" "${needs_update[@]}"
     else
-        printf "%s\n" "$diff"
-        printf "%s\n" "${needs_update[@]}"
+        # remove duplicates
+        _sort | sort -u
     fi
 }
 concat_mods(){
@@ -1306,7 +1310,7 @@ manual_mod_install(){
     if [[ -z $diff ]]; then
         launch "$ip" "$gameport" "$sanitized_mods"
     else
-        printf "Some mods may have failed to download. Try connecting again to resync."
+        printf "User aborted download process, or some mods may have failed to download. Try connecting again to resync."
         exit 1
     fi
 }
