@@ -16,7 +16,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.31
+# 5.0.0-rc.32
 app_name = "DZGUI"
 
 cache = {}
@@ -393,7 +393,7 @@ def process_tree_option(input, treeview):
                     case "Connect by IP" | "Add server by IP" | "Change favorite server":
                         flag = True
                         link_label = ""
-                        prompt = "Enter IP in IP:Queryport format\nE.g. 192.168.1.1:27016"
+                        prompt = "Enter IP in IP:Queryport format (e.g. 192.168.1.1:27016)"
                     case "Connect by ID" | "Add server by ID":
                         flag = True
                         link_label = "Open Battlemetrics"
@@ -436,7 +436,6 @@ class OuterWindow(Gtk.Window):
     def __init__(self, is_steam_deck):
         super().__init__()
 
-        self.connect("destroy", self.halt_proc_and_quit)
         self.connect("delete-event", self.halt_proc_and_quit)
         # Deprecated in GTK 4.0
         self.set_border_width(10)
@@ -461,7 +460,7 @@ class OuterWindow(Gtk.Window):
         self.grid.right_panel.set_filter_visibility(False)
         self.grid.scrollable_treelist.treeview.grab_focus()
 
-    def halt_proc_and_quit(self, window):
+    def halt_proc_and_quit(self, window, event):
         self.grid.terminate_treeview_process()
         Gtk.main_quit()
 
@@ -469,7 +468,6 @@ class OuterWindow(Gtk.Window):
 class ScrollableTree(Gtk.ScrolledWindow):
     def __init__(self, is_steam_deck):
         super().__init__()
-        #self.set_propagate_natural_height(False)
 
         self.treeview = TreeView(is_steam_deck)
         self.add(self.treeview)
@@ -822,14 +820,14 @@ class TreeView(Gtk.TreeView):
                 return False
 
     def _on_keypress(self, treeview, event):
-        if self.get_first_col == "Mod":
-            return
         keyname = Gdk.keyval_name(event.keyval)
         grid = self.get_outer_grid()
         cur_proc = grid.scrollable_treelist.treeview.current_proc
         if event.state is Gdk.ModifierType.CONTROL_MASK:
             match event.keyval:
                 case Gdk.KEY_d:
+                    if self.get_first_col() == "Mod":
+                        return
                     debug = grid.right_panel.filters_vbox.debug_toggle
                     if debug.get_active():
                         debug.set_active(False)
@@ -838,13 +836,19 @@ class TreeView(Gtk.TreeView):
                 case Gdk.KEY_l:
                     self._on_button_release(self, event)
                 case Gdk.KEY_f:
+                    if self.get_first_col() == "Mod":
+                        return
                     grid.right_panel.filters_vbox.grab_keyword_focus()
                 case Gdk.KEY_m:
+                    if self.get_first_col() == "Mod":
+                        return
                     grid.right_panel.filters_vbox.maps_combo.grab_focus()
                     grid.right_panel.filters_vbox.maps_combo.popup()
                 case _:
                     return False
         elif keyname.isnumeric() and int(keyname) > 0:
+            if self.get_first_col() == "Mod":
+                return
             digit = (int(keyname) - 1)
             grid.right_panel.filters_vbox.toggle_check(checks[digit])
         else:
@@ -895,6 +899,7 @@ class TreeView(Gtk.TreeView):
             self.grab_focus()
             size = locale.format_string('%.3f', total_size, grouping=True)
             grid.update_statusbar("Found %s mods taking up %s MiB" %(f'{total_mods:n}', size))
+            toggle_signal(self, self, '_on_keypress', True)
 
         grid = self.get_outer_grid()
         right_panel = grid.right_panel
@@ -918,11 +923,10 @@ class TreeView(Gtk.TreeView):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             column.set_sort_column_id(i)
-            #"""Prevent columns from auto-adjusting"""
             if ("Name" in column_title):
                 column.set_fixed_width(800)
-            #if (column_title == "Map"):
-            #    column.set_fixed_width(300)
+            if (column_title == "Map"):
+                column.set_fixed_width(300)
             self.append_column(column)
 
         self.update_first_col(mode)
@@ -1159,8 +1163,8 @@ def filter_servers(transient_parent, filters_vbox, treeview, context):
 class AppHeaderBar(Gtk.HeaderBar):
     def __init__(self):
         super().__init__()
-        Gtk.HeaderBar()
         self.props.title = app_name
+        self.set_decoration_layout("menu:minimize,maximize,close")
         self.set_show_close_button(True)
 
 
@@ -1490,7 +1494,7 @@ class App(Gtk.Application):
         Gtk.main()
 
     def _halt_window_subprocess(self, accel_group, window, code, flag):
-        self.win.halt_proc_and_quit(self)
+        self.win.halt_proc_and_quit(self, None)
 
 
 class FilterPanel(Gtk.Box):
