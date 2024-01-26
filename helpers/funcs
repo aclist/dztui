@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-34
+version=5.0.0.rc-35
 
 #CONSTANTS
 aid=221100
@@ -1192,7 +1192,7 @@ merge_modlists(){
         printf "%s\n" "${needs_update[@]}"
     }
     readarray -t needs_update < <(check_timestamps)
-    if [[ ${#needs_update[@]} -eq 0 ]]; then
+    if [[ -z ${needs_update[@]} ]]; then
         echo "$diff"
         return 0
     fi
