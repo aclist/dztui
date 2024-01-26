@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.0.0.rc-35
+version=5.0.0.rc-36
 
 #CONSTANTS
 aid=221100
@@ -536,10 +536,10 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="e8f3f1ff2a46c6a4bb8a692f42da550b"
+        ["ui.py"]="4cc79aacfc87ded6989e7a7e077a9b23"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="a37820c4c5da21811bae77f6c43ed9a6"
+        ["funcs"]="c05444b8db8cb010909eb2763100450a"
     )
     local author="aclist"
     local repo="dztui"
@@ -812,7 +812,7 @@ initial_setup(){
     steam_deps
     migrate_files
     stale_symlinks
-#    fetch_helpers > >(pdialog "Checking helper files")
+    fetch_helpers > >(pdialog "Checking helper files")
     local_latlon
     is_steam_running
     is_dzg_downloading
