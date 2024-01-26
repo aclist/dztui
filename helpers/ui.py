@@ -16,7 +16,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.33
+# 5.0.0-rc.34
 app_name = "DZGUI"
 
 cache = {}
@@ -434,7 +434,7 @@ def reinit_checks():
 
 class OuterWindow(Gtk.Window):
     def __init__(self, is_steam_deck):
-        super().__init__()
+        super().__init__(title=app_name)
 
         self.connect("delete-event", self.halt_proc_and_quit)
         # Deprecated in GTK 4.0
@@ -447,13 +447,14 @@ class OuterWindow(Gtk.Window):
         """
         self.grid = Grid(is_steam_deck)
         self.add(self.grid)
-        self.hb = AppHeaderBar()
+#        self.hb = AppHeaderBar()
 
-        if is_steam_deck is True:
-            self.maximize()
-            self.set_decorated(False)
-        else:
-            self.set_titlebar(self.hb)
+#        if is_steam_deck is True:
+#            self.maximize()
+#            self.set_decorated(False)
+#        else:
+#            pass
+#            self.set_titlebar(self.hb)
 
         # Hide FilterPanel on main menu
         self.show_all()
