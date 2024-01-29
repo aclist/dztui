@@ -16,7 +16,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.37
+# 5.0.0-rc.38
 app_name = "DZGUI"
 
 cache = {}
@@ -435,7 +435,7 @@ def reinit_checks():
 
 
 class OuterWindow(Gtk.Window):
-    def __init__(self, is_steam_deck):
+    def __init__(self, is_steam_deck, is_game_mode):
         super().__init__(title=app_name)
 
         self.connect("delete-event", self.halt_proc_and_quit)
@@ -449,14 +449,10 @@ class OuterWindow(Gtk.Window):
         """
         self.grid = Grid(is_steam_deck)
         self.add(self.grid)
-#        self.hb = AppHeaderBar()
-
-#        if is_steam_deck is True:
-#            self.maximize()
-#            self.set_decorated(False)
-#        else:
-#            pass
-#            self.set_titlebar(self.hb)
+        if is_game_mode is True:
+            self.fullscreen()
+        else:
+            self.maximize()
 
         # Hide FilterPanel on main menu
         self.show_all()
@@ -1485,10 +1481,15 @@ class App(Gtk.Application):
         _isd = int(sys.argv[3])
         if _isd == 1:
             is_steam_deck = True
+            is_game_mode = False
+        elif _isd == 2:
+            is_steam_deck = True
+            is_game_mode = True
         else:
             is_steam_deck = False
+            is_game_mode = False
 
-        self.win = OuterWindow(is_steam_deck)
+        self.win = OuterWindow(is_steam_deck, is_game_mode)
 
         accel = Gtk.AccelGroup()
         accel.connect(Gdk.KEY_q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE, self._halt_window_subprocess)

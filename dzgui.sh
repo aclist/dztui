@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.0.0.rc-37
+version=5.0.0.rc-38
 
 #CONSTANTS
 aid=221100
@@ -370,10 +370,22 @@ dl_changelog(){
     local md="https://raw.githubusercontent.com/$author/dztui/${mdbranch}/CHANGELOG.md"
     curl -Ls "$md" > "$state_path/CHANGELOG.md"
 }
+test_display_mode(){
+    pgrep -a gamescope | grep -q "generate-drm-mode"
+    if [[ $? -eq 0 ]]; then
+        echo gm
+    else
+        echo dm
+    fi
+}
 check_architecture(){
     local cpu=$(< /proc/cpuinfo grep "AMD Custom APU 0405")
     if [[ -n "$cpu" ]]; then
-        is_steam_deck=1
+        if [[ $(test_display_mode) == "gm" ]]; then
+            is_steam_deck=2
+        else
+            is_steam_deck=1
+        fi
         logger INFO "Setting architecture to 'Steam Deck'"
     else
         is_steam_deck=0
@@ -536,10 +548,10 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="26032cc056ff1ce25660a2ca58cffc81"
+        ["ui.py"]="79f21f63a704389d5aec0731c75b5e0f"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="4f142d4fe883a6936f94c964dbcf0710"
+        ["funcs"]="e49f7a123134d49f622dba9b671b000e"
     )
     local author="aclist"
     local repo="dztui"
@@ -812,7 +824,7 @@ initial_setup(){
     steam_deps
     migrate_files
     stale_symlinks
-    fetch_helpers > >(pdialog "Checking helper files")
+#    fetch_helpers > >(pdialog "Checking helper files")
     local_latlon
     is_steam_running
     is_dzg_downloading
