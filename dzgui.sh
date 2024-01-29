@@ -824,7 +824,7 @@ initial_setup(){
     steam_deps
     migrate_files
     stale_symlinks
-#    fetch_helpers > >(pdialog "Checking helper files")
+    fetch_helpers > >(pdialog "Checking helper files")
     local_latlon
     is_steam_running
     is_dzg_downloading
