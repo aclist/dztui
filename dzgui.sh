@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.0.0.rc-38
+version=5.0.0.rc-39
 
 #CONSTANTS
 aid=221100
@@ -366,7 +366,7 @@ prompt_dl(){
 dl_changelog(){
     local mdbranch
     [[ $branch == "stable" ]] && mdbranch="dzgui"
-    [[ $branch == "" ]] && mdbranch="testing"
+    [[ $branch == "testing" ]] && mdbranch="testing"
     local md="https://raw.githubusercontent.com/$author/dztui/${mdbranch}/CHANGELOG.md"
     curl -Ls "$md" > "$state_path/CHANGELOG.md"
 }
@@ -548,10 +548,10 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="79f21f63a704389d5aec0731c75b5e0f"
+        ["ui.py"]="2c7b337afc5abc8be83bf3c62e043e71"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="e49f7a123134d49f622dba9b671b000e"
+        ["funcs"]="1396887afe48f16096089395914a417d"
     )
     local author="aclist"
     local repo="dztui"
