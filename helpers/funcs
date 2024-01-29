@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-36
+version=5.0.0.rc-37
 
 #CONSTANTS
 aid=221100
@@ -89,7 +89,6 @@ else
     steam_cmd="flatpak run com.valvesoftware.Steam"
 fi
 
-#TODO: dump servers methods can be merged
 declare -A funcs=(
 ["My servers"]="dump_servers"
 ["Change player name"]="update_config_val"
@@ -774,8 +773,10 @@ update_favs_from_table(){
     local record="$2"
     if [[ $context =~ Remove  ]]; then
         remove_from_favs "$record"
+        echo "Removed $record from saved servers"
     else
         add_to_favs "$record"
+        echo "Added $record to saved servers"
     fi
     return 0
 }
@@ -837,6 +838,7 @@ update_config_val(){
     declare -n nr=$key
     nr="$value"
     update_config
+    echo "Updated the key '$key' to '$value'"
     return 90
 }
 show_log(){
@@ -1163,7 +1165,7 @@ check_timestamps(){
         logger INFO "No prior versions file found, creating"
         update_stamps "$aligned"
         #force refresh all mods if versions file was missing
-        printf "%s\n" "${remote_ids[$@]}"
+        printf "%s\n" "${remote_ids[@]}"
         return 0
     fi
 

@@ -16,7 +16,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.36
+# 5.0.0-rc.37
 app_name = "DZGUI"
 
 cache = {}
@@ -134,7 +134,7 @@ status_tooltip = {
     "Server browser": "Used to browse the global server list",
     "My saved servers": "Browse your saved servers",
     "Quick-connect to favorite server": "Connect to your favorite server",
-    "Recent servers": "Shows the last 10 servers you connected to",
+    "Recent servers": "Shows the last 10 servers you connected to (includes attempts)",
     "Connect by IP": "Connect to a server by IP",
     "Connect by ID": "Connect to a server by Battlemetrics ID",
     "Add server by IP": "Add a server by IP",
@@ -341,7 +341,8 @@ def process_tree_option(input, treeview):
         def _background(subproc, args, dialog):
             def _load():
                 wait_dialog.destroy()
-                msg = proc.stdout
+                out = proc.stdout.splitlines()
+                msg = out[-1]
                 rc = proc.returncode
                 logger.info("Subprocess returned code %s with message '%s'" %(rc, msg))
                 process_shell_return_code(transient_parent, msg, rc, input)
@@ -356,7 +357,8 @@ def process_tree_option(input, treeview):
             # False is used to bypass wait dialogs
             proc = call_out(transient_parent, subproc, args)
             rc = proc.returncode
-            msg = proc.stdout
+            out = proc.stdout.splitlines()
+            msg = out[-1]
             process_shell_return_code(transient_parent, msg, rc, input)
 
 
@@ -667,11 +669,12 @@ class TreeView(Gtk.TreeView):
         match context_menu_label:
             case "Add to my servers" | "Remove from favorites":
                 record = "%s:%s" %(self.get_column_at_index(6), self.get_column_at_index(7))
-                call_out(parent, context_menu_label, record)
+                proc = call_out(parent, context_menu_label, record)
                 if context == "Name (My saved servers)":
                     iter = self.get_current_iter()
                     server_store.remove(iter)
-                res = spawn_dialog(parent, "Added %s to favorites" %(record), "NOTIFY")
+                msg = proc.stdout
+                res = spawn_dialog(parent, msg, "NOTIFY")
             case "Remove from history":
                 record = "%s:%s" %(self.get_column_at_index(6), self.get_column_at_index(7))
                 call_out(parent, context_menu_label, record)
