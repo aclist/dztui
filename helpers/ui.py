@@ -16,7 +16,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.39
+# 5.0.0-rc.40
 app_name = "DZGUI"
 
 cache = {}
@@ -1520,6 +1520,7 @@ class FilterPanel(Gtk.Box):
         self.connect("button-release-event", self._on_button_release)
         self.set_orientation(Gtk.Orientation.VERTICAL)
         set_surrounding_margins(self, 10)
+        self.set_margin_top(1)
 
         self.filters_label = Gtk.Label(label="Filters")
 
