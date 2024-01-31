@@ -16,7 +16,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.0.0-rc.41
+# 5.0.0-rc.42
 app_name = "DZGUI"
 
 cache = {}
@@ -663,7 +663,7 @@ class TreeView(Gtk.TreeView):
         logger.info("User clicked context menu '%s'" %(context_menu_label))
 
         match context_menu_label:
-            case "Add to my servers" | "Remove from favorites":
+            case "Add to my servers" | "Remove from my servers":
                 record = "%s:%s" %(self.get_column_at_index(6), self.get_column_at_index(7))
                 proc = call_out(parent, context_menu_label, record)
                 if context == "Name (My saved servers)":
@@ -722,7 +722,7 @@ class TreeView(Gtk.TreeView):
 
         mod_context_items = ["Open in Steam Workshop", "Delete mod"]
         subcontext_items = {"Server browser": ["Add to my servers", "Copy IP to clipboard", "Show server-side mods"],
-                  "My saved servers": ["Remove from favorites", "Copy IP to clipboard", "Show server-side mods"],
+                  "My saved servers": ["Remove from my servers", "Copy IP to clipboard", "Show server-side mods"],
                   "Recent servers": ["Remove from history", "Copy IP to clipboard", "Show server-side mods"],
                   }
         # submenu hierarchy https://stackoverflow.com/questions/52847909/how-to-add-a-sub-menu-to-a-gtk-menu
@@ -740,7 +740,7 @@ class TreeView(Gtk.TreeView):
                 record = "%s:%s" %(self.get_column_at_index(6), self.get_column_at_index(7))
                 proc = call_out(widget, "is_in_favs", record)
                 if proc.returncode == 0:
-                    item = "Remove from favorites"
+                    item = "Remove from my servers"
             item = Gtk.MenuItem(label=item)
             item.connect("activate", self._on_menu_click)
             self.menu.append(item)

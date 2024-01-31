@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.0.0.rc-41
+version=5.0.0.rc-42
 
 #CONSTANTS
 aid=221100
@@ -548,14 +548,16 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="cf1542c215b72ded42a3b52068e0653f"
+        ["ui.py"]="2331665f5a2fb55cc030621812a309ea"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="c1b73598bddde3fc3b9c9d12061a5b83"
+        ["funcs"]="3f7f374117dd2bbc55e1d055d903cff2"
     )
     local author="aclist"
     local repo="dztui"
     local branch="$branch"
+    #TODO: update to 'dzgui' for first time setup
+    [[ -z $branch ]] && branch="testing"
     local file
     local sum
     local full_path
@@ -565,6 +567,7 @@ fetch_helpers_by_sum(){
         sum="${sums[$i]}"
         full_path="$helpers_path/$file"
         url="https://raw.githubusercontent.com/$author/$repo/$branch/helpers/$file"
+        echo "$url" >> $HOME/log
         if [[ -f "$full_path" ]] && [[ $(get_hash "$full_path") == $sum ]]; then
             logger INFO "$file is current"
         else
@@ -815,6 +818,7 @@ initial_setup(){
     watcher_deps
     check_architecture
     test_connection
+    fetch_helpers > >(pdialog "Checking helper files")
     varcheck
     source "$config_file"
     lock
@@ -824,7 +828,6 @@ initial_setup(){
     steam_deps
     migrate_files
     stale_symlinks
-    fetch_helpers > >(pdialog "Checking helper files")
     local_latlon
     is_steam_running
     is_dzg_downloading
