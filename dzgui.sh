@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.0.0.rc-46
+version=5.0.0.rc-47
 
 #CONSTANTS
 aid=221100
@@ -474,18 +474,6 @@ stale_symlinks(){
         unlink $l
     done
 }
-check_news(){
-    [[ $branch == "stable" ]] && news_url="$stable_url/news"
-    [[ $branch == "testing" ]] && news_url="$testing_url/news"
-    local result=$(curl -Ls "$news_url")
-    local sum=$(<<< "$result" md5sum | awk '{print $1}')
-    if [[ $sum != "$seen_news" ]]; then
-        logger WARN "Local news checksum '$seen_news' != '$sum'"
-        seen_news="$sum"
-        update_config
-        echo "$result"
-    fi
-}
 local_latlon(){
     if [[ -z $(command -v dig) ]]; then
         local local_ip=$(curl -Ls "https://ipecho.net/plain")
@@ -548,10 +536,10 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="a96a6180ac7ddccf4d37ec3dbdbe9c90"
+        ["ui.py"]="aae6bd048bc4786a914c3ed45bef82da"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="7b4a5388ece7f723d2d3bbc08bbc3187"
+        ["funcs"]="6f853f3f0fa838ce731f203dddb22702"
     )
     local author="aclist"
     local repo="dztui"
