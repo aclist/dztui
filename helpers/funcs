@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-43
+version=5.0.0.rc-44
 
 #CONSTANTS
 aid=221100
@@ -1024,7 +1024,7 @@ try_connect(){
         diff=$(merge_modlists "$diff")
     fi
     if [[ -n $diff ]]; then
-        if [[ $is_steam_deck -eq 1 ]] && [[ $(test_display_mode) == "gm" ]]; then
+        if [[ $(check_architecture) -eq 1 ]] && [[ $(test_display_mode) == "gm" ]]; then
             printf "Use Desktop Mode to download mods on Steam Deck"
             return 1
         fi
@@ -1034,6 +1034,14 @@ try_connect(){
         esac
     else
         launch "$ip" "$gameport" "$sanitized_mods"
+    fi
+}
+check_architecture(){
+    local cpu=$(< /proc/cpuinfo grep "AMD Custom APU 0405")
+    if [[ -n "$cpu" ]]; then
+        echo 1
+    else
+        echo 0
     fi
 }
 focus_beta_client(){
