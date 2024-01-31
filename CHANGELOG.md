@@ -1,8 +1,30 @@
 # Changelog
 
-## [5.0.0] 2024-01-29
+## [5.0.0] 2024-01-31
 ### Added
-- Test
+- Context switching: navigate to different pages using side buttons
+- Dynamic statusbar: updates metadata and server distance when selecting rows
+- Show server-side modlist and allow jumping to Steam Workshop pages to browse, and list whether mod is currently installed
+- Print debug logs in-app (Help > Show debug log)
+- Functionality to change API keys in-app (used when revoking old API keys)
+- Print atomic mod sizes when listing installed mods
+- Dialogs show direct links to API key management URLs when changing API keys
+- Toggle dry-run mode directly from server browser
+- Extensive keybindings for fully controlling the application without the mouse
+- Extensive pre-boot sanity checks
+- Keybinding help dialog in main menu
+- Right-click context menus in server browsers/mod list: add/remove from favorites, show server-side mods, delete mod, copy server IP to clipboard
+
+### Changed
+- Utilize GTK bindings and MVC paradigm for UI creation and data flow
+- Filter servers dynamically from within server browser
+- Performance and security improvements to DZGUI helper files
+
+### Fixed
+- First-time setup dialogs respawning repeatedly in certain scenarios
+- Issues with Steam client switching to the wrong page when using auto-mod install
+- Set text input module correctly when launching on Steam Deck
+- Separate current/total player count and use proper integer sort method in table
 
 ## [4.1.1] 2023-12-18
 ### Fixed
