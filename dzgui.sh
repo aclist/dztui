@@ -539,7 +539,7 @@ fetch_helpers_by_sum(){
         ["ui.py"]="ff5b691c3fc7d95c8f939c36c6c52f1d"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="b2fd8cf2796e8511565b00593708cf40"
+        ["funcs"]="8efaeb3cbcf18609689bd5936b985183"
     )
     local author="aclist"
     local repo="dztui"
