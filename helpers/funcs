@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-47
+version=5.0.0.rc-48
 
 #CONSTANTS
 aid=221100
@@ -737,6 +737,7 @@ add_to_favs(){
     ip_list+=("$record")
     update_config
     logger INFO "Added the record $record to saved servers"
+    printf "Added %s to saved servers" $record
     return 90
 }
 remove_from_history(){
