@@ -130,7 +130,7 @@ test_gobject(){
     python3 -c "import gi"
     if [[ ! $? -eq 0 ]]; then
         logger CRITICAL "Missing PyGObject"
-        fdialog "Requires PyGObject"
+        fdialog "Requires PyGObject (python3-gobject)"
         exit 1
     fi
     logger INFO "Found PyGObject in Python env"
