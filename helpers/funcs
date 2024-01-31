@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.0.rc-48
+version=5.1.0-rc.1
 
 #CONSTANTS
 aid=221100
@@ -1227,7 +1227,7 @@ concat_mods(){
     done | tr -d '\n' | perl -ple 'chop'
 }
 is_dayz_running(){
-    local proc=$(ps aux | grep "DayZ.*\.exe" | grep -v grep)
+    local proc=$(ps aux | grep "DayZ_x64.exe" | grep -v grep)
     if [[ -n $proc ]]; then
         echo 1
     else
