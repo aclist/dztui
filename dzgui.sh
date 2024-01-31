@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.0.0.rc-42
+version=5.0.0.rc-43
 
 #CONSTANTS
 aid=221100
@@ -393,7 +393,7 @@ check_architecture(){
     fi
 }
 check_map_count(){
-    [[ $is_steam_deck -eq 1 ]] && return 0
+    [[ $is_steam_deck -gt 0 ]] && return 0
     local count=1048576
     local conf_file="/etc/sysctl.d/dayz.conf"
     if [[ -f $conf_file ]]; then
@@ -548,10 +548,10 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="2331665f5a2fb55cc030621812a309ea"
+        ["ui.py"]="2828ecfd733c3ebc7024fbe5c8349cb5"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="3f7f374117dd2bbc55e1d055d903cff2"
+        ["funcs"]="5f9f7af1fae725e295de08a95f14ba6d"
     )
     local author="aclist"
     local repo="dztui"
