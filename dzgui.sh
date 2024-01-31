@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.0.0
+version=5.0.1
 
 #CONSTANTS
 aid=221100
@@ -536,10 +536,10 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="ff5b691c3fc7d95c8f939c36c6c52f1d"
+        ["ui.py"]="fc25d3882401a1415e3287262dee6bfe"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="8efaeb3cbcf18609689bd5936b985183"
+        ["funcs"]="1ebd92950042874aeb71500d3c1d8e33"
     )
     local author="aclist"
     local repo="dztui"
@@ -631,7 +631,7 @@ find_default_path(){
             -o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
             -o -regex ".*/Steam/ubuntu12_32$" -print -quit 2>/dev/null | sed 's@/ubuntu12_32@@')
     }
-    if [[ $is_steam_deck -eq 1 ]]; then
+    if [[ $is_steam_deck -gt 0 ]]; then
         default_steam_path="$HOME/.local/share/Steam"
         logger INFO "Set default Steam path to $default_steam_path"
         return 0
