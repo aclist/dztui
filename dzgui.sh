@@ -259,8 +259,8 @@ Type=Application
 Terminal=false
 Exec=$share_path/dzgui.sh
 Name=$app_name_upper
-Comment=$appname
-Icon=$share_path/$appname
+Comment=$app_name
+Icon=$share_path/$app_name
 Categories=Game
 END
 }
@@ -272,9 +272,9 @@ freedesktop_dirs(){
     for i in dzgui grid.png hero.png logo.png; do
         curl -s "$img_url/$i" > "$share_path/$i"
     done
-    write_desktop_file > "$freedesktop_path/$appname.desktop"
+    write_desktop_file > "$freedesktop_path/$app_name.desktop"
     [[ $is_steam_deck -eq 0 ]] && return
-    write_desktop_file > "$HOME/Desktop/$appname.desktop"
+    write_desktop_file > "$HOME/Desktop/$app_name.desktop"
 }
 legacy_vars(){
     local suffix="fav"
@@ -313,7 +313,7 @@ check_version(){
         version_url="$testing_url/dzgui.sh"
     fi
     local upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
-    [[ ! -f "$freedesktop_path/$appname.desktop" ]] && freedesktop_dirs
+    [[ ! -f "$freedesktop_path/$app_name.desktop" ]] && freedesktop_dirs
     if [[ $version == $upstream ]]; then
         logger INFO "Local version is same as upstream"
         check_unmerged
