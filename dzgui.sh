@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.0.0.rc-44
+version=5.0.0.rc-45
 
 #CONSTANTS
 aid=221100
@@ -548,25 +548,25 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="9411e901a8572568ab129a4fe472a0a3"
+        ["ui.py"]="6c6e024633f37915d010bc745fecdf7e"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="722834d7fa7aa60a2cf7f5b7350c5675"
+        ["funcs"]="609cfc212219f43af70cd86e7cf87c8f"
     )
     local author="aclist"
     local repo="dztui"
-    local branch="$branch"
-    #TODO: update to 'dzgui' for first time setup
-    [[ -z $branch ]] && branch="testing"
+    local realbranch
     local file
     local sum
     local full_path
+    [[ -z $branch ]] && realbranch="dzgui"
+    [[ $branch == "testing" ]] && realbranch="$branch"
 
     for i in "${!sums[@]}"; do
         file="$i"
         sum="${sums[$i]}"
         full_path="$helpers_path/$file"
-        url="https://raw.githubusercontent.com/$author/$repo/$branch/helpers/$file"
+        url="https://raw.githubusercontent.com/$author/$repo/$realbranch/helpers/$file"
         echo "$url" >> $HOME/log
         if [[ -f "$full_path" ]] && [[ $(get_hash "$full_path") == $sum ]]; then
             logger INFO "$file is current"
