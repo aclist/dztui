@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.2
+version=5.0.3
 
 #CONSTANTS
 aid=221100
@@ -36,7 +36,7 @@ versions_file="$state_path/$prefix.versions"
 lock_file="$state_path/$prefix.lock"
 
 #CACHE
-cache_dir="$HOME/.cache/$appname"
+cache_dir="$HOME/.cache/$app_name"
 _cache_servers="$cache_dir/$prefix.servers"
 _cache_my_servers="$cache_dir/$prefix.my_servers"
 _cache_history="$cache_dir/$prefix.history"
