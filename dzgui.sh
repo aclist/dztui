@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.2.0-rc.1
+version=5.2.0-rc.2
 
 #CONSTANTS
 aid=221100
@@ -536,10 +536,10 @@ fetch_dzq(){
 fetch_helpers_by_sum(){
     declare -A sums
     sums=(
-        ["ui.py"]="b3b5e5917a74317bb19578d961944c6b"
+        ["ui.py"]="b24d91c66498d874f4a611f806fdc41b"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="c6b751e3d6c4bee40197f86425b45258"
+        ["funcs"]="cf0dbd17948bf3ea3888bf829f116acf"
     )
     local author="aclist"
     local repo="dztui"
@@ -560,7 +560,6 @@ fetch_helpers_by_sum(){
         sum="${sums[$i]}"
         full_path="$helpers_path/$file"
         url="https://raw.githubusercontent.com/$author/$repo/$realbranch/helpers/$file"
-        echo "$url" >> $HOME/log
         if [[ -f "$full_path" ]] && [[ $(get_hash "$full_path") == $sum ]]; then
             logger INFO "$file is current"
         else
