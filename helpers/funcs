@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.2.0-rc.2
+version=5.2.0-rc.3
 
 #CONSTANTS
 aid=221100
@@ -1031,7 +1031,7 @@ try_connect(){
         fi
         case $auto_install in
             "") manual_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods";;
-            1|2) auto_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods" ;;
+            1|2) manual_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods" ;;
         esac
     else
         launch "$ip" "$gameport" "$sanitized_mods"
@@ -1289,8 +1289,8 @@ manual_mod_install(){
             [[ -f $ex ]] && return 1
             log ${stage_mods[$i]}
 
-            $steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}"
-            echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
+            $steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}+workshop_download_item 221100 ${stage_mods[$i]}"
+            echo "# Opening workshop page for ${stage_mods[$i]}"
             sleep 1s
             foreground
 
