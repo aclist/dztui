@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.2.0-rc.3
+version=5.2.0-rc.4
 
 #CONSTANTS
 aid=221100
@@ -534,12 +534,13 @@ fetch_dzq(){
     logger INFO "Updated DZQ to sha '$sha'"
 }
 fetch_helpers_by_sum(){
+    source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="7bfed0b2f9aa5ca92b299ba81dbb3f34"
+        ["ui.py"]="44a88b196ea9d65b429525cf0bad66b6"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="c4a7fc048c58a2d20181591b06b836ad"
+        ["funcs"]="e4bd26a95060e57582cda046b2302658"
     )
     local author="aclist"
     local repo="dztui"
