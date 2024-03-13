@@ -1,5 +1,14 @@
 # Changelog
 
+## [5.1.0]
+### Added
+- Make columns in the server browser user-resizable (affects Server Browser, My Servers, and Recent Servers)
+- Save dragged position of user-resized columns
+- Display ping to server in statusbar
+
+### Fixed
+- Fixed a rare scenario in Auto Mod Install Mode where defunct mods (mods no longer available on Steam) would try to be downloaded if the user had previously downloaded the mod
+
 ## [5.0.0] 2024-01-31
 ### Added
 - Context switching: navigate to different pages using side buttons
