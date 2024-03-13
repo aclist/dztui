@@ -1,5 +1,6 @@
 import csv
 import gi
+import json
 import locale
 import logging
 import os
@@ -16,7 +17,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.2.0.rc-4
+# 5.1.0.rc-4
 app_name = "DZGUI"
 
 cache = {}
@@ -47,6 +48,7 @@ state_path = '%s/.local/state/dzgui' %(user_path)
 helpers_path = '%s/.local/share/dzgui/helpers' %(user_path)
 log_path = '%s/logs' %(state_path)
 changelog_path = '%s/CHANGELOG.md' %(state_path)
+geometry_path = '%s/dzg.cols.json' %(state_path)
 funcs = '%s/funcs' %(helpers_path)
 
 logger = logging.getLogger(__name__)
@@ -147,7 +149,7 @@ status_tooltip = {
     "Change player name": "Update your in-game name (required by some servers)",
     "Change Steam API key": "Can be used if you revoked an old API key",
     "Change Battlemetrics API key": "Can be used if you revoked an old API key",
-    "Force update local mods": "Attempts to update any local mods out of synch with remote versions (experimental)",
+    "Force update local mods": "Synchronize the signatures of all local mods with remote versions (experimental)",
     "Output system info to log file": "Generates a system log for troubleshooting",
     "View changelog": "Opens the DZGUI changelog in a dialog window",
     "Show debug log": "Read the DZGUI log generated since startup",
@@ -158,6 +160,10 @@ status_tooltip = {
     "Hall of fame ⧉": "A list of significant contributors and testers",
 }
 
+
+def format_ping(ping):
+    ms = " | Ping: %s" %(ping)
+    return ms
 
 def format_distance(distance):
     if distance == "Unknown":
@@ -610,11 +616,13 @@ class CalcDist(multiprocessing.Process):
     def run(self):
         if self.addr in cache:
             logger.info("Address '%s' already in cache" %(self.addr))
-            self.result_queue.put([self.addr, cache[self.addr]])
+            self.result_queue.put([self.addr, cache[self.addr][0], cache[self.addr][1]])
             return
         proc = call_out(self.widget, "get_dist", self.ip)
+        proc2 = call_out(self.widget, "test_ping", self.ip)
         km = proc.stdout
-        self.result_queue.put([self.addr, km])
+        ping = proc2.stdout
+        self.result_queue.put([self.addr, km, ping])
 
 
 class TreeView(Gtk.TreeView):
@@ -784,9 +792,10 @@ class TreeView(Gtk.TreeView):
             if addr is None:
                 return
             if addr in cache:
-                dist = format_distance(cache[addr])
+                dist = format_distance(cache[addr][0])
+                ping = format_ping(cache[addr][1])
 
-                tooltip = server_tooltip[0] + dist
+                tooltip = server_tooltip[0] + dist + ping
                 grid.update_statusbar(tooltip)
                 return
             self.emit("on_distcalc_started")
@@ -873,6 +882,8 @@ class TreeView(Gtk.TreeView):
             right_panel.set_filter_visibility(True)
             dialog.destroy()
             self.grab_focus()
+            for column in self.get_columns():
+                column.connect("notify::width", self._on_col_width_changed)
 
         grid = self.get_outer_grid()
         right_panel = grid.right_panel
@@ -911,6 +922,33 @@ class TreeView(Gtk.TreeView):
         total_mods = result[1]
         GLib.idle_add(load)
 
+    def _on_col_width_changed(self, col, width):
+
+        def write_json(title, size):
+            data = {"cols": { title: size } }
+            j = json.dumps(data, indent=2)
+            with open(geometry_path, "w") as outfile:
+                outfile.write(j)
+            logger.info("Wrote initial column widths to '%s'" %(geometry_path))
+
+        title = col.get_title()
+        size = col.get_width()
+        if "Name" in title:
+            title = "Name"
+
+        if os.path.isfile(geometry_path):
+            with open(geometry_path, "r") as infile:
+                try:
+                    data = json.load(infile)
+                    data["cols"][title] = size
+                    with open(geometry_path, "w") as outfile:
+                        outfile.write(json.dumps(data, indent=2))
+                except json.decoder.JSONDecodeError:
+                    logger.critical("JSON decode error in '%s'" %(geometry_path))
+                    write_json(title, size)
+        else:
+            write_json(title, size)
+
     def _update_multi_column(self, mode):
         # Local server lists may have different filter toggles from remote list
         # FIXME: tree selection updates twice here. attach signal later
@@ -919,14 +957,35 @@ class TreeView(Gtk.TreeView):
         for column in self.get_columns():
             self.remove_column(column)
         row_store.clear()
+
+        if os.path.isfile(geometry_path):
+            with open(geometry_path, "r") as infile:
+                try:
+                    data = json.load(infile)
+                    valid_json = True
+                except json.decoder.JSONDecodeError:
+                    logger.critical("JSON decode error in '%s'" %(geometry_path))
+                    valid_json = False
+        else:
+            valid_json = False
+
         for i, column_title in enumerate(browser_cols):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
+            column.set_resizable(True)
             column.set_sort_column_id(i)
-            if ("Name" in column_title):
-                column.set_fixed_width(800)
-            if (column_title == "Map"):
-                column.set_fixed_width(300)
+
+            if valid_json:
+                if "Name" in column_title:
+                    column_title = "Name"
+                saved_size = data["cols"][column_title]
+                column.set_fixed_width(saved_size)
+            else:
+                if ("Name" in column_title):
+                    column.set_fixed_width(800)
+                if (column_title == "Map"):
+                    column.set_fixed_width(300)
+
             self.append_column(column)
 
         self.update_first_col(mode)
@@ -1282,6 +1341,32 @@ def KeysDialog(parent, text, mode):
     return dialog
 
 
+class PingDialog(GenericDialog):
+    def __init__(self, parent, text, mode, record):
+        super().__init__(parent, text, mode)
+        dialogBox = self.get_content_area()
+        self.set_default_response(Gtk.ResponseType.OK)
+        self.set_size_request(500, 200)
+        wait_dialog = GenericDialog(parent, "Checking ping", "WAIT")
+        wait_dialog.show_all()
+        thread = threading.Thread(target=self._background, args=(wait_dialog, parent, record))
+        thread.start()
+
+    def _background(self, dialog, parent, record):
+        def _load():
+            dialog.destroy()
+            self.show_all()
+            ping = data.stdout
+            self.format_secondary_text("Ping to remote server: %s" %(ping))
+            res = self.run()
+            self.destroy()
+
+        addr = record.split(':')
+        ip = addr[0]
+        qport = addr[2]
+        data = call_out(parent, "test_ping", ip, qport)
+        GLib.idle_add(_load)
+
 class ModDialog(GenericDialog):
     def __init__(self, parent, text, mode, record):
         super().__init__(parent, text, mode)
@@ -1453,9 +1538,13 @@ class Grid(Gtk.Grid):
         if latest_result is not None:
             addr = latest_result[0]
             km = latest_result[1]
-            cache[addr] = km
+            ping = latest_result[2]
+
+            cache[addr] = km, ping
+
+            ping = format_ping(ping)
             dist = format_distance(km)
-            tooltip = server_tooltip[1] = server_tooltip[0] + dist
+            tooltip = server_tooltip[1] = server_tooltip[0] + dist + ping
             self.update_statusbar(tooltip)
 
         return True
