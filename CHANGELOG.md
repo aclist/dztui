@@ -8,8 +8,7 @@
 ### Added
 - Make columns in the server browser user-resizable (affects Server Browser, My Servers, and Recent Servers)
 - Save dragged position of user-resized columns
-- Display ping to server in statusbar: by popular request, added the ability to visualize both distance to server and round-trip latency (ping), at the cost of a small calculation delay. Please leave 
-  feedback regarding whether this feature feels fast/responsive enough.
+- Display ping to server in statusbar: by popular request, added the ability to visualize both distance to server and round-trip latency (ping), at the cost of a small calculation delay. Please leave feedback regarding whether this feature feels fast/responsive enough.
 
 ### Fixed
 - Fixed a rare scenario in Auto Mod Install Mode where defunct mods (mods no longer available on Steam) would try to be downloaded if the user had previously downloaded the mod
