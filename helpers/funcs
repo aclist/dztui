@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.0.4
+version=5.1.0
 
 #CONSTANTS
 aid=221100
@@ -111,6 +111,7 @@ declare -A funcs=(
 ["list_mods"]="list_mods"
 ["delete"]="delete_local_mod"
 ["show_server_modlist"]="show_server_modlist"
+["test_ping"]="test_ping"
 ["is_in_favs"]="is_in_favs"
 ["show_log"]="show_log"
 ["gen_log"]="generate_log"
@@ -560,13 +561,22 @@ dump_servers(){
     filter_servers "$file" "$@"
 }
 logger(){
-	local date="$(date "+%F %T,%3N")"
-	local tag="$1"
-	local string="$2"
+    local date="$(date "+%F %T,%3N")"
+    local tag="$1"
+    local string="$2"
     local self="${BASH_SOURCE[0]}"
     local caller="${FUNCNAME[1]}"
     local line="${BASH_LINENO[0]}"
-	printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" >> "$debug_log"
+    printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" >> "$debug_log"
+}
+test_ping(){
+    shift
+    local ip="$1"
+    local qport="$2"
+    local res
+    res=$(ping -c1 -4 -W0.5 $1 | grep time= | awk -F= '{print $4}')
+    [[ ! $? -eq 0 ]] && res="Unreachable"
+    printf "%s" "$res"
 }
 show_server_modlist(){
     shift
@@ -1023,6 +1033,7 @@ try_connect(){
     if [[ -n $auto_install ]]; then
         logger INFO "Merging modlists"
         diff=$(merge_modlists "$diff")
+        diff=$(query_defunct "$diff")
     fi
     if [[ -n $diff ]]; then
         if [[ $(check_architecture) -eq 1 ]] && [[ $(test_display_mode) == "gm" ]]; then
@@ -1031,7 +1042,7 @@ try_connect(){
         fi
         case $auto_install in
             "") manual_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods";;
-            1|2) auto_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods" ;;
+            1|2) manual_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods" "auto" ;;
         esac
     else
         launch "$ip" "$gameport" "$sanitized_mods"
@@ -1113,9 +1124,8 @@ force_update(){
     fi
     rm "$versions_file"
     local update=$(check_timestamps)
-    console_dl "$update" &&
-    $steam_cmd steam://open/downloads
-    echo "Finished requesting mod updates. Steam may have some mods pending for download."
+    manual_mod_install "null" "null" "$update" "null" "force"
+    echo "Finished requesting mod updates."
     return 0
 }
 console_dl(){
@@ -1279,6 +1289,7 @@ manual_mod_install(){
     local gameport="$2"
     local diff="$3"
     local sanitized_mods="$4"
+    local mode="$5"
     local ex="$state_path/dzg.watcher"
 
     readarray -t stage_mods <<< "$diff"
@@ -1289,8 +1300,13 @@ manual_mod_install(){
             [[ -f $ex ]] && return 1
             log ${stage_mods[$i]}
 
-            $steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}"
-            echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
+            if [[ $mode == "auto" ]] || [[ $mode == "force" ]]; then
+                $steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}+workshop_download_item $aid ${stage_mods[$i]}"
+                echo "# Opening workshop page for ${stage_mods[$i]}"
+            else
+                $steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}"
+                echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
+            fi
             sleep 1s
             foreground
 
@@ -1303,7 +1319,11 @@ manual_mod_install(){
             done
 
             foreground
-            echo "# Steam is downloading ${stage_mods[$i]} (mod $((i+1)) of ${#stage_mods[@]})"
+            if [[ $mode == "auto" ]] || [[ $mode == "force" ]]; then
+                echo "# Steam is downloading ${stage_mods[$i]} (mod $((i+1)) of ${#stage_mods[@]}). You do not need to manually Subscribe."
+            else
+                echo "# Steam is downloading ${stage_mods[$i]} (mod $((i+1)) of ${#stage_mods[@]})"
+            fi
             until [[ -d $workshop_dir/${stage_mods[$i]} ]]; do
                 [[ -f $ex ]] && return 1
                 sleep 0.1s
@@ -1316,9 +1336,18 @@ manual_mod_install(){
     }
     _watcher > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZG Watcher" --width=500 2>/dev/null; rc=$?; [[ $rc -eq 1 ]] && touch $ex)
 
-    # compare latest installed mods to modlist
+    if [[ $mode == "force" ]]; then
+        rm "$versions_file"
+        check_timestamps
+        return 0
+    fi
+
     local diff=$(compare "$sanitized_mods")
     if [[ -z $diff ]]; then
+        if [[ $mode == "auto" ]]; then
+            rm "$versions_file"
+            check_timestamps
+        fi
         launch "$ip" "$gameport" "$sanitized_mods"
     else
         printf "User aborted download process, or some mods may have failed to download. Try connecting again to resync."
