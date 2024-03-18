@@ -1,6 +1,10 @@
 # Changelog
 
-## [5.1.0]
+## [5.1.1] 2024-03-18
+### Fixed
+- Hotfix for remote helper files not being fetched correctly
+
+## [5.1.0] 2024-03-18
 ### Added
 - Make columns in the server browser user-resizable (affects Server Browser, My Servers, and Recent Servers)
 - Save dragged position of user-resized columns

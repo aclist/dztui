@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.1.0
+version=5.1.1
 
 #CONSTANTS
 aid=221100
@@ -537,10 +537,10 @@ fetch_helpers_by_sum(){
     source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="7189aff7b37e19561c6cfc3f486ca031"
+        ["ui.py"]="7ffd38571285a92fea00faea8027612b"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="5940b8276f67a45ddb413adc42263e6a"
+        ["funcs"]="e56b8da82177ff6e6269701229bd6442"
     )
     local author="aclist"
     local repo="dztui"
@@ -554,6 +554,9 @@ fetch_helpers_by_sum(){
         realbranch="dzgui"
     else
         realbranch="$branch"
+    fi
+    if [[ $realbranch == "stable" ]]; then
+        realbranch="dzgui"
     fi
 
     for i in "${!sums[@]}"; do
