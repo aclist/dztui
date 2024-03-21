@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.1.1
+version=5.2.0
 
 #CONSTANTS
 aid=221100
@@ -121,7 +121,19 @@ declare -A funcs=(
 ["Remove from history"]="remove_from_history"
 ["force_update"]="force_update"
 ["Handshake"]="final_handshake"
+["get_player_count"]="get_player_count"
 )
+
+get_player_count(){
+    shift
+    local res
+    local ip="$1"
+    local qport="$2"
+    res=$(a2s $ip $qport info)
+    [[ ! $? -eq 0 ]] && return 1
+    local players="$(<<< $res jq -r '.[].players')"
+    printf "%s" "$players"
+}
 
 validate_and_connect(){
     local context="$1"
@@ -447,7 +459,7 @@ filter_servers(){
     }
     filter_keyword(){
         keyword=$(sanitize "$keyword")
-        <<< "$filtered" KEYWORD="$keyword" awk -F$separator 'BEGIN{IGNORECASE=1} $0 ~ ENVIRON["KEYWORD"] {print $0}'
+        <<< "$filtered" awk -F$separator -v keyword="$keyword" 'tolower($0) ~ tolower(keyword)'
     }
     filter_duplicates(){
         if [[ ${filters[*]} =~ Duplicate ]]; then
@@ -787,7 +799,6 @@ update_favs_from_table(){
         echo "Removed $record from saved servers"
     else
         add_to_favs "$record"
-        echo "Added $record to saved servers"
     fi
     return 0
 }
