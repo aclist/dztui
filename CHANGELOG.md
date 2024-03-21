@@ -1,10 +1,22 @@
 # Changelog
 
-## [5.1.0]
+## [5.2.0] 2024-03-21
+### Added
+- Refresh player count for active row: invoke via right-click context meu or directly with the Ctrl-r hotkey. This feature has a 30 second global cooldown to prevent throttling.
+
+### Fixed
+- Improve case-insensitive keyword search to be portable across awk versions (previous version required gawk)
+- Fixed a dialog string from being shown twice when adding a server to favorites via context menus
+
+## [5.1.1] 2024-03-18
+### Fixed
+- Hotfix for remote helper files not being fetched correctly
+
+## [5.1.0] 2024-03-18
 ### Added
 - Make columns in the server browser user-resizable (affects Server Browser, My Servers, and Recent Servers)
 - Save dragged position of user-resized columns
-- Display ping to server in statusbar
+- Display ping to server in statusbar: by popular request, added the ability to visualize both distance to server and round-trip latency (ping), at the cost of a small calculation delay. Please leave feedback regarding whether this feature feels fast/responsive enough.
 
 ### Fixed
 - Fixed a rare scenario in Auto Mod Install Mode where defunct mods (mods no longer available on Steam) would try to be downloaded if the user had previously downloaded the mod

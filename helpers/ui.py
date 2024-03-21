@@ -3,10 +3,11 @@ import gi
 import json
 import locale
 import logging
-import os
-import signal
+import math
 import multiprocessing
+import os
 import re
+import signal
 import subprocess
 import sys
 import textwrap
@@ -17,8 +18,10 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.1.0.rc-4
+# 5.2.1.rc-1
 app_name = "DZGUI"
+
+start_time = 0
 
 cache = {}
 config_vals = []
@@ -691,6 +694,8 @@ class TreeView(Gtk.TreeView):
                 ip = addr.split(':')[0]
                 record = "%s:%s" %(ip, qport)
                 self.clipboard.set_text(record, -1)
+            case "Refresh player count":
+                self.refresh_player_count()
             case "Show server-side mods":
                 record = "%s:%s" %(self.get_column_at_index(6), self.get_column_at_index(7))
                 dialog = ModDialog(parent, "Enter/double click a row to open in Steam Workshop. ESC exits this dialog", "Modlist", record)
@@ -729,9 +734,9 @@ class TreeView(Gtk.TreeView):
         self.menu = Gtk.Menu()
 
         mod_context_items = ["Open in Steam Workshop", "Delete mod"]
-        subcontext_items = {"Server browser": ["Add to my servers", "Copy IP to clipboard", "Show server-side mods"],
-                  "My saved servers": ["Remove from my servers", "Copy IP to clipboard", "Show server-side mods"],
-                  "Recent servers": ["Remove from history", "Copy IP to clipboard", "Show server-side mods"],
+        subcontext_items = {"Server browser": ["Add to my servers", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
+                  "My saved servers": ["Remove from my servers", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
+                  "Recent servers": ["Remove from history", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
                   }
         # submenu hierarchy https://stackoverflow.com/questions/52847909/how-to-add-a-sub-menu-to-a-gtk-menu
         if context == "Mod":
@@ -759,6 +764,22 @@ class TreeView(Gtk.TreeView):
             self.menu.popup_at_widget(widget, Gdk.Gravity.CENTER, Gdk.Gravity.WEST)
         else:
             self.menu.popup_at_pointer(event)
+
+    def refresh_player_count(self):
+        parent = self.get_outer_window()
+
+        global start_time
+        then = start_time
+        now = time.monotonic()
+        diff = now - then
+        cooldown = 30 - math.floor(diff)
+        if ((start_time > 0) and (now - then) < 30):
+            spawn_dialog(parent, "Global refresh cooldown not met. Wait %s second(s)." %(str(cooldown)), "NOTIFY")
+            return
+        start_time = now
+
+        thread = threading.Thread(target=self._background_player_count, args=())
+        thread.start()
 
     def get_outer_window(self):
         win = self.get_parent().get_parent().get_parent()
@@ -844,6 +865,8 @@ class TreeView(Gtk.TreeView):
                         debug.set_active(True)
                 case Gdk.KEY_l:
                     self._on_button_release(self, event)
+                case Gdk.KEY_r:
+                    self.refresh_player_count()
                 case Gdk.KEY_f:
                     if self.get_first_col() == "Mod":
                         return
@@ -873,6 +896,32 @@ class TreeView(Gtk.TreeView):
         tree_iter = model.get_iter(path)
         value = model.get_value(tree_iter, index)
         return value
+
+    def _background_player_count(self):
+        def _load():
+            server_store[path][4] = int(data.stdout)
+            wait_dialog.destroy()
+
+        parent = self.get_outer_window()
+        wait_dialog = GenericDialog(parent, "Refreshing player count", "WAIT")
+        wait_dialog.show_all()
+        select = self.get_selection()
+        sels = select.get_selected_rows()
+        (model, pathlist) = sels
+        if len(pathlist) < 1:
+            return
+        path = pathlist[0]
+        tree_iter = model.get_iter(path)
+        addr = server_store[path][6]
+        qport = server_store[path][7]
+        ip = addr.split(':')[0]
+        qport = str(qport)
+
+        data = call_out(self, "get_player_count", ip, qport)
+        if data.returncode == 1:
+            wait_dialog.destroy()
+            return
+        GLib.idle_add(_load)
 
     def _background(self, dialog, mode):
         def loadTable():
@@ -1330,6 +1379,7 @@ def KeysDialog(parent, text, mode):
     Ctrl-f: jump to keyword field
     Ctrl-m: jump to maps dropdown
     Ctrl-d: toggle dry run (debug) mode
+    Ctrl-r: refresh player count for active row
     1-9: toggle filter ON/OFF
     ESC: jump back to main view from keyword/maps
     """
