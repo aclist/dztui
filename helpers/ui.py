@@ -137,7 +137,7 @@ side_buttons = [
 ]
 status_tooltip = {
     "Server browser": "Used to browse the global server list",
-    "My saved servers": "Browse your saved servers",
+    "My saved servers": "Browse your saved servers. Unreachable/offline servers will be excluded",
     "Quick-connect to favorite server": "Connect to your favorite server",
     "Recent servers": "Shows the last 10 servers you connected to (includes attempts)",
     "Connect by IP": "Connect to a server by IP",

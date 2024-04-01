@@ -130,7 +130,7 @@ test_gobject(){
     python3 -c "import gi"
     if [[ ! $? -eq 0 ]]; then
         logger CRITICAL "Missing PyGObject"
-        fdialog "Requires PyGObject (python3-gobject)"
+        fdialog "Requires PyGObject (python-gobject)"
         exit 1
     fi
     logger INFO "Found PyGObject in Python env"
@@ -537,7 +537,7 @@ fetch_helpers_by_sum(){
     source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="d2e78f73933ac945d745a3d822ca89e7"
+        ["ui.py"]="f98211b1e0a2edc8d2853622d2672ef5"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["funcs"]="3701877b85bc853be3f89d59fe1a6bbe"
@@ -664,7 +664,7 @@ find_default_path(){
         $sd_res
 
     case "$res" in
-        *auto*) discover ;;
+        *auto*) _discover ;;
         *manual*)
             zenity --info --text="\nSelect the top-level entry point to the location where Steam (not DayZ)\nis installed and before entering the \"steamapps\" path.\n\nE.g., if Steam is installed at:\n\"/media/mydrive/Steam\"\n\nCorrect:\n- \"/media/mydrive/Steam\"\n\nIncorrect:\n- \"/media/mydrive/Steam/steamapps/common/DayZ\"\n- \"/media/mydrive/\"" --width=500 &&
             file_picker ;;
