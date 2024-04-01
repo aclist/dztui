@@ -27,6 +27,7 @@ If any dependencies are missing when the application starts, it will warn you, s
 - `zenity`
 - `steam`
 - `wmctrl` or `xdotool`
+- `PyGObject` (`python-gobject`)
 
 === Preparation
 . **Download DZGUI and make it executable:**

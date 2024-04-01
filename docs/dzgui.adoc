@@ -22,11 +22,12 @@ If not already installed, the below can be found in your system's package manage
 
 If any dependencies are missing when the application starts, it will warn you, so you need not take any preemptive measures here.
 
-- `curl` 
+- `curl`
 - `jq`
 - `zenity`
 - `steam`
 - `wmctrl` or `xdotool`
+- `PyGObject` (`python-gobject`)
 
 === Preparation
 . **Download DZGUI and make it executable:**

@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.2.1] 2024-04-01
+### Fixed
+- Fixed a regression where where the first-time setup dialog would not trigger auto-path discovery
+
+### Changed
+- Reworded some menus and dialogs for clarity
+
 ## [5.2.0] 2024-03-21
 ### Added
 - Refresh player count for active row: invoke via right-click context meu or directly with the Ctrl-r hotkey. This feature has a 30 second global cooldown to prevent throttling.
