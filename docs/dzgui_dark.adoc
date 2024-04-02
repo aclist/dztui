@@ -502,5 +502,5 @@ Tracked down several highly obscure but key bugs in the early development of the
 Played a critical role in the elaboration of many of the features we now take for granted by being an early beta tester who not only reported bugs, but 
 helped workshop and brainstorm various ideas that turned into QOL features.
 
-.Thiughtduck216
+.Thoughtduck216
 Contributed extensive beta testing of Steam Deck builds and provided ongoing troubleshooting for Steam Deck users
