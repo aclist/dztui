@@ -15,6 +15,9 @@
 - Improve case-insensitive keyword search to be portable across awk versions (previous version required gawk)
 - Fixed a dialog string from being shown twice when adding a server to favorites via context menus
 
+### Changed
+- Use a more robust method for downloading mods when auto mod install is enabled
+
 ## [5.1.1] 2024-03-18
 ### Fixed
 - Hotfix for remote helper files not being fetched correctly
