@@ -195,7 +195,7 @@ The artwork consists of five parts:
 |===
 |Name|Description
 
-|Hero|a large horizontal banner used on the app's details page, and on landscape-orientation covers in the Recently Played section
+|Hero|a large horizontal banner used on the app's details page, and on landscape-orientation covers in the Recent Games section
 |Icon|a square icon used for the tree/list view of the Steam library
 |Grid|a vertical "box art" cover used on Steam library pages
 |Logo|a transparent icon used to remove Steam's default app text
@@ -240,7 +240,7 @@ image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/07.png[07,700]
 image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/08.png[08,700]
 
 [start=10]
-10. After you launch DZGUI for the first time, you should return to the library view and select the Recent Games dropdown on the right-hand side. Steam shows a collection of box art based on categories like "Play Next", "Recent Games", etc. Look for a downward-pointing caret icon and click it, then select the "Recently Played" category. If DZGUI was the last item played, it will be shown with a landscape, rather than portrait, orientation cover, which is initially blank. To customize this cover, right click it and select `Manage > Set custom artwork`, then select the `hero.png` image again for this area.
+10. After you launch DZGUI for the first time, you should return to the library view and select the Recent Games dropdown on the right-hand side. Steam shows a collection of box art based on categories like "Play Next", "Recent Games", etc. Look for a downward-pointing caret icon and click it, then select the "Recent Games" category. If DZGUI was the last item played, it will be shown with a landscape, rather than portrait, orientation cover, which is initially blank. To customize this cover, right click it and select `Manage > Set custom artwork`, then select the `hero.png` image again for this area.
 
 image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/09.png[09,700]
 
