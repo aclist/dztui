@@ -2,8 +2,8 @@
 :toc: left
 :stylesheet: custom.css
 
-= DZGUI documentation
-DayZ official/community server graphical launcher for Linux | Last updated: {d}
+= DZGUI documentation (v5.x.x)
+DayZ server browser and mod manager for Linux | Last updated: {d}
 
 Click https://aclist.github.io/dzgui/dzgui_dark.html[here] for dark mode
 
@@ -22,6 +22,8 @@ If not already installed, the below can be found in your system's package manage
 
 If any dependencies are missing when the application starts, it will warn you, so you need not take any preemptive measures here.
 
+All dependencies are installed out of the box on Steam Deck.
+
 - `curl`
 - `jq`
 - `zenity`
@@ -30,15 +32,16 @@ If any dependencies are missing when the application starts, it will warn you, s
 - `PyGObject` (`python-gobject`)
 
 === Preparation
-. **Download DZGUI and make it executable:**
+==== Step 1: Download DZGUI and make it executable
 
-Automatic method: generic OS (skip to step 3 below when complete)
+**Automatic method: generic OS**
+
+Invoke the command below from a terminal:
 
 ```
 curl -s "https://raw.githubusercontent.com/aclist/dztui/dzgui/install.sh" | bash
 ```
-
-Automatic method: nix-based systems (contributed by lelgenio)
+**Automatic method: nix-based systems (contributed by lelgenio)**
 
 Follow the instructions at https://github.com/lelgenio/dzgui-nix to ingest the package and dependencies
 into your system using flakes. 
@@ -50,44 +53,49 @@ git clone https://github.com/aclist/dztui.git
 chmod +x dzgui.sh
 ```
 
-'''
-[start=2]
-. **Update the `vm.max_map_count` value (see https://www.protondb.com/app/221100)**
+==== Step 2: update the vm.max_map_count value
+
+On most modern distributions, it will seldom be necessary to update this value anymore, since it is set to a sufficiently large number for performance-intensive applications.
 
 **Automatic method:**
 
 This is handled automatically by DZGUI if you just choose to run the application out of the box.
 You will be prompted for your sudo password in order to check whether the system map count is too small.
 This is a one-time check that will not be triggered again once the map count is updated.
-If you used the automatic method, you can skip to Step 3 below.
 
 [NOTE]
-The map count check prompts for a sudo password. If you are using a Steam Deck, this check is not necessary.
+If you are using a Steam Deck, this step is not necessary.
 
-This process writes the count to the file `/etc/sysctl.d/dayz.conf`. 
+The process writes the count to the file `/etc/sysctl.d/dayz.conf`.
 
-If the map count was lower than the threshold, it is updated to 1048576. 
-If the system map count was already higher, that value is interpolated into this file as a redundancy check.
+If the system map count was lower than the threshold, it is updated to `1048576`.
+If the system map count was already higher, that value is interpolated into this file for redundancy purposes and to avoid sudo escalation on subsequent launches of the application.
 
 [NOTE]
 If, for reasons unrelated to DayZ, you choose at a later time to raise your system map count higher than it originally was and
 you find that the count is not sticking, check for the presence of the `dayz.conf` file to see if it is taking precedence and delete it accordingly.
 
-**Ephemeral method:**
-the map count will revert after the system is rebooted.
+If you used the automatic method, you can skip to <<Step 3: Prepare a Steam account with a DayZ license, Step 3>> below.
+
+**Manual method:**
+
+If you wish to update this value yourself without intervention from DZGUI, you have two options:
+
+
+Invoke the command below for an **ephemeral change**. Note that if changing the map count on a one-time basis, it will revert to the old value after the system is rebooted.
+
 
 ```
 sudo sysctl -w vm.max_map_count=1048576
 ```
 
-**Persistent method:**
+Invoke the command below for a **persistent change**:
 ```
 echo 'vm.max_map_count=1048576' | sudo tee /etc/sysctl.d/dayz.conf
 ```
 
-[start=3]
-. **Prepare a Steam account with a DayZ license**
-. **Enable a Proton version ≥ `6.8` (or use Experimental) in the `Compatibility` field of the game's right-click options.**
+==== Step 3: Prepare a Steam account with a DayZ license
+Enable a Proton version ≥ `6.8` (or use Proton Experimental) in the `Compatibility` field of the game's right-click options. As of this writing, any recent version of Proton should work, and it is encouraged to use the most recent one.
 
 === API key & server IDs
 
@@ -98,107 +106,111 @@ echo 'vm.max_map_count=1048576' | sudo tee /etc/sysctl.d/dayz.conf
 
 ==== BattleMetrics API key (optional)
 
-This step is optional. Using this key in conjunction with the above allows you to connect to and query servers by ID instead of by IP. See <<Add server by ID>>.
+This key is optional. Using this key in conjunction with the above allows you to also connect to and query servers by numerical ID instead of by IP. See <<Add server by ID>>.
 
-1. Register for an API key at https://www.battlemetrics.com/account/register?after=%2Fdevelopers[BattleMetrics] (free)
-2. From the **Personal Access Tokens** area, Select **New Token**
-3. Give the token any name in the field at the top
-4. Leave all options **unchecked** and scroll to the bottom, select **Create Token**
+1. Register for an API key at https://www.battlemetrics.com/account/register?after=%2Fdevelopers[BattleMetrics] (free).
+2. From the **Personal Access Tokens** area, Select **New Token**.
+3. Give the token any name in the field at the top.
+4. Leave all options **unchecked** and scroll to the bottom, select **Create Token**.
 5. Once configured, you can insert this key in the app when launching it for the first time (optional), or later on when using the connect/query by ID methods in the app for the first time.
 
 === First-time launch
 
-0. It is always advised to have Steam running in the background. DayZ is meant to run "on top of" Steam.
+It is always advised to have Steam running in the background. DZGUI is meant to run "on top of" Steam, and will warn you if Steam appears to not be running.
 
-1. DZGUI can be launched one of two ways.
+DZGUI can be launched one of two ways.
 
-**From the terminal:**
+**From a terminal:**
 
 ```
 ./dzgui.sh
 ```
 
-Launching from the terminal gives more verbose information in the event of a crash, and can be a good way of troubleshooting problems.
+Launching from a terminal may give more verbose information in the event of a crash, and can be a good way of troubleshooting problems.
 
-**From the shortcut shipped with the application** (if using a desktop environment based on the Freedesktop specification):
+**From the shortcut shipped with the application**:
 
-- Located under the "Games" category of your system's applications list.
-- Via the "DZGUI" desktop shortcut (Steam Deck only)
+If you are using a desktop environment (DE) based on the Freedesktop specification, shortcuts will be installed for you.
 
-[start=2]
-2. Follow the menu prompts given by the app. You will be asked to provide:
+- One shortcut is located under the "Games" category of your system's applications list.
+- The other is accessed via the "DZGUI" desktop icon (Steam Deck only)
 
-- Player name (a generic handle, required by some servers)
+After launching the app, follow the menu prompts onscreen. You will be asked to provide the following:
+
+- Player name (a handle name that identifies your character; required by some servers)
 - Steam API key (required)
 - BM API key (optional)
 
 ==== Steam path discovery
 
 DZGUI will now attempt to locate your default Steam installation and DayZ path. You *must* have DayZ installed in your Steam library in order to proceed. (It can be installed to any drive of your choosing.)
+
 If DZGUI cannot find Steam or cannot find DayZ installed at the detected Steam path, it will prompt you to manually specify the path to your Steam installation.
 
-Specify the top-level entry point to Steam, not DayZ. E.g.,
+Specify the root, top-level entry point to Steam, not DayZ. E.g.,
 
 `/media/mydrive/Steam`, not `/media/mydrive/Steam/steamapps/common/DayZ`
 
 If your Steam installation is in a hidden folder but the file picker dialog does not show hidden folders, ensure that your GTK settings are set to show hidden files.
 
-For GTK 2, edit the file below so that `ShowHidden=true`:
+For GTK 2, update the file `$HOME/.config/gtk-2.0/gtkfilechooser.ini` to contain this line:
 
-`~/.config/gtk-2.0/gtkfilechooser.ini`
+`ShowHidden=true`
 
-For GTK 3, invoke the command: 
+For GTK 3, invoke the command:
 
 `gsettings set org.gtk.Settings.FileChooser show-hidden true`
 
-=== Steam integration & artwork 
+=== Steam integration & artwork
 
-==== Adding to steam
+==== Adding DZGUI as a third-party app
 
 DZGUI can be added to Steam as a "non-Steam game" in order to facilitate integration with Steam Deck or desktop environments.
 
-1. Launch Steam in the "Large" view.
+1. Launch Steam in the "Large" (default) view.
 
 [NOTE]
-Steam Deck: you must switch to "Desktop Mode" and launch Steam from the desktop. Steam Deck Game Mode does not support keyboard entry on some third party apps.
+Steam Deck: you must switch to "Desktop Mode" and launch Steam from the desktop. Steam Deck's Game Mode view has limited support for configuration of custom games.
 
 [start=2]
-2. Select **Add a Game** > **Add a Non-Steam Game** from the lower left-hand corner.
+2. Select **Add a Game** > **Add a Non-Steam Game** from the lower left-hand corner of the Steam client.
 
 image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/01.png[01,500]
 
 [start=3]
 3. Navigate to `$HOME/.local/share/applications/` and select `dzgui.desktop`
-4. Select **Add Selected Programs**.
-
-==== Controller layout
-
-An official controller layout for Steam Deck is available in the Steam community layouts section. Search for "DZGUI Official Config" to download it. Long-press the View button and Select button (☰) to toggle D-pad navigation. This creates an additional layer that lets you navigate through menus using the D-pad and A/B to respectively confirm selections and go back. Remember to toggle this layer off again after launching your game to revert back to the master layer.
+4. Select **Add Selected Programs** to add a shortcut to DZGUI.
 
 ==== Artwork
 
-The application also ships with Steam cover artwork. It is located under:
+DZGUI also ships with Steam cover artwork. It is located under:
 
 ```
 $HOME/.local/share/dzgui
 ```
 
-The artwork consists of four parts:
+The artwork consists of five parts:
 
-1. Grid: a vertical "box art" grid used on library pages
-2. Hero: a large horizontal banner used on the app's details page
-3. Logo: a transparent icon used to remove Steam's default app text
-4. dzgui: used by freedesktop shortcut to generate a desktop icon; not intended for the user
+[%autowidth]
+|===
+|Name|Description
 
-Updating the artwork:
+|Hero|a large horizontal banner used on the app's details page, and on landscape-orientation covers in the Recently Played section
+|Icon|a square icon used for the tree/list view of the Steam library
+|Grid|a vertical "box art" cover used on Steam library pages
+|Logo|a transparent icon used to remove Steam's default app text
+|dzgui|used by freedesktop shortcut to generate a desktop icon; not intended for manual use by the user
+|===
 
-1. Navigate to the app's details page and right-click the blank image header at the top.
+===== Updating the artwork
+
+1. From the main library view, navigate to the app's details page and right-click the blank image header at the top.
 
 image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/03.png[03,700]
 
 [start=2]
 2. Select **Set Custom Background**
-3. Select to display All Files from the File type dropdown
+3. Select to display **All Files** from the File type dropdown
 4. Navigate to the artwork path described above and select `hero.png`.
 5. Next, right-click the image background and select **Set Custom Logo**. 
 
@@ -222,6 +234,22 @@ image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/06.png[06,700]
 
 image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/07.png[07,700]
 
+[start=9]
+9. Right-click the DZGUI entry and select Properties to open the properties dialog. Next to the **Shortcut** field, you will see a small square box which represents the game's icon. Click this to open a file explorer and select `icon.png` from the path above. This will add a small icon to the list view.
+
+image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/08.png[08,700]
+
+[start=10]
+10. After you launch DZGUI for the first time, you should return to the library view and select the Recent Games dropdown on the right-hand side. Steam shows a collection of box art based on categories like "Play Next", "Recent Games", etc. Look for a downward-pointing caret icon and click it, then select the "Recently Played" category. If DZGUI was the last item played, it will be shown with a landscape, rather than portrait, orientation cover, which is initially blank. To customize this cover, right click it and select `Manage > Set custom artwork`, then select the `hero.png` image again for this area.
+
+image::https://github.com/aclist/dztui/raw/dzgui/images/tutorial/09.png[09,700]
+
+==== Controller layout
+
+A controller layout for Steam Deck is available in the Steam community layouts section. Search for "DZGUI Official Config" to download it. This layout provides modal layers intended to facilitate interaction with the DZGUI interface, but does not attempt to customize in-game DayZ controls in a detailed fashion.
+
+Long-press the View button and Select button (☰) to toggle D-pad navigation. This creates an additional layer that lets you navigate through menus using the D-pad and A/B to respectively confirm selections and go back. Remember to toggle this layer off again after launching your game to revert back to the master layer.
+
 
 === Updating the app
 If DZGUI detects a new upstream version, it will prompt you to download it automatically. 
@@ -235,248 +263,308 @@ Upgrading is always advised.
 
 If you experience a problem or need to restore the prior version of DZGUI and/or your configs, 
 it is enough to simply replace the new version with the old one and relaunch the app. 
-The files can be found at:
+The file can be found at:
 
-Script:
 ```
-<path to script><script name>.old
+<path to script>/<script name>.old
 ```
-E.g., if DZGUI is named `dzgui`, in the path `$HOME/bin`, the backup will be located at
+E.g., if DZGUI is named `dzgui.sh`, in the path `$HOME/bin`, the backup will be located at
 ```
-$HOME/bin/dzgui.old
+$HOME/bin/dzgui.sh.old
 ```
-If launching DZGUI via its system shortcut, the backup file will be located under:
+If launching DZGUI via its system shortcut, the backup file will be located under the path:
 
 ```
 $HOME/.local/share/dzgui
 ```
 
-Backup config file:
+Similarly, a backup config file will be located at:
 ```
 $HOME/.config/dztui/dztuirc.old
 
 ```
 
-== Usage
-Select from among the <<Menu options>> below.
+== Basic usage
+Select from among the <<Menu contexts and options>> below.
 
-Connecting to a server consists of fetching metadata for the server(s) you are searching for.
+Connecting to a server consists of fetching metadata for the server you are searching for.
 
 DZGUI will check the server's modset against your local mods. If you are missing any, 
 it will prompt you to download them through the Steam Workshop and open a window in the background in the system browser.
 
-Open each link and click Subscribe to schedule these for download. 
-
 [NOTE]
 You must be logged into Steam for mod changes to take effect.
-It can take some time for the subscribed mods to download and update.
+It can take some time for the mods to download and update.
 
 Once all of the mods are downloaded and staged, DZGUI will notify you that it is ready to connect.
-The app hands the launch parameters to Steam and exits.
+The app hands the launch parameters to Steam, after which point DZGUI is not involved in the operation of DayZ.
 
-== Menu options
+== Menu contexts and options
 
-==== Server browser
+The main view displays a series of contexts, visualized as buttons, on the right-hand side. You can click these to navigate between different areas.
+
+A footer at the bottom of the application lists an explanatory tooltip for the currently focused option. In the case of server browsing contexts, this tooltip will be updated to show the distance in kilometers to the server and an estimated ping (round-trip latency).
+
+The right-hand side of the footer displays the branch of DZGUI you are using (stable/testing), the mod install mode (normal/auto), and the version number. For example, if you are on the stable branch, using the default install mode, and using DZGUI v5.0.0, the footer will read:
+
+`STABLE | NORMAL | DZGUI 5.0.0`
+
+=== Main menu
+
+The main menu context is the central entry point to server navigation, letting you browse the list of publicly available servers, check your list of favorited servers, connect to recent servers, et cetera.
+
+==== Main menu > Server browser
 The server browser retrieves and lists all publicly broadcasting servers (including official ones) in a table.
 These servers can be filtered by various parameters in order to display a more granular result.
 
-After a server is selected from the list, the application continues to the mod validation step.
+After you select a server from the list and choose to connect, the application continues to the mod validation step.
 
-Prior to connecting, DZGUI will prompt you if you want to add this server to your <<My servers>>.
+For details on interacting with server browsing contexts, which are uniform across different menus, refer to <<Server table and filters>>.
 
-===== Filters
+==== Main menu > My saved servers
+Prints metadata for the servers saved in your servers list. Servers can be added via the <<Manage>> context or via the <<Contextual options>> of server table views.
 
-[%autowidth]
-The server browser exposes the following filters. These options can be combined.
+For details on interacting with server browsing contexts, which are uniform across different menus, refer to <<Server table and filters>>.
 
-Untick filters to exclude those matches from the returned results. The "All maps" and "Keyword search" filters have special behavior (see below).
-You must have a minimum of one filter active to return any results.
+==== Main menu > Quick connect to favorite server
+Bypasses the server list and quick-connects to a single favorite server specified in advance using the <<Add (change) favorite server>> option.
 
-|===
-|Filter|Usage
+==== Main menu > Recent servers
+This feature queries the history file for the last 10 servers connected to by any means
+(server browser, favorite servers, connect-by-IP, etc.), and presents them in a table.
 
-|All maps|Return all available map types being served. 
-Note: unticking this filter will present a list from which you can select one specific map type (e.g., namalsk)
-|Daytime|Include servers with gametime between 0600 and 1659
-|Nighttime|Include servers with gametime between 1700 and 0559
-|Empty|Include servers with 0 current players
-|Full|Include servers at maximum capacity
-|Low population|Include servers with fewer than 10 players online
-|Non-ASCII titles|Include servers with special symbols, Unicode, or text in the title. 
-Note: unticking this filter will also exclude CJK languages, Cyrillic, and other special character sets.
-|Keyword|Select this option to filter by server titles matching a specific word or phrase (case insensitive)
-|===
+For details on interacting with server browsing contexts, which are uniform across different menus, refer to <<Server table and filters>>.
 
-===== Table details
-After retrieval, the browser presents a table of results with the following parameters.
-Due to the density of information, the table will try to render at a minimum of 1920x1080 
-on a desktop or at fullscreen on a Steam Deck.
+==== Main menu > Connect by IP
+Provide the IP and query port in `<IP>:<PORT>` format. Depending on the mod installation method you have selected, DZGUI will proceed to stage and download mods and prompt you before connecting.
 
-- Total matches/total servers queried
-- Total players online on all servers
-- Map name
-- Server title
-- Gametime: the in-game time
-- Players: this is zero-padded for sorting purposes
-- Max players: this is zero-padded for sorting purposes
-- Distance: the physical distance to the server in kilometers, calculated by geolocation
-- IP: the IP address and port
-- Qport: the query port used to retrieve metadata and rules
-
-==== My servers
-Fetches detailed server information on the list of servers saved by <<Add server by ID>>.
-Outside of the server browser, this is the main place you interact with DZGUI when choosing a server from your list. These details are:
-
-- **Server**: name of the server, truncated to 50 chars
-- **IP/port**: IP address and port in the format `ip:port`
-- **Players**: online players, in the format `current/max`
-- **Gametime**: in-game time on the 24-hour clock
-- **Status**: whether the server is online or not
-- **ID**: numerical ID from BattleMetrics, used as a reference when troubleshooting or sharing servers
-- **Ping**: round-trip response time from the server
-
-In the event that a server has multiple maps behind different ports, these will all be displayed 
-after selecting the initial server.
-
-==== Quick connect to favorite server
-Bypasses the server list and quick-connects to a single favorite server specified in advance using the <<Add favorite server>> option.
-
-==== Connect by ID
-Requires a BM API key. Use the https://www.battlemetrics.com/servers/dayz[BattleMetrics site] to find servers of interest (proximity, player count, rules, etc.)
+==== Main menu > Connect by ID
+Requires a <<API key & server IDs, BM API key>>. Use the https://www.battlemetrics.com/servers/dayz[BattleMetrics site] to find servers of interest (proximity, player count, rules, etc.)
 
 Each server has a unique ID. This is the string of numbers at the end of the URL. Copy these IDs.
 For example, in the URL https://www.battlemetrics.com/servers/dayz/8039514, the ID is `8039514`.
 
 Enter the ID of a server to have it translated to an IP. After this step, the process continues as though you were connecting by IP.
 
-==== Connect by IP
-Instead of relying on server IDs, returns the list of maps behind a given IP.
-Provide only the IP; no port is necessary. This returns the server metadata for you to verify before connecting.
+=== Manage
+==== Manage > Add server by IP
+Add a server to your saved servers list by IP.
 
-If there are multiple maps hosted behind an IP (e.g. different maps on varying ports), the application will list all of them for you to choose from.
+Provide the IP and query port in `<IP>:<PORT>` format.
 
-==== Recent servers
-This feature queries the history file for the last 10 servers connected to by any means
-(server browser, favorite servers, connect-by-IP, etc.).
+Servers you add will be saved and listed when using the <<My saved servers>> option.
 
-==== Add server by ID
-Requires a BM API key. Use the https://www.battlemetrics.com/servers/dayz[BattleMetrics site] to find servers of interest (proximity, player count, rules, etc.)
+==== Manage > Add server by ID
+Requires a <<API key & server IDs, BM API key>>. Use the https://www.battlemetrics.com/servers/dayz[BattleMetrics site] to find servers of interest (proximity, player count, rules, etc.)
 
 Each server has a unique ID. This is the string of numbers at the end of the URL. Copy these IDs.
 For example, in the URL https://www.battlemetrics.com/servers/dayz/8039514, the ID is `8039514`.
 
-Servers you add will be saved and listed when using the <<My servers>> option.
+Servers you add will be saved and listed when using the <<My saved servers>> option.
 
-==== Add server by IP
-Like the above, only using the direct IP of the server in question.
+==== Manage > Add (change) favorite server
+Prompts you to add/change a favorite server (limit one). The name of the server will be updated in the footer of the app when focused on the <<Main menu > Quick connect to favorite server, Quick connect to favorite server>> option in the <<Main menu>> context. If a favorite server is already enabled, this option switches to "Change favorite server."
 
-Provide only the IP; no port is necessary. This returns the server metadata for you to verify before connecting.
+=== Options
 
-If there are multiple maps hosted behind an IP (e.g. different maps on varying ports), the application will list all of them for you to choose from.
+The options context is chiefly used to toggle settings, update API keys, or perform changes to mods.
 
-==== Add (change) favorite server
-Prompts you to add/change a favorite server to the config file by ID. The name of the server will be updated in the header of the app. This server is used when selecting the <<Quick connect to favorite server>> option. If a favorite server is already enabled, this option switches to "Change favorite server."
-
-==== Delete server
-Prints a list of human-readable servers currently saved, and lets you delete them by selecting one from the list.
-
-==== List installed mods
+==== Options > List installed mods
 Prints a scrollable dialog containing all locally-installed mods and their corresponding symlink IDs and directory names.
 
-==== View changelog
-Prints the entire changelog up to the current version in-app.
+If you right-click on an entry in the list, you have the option of opening the Workshop page for the mod in Steam or deleting the local mod.
 
-==== Advanced options
-If enabled, this menu contains a sub-menu with various advanced features, enumerated below.
-
-===== Toggle branch
+===== Options > Toggle release branch
 Used to toggle the branch to fetch DZGUI from between `stable` and `testing`.
+
 The app ships with the stable branch enabled, with the testing branch being used to elaborate various experimental features.
 
-===== Toggle debug mode
-Toggles debug mode, which is used to perform dry-runs and output what parameters would have been used to connect to a server.
-
-===== Toggle auto mod install
+===== Options > Toggle mod install mode
 This feature is experimental. It attempts to queue the mods requested for download automatically, rather than prompting the user to subscribe to each one.
 
-Both `wmctrl` and `xdotool` must be installed to use this feature.
-
 [NOTE]
-When using auto mod installation, the mods may not appear as subscribed to in the Steam Workshop.
-DZGUI tracks their version internally and will trigger an update if necessary the next time you
-attempt to connect.
+When using auto mod installation, DZGUI will track the latest version of your installed mods and periodically synchronize their signatures next time you attempt to connect to a server. This means that if you satisfy the mods needed for a server, but updates to other mods you already have are found, an update will be triggered until all of your local mods are refreshed. Provided you tend to keep auto mod install on, these updates should be atomic and ensure that mods are always up to date.
 
-===== Change player name
+===== Options > Toggle Steam/Flatpak
+This feature should be used if there are concurrent installations of Steam on the local system. Toggle between using Steam or Flatpak Steam to launch DayZ.
+
+===== Options > Change player name
 Used to change the in-game player name that is broadcast when on servers.
 
-===== Output system info
-Writes a list of your current settings and system configuration to a local file that can be pasted into bug reports.
+===== Options > Change Steam API key
+Used to change or update the Steam API key; can be used if the old key needs to be revoked and updated with a new one.
 
-===== Force update local mods
+===== Options > Change Battlemetrics API key
+Identical to the option above, only for Battlemetrics.
 
-Attempts to refresh the version of all local mods to the newest version by checking remote mod hashes and requesting updates from Steam.
+===== Options > Force update local mods
+Attempts to update the signatures of all local mods and synchronize them with the latest versions available on Steam Workshop. This option should be used when <<Options > Toggle mod install mode, Toggle mod install mode>> is set to AUTO.
 
-This is a convenience feature that attempts to redownload all local mods. Can be used in the event of corruption or file integrity issues. In conjunction with the <<Toggle auto mod install>> feature, this feature is experimental.
+This can be used in the event of mod corruption or linkage errors.
 
-==== Help file
+===== Output system info to log file
+Writes a list of your current settings and system configuration to a local file that can be pasted into bug reports. This process may take some time.
+
+The file is written to `$HOME/.local/state/dzgui/logs/DZGUI_SYSTEM.log`
+
+=== Help
+
+The help context chiefly opens external documentation and support pages in the system-defined web browser or internal dialog.
+
+==== Options > View changelog
+Prints the entire changelog up to the current version in-app.
+
+==== Options > Show debug log
+Prints the DZGUI log file generated since the last session in a tabled format in-app.
+
+==== Help > Help file
 Uses xdg-open to open this documentation in the system browser.
 
-==== Report bug
+==== Help > Report a bug
 Uses xdg-open to open the https://github.com/aclist/dztui/issues[bug tracker] in the system browser.
 
-==== Forum
+==== Help > Forum
 Uses xdg-open to open the https://github.com/aclist/dztui/discussions[discussion forum] in the system browser.
 
-==== Sponsor
+==== Help > Sponsor
 Uses xdg-open to open the https://github.com/sponsors/aclist[sponsor page], where you can help fund development, in the system browser.
 
-==== Hall of fame
+==== Help > Hall of fame
 Uses xdg-open to open the https://aclist.github.io/dzgui/dzgui#_hall_of_fame[Hall of Fame], which recognizes those who actively contributed to the betterment of the application through bug reports and suggestions, in the system browser.
 
-== Config file key/value pairs
-Under normal usage, these values are populated and toggled automatically in-app. This config file is partially compatible with DZTUI.
+=== Exit
+
+Exits the DZGUI application.
+
+=== Keybindings
+
+The "?" button opens a dialog that provides additional information about keybindings and navigation throughout the application.
+
+[NOTE]
+Due to size constraints, this button is not currently available on Steam Deck.
+
+== Server table and filters
+
+=== Table metadata
+
+[%autowidth]
+All server browser contexts (<<Main menu > My saved servers, My saved servers>>, <<Main menu > Server browser, Server browser>>, <<Main menu > Recent servers, Recent servers>>) expose the following filters on the right-hand side. These options can be combined.
+
+The table lists servers in columnar fashion according by:
+
+- **Name**: the server name and the menu context you are currently on
+- **Map**: the map name
+- **Perspective**: first-person (1PP) or third-person (3PP)
+- **Gametime**: in-game time on the 24-hour clock
+- **Players**: total players currently in-game
+- **Maximum**: total players the server supports
+- **Address**: the address in IP:Port format
+- **Qport**: the query port of the listening server
+
+Columns are width-adjustable, and the positions they are set to will be saved and persist across sessions. The saved column width is used uniformly across server browsing contexts.
+
+=== Contextual options
+
+When in a server browsing context, right click on any server in the list to expose a series of contextual options. These are:
+
+* **Add to (Remove from) saved servers**: add or remove the server to/from your saved servers list
+* **Copy IP to clipboard**: copy the game server IP to the clipboard
+* **Show server-side mods**: opens a dialog with details about the name, Workshop ID, and local installation status of mods on the server. Select a mod to open its Workshop page in Steam
+* **Refresh player count**: refresh the player count for this server in-place in the table. Useful if some time has passed since you loaded the list and you want to see if the queue is open
+
+=== Filters
+The filter panel on the right-hand side of the table allows you to search by keyword, map type, and toggle different filters.
+
+==== Keyword search
+
+A text entry field where you can search for hits in any column of the table by partial string match. The field does not support regex, but does support basic backslash escapes for special characters, e.g., `\[My string\]`.
+
+Clear the keyword search and submit again to remove any keyword filter.
+
+==== Map search
+Opens a combobox that lets you filter the table by specific map.
+
+A variety of navigation bindings for interacting with the table and toggling filters can be found via the <<Keybindings>> dialog.
+
+==== Toggle filters
+
+A series of filters that restrict the results by game parameters. Also toggleable via the number keys.
 
 [%autowidth]
 |===
-|Key|Value
+|Filter|Usage
 
-|`api_key`|the API key generated at BattleMetrics. See <<Setup>>
-|`auto_install`|permissible values are 0, 1, and 2. These are set internally depending on if the user enabled auto mod installation
-|`branch`|by default, set to `stable`; set to `testing` to fetch the testing branch
-|`debug`|by default, set to 0; set to `1` to print launch options that would have been run, instead of actually connecting (used for troubleshooting and submitting bug reports)
-|`default_steam_path`|the path to the default Steam client installation
-|`ip_list`|array of server addresses; a concatenation of the IP/GamePort/Queryport
-|`fav_server`|server to display in the `Fav` field and to quick-connect to (must be one only); a concatenation of the IP/Gameport/Queryport
-|`fav_label`|the human-readable name of the fav server set above
-|`name`|a custom "handle" name used to identify the player on a server (required by some servers)
-|`preferred_client`|whether the user prefers native Steam or Flatpak. This value is only set if concurrent installations are found on the system
-|`seen_news`|stores a hash of the news item last seen by the client. This is used to suppress news messages until a new one is posted
-|`staging_dir`|a directory used to stage mods while downloading. This feature is deprecated and is no longer user-configurable
+|1PP|Include servers in first-person perspective
+|3PP|Include servers in third-person perspective
+|Day|Include servers with gametime between 0600 and 1659
+|Night|Include servers with gametime between 1700 and 0559
+|Empty|Include servers with 0 current players
+|Full|Include servers at maximum capacity
+|Low pop|Include servers with a current player count < 30% of the allowable capacity
+|Non-ASCII titles|Include servers with special symbols, Unicode, or text in the title.
+Note: unticking this filter will also exclude CJK languages, Cyrillic, and other special character sets
+|Duplicate|Include servers with duplicated server titles (there may be large numbers of misconfigured or generic servers with the same boilerplate title)
 |===
+
+[NOTE]
+It is possible to filter the list to 0 results if you combine or exclude logically opposed filter pairs, such as excluding both 'Day' and 'Night' servers, effectively restricting the list to no possible servers. If you expect to see results but do not, double-check your filters (and keywords) to make sure your search is not too restrictive.
+
 
 == Troubleshooting/FAQ
 
 .Mods take a long time to synchronize when subscribing from Workshop
-Steam schedules the downloads in the background and processes them as they are subscribed to.
+Steam schedules the downloads in the background and processes them in the order they were subscribed to.
 This process is not instantaneous and can take some time.
 
-.Game does not launch through Steam
-Check the logs emitted by Steam in the terminal, or in `<steam path>/error.log`.
+.The Steam Workshop shows a black screen when attempting to open/download a mod via DZGUI
+This bug is being tracked at https://github.com/ValveSoftware/steam-for-linux/issues/9598. If the issue occurs, manually intervene in the Steam client
+by clicking a different window context (e.g., navigate to the Store page from Workshop, then back again) until the Workshop page starts to load content.
 
-.Game launches, but throws a "mod missing/check PBO file" error when connecting
+.The game does not launch through Steam
+Check the logs emitted by Steam in the terminal, or in `<Steam path>/error.log`.
+
+.The game launches, but throws a "mod missing/check PBO file" error when connecting
 In rare cases, the server may be using misconfigured, malformed, or obsolete mods.
 This depends on server operators checking their mods for integrity.
 
-.Game and server launches, but when joining the game world, an error occurs
+.The game launches, but when joining the game world, an error occurs
 A mod is corrupted or the issue lies with the server. Replace the mods in question and reconnect.
 
 .The game is slow or prone to crashing
 DayZ does not manipulate the game itself and does not contribute to/degrade its performance.
 If you are experiencing performance degradation, it can be caused by too many mods installed or
-by a server-side problem (underpowered server, misconfiguration, etc.) Contract the server administrator
+by a server-side problem (underpowered server, misconfiguration, etc.) Contact the server administrator
 for assistance.
 
-== Hall of fame
+
+== Reference
+
+=== Config file key/value pairs
+The config file is located at `$HOME/.config/dztui/dztuirc`.
+
+Under normal usage, these values are populated and toggled automatically in-app. Deprecated keys are not listed.
+
+[%autowidth]
+|===
+|Key|Value
+
+|`api_key`|an optional BattleMetrics API key generated at BattleMetrics. See <<API key & server IDs>>
+|`auto_install`|permissible values are 0, 1, and 2. These are set internally depending on if the user enabled auto mod installation
+|`branch`|by default, set to `stable`; set to `testing` to fetch the testing branch
+|`debug`|by default, unset; when set to `1`, the launch options that would have been run are printed as a dry-run, instead of actually connecting (used for troubleshooting and submitting bug reports)
+|`default_steam_path`|the path to the default Steam client installation
+|`ip_list`|an array of server addresses; each record is a concatenation of the IP/GamePort/Queryport
+|`fav_server`|a single server to quick-connect to; a concatenation of the IP/Gameport/Queryport
+|`fav_label`|the human-readable name of the fav server set above
+|`name`|a custom "handle" name used to identify the player on a server (required by some servers)
+|`preferred_client`|whether the user prefers native Steam or Flatpak. This value is only set if concurrent versions of Steam are found on the system
+|`src_path`|the path to where DZGUI is currently being stored
+|`staging_dir`|a directory used to stage changes between updates
+|`steam_path`|the path to Steam detected/set during first-time setup
+|`steam_api`|the Steam API key. See <<API key & server IDs>>
+|===
+
+=== Hall of fame
 
 This section recognizes users who have gone above and beyond in submitting useful bug reports that helped in tracking down critical issues
 or resulted in the elaboration of important features. This list is not exhaustive, and any missing parties are errors of omission, but this does
@@ -504,3 +592,4 @@ helped workshop and brainstorm various ideas that turned into QOL features.
 
 .Thoughtduck216
 Contributed extensive beta testing of Steam Deck builds and provided ongoing troubleshooting for Steam Deck users
+
