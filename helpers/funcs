@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.2.1
+version=5.2.2
 
 #CONSTANTS
 aid=221100

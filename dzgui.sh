@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.2.1
+version=5.2.2
 
 #CONSTANTS
 aid=221100
@@ -269,7 +269,7 @@ freedesktop_dirs(){
     local img_url="$stable_url/images"
     curl -s "$version_url" > "$script_path"
     chmod +x "$script_path"
-    for i in dzgui grid.png hero.png logo.png; do
+    for i in dzgui grid.png hero.png logo.png icon.png; do
         curl -s "$img_url/$i" > "$share_path/$i"
     done
     write_desktop_file > "$freedesktop_path/$app_name.desktop"
@@ -537,10 +537,10 @@ fetch_helpers_by_sum(){
     source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="9bfa6de9a648c7c8aa24bdec66a38eae"
+        ["ui.py"]="7b9dc3cd70c9d388536c03d18d3ba0b5"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="48ed212978d20bc24a1adda38389e1b1"
+        ["funcs"]="35db0238f3bb8691107aefd2aee51d0f"
     )
     local author="aclist"
     local repo="dztui"
@@ -601,6 +601,7 @@ fetch_helpers(){
     fetch_dzq
     fetch_geo_file
     fetch_helpers_by_sum
+    [[ ! -f $share_path/icon.png ]] && freedesktop_dirs
 }
 raise_error_and_quit(){
     local msg="$1"
