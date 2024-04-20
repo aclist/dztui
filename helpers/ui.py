@@ -18,7 +18,7 @@ locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.2.2.rc-2
+# 5.2.2.rc-3
 app_name = "DZGUI"
 
 start_time = 0
@@ -493,13 +493,28 @@ class RightPanel(Gtk.Box):
         self.pack_start(self.button_vbox, False, False, 0)
         self.pack_start(self.filters_vbox, False, False, 0)
 
+        self.debug_toggle = Gtk.ToggleButton(label="Debug mode")
+        if query_config(None, "debug")[0] == '1':
+            self.debug_toggle.set_active(True)
+        self.debug_toggle.connect("toggled", self._on_button_toggled, "Toggle debug mode")
+        set_surrounding_margins(self.debug_toggle, 10)
+
         self.question_button = Gtk.Button(label="?")
         self.question_button.set_margin_top(10)
         self.question_button.set_margin_start(50)
         self.question_button.set_margin_end(50)
         self.question_button.connect("clicked", self._on_button_clicked)
+
+        self.pack_start(self.debug_toggle, False, True, 0)
         if is_steam_deck is False:
             self.pack_start(self.question_button, False, True, 0)
+
+    def _on_button_toggled(self, button, command):
+        grid = self.get_parent()
+        transient_parent = grid.get_parent()
+        call_out(transient_parent, "toggle", command)
+        grid.update_right_statusbar()
+        grid.scrollable_treelist.treeview.grab_focus()
 
     def _on_button_clicked(self, button):
         grid = self.get_parent()
@@ -838,6 +853,12 @@ class TreeView(Gtk.TreeView):
         window = self.get_outer_window()
         grid = self.get_outer_grid()
         match event.keyval:
+            case Gdk.KEY_d:
+                debug = grid.right_panel.debug_toggle
+                if debug.get_active():
+                    debug.set_active(False)
+                else:
+                    debug.set_active(True)
             case Gdk.KEY_Right:
                 grid.right_panel.focus_button_box()
             case Gdk.KEY_question:
@@ -855,14 +876,6 @@ class TreeView(Gtk.TreeView):
         cur_proc = grid.scrollable_treelist.treeview.current_proc
         if event.state is Gdk.ModifierType.CONTROL_MASK:
             match event.keyval:
-                case Gdk.KEY_d:
-                    if self.get_first_col() == "Mod":
-                        return
-                    debug = grid.right_panel.filters_vbox.debug_toggle
-                    if debug.get_active():
-                        debug.set_active(False)
-                    else:
-                        debug.set_active(True)
                 case Gdk.KEY_l:
                     self._on_button_release(self, event)
                 case Gdk.KEY_r:
@@ -1675,11 +1688,6 @@ class FilterPanel(Gtk.Box):
         self.maps_combo.connect("changed", self._on_map_changed)
         self.maps_combo.connect("key-press-event", self._on_esc_pressed)
 
-        self.debug_toggle = Gtk.ToggleButton(label="Debug mode")
-        if query_config(None, "debug")[0] == '1':
-            self.debug_toggle.set_active(True)
-        self.debug_toggle.connect("toggled", self._on_button_toggled, "Toggle debug mode")
-        set_surrounding_margins(self.debug_toggle, 10)
 
         self.pack_start(self.filters_label, False, False, True)
         self.pack_start(self.keyword_entry, False, False, True)
@@ -1688,14 +1696,6 @@ class FilterPanel(Gtk.Box):
         for i, check in enumerate(checks[0:]):
             self.pack_start(checks[i], False, False, True)
 
-        self.pack_start(self.debug_toggle, False, False, 0)
-
-    def _on_button_toggled(self, button, command):
-        transient_parent = self.get_outer_window()
-        grid = self.get_outer_grid()
-        call_out(transient_parent, "toggle", command)
-        grid.update_right_statusbar()
-        grid.scrollable_treelist.treeview.grab_focus()
 
     def grab_keyword_focus(self):
         self.keyword_entry.grab_focus()
