@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.2.2.rc-1
+version=5.2.2.rc-2
 
 #CONSTANTS
 aid=221100
@@ -652,9 +652,6 @@ debug="$debug"
 
 #Toggle stable/testing branch
 branch="$branch"
-
-#Last seen news item
-seen_news="$seen_news"
 
 #Steam API key
 steam_api="$steam_api"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.2.2-rc.1
+version=5.2.2-rc.2
 
 #CONSTANTS
 aid=221100
@@ -109,7 +109,6 @@ setup_state_files(){
 print_config_vals(){
     local keys=(
     "branch"
-    "seen_news"
     "name"
     "fav_server"
     "fav_label"
@@ -191,9 +190,6 @@ debug="$debug"
 
 #Toggle stable/testing branch
 branch="$branch"
-
-#Last seen news item
-seen_news="$seen_news"
 
 #Steam API key
 steam_api="$steam_api"
@@ -537,10 +533,10 @@ fetch_helpers_by_sum(){
     source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="17116377901f13bc8f743284326f53cb"
+        ["ui.py"]="b5140a1b59612fa1660201da901a4803"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="07494fa8e08e24d6f7d40cad890a89b5"
+        ["funcs"]="3d45ccf5ee5c2637e138f554a058fb77"
     )
     local author="aclist"
     local repo="dztui"
