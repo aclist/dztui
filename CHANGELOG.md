@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.2.2] 2024-04-18
+### Added
+- Cover artwork/icons for Steam "Recent Games" and tree view
+
+### Changed
+- Updated documentation to the v5.0.0 spec
+
 ## [5.2.1] 2024-04-01
 ### Fixed
 - Fixed a regression where where the first-time setup dialog would not trigger auto-path discovery
