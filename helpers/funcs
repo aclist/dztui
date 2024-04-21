@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.2.2.rc-3
+version=5.2.2.rc-4
 
 #CONSTANTS
 aid=221100
@@ -1266,7 +1266,7 @@ launch(){
     update_symlinks
     if [[ $debug -eq 1 ]]; then
         local launch_options="$steam_cmd -applaunch $aid -connect=$ip:$gameport -nolauncher -nosplash -name=$name -skipintro \"-mod=$concat\""
-        printf "Dry-run mode: these options would have been used to launch the game: $launch_options"
+        printf "Debug mode: these options would have been used to launch the game: $launch_options"
         return 0
     fi
     echo "$concat" > "$_cache_launch"
