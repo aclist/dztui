@@ -1,5 +1,15 @@
 # Changelog
 
+## [5.2.3] 2024-04-19
+### Added
+- Added Debug Mode button to main menu
+
+### Changed
+- Reworded debug mode notification dialog
+
+### Dropped
+- Dropped seen_news key from configs
+
 ## [5.2.2] 2024-04-18
 ### Added
 - Cover artwork/icons for Steam "Recent Games" and tree view
