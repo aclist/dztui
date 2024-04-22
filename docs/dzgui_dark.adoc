@@ -509,6 +509,11 @@ Note: unticking this filter will also exclude CJK languages, Cyrillic, and other
 [NOTE]
 It is possible to filter the list to 0 results if you combine or exclude logically opposed filter pairs, such as excluding both 'Day' and 'Night' servers, effectively restricting the list to no possible servers. If you expect to see results but do not, double-check your filters (and keywords) to make sure your search is not too restrictive.
 
+== Debug mode
+
+Debug mode can be enabled via the button toggle on the right panel. When debug mode is enabled, any attempt to connect to a server will function as before, excluding the final connection step. DZGUI will attempt to synchronize and download mods and then print a dialog showing what options would have actually been run when connecting to the server.
+
+This can be used to diagnose problems and test functionality without actually launching the game.
 
 == Troubleshooting/FAQ
 
