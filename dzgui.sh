@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.2.3-rc.1
+version=5.2.3-rc.2
 
 #CONSTANTS
 aid=221100
@@ -579,7 +579,7 @@ fetch_helpers_by_sum(){
 }
 fetch_geo_file(){
     # for binary releases
-    local geo_sum="e7f3b25223ac4dfd5e30a0b55bb3ff6c"
+    local geo_sum="7b6668eb4535bb432acb42016ba9cc47"
     local km_sum="b038fdb8f655798207bd28de3a004706"
     local gzip="$helpers_path/ips.csv.gz"
     if [[ ! -f $geo_file  ]] || [[ $(get_hash $geo_file) != $geo_sum ]]; then
