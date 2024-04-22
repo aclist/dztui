@@ -17,3 +17,7 @@ Other options include the ability to connect by IP or ID or  set a favorite serv
 Refer to the [manual](https://aclist.github.io/dzgui/dzgui.html) for installation and setup instructions, a feature-by-feature breakdown, and Steam integration tutorials.
 
 ![Alt text](/images/example.png)
+
+## Attribution
+
+Geolocation records from [DB-IP](https://db-ip.com) under [CC 4.0 license](https://creativecommons.org/licenses/by/4.0/)
