@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.2.2
+version=5.2.3
 
 #CONSTANTS
 aid=221100
@@ -109,7 +109,6 @@ setup_state_files(){
 print_config_vals(){
     local keys=(
     "branch"
-    "seen_news"
     "name"
     "fav_server"
     "fav_label"
@@ -191,9 +190,6 @@ debug="$debug"
 
 #Toggle stable/testing branch
 branch="$branch"
-
-#Last seen news item
-seen_news="$seen_news"
 
 #Steam API key
 steam_api="$steam_api"
@@ -537,10 +533,10 @@ fetch_helpers_by_sum(){
     source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="7b9dc3cd70c9d388536c03d18d3ba0b5"
+        ["ui.py"]="1e692d9c658aba4402c1c998263f6184"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="35db0238f3bb8691107aefd2aee51d0f"
+        ["funcs"]="47ba5f1b5da5d1e7f42a5a088b29ec9d"
     )
     local author="aclist"
     local repo="dztui"
@@ -583,7 +579,7 @@ fetch_helpers_by_sum(){
 }
 fetch_geo_file(){
     # for binary releases
-    local geo_sum="e7f3b25223ac4dfd5e30a0b55bb3ff6c"
+    local geo_sum="7b6668eb4535bb432acb42016ba9cc47"
     local km_sum="b038fdb8f655798207bd28de3a004706"
     local gzip="$helpers_path/ips.csv.gz"
     if [[ ! -f $geo_file  ]] || [[ $(get_hash $geo_file) != $geo_sum ]]; then
