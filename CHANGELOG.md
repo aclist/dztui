@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.2.4] 2024-05-29
+### Fixed
+- Resolved an issue that could cause an old path to a prior DayZ installation to be reinserted in the config file if the Steam client did not synch the new path internally. DZGUI would try to ask the user to re-run first-time setup and update the path, but the old path would still be used.
+
 ## [5.2.3] 2024-04-19
 ### Added
 - Added Debug Mode button to main menu
