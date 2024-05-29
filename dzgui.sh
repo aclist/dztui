@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.2.3-rc.2
+version=5.2.5-rc.1
 
 #CONSTANTS
 aid=221100
@@ -533,10 +533,10 @@ fetch_helpers_by_sum(){
     source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="9eeff067994b1e8010eb37f1db1b34bc"
+        ["ui.py"]="1e692d9c658aba4402c1c998263f6184"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="6fe6e3ff99237c77ef855a51420c51f0"
+        ["funcs"]="47ba5f1b5da5d1e7f42a5a088b29ec9d"
     )
     local author="aclist"
     local repo="dztui"
@@ -688,6 +688,11 @@ find_library_folder(){
     logger INFO "Steam path resolved to: $steam_path"
 }
 create_config(){
+    #if old path is malformed and this function is forcibly called,
+    #wipe paths from memory before entering the loop to force path rediscovery
+    unset default_steam_path
+    unset steam_path
+
     while true; do
         local player_input="$($steamsafe_zenity \
             --forms \
@@ -698,8 +703,7 @@ create_config(){
             --text="DZGUI" $sd_res \
             --separator="@")"
         #explicitly setting IFS crashes $steamsafe_zenity in loop
-        #and mapfile does not support high ascii delimiters
-        #so split fields with newline
+        #and mapfile does not support high ascii delimiters, so split fields with newline
         readarray -t args < <(<<< "$player_input" sed 's/@/\n/g')
         name="${args[0]}"
         steam_api="${args[1]}"
@@ -730,7 +734,7 @@ create_config(){
             find_library_folder "$default_steam_path"
             if [[ -z $steam_path ]]; then
                 logger raise_error "Steam path was empty"
-                zenity --question --text="DayZ not found or not installed at the chosen path." --ok-label="Choose path manually" --cancel-label="Exit"
+                zenity --question --text="DayZ not found or not installed at the Steam library given." --ok-label="Choose path manually" --cancel-label="Exit"
                 if [[ $? -eq 0 ]]; then
                     logger INFO "User selected file picker"
                     file_picker
