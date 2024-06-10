@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.2.4
+version=5.3.0
 
 #CONSTANTS
 aid=221100
@@ -35,6 +35,7 @@ prefix="dzg"
 history_file="$state_path/$prefix.history"
 versions_file="$state_path/$prefix.versions"
 lock_file="$state_path/$prefix.lock"
+cols_file="$state_path/$prefix.cols.json"
 
 #CACHE FILES
 coords_file="$cache_path/$prefix.coords"
@@ -533,10 +534,10 @@ fetch_helpers_by_sum(){
     source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="1e692d9c658aba4402c1c998263f6184"
+        ["ui.py"]="f14772424461ec438579dec567db0634"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="47ba5f1b5da5d1e7f42a5a088b29ec9d"
+        ["funcs"]="37ae407ac397f6775f3a412e7adb7840"
     )
     local author="aclist"
     local repo="dztui"
@@ -610,7 +611,7 @@ test_steam_api(){
     [[ -z $key ]] && return 1
     local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$key"
     local code=$(curl -ILs "$url" | grep -E "^HTTP")
-    [[ $code =~ 403 ]] && echo 1
+    [[ ! $code =~ 200 ]] && echo 1
     [[ $code =~ 200 ]] && echo 0
 }
 test_bm_api(){
@@ -626,10 +627,16 @@ test_bm_api(){
 }
 find_default_path(){
     _discover(){
-        default_steam_path=$(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path \
-            "/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" \
-            -o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
-            -o -regex ".*/Steam/ubuntu12_32$" -print -quit 2>/dev/null | sed 's@/ubuntu12_32@@')
+        readarray -t paths < <(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path \
+                    "/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" \
+                    -o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
+                    -o -regex ".*Steam/config/libraryfolders.vdf$" -print 2>/dev/null | sed 's@config/libraryfolders.vdf@@')
+
+        if [[ "${#paths[@]}" -gt 1 ]]; then
+            default_steam_path=$(printf "%s\n" "${paths[@]}" | $steamsafe_zenity --list --column="paths" --hide-header --text="Found multiple valid Steam paths. Select your default Steam installation." "${zenity_flags[@]}")
+        else
+            default_steam_path="${paths[0]}"
+        fi
     }
     if [[ $is_steam_deck -gt 0 ]]; then
         default_steam_path="$HOME/.local/share/Steam"
@@ -806,6 +813,13 @@ test_connection(){
         raise_error_and_quit "No connection could be established to the remote server (steampowered.com)."
     fi
 }
+legacy_cols(){
+    [[ ! -f $cols_file ]] && return
+    local has=$(< "$cols_file" jq '.cols|has("Queue")')
+    [[ $has == "true" ]] && return
+    < $cols_file jq '.cols += { "Queue": 120 }' > $cols_file.new &&
+    mv $cols_file.new $cols_file
+}
 initial_setup(){
     setup_dirs
     setup_state_files
@@ -820,6 +834,7 @@ initial_setup(){
     source "$config_file"
     lock
     legacy_vars
+    legacy_cols
     check_version
     check_map_count
     steam_deps

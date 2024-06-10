@@ -107,7 +107,7 @@ Enable a Proton version ≥ `6.8` (or use Proton Experimental) in the `Compatibi
 
 ==== BattleMetrics API key (optional)
 
-This key is optional. Using this key in conjunction with the above allows you to also connect to and query servers by numerical ID instead of by IP. See <<Add server by ID>>.
+This key is optional. Using this key in conjunction with the above allows you to also connect to and query servers by numerical ID instead of by IP. See <<Manage > Add server by ID, Add server by ID>>.
 
 1. Register for an API key at https://www.battlemetrics.com/account/register?after=%2Fdevelopers[BattleMetrics] (free).
 2. From the **Personal Access Tokens** area, Select **New Token**.
@@ -340,7 +340,7 @@ Prints metadata for the servers saved in your servers list. Servers can be added
 For details on interacting with server browsing contexts, which are uniform across different menus, refer to <<Server table and filters>>.
 
 ==== Main menu > Quick connect to favorite server
-Bypasses the server list and quick-connects to a single favorite server specified in advance using the <<Add (change) favorite server>> option.
+Bypasses the server list and quick-connects to a single favorite server specified in advance using the <<Manage > Add (change) favorite server, Add (change) favorite server>> option.
 
 ==== Main menu > Recent servers
 This feature queries the history file for the last 10 servers connected to by any means
@@ -365,7 +365,7 @@ Add a server to your saved servers list by IP.
 
 Provide the IP and query port in `<IP>:<PORT>` format.
 
-Servers you add will be saved and listed when using the <<My saved servers>> option.
+Servers you add will be saved and listed when using the <<Main menu > My saved servers, My saved servers>> option.
 
 ==== Manage > Add server by ID
 Requires a <<API key & server IDs, BM API key>>. Use the https://www.battlemetrics.com/servers/dayz[BattleMetrics site] to find servers of interest (proximity, player count, rules, etc.)
@@ -373,7 +373,7 @@ Requires a <<API key & server IDs, BM API key>>. Use the https://www.battlemetri
 Each server has a unique ID. This is the string of numbers at the end of the URL. Copy these IDs.
 For example, in the URL https://www.battlemetrics.com/servers/dayz/8039514, the ID is `8039514`.
 
-Servers you add will be saved and listed when using the <<My saved servers>> option.
+Servers you add will be saved and listed when using the <<Main menu > My saved servers, My saved servers>> option.
 
 ==== Manage > Add (change) favorite server
 Prompts you to add/change a favorite server (limit one). The name of the server will be updated in the footer of the app when focused on the <<Main menu > Quick connect to favorite server, Quick connect to favorite server>> option in the <<Main menu>> context. If a favorite server is already enabled, this option switches to "Change favorite server."
@@ -387,35 +387,35 @@ Prints a scrollable dialog containing all locally-installed mods and their corre
 
 If you right-click on an entry in the list, you have the option of opening the Workshop page for the mod in Steam or deleting the local mod.
 
-===== Options > Toggle release branch
+==== Options > Toggle release branch
 Used to toggle the branch to fetch DZGUI from between `stable` and `testing`.
 
 The app ships with the stable branch enabled, with the testing branch being used to elaborate various experimental features.
 
-===== Options > Toggle mod install mode
+==== Options > Toggle mod install mode
 This feature is experimental. It attempts to queue the mods requested for download automatically, rather than prompting the user to subscribe to each one.
 
 [NOTE]
 When using auto mod installation, DZGUI will track the latest version of your installed mods and periodically synchronize their signatures next time you attempt to connect to a server. This means that if you satisfy the mods needed for a server, but updates to other mods you already have are found, an update will be triggered until all of your local mods are refreshed. Provided you tend to keep auto mod install on, these updates should be atomic and ensure that mods are always up to date.
 
-===== Options > Toggle Steam/Flatpak
+==== Options > Toggle Steam/Flatpak
 This feature should be used if there are concurrent installations of Steam on the local system. Toggle between using Steam or Flatpak Steam to launch DayZ.
 
-===== Options > Change player name
+==== Options > Change player name
 Used to change the in-game player name that is broadcast when on servers.
 
-===== Options > Change Steam API key
+==== Options > Change Steam API key
 Used to change or update the Steam API key; can be used if the old key needs to be revoked and updated with a new one.
 
-===== Options > Change Battlemetrics API key
+==== Options > Change Battlemetrics API key
 Identical to the option above, only for Battlemetrics.
 
-===== Options > Force update local mods
+==== Options > Force update local mods
 Attempts to update the signatures of all local mods and synchronize them with the latest versions available on Steam Workshop. This option should be used when <<Options > Toggle mod install mode, Toggle mod install mode>> is set to AUTO.
 
 This can be used in the event of mod corruption or linkage errors.
 
-===== Output system info to log file
+==== Output system info to log file
 Writes a list of your current settings and system configuration to a local file that can be pasted into bug reports. This process may take some time.
 
 The file is written to `$HOME/.local/state/dzgui/logs/DZGUI_SYSTEM.log`
@@ -463,7 +463,7 @@ Due to size constraints, this button is not currently available on Steam Deck.
 [%autowidth]
 All server browser contexts (<<Main menu > My saved servers, My saved servers>>, <<Main menu > Server browser, Server browser>>, <<Main menu > Recent servers, Recent servers>>) expose the following filters on the right-hand side. These options can be combined.
 
-The table lists servers in columnar fashion according by:
+The table lists servers in columnar fashion according to:
 
 - **Name**: the server name and the menu context you are currently on
 - **Map**: the map name
@@ -471,6 +471,7 @@ The table lists servers in columnar fashion according by:
 - **Gametime**: in-game time on the 24-hour clock
 - **Players**: total players currently in-game
 - **Maximum**: total players the server supports
+- **Queue**: total players in the waiting queue (for full servers)
 - **Address**: the address in IP:Port format
 - **Qport**: the query port of the listening server
 
