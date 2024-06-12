@@ -633,7 +633,7 @@ find_default_path(){
                     -o -regex ".*Steam/config/libraryfolders.vdf$" -print 2>/dev/null | sed 's@config/libraryfolders.vdf@@')
 
         if [[ "${#paths[@]}" -gt 1 ]]; then
-            default_steam_path=$(printf "%s\n" "${paths[@]}" | $steamsafe_zenity --list --column="paths" --hide-header --text="Found multiple valid Steam paths. Select your default Steam installation." "${zenity_flags[@]}")
+            default_steam_path=$(printf "%s\n" "${paths[@]}" | $steamsafe_zenity --list --column="paths" --hide-header --text="Found multiple valid Steam paths. Select your default Steam installation." --title="DZGUI")
         else
             default_steam_path="${paths[0]}"
         fi
@@ -845,9 +845,56 @@ initial_setup(){
     is_dzg_downloading
     print_config_vals
 }
+uninstall(){
+    _full(){
+        for i in "$config_path" "$state_path" "$cache_path" "$share_path"; do
+            echo "Deleting the path '$i'"
+            rm -rf "$i"
+        done
+    }
+    _partial(){
+        for i in "$config_path" "$cache_path" "$share_path"; do
+            echo "Deleting the path '$i'"
+            rm -rf "$i"
+        done
+    }
+    local choice=$($steamsafe_zenity \
+        --list \
+        --radiolist \
+        --column="a" \
+        --column="b" \
+        --hide-header \
+        --text="Choose an uninstall routine below." \
+        TRUE "Keep user config files" \
+        FALSE "Delete all DZGUI files" \
+        --title="DZGUI"
+        )
+
+    case "$choice" in
+        "Keep user config files")
+            _partial
+            ;;
+        "Delete all DZGUI files")
+            _full
+            ;;
+        "")
+            echo "User aborted uninstall process"
+            exit 1
+            ;;
+    esac
+    local self="$(realpath "$0")"
+    echo "Deleting '$self'"
+    rm "$self"
+    echo "Uninstall routine complete"
+}
 main(){
     local zenv=$(zenity --version 2>/dev/null)
     [[ -z $zenv ]] && { echo "Requires zenity <= 3.44.1"; exit 1; }
+    if [[ $1 == "--uninstall" ]] || [[ $1 == "-u" ]]; then
+        uninstall &&
+        exit 0
+    fi
+    
     set_im_module
 
     printf "Initializing setup...\n"
@@ -856,6 +903,6 @@ main(){
     printf "All OK. Kicking off UI...\n"
     python3 "$ui_helper" "--init-ui" "$version" "$is_steam_deck"
 }
-main
+main "$@"
 #TODO: tech debt: cruddy handling for steam forking
 [[ $? -eq 1 ]] && pkill -f dzgui.sh
