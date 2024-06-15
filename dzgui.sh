@@ -238,6 +238,7 @@ watcher_deps(){
     logger INFO "Found DZG Watcher dependencies"
 }
 format_version_url(){
+    [[ -z "$branch" ]] && branch="stable"
     case "$branch" in
         "stable")
             version_url="$stable_url/dzgui.sh"
@@ -531,7 +532,7 @@ fetch_dzq(){
     logger INFO "Updated DZQ to sha '$sha'"
 }
 fetch_helpers_by_sum(){
-    source "$config_file"
+    [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
         ["ui.py"]="f14772424461ec438579dec567db0634"
