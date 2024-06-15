@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.3.0] 2024-06-10
+### Added
+- Server browser tables now display the number of players in queue (for full servers)
+- Warning dialog if the user's API key returned no servers, and a global API cooldown dialog (60 seconds)
+### Fixed
+- Removing servers from My Servers via the right-click context menu was not actually removing the server and drawing an empty dialog
+- Resolved an issue where, when Steam was not installed in a standard location and the user was prompted to let DZGUI auto-discover the correct path, this information was not retained correctly
+
 ## [5.2.4] 2024-05-29
 ### Fixed
 - Resolved an issue that could cause an old path to a prior DayZ installation to be reinserted in the config file if the Steam client did not synch the new path internally. DZGUI would try to ask the user to re-run first-time setup and update the path, but the old path would still be used.
