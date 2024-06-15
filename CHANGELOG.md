@@ -3,9 +3,10 @@
 ## [5.3.0] 2024-06-10
 ### Added
 - Server browser tables now display the number of players in queue (for full servers)
-- Warning dialog if the user's API key returned no servers, and global API cooldown dialog
+- Warning dialog if the user's API key returned no servers, and a global API cooldown dialog (60 seconds)
 ### Fixed
 - Removing servers from My Servers via the right-click context menu was not actually removing the server and drawing an empty dialog
+- Resolved an issue where, when Steam was not installed in a standard location and the user was prompted to let DZGUI auto-discover the correct path, this information was not retained correctly
 
 ## [5.2.4] 2024-05-29
 ### Fixed
