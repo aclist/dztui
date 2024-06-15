@@ -1,6 +1,10 @@
 # Changelog
 
-## [5.3.0] 2024-06-10
+## [5.3.1] 2024-06-15
+### Added
+- Uninstall routine: invoke via dzgui.sh -u or dzgui.sh --uninstall and choose from full or partial uninstall
+
+## [5.3.0] 2024-06-15
 ### Added
 - Server browser tables now display the number of players in queue (for full servers)
 - Warning dialog if the user's API key returned no servers, and a global API cooldown dialog (60 seconds)
