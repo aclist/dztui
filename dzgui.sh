@@ -854,7 +854,7 @@ uninstall(){
         done
     }
     _partial(){
-        for i in "$config_path" "$cache_path" "$share_path"; do
+        for i in "$cache_path" "$share_path"; do
             echo "Deleting the path '$i'"
             rm -rf "$i"
         done
