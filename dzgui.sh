@@ -631,10 +631,12 @@ find_default_path(){
         readarray -t paths < <(find / -type d \( -path "/proc" -o -path "*/timeshift" -o -path \
                     "/tmp" -o -path "/usr" -o -path "/boot" -o -path "/proc" -o -path "/root" \
                     -o -path "/sys" -o -path "/etc" -o -path "/var" -o -path "/lost+found" \) -prune \
-                    -o -regex ".*Steam/config/libraryfolders.vdf$" -print 2>/dev/null | sed 's@config/libraryfolders.vdf@@')
+                    -o -regex ".*Steam/config/libraryfolders.vdf$" -print 2>/dev/null | sed 's@/config/libraryfolders.vdf@@')
 
         if [[ "${#paths[@]}" -gt 1 ]]; then
+            echo "100"
             default_steam_path=$(printf "%s\n" "${paths[@]}" | $steamsafe_zenity --list --column="paths" --hide-header --text="Found multiple valid Steam paths. Select your default Steam installation." --title="DZGUI")
+            [[ -z "$default_steam_path" ]] && exit 1
         else
             default_steam_path="${paths[0]}"
         fi
@@ -661,15 +663,15 @@ find_default_path(){
     done
 
     local msg="Let DZGUI auto-discover Steam path (accurate, slower)\nSelect the Steam path manually (less accurate, faster)"
-    echo -e "$msg" | $steamsafe_zenity --list \
+    local res=$(echo -e "$msg" | $steamsafe_zenity --list \
         --column="Choice" \
         --title="DZGUI" \
         --hide-header \
         --text="Steam is not installed in a standard location." \
-        $sd_res
+        $sd_res)
 
     case "$res" in
-        *auto*) _discover ;;
+        *auto*) _discover > >(pdialog "Scanning paths") ;;
         *manual*)
             zenity --info --text="\nSelect the top-level entry point to the location where Steam (not DayZ)\nis installed and before entering the \"steamapps\" path.\n\nE.g., if Steam is installed at:\n\"/media/mydrive/Steam\"\n\nCorrect:\n- \"/media/mydrive/Steam\"\n\nIncorrect:\n- \"/media/mydrive/Steam/steamapps/common/DayZ\"\n- \"/media/mydrive/\"" --width=500 &&
             file_picker ;;
