@@ -550,7 +550,7 @@ This depends on server operators checking their mods for integrity.
 A mod is corrupted or the issue lies with the server. Replace the mods in question and reconnect.
 
 .The game is slow or prone to crashing
-DayZ does not manipulate the game itself and does not contribute to/degrade its performance.
+DZGUI does not manipulate the game itself and does not contribute to/degrade its performance.
 If you are experiencing performance degradation, it can be caused by too many mods installed or
 by a server-side problem (underpowered server, misconfiguration, etc.) Contact the server administrator
 for assistance.
