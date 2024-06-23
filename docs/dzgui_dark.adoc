@@ -311,7 +311,7 @@ Select from among the <<Menu contexts and options>> below.
 Connecting to a server consists of fetching metadata for the server you are searching for.
 
 DZGUI will check the server's modset against your local mods. If you are missing any, 
-it will prompt you to download them through the Steam Workshop and open a window in the background in the system browser.
+it will prompt you to download them through the Steam Workshop.
 
 [NOTE]
 You must be logged into Steam for mod changes to take effect.
@@ -469,7 +469,7 @@ Due to size constraints, this button is not currently available on Steam Deck.
 === Table metadata
 
 [%autowidth]
-All server browser contexts (<<Main menu > My saved servers, My saved servers>>, <<Main menu > Server browser, Server browser>>, <<Main menu > Recent servers, Recent servers>>) expose the following filters on the right-hand side. These options can be combined.
+All server browser contexts (<<Main menu > My saved servers, My saved servers>>, <<Main menu > Server browser, Server browser>>, <<Main menu > Recent servers, Recent servers>>) share the same table layout.
 
 The table lists servers in columnar fashion according to:
 
@@ -490,12 +490,12 @@ Columns are width-adjustable, and the positions they are set to will be saved an
 When in a server browsing context, right click on any server in the list to expose a series of contextual options. These are:
 
 * **Add to (Remove from) saved servers**: add or remove the server to/from your saved servers list
-* **Copy IP to clipboard**: copy the game server IP to the clipboard
+* **Copy IP to clipboard**: copy the game server IP to the system clipboard
 * **Show server-side mods**: opens a dialog with details about the name, Workshop ID, and local installation status of mods on the server. Select a mod to open its Workshop page in Steam
 * **Refresh player count**: refresh the player count for this server in-place in the table. Useful if some time has passed since you loaded the list and you want to see if the queue is open
 
 === Filters
-The filter panel on the right-hand side of the table allows you to search by keyword, map type, and toggle different filters.
+The filter panel on the right-hand side of the table allows you to search by keyword, map type, and toggle different filters. These filters can be combined.
 
 ==== Keyword search
 
