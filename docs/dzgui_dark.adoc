@@ -297,6 +297,14 @@ LC_ALL=de_DE.UTF-8 ./dzgui.sh
 
 If you intend to use this frequently, you could wrap the above in a script or alias.
 
+== Uninstallation
+
+To uninstall DZGUI and its associated files, invoke `./dzgui.sh` with the `-u` or `--uninstall` flag.
+
+Follow the prompts to choose from full uninstall (removes the application and all user-defined configuration files) or partial install (removes the application, but keeps user-defined configuration files).
+
+If you intend to reinstall DZGUI again, keeping your configuration files is recommended.
+
 == Basic usage
 Select from among the <<Menu contexts and options>> below.
 
