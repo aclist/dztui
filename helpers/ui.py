@@ -36,12 +36,12 @@ checks = list()
 map_store = Gtk.ListStore(str)
 row_store = Gtk.ListStore(str)
 modlist_store = Gtk.ListStore(str, str, str)
-# Name, Symlink, ID, Size
+#cf. mod_cols
 mod_store = Gtk.ListStore(str, str, str, float)
-# Timestamp, Flag, Trace, Message
+#cf. log_cols
 log_store = Gtk.ListStore(str, str, str, str)
-# Name, Map, Perspective, Gametime, Players, Max, IP, Qport
-server_store = Gtk.ListStore(str, str, str, str, int, int, str, int)
+#cf. browser_cols
+server_store = Gtk.ListStore(str, str, str, str, int, int, int, str, int)
 
 default_tooltip = "Select a row to see its detailed description"
 server_tooltip = [None, None]
@@ -69,6 +69,7 @@ browser_cols = [
     "Gametime",
     "Players",
     "Maximum",
+    "Queue",
     "IP",
     "Qport",
 ]
@@ -230,7 +231,7 @@ def parse_server_rows(data):
     reader = csv.reader(lines, delimiter=delimiter)
     hits = len(lines)
     try:
-        rows = [[row[0], row[1], row[2], row[3], int(row[4]), int(row[5]), row[6], int(row[7])] for row in reader if row]
+        rows = [[row[0], row[1], row[2], row[3], int(row[4]), int(row[5]), int(row[6]), row[7], int(row[8])] for row in reader if row]
     except IndexError:
         return 1
     for row in rows:
@@ -690,7 +691,7 @@ class TreeView(Gtk.TreeView):
 
         match context_menu_label:
             case "Add to my servers" | "Remove from my servers":
-                record = "%s:%s" %(self.get_column_at_index(6), self.get_column_at_index(7))
+                record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
                 proc = call_out(parent, context_menu_label, record)
                 if context == "Name (My saved servers)":
                     iter = self.get_current_iter()
@@ -698,21 +699,21 @@ class TreeView(Gtk.TreeView):
                 msg = proc.stdout
                 res = spawn_dialog(parent, msg, "NOTIFY")
             case "Remove from history":
-                record = "%s:%s" %(self.get_column_at_index(6), self.get_column_at_index(7))
+                record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
                 call_out(parent, context_menu_label, record)
                 iter = self.get_current_iter()
                 server_store.remove(iter)
             case "Copy IP to clipboard":
                 self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-                addr = self.get_column_at_index(6)
-                qport = self.get_column_at_index(7)
+                addr = self.get_column_at_index(7)
+                qport = self.get_column_at_index(8)
                 ip = addr.split(':')[0]
                 record = "%s:%s" %(ip, qport)
                 self.clipboard.set_text(record, -1)
             case "Refresh player count":
                 self.refresh_player_count()
             case "Show server-side mods":
-                record = "%s:%s" %(self.get_column_at_index(6), self.get_column_at_index(7))
+                record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
                 dialog = ModDialog(parent, "Enter/double click a row to open in Steam Workshop. ESC exits this dialog", "Modlist", record)
                 modlist_store.clear()
             case "Delete mod":
@@ -765,7 +766,7 @@ class TreeView(Gtk.TreeView):
 
         for item in items:
             if subcontext == "Server browser" and item == "Add to my servers":
-                record = "%s:%s" %(self.get_column_at_index(6), self.get_column_at_index(7))
+                record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
                 proc = call_out(widget, "is_in_favs", record)
                 if proc.returncode == 0:
                     item = "Remove from my servers"
@@ -824,7 +825,7 @@ class TreeView(Gtk.TreeView):
             self.current_proc.terminate()
 
         if "Name" in context:
-            addr = self.get_column_at_index(6)
+            addr = self.get_column_at_index(7)
             if addr is None:
                 return
             if addr in cache:
@@ -912,7 +913,11 @@ class TreeView(Gtk.TreeView):
 
     def _background_player_count(self):
         def _load():
-            server_store[path][4] = int(data.stdout)
+            lines = data.stdout.splitlines()
+            #update players
+            server_store[path][4] = int(lines[0])
+            #update queue
+            server_store[path][6] = int(lines[1])
             wait_dialog.destroy()
 
         parent = self.get_outer_window()
@@ -925,8 +930,8 @@ class TreeView(Gtk.TreeView):
             return
         path = pathlist[0]
         tree_iter = model.get_iter(path)
-        addr = server_store[path][6]
-        qport = server_store[path][7]
+        addr = server_store[path][7]
+        qport = server_store[path][8]
         ip = addr.split(':')[0]
         qport = str(qport)
 
@@ -946,6 +951,13 @@ class TreeView(Gtk.TreeView):
             self.grab_focus()
             for column in self.get_columns():
                 column.connect("notify::width", self._on_col_width_changed)
+            if hits == 0:
+                call_out(self, "start_cooldown", "", "")
+                api_warn_msg = """\
+                    No servers returned. Possible network issue or API key on cooldown?
+                    Return to the main menu, wait 60s, and try again.
+                    If this issue persists, your API key may be defunct."""
+                spawn_dialog(self.get_outer_window(), textwrap.dedent(api_warn_msg), "NOTIFY")
 
         grid = self.get_outer_grid()
         right_panel = grid.right_panel
@@ -1137,8 +1149,8 @@ class TreeView(Gtk.TreeView):
 
     def _attempt_connection(self):
         transient_parent = self.get_outer_window()
-        addr = self.get_column_at_index(6)
-        qport = self.get_column_at_index(7)
+        addr = self.get_column_at_index(7)
+        qport = self.get_column_at_index(8)
         record = "%s:%s" %(addr, str(qport))
 
         wait_dialog = GenericDialog(transient_parent, "Querying server and aligning mods", "WAIT")
@@ -1166,6 +1178,10 @@ class TreeView(Gtk.TreeView):
 
             if chosen_row == "Server browser":
                 reinit_checks()
+                cooldown = call_out(self, "test_cooldown", "", "")
+                if cooldown.returncode == 1:
+                    spawn_dialog(self.get_outer_window(), cooldown.stdout, "NOTIFY")
+                    return 1
             else:
                 for check in checks:
                     if check.get_label() not in toggled_checks:
