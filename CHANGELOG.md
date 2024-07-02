@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.3.2] 2024-07-02
+### Fixed
+- Server list would sometimes be missing some expected servers due to truncation being caused when a server erroneously set an incomplete gametype
+
 ## [5.3.1] 2024-06-15
 ### Added
 - Uninstall routine: invoke via dzgui.sh -u or dzgui.sh --uninstall and choose from full or partial uninstall
