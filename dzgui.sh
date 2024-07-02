@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.3.1-beta.1
+version=5.3.1-beta.2
 
 #CONSTANTS
 aid=221100
@@ -538,7 +538,7 @@ fetch_helpers_by_sum(){
         ["ui.py"]="f14772424461ec438579dec567db0634"
         ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="37ae407ac397f6775f3a412e7adb7840"
+        ["funcs"]="718c3060b88041f5b99a1ce52b12642f"
     )
     local author="aclist"
     local repo="dztui"
@@ -655,7 +655,9 @@ find_default_path(){
     debian_path="$HOME/.steam/debian-installation"
     flatpak_path="$HOME/.var/app/com.valvesoftware.Steam/data/Steam"
 
-    for i in "$def_path" "$ubuntu_path" "$debian_path" "$flatpak_path"; do
+    #ubuntu path must precede default path because
+    #both exist on ubuntu systems, but only ubuntu path contains library data
+    for i in "$ubuntu_path" "$def_path" "$debian_path" "$flatpak_path"; do
         if [[ -d "$i" ]]; then
             default_steam_path="$i"
             return 0
