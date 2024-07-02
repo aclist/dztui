@@ -521,7 +521,7 @@ parse_server_json(){
     "\(if .gametype == null then "null" else (.gametype as $time|$time|test("[0-9]{2}:[0-9]{2}$") as $match|(if $match == true then ($time|scan("[0-9]{2}:[0-9]{2}$")) else "XXXX" end)) end)␞" +
     "\(.players)␞" +
     "\(.max_players)␞" +
-    "\(if .gametype == null then "0" else .gametype|split("lqs")[1]|split(",")[0] end)␞" +
+    "\(if .gametype == null then "0" elif .gametype|split("lqs")[1] == null then "0" else .gametype|split("lqs")[1]|split(",")[0] end)␞" +
     "\(.addr|split(":")[0]):\(if .gameport == null then "XXXX" else .gameport end)␞" +
     "\(.addr|split(":")[1])"
     ' | sort -k1
