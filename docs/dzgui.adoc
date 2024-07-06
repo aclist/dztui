@@ -7,6 +7,8 @@ DayZ server browser and mod manager for Linux | Last updated: {d}
 
 Click https://aclist.github.io/dzgui/dzgui_dark.html[here] for dark mode
 
+Looking for the DZGUI Knowledge Base? Click https://aclist.github.io/dzgui/kb.html[here]
+
 == What this is
 A GUI version of https://github.com/aclist/dztui[DZTUI] for Linux. 
 Used to list official and community server details and quick connect to preferred servers 
@@ -539,30 +541,7 @@ This can be used to diagnose problems and test functionality without actually la
 
 == Troubleshooting/FAQ
 
-.Mods take a long time to synchronize when subscribing from Workshop
-Steam schedules the downloads in the background and processes them in the order they were subscribed to.
-This process is not instantaneous and can take some time.
-
-.The Steam Workshop shows a black screen when attempting to open/download a mod via DZGUI
-This bug is being tracked at https://github.com/ValveSoftware/steam-for-linux/issues/9598. If the issue occurs, manually intervene in the Steam client
-by clicking a different window context (e.g., navigate to the Store page from Workshop, then back again) until the Workshop page starts to load content.
-
-.The game does not launch through Steam
-Check the logs emitted by Steam in the terminal, or in `<Steam path>/error.log`.
-
-.The game launches, but throws a "mod missing/check PBO file" error when connecting
-In rare cases, the server may be using misconfigured, malformed, or obsolete mods.
-This depends on server operators checking their mods for integrity.
-
-.The game launches, but when joining the game world, an error occurs
-A mod is corrupted or the issue lies with the server. Replace the mods in question and reconnect.
-
-.The game is slow or prone to crashing
-DZGUI does not manipulate the game itself and does not contribute to/degrade its performance.
-If you are experiencing performance degradation, it can be caused by too many mods installed or
-by a server-side problem (underpowered server, misconfiguration, etc.) Contact the server administrator
-for assistance.
-
+Please refer to the https://aclist.github.io/dzgui/kb.html[DZGUI Knowledge Base] for common issues.
 
 == Reference
 
