@@ -7,7 +7,7 @@ DayZ server browser and mod manager for Linux | Last updated: {d}
 
 Click https://aclist.github.io/dzgui/dzgui.html[here] for light mode
 
-Looking for the DZGUI Knowledge Base? Click https://aclist.github.io/dzgui/kb.html[here]
+Looking for the DZGUI Knowledge Base? Click https://aclist.github.io/dzgui/kb_dark.html[here]
 
 == What this is
 A GUI version of https://github.com/aclist/dztui[DZTUI] for Linux. 
