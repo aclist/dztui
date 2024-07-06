@@ -1,0 +1,11 @@
+[[DZG-006,DZG-006]]
+== DZG-006: After moving DayZ to another drive, DZGUI fails to locate it on initial setup
+Last updated: {d}
+
+If you recently moved the location of DayZ using Steam's internal dialogs, it may take some time for this information to update internally on Steam's side.
+
+Steam stores the location of installed games in a unified file, and DZGUI checks this file during initial setup to determine where Steam claims DayZ is installed.
+
+If you recently moved DayZ to a different drive or partition but did not restart Steam, this information may be out of date, causing Steam to report the wrong location.
+
+Try restarting the Steam client and starting the DZGUI initial setup again.

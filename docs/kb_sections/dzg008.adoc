@@ -1,0 +1,7 @@
+[[DZG-008,DZG-008]]
+== DZG-008: DZGUI server browser stops working, and Steam API key is seemingly malformed
+Last updated: {d}
+
+In order to use a Steam API key, you will have to enable Steam Guard (2FA) protection on your account. If you previously generated an API key and enabled Steam Guard, but then disabled Steam Guard for some other reason, this will also disable any prior API keys you had.
+
+If, after setting up DZGUI, you inadvertently turned off Steam Guard for some reason, check to see if your API key has been disabled, and reapply Steam Guard accordingly.

@@ -1,0 +1,17 @@
+[[DZG-007,DZG-007]]
+== DZG-007: Why do I need a Steam API key? Is it safe?
+Last updated: {d}
+
+In order to provide a server browser showing a searchable list of all available servers, DZGUI utilizes the Steam API.
+
+Actual connections and queries to individual servers are performed directly between the computer and the DayZ server.
+
+DZGUI gets its server information directly from the most authoritative source: Steam. It does this by letting the user be solely in control of their own API key and the application in an authenticated way. Users explicitly get permission to use an API key instead of scraping DayZ server info from third-party sites.
+
+Everything that happens between DZGUI and Steam takes place solely on the user's computer, and no information gets sent back to the developer. DZGUI does not scrape third party DayZ APIs without permission.
+
+There is some misconception that a Steam API key could be used to gain information about a user's account or control their account. Not only is this not possible, but the API key is used solely by the user on their own computer and is protected by Steam Guard.
+
+A Steam API key is the most strict way of getting authentic, reliable, and consistent server information in a zero-trust model. 
+
+You are responsible for the creation, storage, management, and revocation of your API key.
