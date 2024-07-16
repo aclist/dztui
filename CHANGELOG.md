@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.3.3] 2024-07-16
+### Fixed
+- Encapsulate player names correctly so that names with whitespace in them are supported
+
 ## [5.3.2] 2024-07-02
 ### Fixed
 - Server list would sometimes be missing some expected servers due to truncation being caused when a server erroneously set an incomplete gametype
