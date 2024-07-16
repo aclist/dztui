@@ -1307,7 +1307,14 @@ final_handshake(){
         return 1
     fi
     logger INFO "Kicking off Steam launch"
-    $steam_cmd -applaunch $aid -connect=$saved_address -nolauncher -nosplash -skipintro \"-name=$name\" \"-mod=$saved_mods\" &
+    local params=()
+    params+=("-connect=$saved_address")
+    params+=("-nolauncher")
+    params+=("-nosplash")
+    params+=("-skipintro")
+    params+=("\"-name=$name\"")
+    params+=("\"-mod=$saved_mods\"")
+    $steam_cmd -applaunch $aid "${params[@]}" &
     until [[ $(is_dayz_running) -eq 1 ]]; do
         sleep 0.1s
     done

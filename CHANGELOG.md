@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.3.5] 2024-07-16
+### Fixed
+- Pack launch parameters into array before splitting
+
 ## [5.3.4] 2024-07-16
 ### Fixed
 - Clerical update to prior 5.3.3 hotfix
