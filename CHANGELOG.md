@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.3.4] 2024-07-16
+### Fixed
+- Clerical update to prior 5.3.3 hotfix
+
 ## [5.3.3] 2024-07-16
 ### Fixed
 - Encapsulate player names correctly so that names with whitespace in them are supported
