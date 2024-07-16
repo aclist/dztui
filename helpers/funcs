@@ -1287,7 +1287,7 @@ launch(){
 
     update_symlinks
     if [[ $debug -eq 1 ]]; then
-        local launch_options="$steam_cmd -applaunch $aid -connect=$ip:$gameport -nolauncher -nosplash -name=$name -skipintro \"-mod=$concat\""
+        local launch_options="$steam_cmd -applaunch $aid -connect=$ip:$gameport -nolauncher -nosplash \"-name=$name\" -skipintro \"-mod=$concat\""
         printf "Debug mode: these options would have been used to launch the game: $launch_options"
         return 0
     fi
