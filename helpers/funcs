@@ -1287,7 +1287,7 @@ launch(){
 
     update_symlinks
     if [[ $debug -eq 1 ]]; then
-        local launch_options="$steam_cmd -applaunch $aid -connect=$ip:$gameport -nolauncher -nosplash \"-name=$name\" -skipintro \"-mod=$concat\""
+        local launch_options="$steam_cmd -applaunch $aid -connect=$ip:$gameport -nolauncher -nosplash -name=$name -skipintro -mod=$concat"
         printf "Debug mode: these options would have been used to launch the game: $launch_options"
         return 0
     fi
@@ -1312,13 +1312,14 @@ final_handshake(){
     params+=("-nolauncher")
     params+=("-nosplash")
     params+=("-skipintro")
-    params+=("\"-name=$name\"")
-    params+=("\"-mod=$saved_mods\"")
+    params+=("-name=$name")
+    params+=("-mod=$saved_mods")
     $steam_cmd -applaunch $aid "${params[@]}" &
     until [[ $(is_dayz_running) -eq 1 ]]; do
         sleep 0.1s
     done
     logger INFO "Caught DayZ process"
+    printf "\n"
     return 6
 }
 manual_mod_install(){
