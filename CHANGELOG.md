@@ -1,14 +1,11 @@
 # Changelog
 
-## [5.3.5] 2024-07-16
+## [5.3.3-beta.2] 2024-08-03
 ### Fixed
-- Pack launch parameters into array before splitting
+- Clerical hotfix for previous player names fix
+- Test if DayZ directory is empty at startup, implying that the game was moved to a new library collection
 
-## [5.3.4] 2024-07-16
-### Fixed
-- Clerical update to prior 5.3.3 hotfix
-
-## [5.3.3] 2024-07-16
+## [5.3.3-beta.1] 2024-07-16
 ### Fixed
 - Encapsulate player names correctly so that names with whitespace in them are supported
 
