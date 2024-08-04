@@ -17,6 +17,7 @@ import time
 locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
+from enum import Enum
 
 # 5.2.3
 app_name = "DZGUI"
@@ -91,7 +92,8 @@ connect = [
     ("Quick-connect to favorite server",),
     ("Recent servers",),
     ("Connect by IP",),
-    ("Connect by ID",)
+    ("Connect by ID",),
+    ("Scan LAN servers",)
 ]
 manage = [
     ("Add server by IP",),
@@ -143,6 +145,7 @@ status_tooltip = {
     "Recent servers": "Shows the last 10 servers you connected to (includes attempts)",
     "Connect by IP": "Connect to a server by IP",
     "Connect by ID": "Connect to a server by Battlemetrics ID",
+    "Scan LAN servers": "Search for servers on your local network",
     "Add server by IP": "Add a server by IP",
     "Add server by ID": "Add a server by Battlemetrics ID",
     "Change favorite server": "Update your quick-connect server",
@@ -570,10 +573,16 @@ class ButtonBox(Gtk.Box):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             treeview.append_column(column)
+        self._populate(context)
         treeview.set_model(row_store)
         treeview.grab_focus()
 
-    def _populate(self, array_context):
+    def _populate(self, context):
+        match context:
+            case 'Manage': array_context = manage
+            case 'Main menu': array_context = connect
+            case 'Options': array_context = options
+            case 'Help': array_context = help
         row_store.clear()
         status = array_context[0][0]
         treeview = self.get_treeview()
@@ -606,11 +615,7 @@ class ButtonBox(Gtk.Box):
         for col in cols:
             col.set_title(context)
 
-        match context:
-            case 'Manage': self._populate(manage)
-            case 'Main menu': self._populate(connect)
-            case 'Options': self._populate(options)
-            case 'Help': self._populate(help)
+        self._populate(context)
 
         toggle_signal(treeview, treeview.selected_row, '_on_tree_selection_changed', True)
 
@@ -1069,6 +1074,17 @@ class TreeView(Gtk.TreeView):
             toggle_signal(self.get_outer_grid().right_panel.filters_vbox, check, '_on_check_toggle', True)
         toggle_signal(self, self, '_on_keypress', True)
 
+        if mode == "Scan LAN servers":
+            lan_dialog = LanButtonDialog(self.get_outer_window())
+            port = lan_dialog.get_selected_port()
+            if port is None:
+                grid = self.get_outer_grid()
+                right_panel = grid.right_panel
+                vbox = right_panel.button_vbox
+                vbox._update_single_column("Main menu")
+                return
+            mode = mode + ":" + port
+
         wait_dialog = GenericDialog(transient_parent, "Fetching server metadata", "WAIT")
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background, args=(wait_dialog, mode))
@@ -1304,6 +1320,10 @@ class AppHeaderBar(Gtk.HeaderBar):
         self.set_decoration_layout("menu:minimize,maximize,close")
         self.set_show_close_button(True)
 
+class Port(Enum):
+    # Contains enums for LanButtonDialog ports
+    DEFAULT = 1
+    CUSTOM = 2
 
 class GenericDialog(Gtk.MessageDialog):
     def __init__(self, parent, text, mode):
@@ -1360,6 +1380,140 @@ class GenericDialog(Gtk.MessageDialog):
     def update_label(self, text):
         self.format_secondary_text(text)
 
+
+class LanButtonDialog(Gtk.Window):
+    def __init__(self, parent):
+        super().__init__()
+
+        self.buttonBox = Gtk.Box()
+
+        header_label = "Scan LAN servers"
+        buttons = [
+           ( "Use default query port (27016)", Port.DEFAULT ),
+           ( "Enter custom query port", Port.CUSTOM ),
+           ]
+
+        self.buttonBox.set_orientation(Gtk.Orientation.VERTICAL)
+        self.buttonBox.active_button = None
+
+        for i in enumerate(buttons):
+
+            string = i[1][0]
+            enum = i[1][1]
+
+            button = Gtk.RadioButton(label=string)
+            button.port = enum
+            button.connect("toggled", self._on_button_toggled)
+
+            if i[0] == 0:
+                self.buttonBox.active_button = button
+            else:
+                button.join_group(self.buttonBox.active_button)
+
+            self.buttonBox.add(button)
+
+        self.entry = Gtk.Entry()
+        self.buttonBox.add(self.entry)
+        self.entry.set_no_show_all(True)
+
+        self.label = Gtk.Label()
+        self.label.set_text("Invalid port")
+        self.label.set_no_show_all(True)
+        self.buttonBox.add(self.label)
+
+        self.dialog = LanDialog(parent, header_label, self.buttonBox, self.entry, self.label)
+        self.dialog.run()
+        self.dialog.destroy()
+
+    def get_selected_port(self):
+        return self.dialog.p
+
+    def _on_button_toggled(self, button):
+        if button.get_active():
+            self.buttonBox.active_button = button
+
+            match button.port:
+                case Port.DEFAULT:
+                    self.entry.set_visible(False)
+                case Port.CUSTOM:
+                    self.entry.set_visible(True)
+                    self.entry.grab_focus()
+
+    def get_active_button():
+        return self.buttonBox.active_button
+
+class LanDialog(Gtk.MessageDialog):
+    # Custom dialog class that performs integer validation and blocks input if invalid port
+    # Returns None if user cancels the dialog
+    def __init__(self, parent, text, child, entry, label):
+        super().__init__(transient_for=parent,
+            flags=0,
+            message_type=Gtk.MessageType.INFO,
+            buttons=Gtk.ButtonsType.OK_CANCEL,
+            text=text,
+            secondary_text="Select the query port",
+            title=app_name,
+            modal=True,
+        )
+
+        self.outer = self.get_content_area()
+        self.outer.pack_start(child, False, False, 0)
+        self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
+        self.set_size_request(500, 0)
+        self.outer.set_margin_start(30)
+        self.outer.set_margin_end(30)
+        self.outer.show_all()
+
+        self.connect("response", self._on_dialog_response, child, entry)
+        self.connect("key-press-event", self._on_keypress, entry)
+        self.connect("key-release-event", self._on_key_release, entry, label)
+
+        self.child = child
+
+        self.p = None
+
+    def _on_key_release(self, dialog, event, entry, label):
+        label.set_visible(False)
+        if entry.is_visible() == False or entry.get_text() == "":
+            return
+        if self._is_invalid(entry.get_text()):
+            label.set_visible(True)
+        else:
+            label.set_visible(False)
+
+    def _on_keypress(self, a, event, entry):
+        if event.keyval == Gdk.KEY_Return:
+            self.response(Gtk.ResponseType.OK)
+        if event.keyval == Gdk.KEY_Up:
+            entry.set_text("")
+            self.child.get_children()[0].grab_focus()
+
+    def _on_dialog_response(self, dialog, resp, child, entry):
+        match resp:
+            case Gtk.ResponseType.CANCEL:
+                return
+            case Gtk.ResponseType.DELETE_EVENT:
+                return
+
+        string = entry.get_text()
+        port = child.active_button.port
+
+        match port:
+            case Port.DEFAULT:
+                self.p = "27016"
+            case Port.CUSTOM:
+                if self._is_invalid(string):
+                    self.stop_emission_by_name("response")
+                else:
+                    self.p = string
+
+    def _is_invalid(self, string):
+        if string.isdigit() == False \
+            or int(string) == 0 \
+            or int(string[0]) == 0 \
+            or int(string) > 65535:
+                return True
+        return False
 
 def ChangelogDialog(parent, text, mode):
 

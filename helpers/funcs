@@ -44,6 +44,7 @@ _cache_launch="$cache_dir/$prefix.launch_mods"
 _cache_address="$cache_dir/$prefix.launch_address"
 _cache_coords="$cache_path/$prefix.coords"
 _cache_cooldown="$cache_path/$prefix.cooldown"
+_cache_lan="$cache_path/$prefix.lan"
 
 #XDG
 freedesktop_path="$HOME/.local/share/applications"
@@ -55,6 +56,7 @@ km_helper="$helpers_path/latlon"
 sums_path="$helpers_path/sums.md5"
 query_helper="$helpers_path/query_v2.py"
 func_helper="$helpers_path/funcs"
+lan_helper="$helpers_path/lan"
 
 #STEAM PATHS
 workshop_path="$steam_path/steamapps/workshop"
@@ -125,8 +127,19 @@ declare -A funcs=(
 ["force_update"]="force_update"
 ["Handshake"]="final_handshake"
 ["get_player_count"]="get_player_count"
+["lan_scan"]="lan_scan"
 )
 
+lan_scan(){
+    local port="$1"
+    local res
+    res=$("$lan_helper" "$port")
+    if [[ $? -ne 0 ]]; then
+        printf "\n"
+    else
+        printf "%s\n" "$res"
+    fi
+}
 get_player_count(){
     shift
     local res
@@ -589,6 +602,16 @@ dump_servers(){
                 _iterate "$file" "${iters[@]}"
             fi
             ;;
+        *Scan[[:space:]]LAN[[:space:]]servers*)
+            local port=$(<<< "$subcontext" awk -F: '{print $2}')
+            local file="$_cache_lan"
+            if [[ ! $subcontext =~ Name ]]; then
+                [[ -f $file ]] && rm $file
+                local lan=$(lan_scan $port)
+                readarray -t iters <<< "$lan"
+                _iterate "$file" "${iters[@]}"
+            fi
+            ;;
     esac
     shift
     logger INFO "Server context is '$subcontext', reading from file '$file'"
@@ -988,8 +1011,6 @@ query_defunct(){
             -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
     }
     local result=$(post | jq -r '.[].publishedfiledetails[] | select(.result==1) | "\(.file_size) \(.publishedfileid)"')
-    local result2=$(post | jq -r '')
-    echo "$result2" > $HOME/json
     <<< "$result" awk '{print $2}'
 }
 encode(){

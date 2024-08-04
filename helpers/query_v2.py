@@ -5,6 +5,14 @@ import json
 from a2s import dayzquery
 sys.path.append('a2s')
 
+def test_local(ip, qport):
+    try:
+        info = a2s.info((ip, int(qport)), 0.5)
+        name = info.server_name
+        print(name)
+    except:
+        sys.exit(1)
+
 def get_info(ip, qport):
     try:
         info = a2s.info((ip, int(qport)))
@@ -73,3 +81,5 @@ match mode:
         get_rules(ip, qport)
     case "names":
         get_names(ip, qport)
+    case "test":
+        test_local(ip, qport)

@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.3.3-beta.3] 2024-08-04
+### Added
+- Scan local area network for DayZ servers
+
 ## [5.3.3-beta.2] 2024-08-03
 ### Fixed
 - Clerical hotfix for previous player names fix
