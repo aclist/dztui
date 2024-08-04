@@ -1186,7 +1186,7 @@ class TreeView(Gtk.TreeView):
         right_panel = outer.grid.right_panel
         filters_vbox = right_panel.filters_vbox
 
-        valid_contexts = ["Server browser", "My saved servers", "Recent servers"]
+        valid_contexts = ["Server browser", "My saved servers", "Recent servers", "Scan LAN servers"]
         if chosen_row in valid_contexts:
             # server contexts share the same model type
             for check in checks:
