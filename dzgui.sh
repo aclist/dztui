@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.3.3-beta.4
+version=5.3.3-beta.5
 
 #CONSTANTS
 aid=221100
@@ -538,7 +538,7 @@ fetch_helpers_by_sum(){
         ["ui.py"]="c62e84ddd1457b71a85ad21da662b9af"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="2ebe0f7072f7a9459007b1d9d09e2f4f"
+        ["funcs"]="5ebf7c9694c9ec8df00f0b30871eeb38"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
@@ -577,6 +577,7 @@ fetch_helpers_by_sum(){
             logger INFO "Updated '$full_path' to sum '$sum'"
         fi
         [[ $file == "funcs" ]] && chmod +x "$full_path"
+        [[ $file == "lan" ]] && chmod +x "$full_path"
     done
     return 0
 }

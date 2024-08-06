@@ -134,7 +134,7 @@ lan_scan(){
     local port="$1"
     local res
     res=$("$lan_helper" "$port")
-    if [[ $? -ne 0 ]]; then
+    if [[ -z $res ]]; then
         printf "\n"
     else
         printf "%s\n" "$res"
