@@ -3,6 +3,8 @@
 ## [5.3.3-beta.5] 2024-08-27
 ### Added
 - Freedesktop application icons for system taskbar, tray, and other dialogs
+### Fixed
+- Errors being printed to the console when Exit button was explicitly clicked
 
 ## [5.3.3-beta.4] 2024-08-21
 ### Added
