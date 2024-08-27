@@ -864,7 +864,7 @@ initial_setup(){
     watcher_deps
     check_architecture
     test_connection
-#    fetch_helpers > >(pdialog "Checking helper files")
+    fetch_helpers > >(pdialog "Checking helper files")
     varcheck
     source "$config_file"
     lock
