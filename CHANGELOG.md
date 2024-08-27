@@ -1,29 +1,15 @@
 # Changelog
 
-## [5.3.3-beta.5] 2024-08-27
+## [5.3.3] 2024-08-27
 ### Added
+- Scan local area network for DayZ servers
 - Freedesktop application icons for system taskbar, tray, and other dialogs
-### Fixed
-- Errors being printed to the console when Exit button was explicitly clicked
-
-## [5.3.3-beta.4] 2024-08-21
-### Added
 - Emit CPU model name when exporting system debug log
 ### Fixed
 - Detect Steam Deck OLED APU variant during initial setup
-
-## [5.3.3-beta.3] 2024-08-04
-### Added
-- Scan local area network for DayZ servers
-
-## [5.3.3-beta.2] 2024-08-03
-### Fixed
-- Clerical hotfix for previous player names fix
-- Test if DayZ directory is empty at startup, implying that the game was moved to a new library collection
-
-## [5.3.3-beta.1] 2024-07-16
-### Fixed
-- Encapsulate player names correctly so that names with whitespace in them are supported
+- Errors being printed to the console when Exit button was explicitly clicked
+- Test if DayZ library location was moved internally on Steam by user
+- Encapsulate player names correctly to support whitespace
 
 ## [5.3.2] 2024-07-02
 ### Fixed
