@@ -1,5 +1,15 @@
 # Changelog
 
+## [5.3.3-beta.5] 2024-08-27
+### Added
+- Freedesktop application icons for system taskbar, tray, and other dialogs
+
+## [5.3.3-beta.4] 2024-08-21
+### Added
+- Emit CPU model name when exporting system debug log
+### Fixed
+- Detect Steam Deck OLED APU variant during initial setup
+
 ## [5.3.3-beta.3] 2024-08-04
 ### Added
 - Scan local area network for DayZ servers

@@ -562,7 +562,7 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="b5e27858e4aaf966067d452f7e44b9eb"
+        ["ui.py"]="9dcc0ffd25b54d1b446c23220bee589c"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["funcs"]="44eca80b207057423c2d298cc7cf1e29"
@@ -629,8 +629,7 @@ fetch_helpers(){
     fetch_geo_file
     fetch_helpers_by_sum
     [[ ! -f $share_path/icon.png ]] && freedesktop_dirs
-    #TODO: integration test
-    #fetch_icons
+    fetch_icons
 }
 raise_error_and_quit(){
     local msg="$1"

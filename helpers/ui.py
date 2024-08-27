@@ -1812,6 +1812,7 @@ class App(Gtk.Application):
             is_game_mode = False
 
         self.win = OuterWindow(is_steam_deck, is_game_mode)
+        self.win.set_icon_name("dzgui")
 
         accel = Gtk.AccelGroup()
         accel.connect(Gdk.KEY_q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE, self._halt_window_subprocess)
