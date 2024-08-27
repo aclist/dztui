@@ -562,7 +562,7 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="9dcc0ffd25b54d1b446c23220bee589c"
+        ["ui.py"]="f89047e3fde843dbb52d343daf8d2675"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["funcs"]="44eca80b207057423c2d298cc7cf1e29"
@@ -864,7 +864,7 @@ initial_setup(){
     watcher_deps
     check_architecture
     test_connection
-    fetch_helpers > >(pdialog "Checking helper files")
+#    fetch_helpers > >(pdialog "Checking helper files")
     varcheck
     source "$config_file"
     lock

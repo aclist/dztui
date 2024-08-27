@@ -602,6 +602,7 @@ class ButtonBox(Gtk.Box):
         if context == "Exit":
             logger.info("Normal user exit")
             Gtk.main_quit()
+            return
         cols = treeview.get_columns()
 
         if len(cols) > 1:
