@@ -380,7 +380,7 @@ test_display_mode(){
 check_architecture(){
     local cpu=$(< /proc/cpuinfo awk -F": " '/AMD Custom APU [0-9]{4}$/ {print $2; exit}')
     read -a APU_MODEL <<< "$cpu"
-    if [[ ${APU_MODEL[3]} != "0932" ]] || [[ ${APU_MODEL[3]} != "0405" ]]; then
+    if [[ ${APU_MODEL[3]} != "0932" ]] && [[ ${APU_MODEL[3]} != "0405" ]]; then
         is_steam_deck=0
         logger INFO "Setting architecture to 'desktop'"
         return
