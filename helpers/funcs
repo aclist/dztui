@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.2.3
+version=5.3.3
 
 #CONSTANTS
 aid=221100
@@ -978,6 +978,7 @@ generate_log(){
 	cat <<-DOC > $system_log
 	Distro: $(< /etc/os-release grep -w NAME | awk -F\" '{print $2}')
 	Kernel: $(uname -mrs)
+	CPU: $(< /proc/cpuinfo awk -F": " '/model name/ {print $2; exit}')
 	Version: $version
 	Branch: $branch
 	Mode: $(if [[ -z $debug ]]; then echo normal; else echo debug; fi)
