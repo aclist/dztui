@@ -545,7 +545,7 @@ fetch_icons(){
             "128"
             "256"
     )
-    url="$testing_url/images/icons"
+    url="$stable_url/images/icons"
     for i in "${res[@]}"; do
         size="${i}x${i}"
         dir="$HOME/.local/share/icons/hicolor/$size/apps"
