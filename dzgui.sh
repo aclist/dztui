@@ -562,7 +562,7 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="f89047e3fde843dbb52d343daf8d2675"
+        ["ui.py"]="13bb5456aa9d95efdf2335e437f4c6fb"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["funcs"]="44eca80b207057423c2d298cc7cf1e29"

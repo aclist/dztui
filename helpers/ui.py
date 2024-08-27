@@ -1812,6 +1812,7 @@ class App(Gtk.Application):
             is_steam_deck = False
             is_game_mode = False
 
+        GLib.set_prgname(app_name)
         self.win = OuterWindow(is_steam_deck, is_game_mode)
         self.win.set_icon_name("dzgui")
 
