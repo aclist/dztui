@@ -10,6 +10,7 @@
 - Errors being printed to the console when Exit button was explicitly clicked
 - Test if DayZ library location was moved internally on Steam by user
 - Encapsulate player names correctly to support whitespace
+- Report WM_CLASS name to the window manager
 
 ## [5.3.2] 2024-07-02
 ### Fixed
