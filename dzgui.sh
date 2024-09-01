@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.3.2
+version=5.3.3
 
 #CONSTANTS
 aid=221100
@@ -13,7 +13,7 @@ sd_res="--width=1280 --height=800"
 steamsafe_zenity="/usr/bin/zenity"
 zenity_flags=("--width=500" "--title=DZGUI")
 declare -A deps
-deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [$steamsafe_zenity]="3.42.1")
+deps=([awk]="5.1.1" [curl]="7.80.0" [jq]="1.6" [tr]="9.0" [$steamsafe_zenity]="3.44.1")
 
 #CONFIG
 config_path="$HOME/.config/dztui"
@@ -65,6 +65,7 @@ km_helper_url="$releases_url/latlon"
 geo_file_url="$releases_url/ips.csv.gz"
 
 set_im_module(){
+    #TODO: drop pending SteamOS changes
     pgrep -a gamescope | grep -q "generate-drm-mode"
     if [[ $? -eq 0 ]]; then
         GTK_IM_MODULE=""
@@ -377,18 +378,20 @@ test_display_mode(){
     fi
 }
 check_architecture(){
-    local cpu=$(< /proc/cpuinfo grep "AMD Custom APU 0405")
-    if [[ -n "$cpu" ]]; then
-        if [[ $(test_display_mode) == "gm" ]]; then
-            is_steam_deck=2
-        else
-            is_steam_deck=1
-        fi
-        logger INFO "Setting architecture to 'Steam Deck'"
-    else
+    local cpu=$(< /proc/cpuinfo awk -F": " '/AMD Custom APU [0-9]{4}$/ {print $2; exit}')
+    read -a APU_MODEL <<< "$cpu"
+    if [[ ${APU_MODEL[3]} != "0932" ]] && [[ ${APU_MODEL[3]} != "0405" ]]; then
         is_steam_deck=0
         logger INFO "Setting architecture to 'desktop'"
+        return
     fi
+
+    if [[ $(test_display_mode) == "gm" ]]; then
+        is_steam_deck=2
+    else
+        is_steam_deck=1
+    fi
+    logger INFO "Setting architecture to 'Steam Deck'"
 }
 check_map_count(){
     [[ $is_steam_deck -gt 0 ]] && return 0
@@ -531,14 +534,39 @@ fetch_dzq(){
     curl -Ls "$url" > "$file"
     logger INFO "Updated DZQ to sha '$sha'"
 }
+fetch_icons(){
+    res=(
+            "16"
+            "24"
+            "32"
+            "48"
+            "64"
+            "96"
+            "128"
+            "256"
+    )
+    url="$stable_url/images/icons"
+    for i in "${res[@]}"; do
+        size="${i}x${i}"
+        dir="$HOME/.local/share/icons/hicolor/$size/apps"
+        icon="$dir/$app_name.png"
+        [[ -f $icon ]] && return
+        if [[ ! -d $dir ]]; then
+            mkdir -p "$dir"
+        fi
+        logger INFO "Updating $size Freedesktop icon"
+        curl -Ls "${url}/${i}.png" > "$icon"
+    done
+}
 fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="f14772424461ec438579dec567db0634"
-        ["query_v2.py"]="1822bd1769ce7d7cb0d686a60f9fa197"
+        ["ui.py"]="13bb5456aa9d95efdf2335e437f4c6fb"
+        ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="718c3060b88041f5b99a1ce52b12642f"
+        ["funcs"]="44eca80b207057423c2d298cc7cf1e29"
+        ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
     local repo="dztui"
@@ -576,6 +604,7 @@ fetch_helpers_by_sum(){
             logger INFO "Updated '$full_path' to sum '$sum'"
         fi
         [[ $file == "funcs" ]] && chmod +x "$full_path"
+        [[ $file == "lan" ]] && chmod +x "$full_path"
     done
     return 0
 }
@@ -600,6 +629,7 @@ fetch_helpers(){
     fetch_geo_file
     fetch_helpers_by_sum
     [[ ! -f $share_path/icon.png ]] && freedesktop_dirs
+    fetch_icons
 }
 raise_error_and_quit(){
     local msg="$1"
@@ -778,7 +808,7 @@ varcheck(){
     source "$config_file"
     local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
     local game_dir="$steam_path/steamapps/common/DayZ"
-    if [[ ! -d $steam_path ]] || [[ ! -d $game_dir ]]; then
+    if [[ ! -d $steam_path ]] || [[ ! -d $game_dir ]] || [[ ! $(find $game_dir -type f) ]]; then
         logger WARN "DayZ path resolved to '$game_dir'"
         logger WARN "Workshop path resolved to '$workshop_dir'"
         qdialog "$msg2" "Yes" "Exit"
@@ -894,7 +924,7 @@ uninstall(){
 }
 main(){
     local zenv=$(zenity --version 2>/dev/null)
-    [[ -z $zenv ]] && { echo "Requires zenity <= 3.44.1"; exit 1; }
+    [[ -z $zenv ]] && { echo "Requires zenity >= ${deps[$steamsafe_zenity]}"; exit 1; }
     if [[ $1 == "--uninstall" ]] || [[ $1 == "-u" ]]; then
         uninstall &&
         exit 0

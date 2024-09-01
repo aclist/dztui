@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+query_name(){
+    local ip="$1"
+    local port="$2"
+    local api="$HOME/.local/share/dzgui/helpers/query_v2.py"
+    python3 "$api" "$ip" "$port" test
+}
+
+scan(){
+    local ip="$1"
+    local port="$2"
+    local res=$(query_name "$ip" "$port")
+    [[ -z $res ]] && return 1
+    printf "%s\n" "${ip}:XXX:${port}"
+}
+
+get_netmask(){
+    ip r \
+        | awk '/default/ {print $3}' \
+        | uniq \
+        | awk -F. 'OFS="."{print $1,$2,$3}'
+}
+
+iter(){
+    _testping(){
+        ping -c1 -i 0.1 -w 1 "$1" 2>/dev/null 1>&2
+        [[ $? -eq 0 ]] && echo "$1"
+    }
+    export -f _testping
+    local mask=$(get_netmask)
+    # GNU parallel is not available OOTB on Steam Deck
+    for i in $(seq 1 255); do
+        echo "${mask}.${i}"
+    done | xargs -I {} -P 200 bash -c '_testping "{}"'
+}
+
+export -f scan
+export -f query_name
+
+DZG_LAN_PORT="$1"
+
+readarray -t ips < <(iter)
+for i in "${ips[@]}"; do
+    scan "$i" $DZG_LAN_PORT
+done
