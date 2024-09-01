@@ -19,7 +19,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 from enum import Enum
 
-# 5.3.3
+# 5.3.0
 app_name = "DZGUI"
 
 start_time = 0
