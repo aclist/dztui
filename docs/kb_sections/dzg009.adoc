@@ -1,0 +1,5 @@
+[[DZG-009,DZG-009]]
+== DZG-009: Livonia map is missing from maps dropdown in DZGUI
+Last updated: {d}
+
+The Livonia map was iterated off of a map used for the Arma 3 Contact DLC, and is internally called Enoch. Servers running the Livonia map thus use the internal name. Search for Enoch in the list.

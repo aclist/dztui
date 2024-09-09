@@ -1,5 +1,21 @@
 # Changelog
 
+## [5.3.3] 2024-08-27
+### Added
+- Scan local area network for DayZ servers
+- Freedesktop application icons for system taskbar, tray, and other dialogs
+- Emit CPU model name when exporting system debug log
+### Fixed
+- Detect Steam Deck OLED APU variant during initial setup
+- Errors being printed to the console when Exit button was explicitly clicked
+- Test if DayZ library location was moved internally on Steam by user
+- Encapsulate player names correctly to support whitespace
+- Report WM_CLASS name to the window manager
+
+## [5.3.2] 2024-07-02
+### Fixed
+- Server list would sometimes be missing some expected servers due to truncation being caused when a server erroneously set an incomplete gametype
+
 ## [5.3.1] 2024-06-15
 ### Added
 - Uninstall routine: invoke via dzgui.sh -u or dzgui.sh --uninstall and choose from full or partial uninstall
