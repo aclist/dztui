@@ -1200,14 +1200,15 @@ class TreeView(Gtk.TreeView):
                 if cooldown.returncode == 1:
                     spawn_dialog(self.get_outer_window(), cooldown.stdout, "NOTIFY")
                     return 1
+                for check in checks:
+                    toggle_signal(filters_vbox, check, '_on_check_toggle', False)
                 reinit_checks()
             else:
                 for check in checks:
+                    toggle_signal(filters_vbox, check, '_on_check_toggle', False)
                     if check.get_label() not in toggled_checks:
                         toggled_checks.append(check.get_label())
                         check.set_active(True)
-            for check in checks:
-                toggle_signal(filters_vbox, check, '_on_check_toggle', False)
             self._update_multi_column(chosen_row)
 
             map_store.clear()

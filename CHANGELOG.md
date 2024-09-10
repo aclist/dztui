@@ -1,6 +1,10 @@
 # Changelog
 
-## [5.4.1-beta.5] 2024-09-10
+## [5.4.1-beta.2] 2024-09-10
+### Fixed
+- Checkbox toggle signal handling control flow
+
+## [5.4.1-beta.1] 2024-09-10
 ### Added
 - Pre-boot validation check for users with self-compiled version of jq
 ### Fixed
