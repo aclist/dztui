@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.3.3-beta.7
+version=5.4.1-beta.1
 
 #CONSTANTS
 aid=221100
@@ -220,6 +220,10 @@ depcheck(){
             raise_error_and_quit "$msg"
         fi
     done
+    local jqmsg="jq must be compiled with support for oniguruma"
+    local jqtest
+    jqtest=$(echo '{"test": "foo"}' | jq '.test | test("^foo$")')
+    [[ $? -ne 0 ]] && raise_error_and_quit "$jqmsg"
     logger INFO "Initial dependencies satisfied"
 }
 check_pyver(){
@@ -562,10 +566,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="f89047e3fde843dbb52d343daf8d2675"
+        ["ui.py"]="9a5df05a4b67af3be06e39d9d7cebff3"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="44eca80b207057423c2d298cc7cf1e29"
+        ["funcs"]="b73289e0aa71a91da539c28707a6405c"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"

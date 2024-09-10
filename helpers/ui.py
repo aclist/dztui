@@ -19,7 +19,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 from enum import Enum
 
-# 5.3.3
+# 5.4.1
 app_name = "DZGUI"
 
 start_time = 0
@@ -574,6 +574,7 @@ class ButtonBox(Gtk.Box):
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             treeview.append_column(column)
         self._populate(context)
+        toggle_signal(treeview, treeview, '_on_keypress', False)
         treeview.set_model(row_store)
         treeview.grab_focus()
 
@@ -1033,7 +1034,6 @@ class TreeView(Gtk.TreeView):
         # Local server lists may have different filter toggles from remote list
         # FIXME: tree selection updates twice here. attach signal later
         toggle_signal(self, self.selected_row, '_on_tree_selection_changed', False)
-        # toggle_signal(self, self.selected_row, '_on_check_toggled', False)
         for column in self.get_columns():
             self.remove_column(column)
         row_store.clear()
@@ -1070,6 +1070,10 @@ class TreeView(Gtk.TreeView):
 
         self.update_first_col(mode)
         transient_parent = self.get_outer_window()
+
+        # Reset map selection
+        selected_map.clear()
+        selected_map.append("Map=All maps")
 
         for check in checks:
             toggle_signal(self.get_outer_grid().right_panel.filters_vbox, check, '_on_check_toggle', True)
@@ -1190,20 +1194,20 @@ class TreeView(Gtk.TreeView):
         valid_contexts = ["Server browser", "My saved servers", "Recent servers", "Scan LAN servers"]
         if chosen_row in valid_contexts:
             # server contexts share the same model type
-            for check in checks:
-                toggle_signal(filters_vbox, check, '_on_check_toggle', False)
 
             if chosen_row == "Server browser":
-                reinit_checks()
                 cooldown = call_out(self, "test_cooldown", "", "")
                 if cooldown.returncode == 1:
                     spawn_dialog(self.get_outer_window(), cooldown.stdout, "NOTIFY")
                     return 1
+                reinit_checks()
             else:
                 for check in checks:
                     if check.get_label() not in toggled_checks:
                         toggled_checks.append(check.get_label())
                         check.set_active(True)
+            for check in checks:
+                toggle_signal(filters_vbox, check, '_on_check_toggle', False)
             self._update_multi_column(chosen_row)
 
             map_store.clear()
@@ -1812,6 +1816,7 @@ class App(Gtk.Application):
             is_steam_deck = False
             is_game_mode = False
 
+        GLib.set_prgname(app_name)
         self.win = OuterWindow(is_steam_deck, is_game_mode)
         self.win.set_icon_name("dzgui")
 
