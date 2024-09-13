@@ -1,8 +1,12 @@
 # Changelog
 
+## [5.4.1-beta.2] 2024-09-12
+### Fixed
+- Use fallback logic for modlist queries when user traverses networks
+
 ## [5.4.1-beta.2] 2024-09-10
 ### Fixed
-- Checkbox toggle signal handling control flow
+- Fix signal handling control flow for checkbox toggles
 
 ## [5.4.1-beta.1] 2024-09-10
 ### Added
