@@ -21,6 +21,7 @@
 - Detect Steam Deck OLED APU variant during initial setup
 - Encapsulate player names correctly so that names with whitespace in them are supported
 - Test if DayZ directory is empty at startup, implying that the game was moved to a new library collection
+- Report WM_CLASS name to the window manager
 
 ## [5.3.2] 2024-07-02
 ### Fixed

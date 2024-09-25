@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.4.1-beta.3
+version=5.4.1
 
 #CONSTANTS
 aid=221100
@@ -549,7 +549,7 @@ fetch_icons(){
             "128"
             "256"
     )
-    url="$testing_url/images/icons"
+    url="$stable_url/images/icons"
     for i in "${res[@]}"; do
         size="${i}x${i}"
         dir="$HOME/.local/share/icons/hicolor/$size/apps"
