@@ -33,6 +33,10 @@ All dependencies are installed out of the box on Steam Deck.
 - `wmctrl` or `xdotool`
 - `PyGObject` (`python-gobject`)
 
+
+[NOTE]
+If you are using a self-compiled version of jq (e.g. gentoo), it must be configured with support for oniguruma (this is the default setting on most distributions).
+
 === Preparation
 ==== Step 1: Download DZGUI and make it executable
 

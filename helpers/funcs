@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.3.0
+version=5.4.1
 
 #CONSTANTS
 aid=221100
@@ -285,7 +285,15 @@ a2s(){
     local qport="$2"
     local mode="$3"
     logger INFO "Querying '$ip:$qport' with mode '$mode'"
-    python3 "$query_helper" "$ip" "$qport" "$mode"
+    local res
+    res=$(python3 "$query_helper" "$ip" "$qport" "$mode")
+    if [[ $? -eq 1 ]]; then
+        res=$(try_fallback "$ip" "$qport" "$mode")
+        if [[ $? -eq 1 ]]; then
+            return 1
+        fi
+    fi
+    printf "%s\n" "$res"
 }
 is_in_favs(){
     shift
@@ -1063,6 +1071,34 @@ update_history(){
 update_symlinks(){
     legacy_symlinks
     symlinks
+}
+try_fallback(){
+    local ip="$1"
+    local qport="$2"
+    local mode="$3"
+    if [[ $mode != "rules" ]] && [[ $mode != "names" ]]; then
+        return 1
+    fi
+    [[ -z $api_key ]] && return 1
+    local res=$(curl -s "$bm_api" -H "Authorization: Bearer "$api_key"" \
+        -G -d "filter[game]=$game" \
+        -d "filter[search]=%22${ip}:${qport}%22")
+    [[ -z $res ]] && return 1
+    local len=$(<<< "$res" jq '.data|length')
+    [[ $len -eq 0 ]] && return 1
+    local record=$(<<< "$res" jq -r '
+        .data[].attributes
+        |select(.status != "removed").details')
+    case "$mode" in
+        "rules")
+            <<< "$record" jq '.modIds[]'
+            ;;
+        "names")
+            <<< "$record" jq '
+            [.modNames, .modIds] as [$n, $i]
+            | {names: $n, ids: $i}'
+        ;;
+    esac
 }
 try_connect(){
     local record="$1"
