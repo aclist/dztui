@@ -758,7 +758,7 @@ class TreeView(Gtk.TreeView):
         mod_context_items = ["Open in Steam Workshop", "Delete mod"]
         subcontext_items = {"Server browser": ["Add to my servers", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
                   "My saved servers": ["Remove from my servers", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
-                  "Recent servers": ["Remove from history", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
+                  "Recent servers": ["Add to my servers", "Remove from history", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
                   }
         # submenu hierarchy https://stackoverflow.com/questions/52847909/how-to-add-a-sub-menu-to-a-gtk-menu
         if context == "Mod":
