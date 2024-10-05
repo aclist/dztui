@@ -1019,7 +1019,11 @@ query_defunct(){
             -H "Content-Type:application/x-www-form-urlencoded"\
             -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
     }
-    local result=$(post | jq -r '.[].publishedfiledetails[] | select(.result==1) | "\(.file_size) \(.publishedfileid)"')
+    local result=$(post | jq -r '
+    .[].publishedfiledetails[]
+    | select(.result==1)
+    | select(.filename|contains("screenshot")|not)
+    | "\(.file_size) \(.publishedfileid)"')
     <<< "$result" awk '{print $2}'
 }
 encode(){
@@ -1177,6 +1181,7 @@ focus_beta_client(){
     $steam_cmd steam://open/console 2>/dev/null 1>&2
 }
 auto_mod_install(){
+    # currently unused, merged with manual method
     local ip="$1"
     local gameport="$2"
     local diff="$3"

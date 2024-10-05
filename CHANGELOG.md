@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.4.2-beta.1] 2024-10-05
+### Fixed
+- Sanitize third-party API IDs to remove UGC collisions
+
 ## [5.4.1-beta.2] 2024-09-12
 ### Fixed
 - Use fallback logic for modlist queries when user traverses networks
