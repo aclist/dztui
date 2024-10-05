@@ -1,50 +1,30 @@
 # Changelog
 
-## [5.4.2-beta.1] 2024-10-05
-### Fixed
+## [5.4.2] 2024-10-05
 - Sanitize third-party API IDs to remove UGC collisions
 
-## [5.4.1-beta.2] 2024-09-12
-### Fixed
-- Use fallback logic for modlist queries when user traverses networks
-
-## [5.4.1-beta.2] 2024-09-10
-### Fixed
-- Fix signal handling control flow for checkbox toggles
-
-## [5.4.1-beta.1] 2024-09-10
+## [5.4.1] 2024-09-25
 ### Added
 - Pre-boot validation check for users with self-compiled version of jq
 ### Fixed
+- Use fallback logic for modlist queries when user traverses networks
+- Fix signal handling control flow for checkbox toggles
 - When reloading the server browser, the map combobox selection would revert to the last selected map instead of All Maps
 - Server filter toggle signals were accessible from the main menu when switching between menu contexts
 - Global cooldown dialog could sometimes block filter toggles after cooldown reset
 - Normalized minor version number due to a previous clerical error
 
-## [5.4.0-beta.5] 2024-08-27
-### Added
-- Freedesktop application icons for system taskbar, tray, and other dialogs
-### Fixed
-- Errors being printed to the console when Exit button was explicitly clicked
-
-## [5.4.0-beta.4] 2024-08-21
-### Added
-- Emit CPU model name when exporting system debug log
-### Fixed
-- Detect Steam Deck OLED APU variant during initial setup
-
-## [5.4.0-beta.3] 2024-08-04
+## [5.4.0] 2024-08-27
 ### Added
 - Scan local area network for DayZ servers
-
-## [5.4.0-beta.2] 2024-08-03
+- Freedesktop application icons for system taskbar, tray, and other dialogs
+- Emit CPU model name when exporting system debug log
 ### Fixed
-- Clerical hotfix for previous player names fix
-- Test if DayZ directory is empty at startup, implying that the game was moved to a new library collection
-
-## [5.4.0-beta.1] 2024-07-16
-### Fixed
+- Errors being printed to the console when Exit button was explicitly clicked
+- Detect Steam Deck OLED APU variant during initial setup
 - Encapsulate player names correctly so that names with whitespace in them are supported
+- Test if DayZ directory is empty at startup, implying that the game was moved to a new library collection
+- Report WM_CLASS name to the window manager
 
 ## [5.3.2] 2024-07-02
 ### Fixed
