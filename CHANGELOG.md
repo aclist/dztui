@@ -1,6 +1,7 @@
 # Changelog
 
 ## [5.4.2] 2024-10-05
+### Fixed
 - Sanitize third-party API IDs to remove UGC collisions
 
 ## [5.4.1] 2024-09-25
