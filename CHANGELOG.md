@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.5.0-beta.1] 2024-10-30
+### Added
+- Support servers running DLC content (fixes Frostline servers)
+- Text autocompletion in maps search field
+### Fixed
+- Abort fallback query method if DLC is required
+
 ## [5.4.2-beta.1] 2024-10-05
 ### Fixed
 - Sanitize third-party API IDs to remove UGC collisions

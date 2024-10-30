@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.4.2
+version=5.5.0
 
 #CONSTANTS
 aid=221100
@@ -279,6 +279,14 @@ initialize_remote_servers(){
     local res
     res=$(get_remote_servers)
     parse_server_json "$res" >> "$file"
+}
+is_dlc(){
+    local dlc
+    local ip="$1"
+    local gport="$2"
+    local res="$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\gameaddr\\${ip}:${gport}\appid\221100&key=$steam_api")"
+    dlc=$(<<< "$res" jq '.response.servers[].gametype|contains("isDLC")')
+    printf "%s\n" "$dlc"
 }
 a2s(){
     local ip="$1"
@@ -1081,25 +1089,39 @@ try_fallback(){
     local qport="$2"
     local mode="$3"
     if [[ $mode != "rules" ]] && [[ $mode != "names" ]]; then
+        logger WARN "Fallback query API called with an invalid mode: '$mode'"
         return 1
     fi
     [[ -z $api_key ]] && return 1
+    logger INFO "Using fallback query API on '$ip:$qport' with mode: '$mode'"
     local res=$(curl -s "$bm_api" -H "Authorization: Bearer "$api_key"" \
         -G -d "filter[game]=$game" \
         -d "filter[search]=%22${ip}:${qport}%22")
     [[ -z $res ]] && return 1
     local len=$(<<< "$res" jq '.data|length')
     [[ $len -eq 0 ]] && return 1
+
+    # cull defunct entries
     local record=$(<<< "$res" jq -r '
         .data[].attributes
-        |select(.status != "removed").details')
+        |select(.status != "removed")')
+
+    # reverse lookup gport
+    local dlc
+    local gport=$(<<< "$record" jq -r '.port')
+    dlc=$(is_dlc "$ip" "$gport")
+    if [[ $dlc == "true" ]]; then
+        logger FAIL "Fallback query API called on DLC-enabled server"
+        return 1
+    fi
+
     case "$mode" in
         "rules")
-            <<< "$record" jq '.modIds[]'
+            <<< "$record" jq '.details.modIds[]'
             ;;
         "names")
             <<< "$record" jq '
-            [.modNames, .modIds] as [$n, $i]
+            .details|[.modNames, .modIds] as [$n, $i]
             | {names: $n, ids: $i}'
         ;;
     esac
@@ -1403,7 +1425,7 @@ manual_mod_install(){
 
             if [[ $mode == "auto" ]] || [[ $mode == "force" ]]; then
                 $steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}+workshop_download_item $aid ${stage_mods[$i]}"
-                echo "# Opening workshop page for ${stage_mods[$i]}"
+                echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress, you may be out of disk space."
             else
                 $steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}"
                 echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
