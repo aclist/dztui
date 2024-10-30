@@ -4,6 +4,7 @@
 ### Added
 - Support servers running DLC content (fixes Frostline servers)
 - Text autocompletion in maps search field
+- Add disk space warning to popup dialog
 ### Fixed
 - Abort fallback query method if DLC is required
 
