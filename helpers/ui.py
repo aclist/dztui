@@ -105,6 +105,7 @@ options = [
     ("Toggle release branch",),
     ("Toggle mod install mode",),
     ("Toggle Steam/Flatpak",),
+    ("Toggle DZGUI fullscreen boot",),
     ("Change player name",),
     ("Change Steam API key",),
     ("Change Battlemetrics API key",),
@@ -153,6 +154,7 @@ status_tooltip = {
     "Toggle release branch": "Switch between stable and testing branches",
     "Toggle mod install mode": "Switch between manual and auto mod installation",
     "Toggle Steam/Flatpak": "Switch the preferred client to use for launching DayZ",
+    "Toggle DZGUI fullscreen boot": "Whether to start DZGUI as a maximized window (desktop only)",
     "Change player name": "Update your in-game name (required by some servers)",
     "Change Steam API key": "Can be used if you revoked an old API key",
     "Change Battlemetrics API key": "Can be used if you revoked an old API key",
@@ -348,7 +350,12 @@ def process_tree_option(input, treeview):
     logger.info("Parsing tree option '%s' for the context '%s'" %(command, context))
 
     transient_parent = treeview.get_outer_window()
-    toggle_contexts = ["Toggle mod install mode", "Toggle release branch", "Toggle Steam/Flatpak"]
+    toggle_contexts = [
+            "Toggle mod install mode",
+            "Toggle release branch",
+            "Toggle Steam/Flatpak",
+            "Toggle DZGUI fullscreen boot"
+            ]
 
     def call_on_thread(bool, subproc, msg, args):
         def _background(subproc, args, dialog):
@@ -373,7 +380,6 @@ def process_tree_option(input, treeview):
             out = proc.stdout.splitlines()
             msg = out[-1]
             process_shell_return_code(transient_parent, msg, rc, input)
-
 
     match context:
         case "Help":
@@ -465,7 +471,8 @@ class OuterWindow(Gtk.Window):
         if is_game_mode is True:
             self.fullscreen()
         else:
-            self.maximize()
+            if query_config(None, "fullscreen")[0] == "true":
+                self.maximize()
 
         # Hide FilterPanel on main menu
         self.show_all()
@@ -1237,7 +1244,8 @@ def format_metadata(row_sel):
             "auto_install": config_vals[2],
             "name": config_vals[3],
             "fav_label": config_vals[4],
-            "preferred_client": config_vals[5]
+            "preferred_client": config_vals[5],
+            "fullscreen": config_vals[6]
             }
     match row_sel:
         case "Quick-connect to favorite server" | "Change favorite server":
@@ -1257,6 +1265,10 @@ def format_metadata(row_sel):
             val = "branch"
         case "Toggle Steam/Flatpak":
             val = "preferred_client"
+        case "Toggle DZGUI fullscreen boot":
+            default = "false"
+            alt = "true"
+            val = "fullscreen"
         case _:
             return prefix
 

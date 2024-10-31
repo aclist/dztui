@@ -193,6 +193,9 @@ debug="$debug"
 #Toggle stable/testing branch
 branch="$branch"
 
+#Start in fullscreen
+fullscreen="$fullscreen"
+
 #Steam API key
 steam_api="$steam_api"
 

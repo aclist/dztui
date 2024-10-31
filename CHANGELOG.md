@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.5.0-beta.4] 2024-10-31
+### Added
+- Expose a toggle setting for whether to launch the application in fullscreen
+### Fixed
+- Enable adding/removing servers to/from My Saved Servers when in Recent Servers context
+
 ## [5.5.0-beta.3] 2024-10-31
 ### Fixed
 - Prevent maps combobox from duplicating contents
