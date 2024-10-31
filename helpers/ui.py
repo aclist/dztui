@@ -1932,7 +1932,7 @@ class FilterPanel(Gtk.Box):
             case Gdk.KEY_Escape:
                 GLib.idle_add(self.restore_focus_to_treeview)
             case _:
-                return True
+                return False
 
     def get_outer_grid(self):
         panel = self.get_parent()

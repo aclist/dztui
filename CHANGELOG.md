@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.5.0-beta.1] 2024-10-31
+### Fixed
+- Restore keyboard input to keyword entry field
+
 ## [5.5.0-beta.1] 2024-10-30
 ### Added
 - Support servers running DLC content (fixes Frostline servers)
