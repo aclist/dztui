@@ -766,7 +766,7 @@ class TreeView(Gtk.TreeView):
         mod_context_items = ["Open in Steam Workshop", "Delete mod"]
         subcontext_items = {"Server browser": ["Add to my servers", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
                   "My saved servers": ["Remove from my servers", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
-                  "Recent servers": ["Remove from history", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
+                  "Recent servers": ["Add to my servers", "Remove from history", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
                   }
         # submenu hierarchy https://stackoverflow.com/questions/52847909/how-to-add-a-sub-menu-to-a-gtk-menu
         if context == "Mod":
@@ -779,7 +779,7 @@ class TreeView(Gtk.TreeView):
             return
 
         for item in items:
-            if subcontext == "Server browser" and item == "Add to my servers":
+            if subcontext == "Server browser" or "Recent servers" and item == "Add to my servers":
                 record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
                 proc = call_out(widget, "is_in_favs", record)
                 if proc.returncode == 0:
