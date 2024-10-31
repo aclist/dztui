@@ -1,6 +1,10 @@
 # Changelog
 
-## [5.5.0-beta.1] 2024-10-31
+## [5.5.0-beta.3] 2024-10-31
+### Fixed
+- Prevent maps combobox from duplicating contents
+
+## [5.5.0-beta.2] 2024-10-31
 ### Fixed
 - Restore keyboard input to keyword entry field
 

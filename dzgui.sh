@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.5.0-beta.2
+version=5.5.0-beta.3
 
 #CONSTANTS
 aid=221100
@@ -566,7 +566,7 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="804fd1ec88da07b7c6015fd341c5c133"
+        ["ui.py"]="bfdc7d510cea375731d4b92b9c3ab510"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["funcs"]="105e7be170eea48ce61fcfe7b50b8f59"

@@ -1864,9 +1864,8 @@ class FilterPanel(Gtk.Box):
         completion.connect("match_selected", self._on_completer_match)
 
         renderer_text = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
-        self.maps_combo = Gtk.ComboBox.new_with_entry()
+        self.maps_combo = Gtk.ComboBox.new_with_model_and_entry(map_store)
         self.maps_combo.set_entry_text_column(0)
-        self.maps_combo.set_model(map_store)
     
         # instantiate maps completer entry
         self.maps_entry = self.maps_combo.get_child()
@@ -1876,7 +1875,6 @@ class FilterPanel(Gtk.Box):
         self.maps_entry.connect("key-press-event", self._on_map_entry_keypress)
 
         self.maps_combo.pack_start(renderer_text, True)
-        self.maps_combo.add_attribute(renderer_text, "text", 0)
         self.maps_combo.connect("changed", self._on_map_changed)
         self.maps_combo.connect("key-press-event", self._on_esc_pressed)
 
