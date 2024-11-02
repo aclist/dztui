@@ -410,6 +410,7 @@ query_config(){
         "name"
         "fav_label"
         "preferred_client"
+        "fullscreen"
     )
     if [[ -n $key ]]; then
         if [[ -n ${!key} ]]; then
@@ -714,6 +715,9 @@ debug="$debug"
 #Toggle stable/testing branch
 branch="$branch"
 
+#Start in fullscreen
+fullscreen="$fullscreen"
+
 #Steam API key
 steam_api="$steam_api"
 
@@ -807,6 +811,14 @@ toggle(){
             else
                 preferred_client="steam"
             fi
+            ;;
+        Toggle[[:space:]]DZGUI[[:space:]]fullscreen[[:space:]]boot)
+            if [[ $fullscreen == "true" ]]; then
+                fullscreen="false"
+            else
+                fullscreen="true"
+            fi
+            ;;
     esac
     update_config
     return 90
