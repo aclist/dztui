@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.5.0-beta.4
+version=5.5.0-beta.5
 
 #CONSTANTS
 aid=221100
@@ -534,7 +534,7 @@ fetch_dzq(){
         logger INFO "DZQ is current"
         return 0
     fi
-    local sha=788e85b82189cb3485d4a08ee350c67994b29ea3
+    local sha=3088bbfb147b77bc7b6a9425581b439889ff3f7f
     local author="aclist"
     local repo="dayzquery"
     local url="https://raw.githubusercontent.com/$author/$repo/$sha/dayzquery.py"
@@ -569,7 +569,7 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="f4aaf17ec91b95b9b951fc1bc7c2b7b4"
+        ["ui.py"]="dd7aa34df1d374739127cca3033a3f67"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["funcs"]="d8ae2662fbc3c62bdb5a51dec1935705"

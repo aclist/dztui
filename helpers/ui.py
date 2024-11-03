@@ -779,11 +779,12 @@ class TreeView(Gtk.TreeView):
             return
 
         for item in items:
-            if subcontext == "Server browser" or "Recent servers" and item == "Add to my servers":
-                record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
-                proc = call_out(widget, "is_in_favs", record)
-                if proc.returncode == 0:
-                    item = "Remove from my servers"
+            if subcontext == "Server browser" or "Recent servers":
+                if item == "Add to my servers":
+                    record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
+                    proc = call_out(widget, "is_in_favs", record)
+                    if proc.returncode == 0:
+                        item = "Remove from my servers"
             item = Gtk.MenuItem(label=item)
             item.connect("activate", self._on_menu_click)
             self.menu.append(item)

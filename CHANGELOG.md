@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.5.0-beta.5] 2024-11-03
+### Changed
+- Use updated A2S_RULES logic
+### Fixed
+- Servers in saved servers list would populate context menu with same option when right-clicking in server browser
+
 ## [5.5.0-beta.4] 2024-10-31
 ### Added
 - Expose a toggle setting for whether to launch the application in fullscreen
