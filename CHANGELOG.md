@@ -1,5 +1,19 @@
 # Changelog
 
+## [5.5.0] 2024-11-10
+### Added
+- Support servers running DLC content (fixes Frostline servers)
+- Expose a toggle setting for whether to launch the application in fullscreen
+- Text autocompletion in maps search field (partial search)
+- Add disk space warning to popup dialog when downloading mods
+### Fixed
+- Servers in saved servers list would populate context menu with same option when right-clicking in server browser
+- Enable adding/removing servers to/from My Saved Servers when in Recent Servers context
+- Prevent maps combobox from duplicating contents
+- Restore keyboard input to keyword entry field
+### Changed
+- Abort fallback query method if DLC is required
+
 ## [5.4.2] 2024-10-05
 ### Fixed
 - Sanitize third-party API IDs to remove UGC collisions

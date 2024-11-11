@@ -19,7 +19,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 from enum import Enum
 
-# 5.4.1
+# 5.5.0
 app_name = "DZGUI"
 
 start_time = 0
@@ -105,6 +105,7 @@ options = [
     ("Toggle release branch",),
     ("Toggle mod install mode",),
     ("Toggle Steam/Flatpak",),
+    ("Toggle DZGUI fullscreen boot",),
     ("Change player name",),
     ("Change Steam API key",),
     ("Change Battlemetrics API key",),
@@ -153,6 +154,7 @@ status_tooltip = {
     "Toggle release branch": "Switch between stable and testing branches",
     "Toggle mod install mode": "Switch between manual and auto mod installation",
     "Toggle Steam/Flatpak": "Switch the preferred client to use for launching DayZ",
+    "Toggle DZGUI fullscreen boot": "Whether to start DZGUI as a maximized window (desktop only)",
     "Change player name": "Update your in-game name (required by some servers)",
     "Change Steam API key": "Can be used if you revoked an old API key",
     "Change Battlemetrics API key": "Can be used if you revoked an old API key",
@@ -348,7 +350,12 @@ def process_tree_option(input, treeview):
     logger.info("Parsing tree option '%s' for the context '%s'" %(command, context))
 
     transient_parent = treeview.get_outer_window()
-    toggle_contexts = ["Toggle mod install mode", "Toggle release branch", "Toggle Steam/Flatpak"]
+    toggle_contexts = [
+            "Toggle mod install mode",
+            "Toggle release branch",
+            "Toggle Steam/Flatpak",
+            "Toggle DZGUI fullscreen boot"
+            ]
 
     def call_on_thread(bool, subproc, msg, args):
         def _background(subproc, args, dialog):
@@ -373,7 +380,6 @@ def process_tree_option(input, treeview):
             out = proc.stdout.splitlines()
             msg = out[-1]
             process_shell_return_code(transient_parent, msg, rc, input)
-
 
     match context:
         case "Help":
@@ -465,7 +471,8 @@ class OuterWindow(Gtk.Window):
         if is_game_mode is True:
             self.fullscreen()
         else:
-            self.maximize()
+            if query_config(None, "fullscreen")[0] == "true":
+                self.maximize()
 
         # Hide FilterPanel on main menu
         self.show_all()
@@ -759,7 +766,7 @@ class TreeView(Gtk.TreeView):
         mod_context_items = ["Open in Steam Workshop", "Delete mod"]
         subcontext_items = {"Server browser": ["Add to my servers", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
                   "My saved servers": ["Remove from my servers", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
-                  "Recent servers": ["Remove from history", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
+                  "Recent servers": ["Add to my servers", "Remove from history", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
                   }
         # submenu hierarchy https://stackoverflow.com/questions/52847909/how-to-add-a-sub-menu-to-a-gtk-menu
         if context == "Mod":
@@ -772,11 +779,12 @@ class TreeView(Gtk.TreeView):
             return
 
         for item in items:
-            if subcontext == "Server browser" and item == "Add to my servers":
-                record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
-                proc = call_out(widget, "is_in_favs", record)
-                if proc.returncode == 0:
-                    item = "Remove from my servers"
+            if subcontext == "Server browser" or "Recent servers":
+                if item == "Add to my servers":
+                    record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
+                    proc = call_out(widget, "is_in_favs", record)
+                    if proc.returncode == 0:
+                        item = "Remove from my servers"
             item = Gtk.MenuItem(label=item)
             item.connect("activate", self._on_menu_click)
             self.menu.append(item)
@@ -895,8 +903,7 @@ class TreeView(Gtk.TreeView):
                 case Gdk.KEY_m:
                     if self.get_first_col() == "Mod":
                         return
-                    grid.right_panel.filters_vbox.maps_combo.grab_focus()
-                    grid.right_panel.filters_vbox.maps_combo.popup()
+                    grid.right_panel.filters_vbox.maps_entry.grab_focus()
                 case _:
                     return False
         elif keyname.isnumeric() and int(keyname) > 0:
@@ -1238,7 +1245,8 @@ def format_metadata(row_sel):
             "auto_install": config_vals[2],
             "name": config_vals[3],
             "fav_label": config_vals[4],
-            "preferred_client": config_vals[5]
+            "preferred_client": config_vals[5],
+            "fullscreen": config_vals[6]
             }
     match row_sel:
         case "Quick-connect to favorite server" | "Change favorite server":
@@ -1258,6 +1266,10 @@ def format_metadata(row_sel):
             val = "branch"
         case "Toggle Steam/Flatpak":
             val = "preferred_client"
+        case "Toggle DZGUI fullscreen boot":
+            default = "false"
+            alt = "true"
+            val = "fullscreen"
         case _:
             return prefix
 
@@ -1566,7 +1578,7 @@ def KeysDialog(parent, text, mode):
     Enter/Space/Double click: connect to server
     Right-click on row/Ctrl-l: displays additional context menus
     Ctrl-f: jump to keyword field
-    Ctrl-m: jump to maps dropdown
+    Ctrl-m: jump to maps field
     Ctrl-d: toggle dry run (debug) mode
     Ctrl-r: refresh player count for active row
     1-9: toggle filter ON/OFF
@@ -1639,7 +1651,7 @@ class ModDialog(GenericDialog):
         def _load():
             dialog.destroy()
             if data.returncode == 1:
-                spawn_dialog(parent, "Server has no mods installed", "NOTIFY")
+                spawn_dialog(parent, "Server has no mods installed or is unsupported in this mode", "NOTIFY")
                 return
             self.show_all()
             self.set_markup("Modlist (%s mods)" %(mod_count))
@@ -1858,14 +1870,26 @@ class FilterPanel(Gtk.Box):
         self.keyword_entry.set_placeholder_text("Filter by keyword")
         self.keyword_entry.connect("activate", self._on_keyword_enter)
         self.keyword_entry.connect("key-press-event", self._on_esc_pressed)
+    
+        completion = Gtk.EntryCompletion(inline_completion=True)
+        completion.set_text_column(0)
+        completion.set_minimum_key_length(1)
+        completion.connect("match_selected", self._on_completer_match)
 
         renderer_text = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
-        self.maps_combo = Gtk.ComboBox.new_with_model(map_store)
+        self.maps_combo = Gtk.ComboBox.new_with_model_and_entry(map_store)
+        self.maps_combo.set_entry_text_column(0)
+    
+        # instantiate maps completer entry
+        self.maps_entry = self.maps_combo.get_child()
+        self.maps_entry.set_completion(completion)
+        self.maps_entry.set_placeholder_text("Filter by map")
+        self.maps_entry.connect("changed", self._on_map_completion, True)
+        self.maps_entry.connect("key-press-event", self._on_map_entry_keypress)
+
         self.maps_combo.pack_start(renderer_text, True)
-        self.maps_combo.add_attribute(renderer_text, "text", 0)
         self.maps_combo.connect("changed", self._on_map_changed)
         self.maps_combo.connect("key-press-event", self._on_esc_pressed)
-
 
         self.pack_start(self.filters_label, False, False, True)
         self.pack_start(self.keyword_entry, False, False, True)
@@ -1874,6 +1898,37 @@ class FilterPanel(Gtk.Box):
         for i, check in enumerate(checks[0:]):
             self.pack_start(checks[i], False, False, True)
 
+    def _on_map_entry_keypress(self, entry, event):
+        match event.keyval:
+            case Gdk.KEY_Return:
+                text = entry.get_text()
+                if text is None:
+                    return
+                # if entry is exact match for value in liststore,
+                # trigger map change function
+                for i in enumerate(map_store):
+                    if text == i[1][0]:
+                        self.maps_combo.set_active(i[0])
+                        self._on_map_changed(self.maps_combo)
+            case Gdk.KEY_Escape:
+                GLib.idle_add(self.restore_focus_to_treeview)
+                # TODO: this is a workaround for widget.grab_remove()
+                # set cursor position to SOL when unfocusing
+                text = self.maps_entry.get_text()
+                self.maps_entry.set_position(len(text))
+            case _:
+                return
+
+    def _on_completer_match(self, completion, model, iter):
+        self.maps_combo.set_active_iter(iter)
+
+    def _on_map_completion(self, entry, editable):
+        text = entry.get_text()
+        completion = entry.get_completion()
+
+        if len(text) >= completion.get_minimum_key_length():
+            completion.set_model(map_store)
+            self._on_map_changed(self.maps_combo)
 
     def grab_keyword_focus(self):
         self.keyword_entry.grab_focus()
@@ -1884,9 +1939,11 @@ class FilterPanel(Gtk.Box):
         return False
 
     def _on_esc_pressed(self, entry, event):
-        keyname = Gdk.keyval_name(event.keyval)
-        if keyname == "Escape":
-            GLib.idle_add(self.restore_focus_to_treeview)
+        match event.keyval:
+            case Gdk.KEY_Escape:
+                GLib.idle_add(self.restore_focus_to_treeview)
+            case _:
+                return False
 
     def get_outer_grid(self):
         panel = self.get_parent()
@@ -1952,13 +2009,19 @@ class FilterPanel(Gtk.Box):
 
         tree_iter = combo.get_active_iter()
         if tree_iter is not None:
-            selected_map.clear()
+            # take no action if completer query is same as current map sel
+            old_sel = selected_map[0].split("Map=")[1]
             model = combo.get_model()
             selection = model[tree_iter][0]
-            selected_map.append("Map=" + selection)
-            logger.info("User selected map '%s'" %(selection))
-            filter_servers(transient_parent, self, treeview, context)
+            if selection == old_sel:
+                return
 
+            selected_map.clear()
+            if selection is not None:
+                selected_map.append("Map=" + selection)
+                logger.info("User selected map '%s'" %(selection))
+                filter_servers(transient_parent, self, treeview, context)
+                self.maps_entry.set_text(selection)
 
 def main():
 
