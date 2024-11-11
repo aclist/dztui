@@ -2,8 +2,7 @@
 
 ## [5.5.0] 2024-11-10
 ### Added
-- Support servers running DLC content (fixes F    git push --set-upstream origin release/5.5.0-stable
-rostline servers)
+- Support servers running DLC content (fixes Frostline servers)
 - Expose a toggle setting for whether to launch the application in fullscreen
 - Text autocompletion in maps search field (partial search)
 - Add disk space warning to popup dialog when downloading mods
