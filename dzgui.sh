@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.3.0
+version=5.5.0
 
 #CONSTANTS
 aid=221100
@@ -193,6 +193,9 @@ debug="$debug"
 #Toggle stable/testing branch
 branch="$branch"
 
+#Start in fullscreen
+fullscreen="$fullscreen"
+
 #Steam API key
 steam_api="$steam_api"
 
@@ -220,6 +223,10 @@ depcheck(){
             raise_error_and_quit "$msg"
         fi
     done
+    local jqmsg="jq must be compiled with support for oniguruma"
+    local jqtest
+    jqtest=$(echo '{"test": "foo"}' | jq '.test | test("^foo$")')
+    [[ $? -ne 0 ]] && raise_error_and_quit "$jqmsg"
     logger INFO "Initial dependencies satisfied"
 }
 check_pyver(){
@@ -521,14 +528,14 @@ fetch_a2s(){
     logger INFO "Updated A2S helper to sha '$sha'"
 }
 fetch_dzq(){
-    local sum="232f42b98a3b50a0dd6e73fee55521b2"
+    local sum="9caed1445c45832f4af87736ba3f9637"
     local file="$helpers_path/a2s/dayzquery.py"
     if [[ -f $file ]] && [[ $(get_hash "$file") == $sum ]]; then
         logger INFO "DZQ is current"
         return 0
     fi
-    local sha=ccc4f71b48610a1885706c9d92638dbd8ca012a5
-    local author="yepoleb"
+    local sha=3088bbfb147b77bc7b6a9425581b439889ff3f7f
+    local author="aclist"
     local repo="dayzquery"
     local url="https://raw.githubusercontent.com/$author/$repo/$sha/dayzquery.py"
     curl -Ls "$url" > "$file"
@@ -562,10 +569,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="819a30c43644817a4f4a009f3df52b77"
+        ["ui.py"]="dd7aa34df1d374739127cca3033a3f67"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="e1998f02f17776ccf2108fe5e9396d75"
+        ["funcs"]="d8ae2662fbc3c62bdb5a51dec1935705"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"

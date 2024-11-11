@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.3.0
+version=5.5.0
 
 #CONSTANTS
 aid=221100
@@ -280,12 +280,28 @@ initialize_remote_servers(){
     res=$(get_remote_servers)
     parse_server_json "$res" >> "$file"
 }
+is_dlc(){
+    local dlc
+    local ip="$1"
+    local gport="$2"
+    local res="$(curl -Ls "https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\gameaddr\\${ip}:${gport}\appid\221100&key=$steam_api")"
+    dlc=$(<<< "$res" jq '.response.servers[].gametype|contains("isDLC")')
+    printf "%s\n" "$dlc"
+}
 a2s(){
     local ip="$1"
     local qport="$2"
     local mode="$3"
     logger INFO "Querying '$ip:$qport' with mode '$mode'"
-    python3 "$query_helper" "$ip" "$qport" "$mode"
+    local res
+    res=$(python3 "$query_helper" "$ip" "$qport" "$mode")
+    if [[ $? -eq 1 ]]; then
+        res=$(try_fallback "$ip" "$qport" "$mode")
+        if [[ $? -eq 1 ]]; then
+            return 1
+        fi
+    fi
+    printf "%s\n" "$res"
 }
 is_in_favs(){
     shift
@@ -394,6 +410,7 @@ query_config(){
         "name"
         "fav_label"
         "preferred_client"
+        "fullscreen"
     )
     if [[ -n $key ]]; then
         if [[ -n ${!key} ]]; then
@@ -698,6 +715,9 @@ debug="$debug"
 #Toggle stable/testing branch
 branch="$branch"
 
+#Start in fullscreen
+fullscreen="$fullscreen"
+
 #Steam API key
 steam_api="$steam_api"
 
@@ -791,6 +811,14 @@ toggle(){
             else
                 preferred_client="steam"
             fi
+            ;;
+        Toggle[[:space:]]DZGUI[[:space:]]fullscreen[[:space:]]boot)
+            if [[ $fullscreen == "true" ]]; then
+                fullscreen="false"
+            else
+                fullscreen="true"
+            fi
+            ;;
     esac
     update_config
     return 90
@@ -1011,7 +1039,11 @@ query_defunct(){
             -H "Content-Type:application/x-www-form-urlencoded"\
             -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
     }
-    local result=$(post | jq -r '.[].publishedfiledetails[] | select(.result==1) | "\(.file_size) \(.publishedfileid)"')
+    local result=$(post | jq -r '
+    .[].publishedfiledetails[]
+    | select(.result==1)
+    | select(.filename|contains("screenshot")|not)
+    | "\(.file_size) \(.publishedfileid)"')
     <<< "$result" awk '{print $2}'
 }
 encode(){
@@ -1063,6 +1095,48 @@ update_history(){
 update_symlinks(){
     legacy_symlinks
     symlinks
+}
+try_fallback(){
+    local ip="$1"
+    local qport="$2"
+    local mode="$3"
+    if [[ $mode != "rules" ]] && [[ $mode != "names" ]]; then
+        logger WARN "Fallback query API called with an invalid mode: '$mode'"
+        return 1
+    fi
+    [[ -z $api_key ]] && return 1
+    logger INFO "Using fallback query API on '$ip:$qport' with mode: '$mode'"
+    local res=$(curl -s "$bm_api" -H "Authorization: Bearer "$api_key"" \
+        -G -d "filter[game]=$game" \
+        -d "filter[search]=%22${ip}:${qport}%22")
+    [[ -z $res ]] && return 1
+    local len=$(<<< "$res" jq '.data|length')
+    [[ $len -eq 0 ]] && return 1
+
+    # cull defunct entries
+    local record=$(<<< "$res" jq -r '
+        .data[].attributes
+        |select(.status != "removed")')
+
+    # reverse lookup gport
+    local dlc
+    local gport=$(<<< "$record" jq -r '.port')
+    dlc=$(is_dlc "$ip" "$gport")
+    if [[ $dlc == "true" ]]; then
+        logger FAIL "Fallback query API called on DLC-enabled server"
+        return 1
+    fi
+
+    case "$mode" in
+        "rules")
+            <<< "$record" jq '.details.modIds[]'
+            ;;
+        "names")
+            <<< "$record" jq '
+            .details|[.modNames, .modIds] as [$n, $i]
+            | {names: $n, ids: $i}'
+        ;;
+    esac
 }
 try_connect(){
     local record="$1"
@@ -1141,6 +1215,7 @@ focus_beta_client(){
     $steam_cmd steam://open/console 2>/dev/null 1>&2
 }
 auto_mod_install(){
+    # currently unused, merged with manual method
     local ip="$1"
     local gameport="$2"
     local diff="$3"
@@ -1362,7 +1437,7 @@ manual_mod_install(){
 
             if [[ $mode == "auto" ]] || [[ $mode == "force" ]]; then
                 $steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}+workshop_download_item $aid ${stage_mods[$i]}"
-                echo "# Opening workshop page for ${stage_mods[$i]}"
+                echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress, you may be out of disk space."
             else
                 $steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}"
                 echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
