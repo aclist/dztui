@@ -671,7 +671,7 @@ test_ping(){
     local qport="$2"
     local res
     res=$(ping -c1 -4 -W0.5 $1 | grep time= | awk -F= '{print $4}')
-    [[ ! $? -eq 0 ]] && res="Unreachable"
+    [[ ! $? -eq 0 ]] && res="Timed out"
     printf "%s" "$res"
 }
 show_server_modlist(){
