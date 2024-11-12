@@ -19,7 +19,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 from enum import Enum
 
-# 5.5.0
+# 5.6.0
 app_name = "DZGUI"
 
 start_time = 0
@@ -297,25 +297,25 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
             #TODO: add logger output to each
         case 0:
             # success with notice popup
-            spawn_dialog(transient_parent, msg, "NOTIFY")
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
         case 1:
             # error with notice popup
             if msg == "":
                 msg = "Something went wrong"
-            spawn_dialog(transient_parent, msg, "NOTIFY")
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
         case 2:
             # warn and recurse (e.g. validation failed)
-            spawn_dialog(transient_parent, msg, "NOTIFY")
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             treeview = transient_parent.grid.scrollable_treelist.treeview
             process_tree_option(original_input, treeview)
         case 4:
             # for BM only
-            spawn_dialog(transient_parent, msg, "NOTIFY")
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             treeview = transient_parent.grid.scrollable_treelist.treeview
             process_tree_option(["Options", "Change Battlemetrics API key"], treeview)
         case 5:
             # for steam only
-            spawn_dialog(transient_parent, msg, "NOTIFY")
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             treeview = transient_parent.grid.scrollable_treelist.treeview
             process_tree_option(["Options", "Change Steam API key"], treeview)
         case 6:
@@ -330,17 +330,17 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
                 config_vals.append(i)
             tooltip = format_metadata(col)
             transient_parent.grid.update_statusbar(tooltip)
-            spawn_dialog(transient_parent, msg, "NOTIFY")
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             return
         case 100:
             # final handoff before launch
-            final_conf = spawn_dialog(transient_parent, msg, "CONFIRM")
+            final_conf = spawn_dialog(transient_parent, msg, Popup.CONFIRM)
             treeview = transient_parent.grid.scrollable_treelist.treeview
             if final_conf == 1 or final_conf is None:
                 return
             process_tree_option(["Handshake", ""], treeview)
         case 255:
-            spawn_dialog(transient_parent, "Update complete. Please close DZGUI and restart.", "NOTIFY")
+            spawn_dialog(transient_parent, "Update complete. Please close DZGUI and restart.", Popup.NOTIFY)
             Gtk.main_quit()
 
 
@@ -369,7 +369,7 @@ def process_tree_option(input, treeview):
             proc = call_out(transient_parent, subproc, args)
             GLib.idle_add(_load)
         if bool is True:
-            wait_dialog = GenericDialog(transient_parent, msg, "WAIT")
+            wait_dialog = GenericDialog(transient_parent, msg, Popup.WAIT)
             wait_dialog.show_all()
             thread = threading.Thread(target=_background, args=(subproc, args, wait_dialog))
             thread.start()
@@ -432,7 +432,7 @@ def process_tree_option(input, treeview):
                         link_label = "Open Battlemetrics API page"
                         prompt = "Enter new API key"
 
-                user_entry = EntryDialog(transient_parent, prompt, "ENTRY", link_label)
+                user_entry = EntryDialog(transient_parent, prompt, Popup.ENTRY, link_label)
                 res = user_entry.get_input()
                 if res is None:
                     logger.info("User aborted entry dialog")
@@ -711,7 +711,7 @@ class TreeView(Gtk.TreeView):
                     iter = self.get_current_iter()
                     server_store.remove(iter)
                 msg = proc.stdout
-                res = spawn_dialog(parent, msg, "NOTIFY")
+                res = spawn_dialog(parent, msg, Popup.NOTIFY)
             case "Remove from history":
                 record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
                 call_out(parent, context_menu_label, record)
@@ -734,16 +734,16 @@ class TreeView(Gtk.TreeView):
                 conf_msg = "Really delete the mod '%s'?" %(value)
                 success_msg = "Successfully deleted the mod '%s'." %(value)
                 fail_msg = "An error occurred during deletion. Aborting."
-                res = spawn_dialog(parent, conf_msg, "CONFIRM")
+                res = spawn_dialog(parent, conf_msg, Popup.CONFIRM)
                 symlink = self.get_column_at_index(1)
                 dir = self.get_column_at_index(2)
                 if res == 0:
                     proc = call_out(parent, "delete", symlink, dir)
                     if proc.returncode == 0:
-                        spawn_dialog(parent, success_msg, "NOTIFY")
+                        spawn_dialog(parent, success_msg, Popup.NOTIFY)
                         self._update_quad_column("List installed mods")
                     else:
-                        spawn_dialog(parent, fail_msg, "NOTIFY")
+                        spawn_dialog(parent, fail_msg, Popup.NOTIFY)
             case "Open in Steam Workshop":
                 record = self.get_column_at_index(2)
                 call_out(parent, "open_workshop_page", record)
@@ -805,7 +805,7 @@ class TreeView(Gtk.TreeView):
         diff = now - then
         cooldown = 30 - math.floor(diff)
         if ((start_time > 0) and (now - then) < 30):
-            spawn_dialog(parent, "Global refresh cooldown not met. Wait %s second(s)." %(str(cooldown)), "NOTIFY")
+            spawn_dialog(parent, "Global refresh cooldown not met. Wait %s second(s)." %(str(cooldown)), Popup.NOTIFY)
             return
         start_time = now
 
@@ -935,7 +935,7 @@ class TreeView(Gtk.TreeView):
             wait_dialog.destroy()
 
         parent = self.get_outer_window()
-        wait_dialog = GenericDialog(parent, "Refreshing player count", "WAIT")
+        wait_dialog = GenericDialog(parent, "Refreshing player count", Popup.WAIT)
         wait_dialog.show_all()
         select = self.get_selection()
         sels = select.get_selected_rows()
@@ -971,7 +971,7 @@ class TreeView(Gtk.TreeView):
                     No servers returned. Possible network issue or API key on cooldown?
                     Return to the main menu, wait 60s, and try again.
                     If this issue persists, your API key may be defunct."""
-                spawn_dialog(self.get_outer_window(), textwrap.dedent(api_warn_msg), "NOTIFY")
+                spawn_dialog(self.get_outer_window(), textwrap.dedent(api_warn_msg), Popup.NOTIFY)
 
         grid = self.get_outer_grid()
         right_panel = grid.right_panel
@@ -1097,7 +1097,7 @@ class TreeView(Gtk.TreeView):
                 return
             mode = mode + ":" + port
 
-        wait_dialog = GenericDialog(transient_parent, "Fetching server metadata", "WAIT")
+        wait_dialog = GenericDialog(transient_parent, "Fetching server metadata", Popup.WAIT)
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background, args=(wait_dialog, mode))
         thread.start()
@@ -1153,12 +1153,12 @@ class TreeView(Gtk.TreeView):
             data = call_out(self, "show_log")
             res = parse_log_rows(data)
             if res == 1:
-                spawn_dialog(self.get_outer_window(), "Failed to load log file, possibly corrupted", "NOTIFY")
+                spawn_dialog(self.get_outer_window(), "Failed to load log file, possibly corrupted", Popup.NOTIFY)
             return
 
         transient_parent = self.get_outer_window()
 
-        wait_dialog = GenericDialog(transient_parent, "Checking mods", "WAIT")
+        wait_dialog = GenericDialog(transient_parent, "Checking mods", Popup.WAIT)
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background_quad, args=(wait_dialog, mode))
         thread.start()
@@ -1181,7 +1181,7 @@ class TreeView(Gtk.TreeView):
         qport = self.get_column_at_index(8)
         record = "%s:%s" %(addr, str(qport))
 
-        wait_dialog = GenericDialog(transient_parent, "Querying server and aligning mods", "WAIT")
+        wait_dialog = GenericDialog(transient_parent, "Querying server and aligning mods", Popup.WAIT)
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background_connection, args=(wait_dialog, record))
         thread.start()
@@ -1205,7 +1205,7 @@ class TreeView(Gtk.TreeView):
             if chosen_row == "Server browser":
                 cooldown = call_out(self, "test_cooldown", "", "")
                 if cooldown.returncode == 1:
-                    spawn_dialog(self.get_outer_window(), cooldown.stdout, "NOTIFY")
+                    spawn_dialog(self.get_outer_window(), cooldown.stdout, Popup.NOTIFY)
                     return 1
                 for check in checks:
                     toggle_signal(filters_vbox, check, '_on_check_toggle', False)
@@ -1323,7 +1323,7 @@ def filter_servers(transient_parent, filters_vbox, treeview, context):
     toggle_signal(filters_vbox, filters_vbox, '_on_button_release', False)
     toggle_signal(filters_vbox, filters_vbox.maps_combo, '_on_map_changed', False)
 
-    dialog = GenericDialog(transient_parent, "Filtering results", "WAIT")
+    dialog = GenericDialog(transient_parent, "Filtering results", Popup.WAIT)
     dialog.show_all()
     server_store.clear()
 
@@ -1343,6 +1343,12 @@ class Port(Enum):
     DEFAULT = 1
     CUSTOM = 2
 
+class Popup(Enum):
+    WAIT = 1
+    NOTIFY = 2
+    CONFIRM = 3
+    ENTRY = 4
+
 class GenericDialog(Gtk.MessageDialog):
     def __init__(self, parent, text, mode):
 
@@ -1351,19 +1357,19 @@ class GenericDialog(Gtk.MessageDialog):
             return True
 
         match mode:
-            case "WAIT":
+            case Popup.WAIT:
                 dialog_type = Gtk.MessageType.INFO
                 button_type = Gtk.ButtonsType.NONE
                 header_text = "Please wait"
-            case "NOTIFY":
+            case Popup.NOTIFY:
                 dialog_type = Gtk.MessageType.INFO
                 button_type = Gtk.ButtonsType.OK
                 header_text = "Notice"
-            case "CONFIRM":
+            case Popup.CONFIRM:
                 dialog_type = Gtk.MessageType.QUESTION
                 button_type = Gtk.ButtonsType.OK_CANCEL
                 header_text = "Confirmation"
-            case "ENTRY":
+            case Popup.ENTRY:
                 dialog_type = Gtk.MessageType.QUESTION
                 button_type = Gtk.ButtonsType.OK_CANCEL
                 header_text = "User input required"
@@ -1384,7 +1390,7 @@ class GenericDialog(Gtk.MessageDialog):
             modal=True,
         )
 
-        if mode == "WAIT":
+        if mode == Popup.WAIT:
             dialogBox = self.get_content_area()
             spinner = Gtk.Spinner()
             dialogBox.pack_end(spinner, False, False, 0)
@@ -1598,7 +1604,7 @@ class PingDialog(GenericDialog):
         dialogBox = self.get_content_area()
         self.set_default_response(Gtk.ResponseType.OK)
         self.set_size_request(500, 200)
-        wait_dialog = GenericDialog(parent, "Checking ping", "WAIT")
+        wait_dialog = GenericDialog(parent, "Checking ping", Popup.WAIT)
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background, args=(wait_dialog, parent, record))
         thread.start()
@@ -1642,7 +1648,7 @@ class ModDialog(GenericDialog):
             column.set_sort_column_id(i)
         dialogBox.pack_end(self.scrollable, True, True, 0)
 
-        wait_dialog = GenericDialog(parent, "Fetching modlist", "WAIT")
+        wait_dialog = GenericDialog(parent, "Fetching modlist", Popup.WAIT)
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background, args=(wait_dialog, parent, record))
         thread.start()
@@ -1651,7 +1657,7 @@ class ModDialog(GenericDialog):
         def _load():
             dialog.destroy()
             if data.returncode == 1:
-                spawn_dialog(parent, "Server has no mods installed or is unsupported in this mode", "NOTIFY")
+                spawn_dialog(parent, "Server has no mods installed or is unsupported in this mode", Popup.NOTIFY)
                 return
             self.show_all()
             self.set_markup("Modlist (%s mods)" %(mod_count))
