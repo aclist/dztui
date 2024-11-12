@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.5.0
+version=5.6.0
 
 #CONSTANTS
 aid=221100
@@ -38,6 +38,7 @@ lock_file="$state_path/$prefix.lock"
 #CACHE
 cache_dir="$HOME/.cache/$app_name"
 _cache_servers="$cache_dir/$prefix.servers"
+_cache_temp="$cache_dir/$prefix.temp"
 _cache_my_servers="$cache_dir/$prefix.my_servers"
 _cache_history="$cache_dir/$prefix.history"
 _cache_launch="$cache_dir/$prefix.launch_mods"
@@ -380,9 +381,30 @@ get_dist(){
     fi
 }
 get_remote_servers(){
-    local limit=20000
-    local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=$limit&key=$steam_api"
-    curl -Ls "$url" | jq -r '.response.servers'
+    params=(
+        "\\nor\1\map\chernarusplus\\nor\1\map\sakhal"
+        "\map\chernarusplus\empty\1"
+        "\map\chernarusplus\noplayers\1"
+        "\map\\sakhal"
+    )
+    local limit=10000
+    local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?"
+
+    _fetch(){
+        local param="$1"
+        curl -LsG "$url" \
+            -d filter="\appid\221100${param}" \
+            -d limit=$limit \
+            -d key=$steam_api \
+            | jq -M -r '.response.servers'
+
+    }
+
+    for ((i=0; i <${#params[@]}; i++ )); do
+        _fetch "${params[$i]}" > $_cache_temp.${i}
+    done
+
+    jq -n '[ [inputs]|add ].[]' $_cache_temp.* && rm $_cache_temp.*
 }
 get_unique_maps(){
     shift
