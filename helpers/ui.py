@@ -169,6 +169,14 @@ status_tooltip = {
     "Hall of fame ⧉": "A list of significant contributors and testers",
 }
 
+def pluralize(plural, count):
+    suffix = plural[-2:]
+    if suffix == "es":
+        base = plural[:-2]
+        return f"%s{'es'[:2*count^2]}" %(base)
+    else:
+        base = plural[:-1]
+        return f"%s{'s'[:count^1]}" %(base)
 
 def format_ping(ping):
     ms = " | Ping: %s" %(ping)
@@ -997,7 +1005,8 @@ class TreeView(Gtk.TreeView):
             self.set_model(mod_store)
             self.grab_focus()
             size = locale.format_string('%.3f', total_size, grouping=True)
-            grid.update_statusbar("Found %s mods taking up %s MiB" %(f'{total_mods:n}', size))
+            pretty = pluralize("mods", total_mods)
+            grid.update_statusbar(f"Found {total_mods:n} {pretty} taking up {size} MiB")
             toggle_signal(self, self, '_on_keypress', True)
 
         grid = self.get_outer_grid()
@@ -1286,16 +1295,10 @@ def format_metadata(row_sel):
         return prefix
 
 
-def format_tooltip(sum, hits):
-    if hits == 1:
-        hit_suffix = "match"
-    else:
-        hit_suffix = "matches"
-    if sum == 1:
-        player_suffix = "player"
-    else:
-        player_suffix = "players"
-    tooltip = "Found %s %s with %s %s" %(f'{hits:n}', hit_suffix, f'{sum:n}', player_suffix)
+def format_tooltip(players, hits):
+    hits_pretty = pluralize("matches", hits)
+    players_pretty = pluralize("players", players)
+    tooltip = f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
     return tooltip
 
 
