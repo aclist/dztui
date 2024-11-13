@@ -19,7 +19,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 from enum import Enum
 
-# 5.5.0
+# 5.6.0
 app_name = "DZGUI"
 
 start_time = 0
@@ -48,12 +48,14 @@ default_tooltip = "Select a row to see its detailed description"
 server_tooltip = [None, None]
 
 user_path = os.path.expanduser('~')
+cache_path = '%s/.cache/dzgui' %(user_path)
 state_path = '%s/.local/state/dzgui' %(user_path)
 helpers_path = '%s/.local/share/dzgui/helpers' %(user_path)
 log_path = '%s/logs' %(state_path)
 changelog_path = '%s/CHANGELOG.md' %(state_path)
 geometry_path = '%s/dzg.cols.json' %(state_path)
 funcs = '%s/funcs' %(helpers_path)
+mods_temp_file = '%s/dzg.mods_temp' %(cache_path)
 
 logger = logging.getLogger(__name__)
 log_file = '%s/DZGUI_DEBUG.log' %(log_path)
@@ -169,6 +171,41 @@ status_tooltip = {
     "Hall of fame ⧉": "A list of significant contributors and testers",
 }
 
+def relative_widget(child):
+    # returns collection of outer widgets relative to source widget
+    # chiefly used for transient modals and accessing non-adjacent widget methods
+    # positions are always relative to grid sub-children
+    # containers and nested buttons should never need to call this function directly
+
+    grid = child.get_parent().get_parent()
+    treeview = grid.scrollable_treelist.treeview
+    outer = grid.get_parent()
+
+    widgets = {
+            'grid': grid,
+            'treeview': treeview,
+            'outer': outer
+            }
+
+    supported = [
+            "ModSelectionPanel", # Grid < RightPanel < ModSelectionPanel
+            "ButtonBox", # Grid < RightPanel < ButtonBox
+            "TreeView" # Grid < ScrollableTree < TreeView
+            ]
+
+    if child.__class__.__name__ not in supported:
+        raise Exception("Unsupported child widget")
+
+    return widgets
+
+def pluralize(plural, count):
+    suffix = plural[-2:]
+    if suffix == "es":
+        base = plural[:-2]
+        return f"%s{'es'[:2*count^2]}" %(base)
+    else:
+        base = plural[:-1]
+        return f"%s{'s'[:count^1]}" %(base)
 
 def format_ping(ping):
     ms = " | Ping: %s" %(ping)
@@ -297,25 +334,25 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
             #TODO: add logger output to each
         case 0:
             # success with notice popup
-            spawn_dialog(transient_parent, msg, "NOTIFY")
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
         case 1:
             # error with notice popup
             if msg == "":
                 msg = "Something went wrong"
-            spawn_dialog(transient_parent, msg, "NOTIFY")
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
         case 2:
             # warn and recurse (e.g. validation failed)
-            spawn_dialog(transient_parent, msg, "NOTIFY")
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             treeview = transient_parent.grid.scrollable_treelist.treeview
             process_tree_option(original_input, treeview)
         case 4:
             # for BM only
-            spawn_dialog(transient_parent, msg, "NOTIFY")
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             treeview = transient_parent.grid.scrollable_treelist.treeview
             process_tree_option(["Options", "Change Battlemetrics API key"], treeview)
         case 5:
             # for steam only
-            spawn_dialog(transient_parent, msg, "NOTIFY")
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             treeview = transient_parent.grid.scrollable_treelist.treeview
             process_tree_option(["Options", "Change Steam API key"], treeview)
         case 6:
@@ -330,17 +367,17 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
                 config_vals.append(i)
             tooltip = format_metadata(col)
             transient_parent.grid.update_statusbar(tooltip)
-            spawn_dialog(transient_parent, msg, "NOTIFY")
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             return
         case 100:
             # final handoff before launch
-            final_conf = spawn_dialog(transient_parent, msg, "CONFIRM")
+            final_conf = spawn_dialog(transient_parent, msg, Popup.CONFIRM)
             treeview = transient_parent.grid.scrollable_treelist.treeview
             if final_conf == 1 or final_conf is None:
                 return
             process_tree_option(["Handshake", ""], treeview)
         case 255:
-            spawn_dialog(transient_parent, "Update complete. Please close DZGUI and restart.", "NOTIFY")
+            spawn_dialog(transient_parent, "Update complete. Please close DZGUI and restart.", Popup.NOTIFY)
             Gtk.main_quit()
 
 
@@ -369,7 +406,7 @@ def process_tree_option(input, treeview):
             proc = call_out(transient_parent, subproc, args)
             GLib.idle_add(_load)
         if bool is True:
-            wait_dialog = GenericDialog(transient_parent, msg, "WAIT")
+            wait_dialog = GenericDialog(transient_parent, msg, Popup.WAIT)
             wait_dialog.show_all()
             thread = threading.Thread(target=_background, args=(subproc, args, wait_dialog))
             thread.start()
@@ -432,7 +469,7 @@ def process_tree_option(input, treeview):
                         link_label = "Open Battlemetrics API page"
                         prompt = "Enter new API key"
 
-                user_entry = EntryDialog(transient_parent, prompt, "ENTRY", link_label)
+                user_entry = EntryDialog(transient_parent, prompt, Popup.ENTRY, link_label)
                 res = user_entry.get_input()
                 if res is None:
                     logger.info("User aborted entry dialog")
@@ -554,6 +591,7 @@ class ButtonBox(Gtk.Box):
                 button.set_size_request(10, 10)
             else:
                 button.set_size_request(50,50)
+            #TODO: explore a more intuitive way of highlighting the active context
             button.set_opacity(0.6)
             self.buttons.append(button)
             button.connect("clicked", self._on_selection_button_clicked)
@@ -563,9 +601,16 @@ class ButtonBox(Gtk.Box):
 
     def _update_single_column(self, context):
         logger.info("Returning from multi-column view to monocolumn view for the context '%s'" %(context))
-        treeview = self.get_treeview()
+        widgets = relative_widget(self)
+
+        # only applicable when returning from mod list
+        grid = widgets["grid"]
+        grid.right_panel.remove(grid.sel_panel)
         right_panel = self.get_parent()
         right_panel.set_filter_visibility(False)
+
+        treeview = widgets["treeview"]
+        treeview.set_selection_mode(Gtk.SelectionMode.SINGLE)
 
         """Block maps combo when returning to main menu"""
         toggle_signal(right_panel.filters_vbox, right_panel.filters_vbox.maps_combo, '_on_map_changed', False)
@@ -711,7 +756,7 @@ class TreeView(Gtk.TreeView):
                     iter = self.get_current_iter()
                     server_store.remove(iter)
                 msg = proc.stdout
-                res = spawn_dialog(parent, msg, "NOTIFY")
+                res = spawn_dialog(parent, msg, Popup.NOTIFY)
             case "Remove from history":
                 record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
                 call_out(parent, context_menu_label, record)
@@ -734,21 +779,37 @@ class TreeView(Gtk.TreeView):
                 conf_msg = "Really delete the mod '%s'?" %(value)
                 success_msg = "Successfully deleted the mod '%s'." %(value)
                 fail_msg = "An error occurred during deletion. Aborting."
-                res = spawn_dialog(parent, conf_msg, "CONFIRM")
+                res = spawn_dialog(parent, conf_msg, Popup.CONFIRM)
                 symlink = self.get_column_at_index(1)
                 dir = self.get_column_at_index(2)
                 if res == 0:
                     proc = call_out(parent, "delete", symlink, dir)
                     if proc.returncode == 0:
-                        spawn_dialog(parent, success_msg, "NOTIFY")
-                        self._update_quad_column("List installed mods")
+                        spawn_dialog(parent, success_msg, Popup.NOTIFY)
+                        self.update_quad_column("List installed mods")
                     else:
-                        spawn_dialog(parent, fail_msg, "NOTIFY")
+                        spawn_dialog(parent, fail_msg, Popup.NOTIFY)
             case "Open in Steam Workshop":
                 record = self.get_column_at_index(2)
                 call_out(parent, "open_workshop_page", record)
 
+    def toggle_selection(self, bool):
+        l = len(mod_store)
+        match bool:
+            case True:
+                for i in range (0, l):
+                    path = Gtk.TreePath(i)
+                    it = mod_store.get_iter(path)
+                    self.get_selection().select_path(path)
+            case False:
+                for i in range (0, l):
+                    path = Gtk.TreePath(i)
+                    it = mod_store.get_iter(path)
+                    self.get_selection().unselect_path(path)
+
     def _on_button_release(self, widget, event):
+        if event.type is Gdk.EventType.BUTTON_RELEASE and event.button != 3:
+            return
         try:
             pathinfo = self.get_path_at_pos(event.x, event.y)
             if pathinfo is None:
@@ -758,8 +819,6 @@ class TreeView(Gtk.TreeView):
         except AttributeError:
             pass
 
-        if event.type is Gdk.EventType.BUTTON_RELEASE and event.button != 3:
-            return
         context = self.get_first_col()
         self.menu = Gtk.Menu()
 
@@ -805,7 +864,7 @@ class TreeView(Gtk.TreeView):
         diff = now - then
         cooldown = 30 - math.floor(diff)
         if ((start_time > 0) and (now - then) < 30):
-            spawn_dialog(parent, "Global refresh cooldown not met. Wait %s second(s)." %(str(cooldown)), "NOTIFY")
+            spawn_dialog(parent, "Global refresh cooldown not met. Wait %s second(s)." %(str(cooldown)), Popup.NOTIFY)
             return
         start_time = now
 
@@ -853,8 +912,6 @@ class TreeView(Gtk.TreeView):
             self.emit("on_distcalc_started")
             self.current_proc = CalcDist(self, addr, self.queue, cache)
             self.current_proc.start()
-        elif None:
-            return
         else:
             tooltip = format_metadata(row_sel)
             grid.update_statusbar(tooltip)
@@ -914,6 +971,11 @@ class TreeView(Gtk.TreeView):
         else:
             return False
 
+    def _focus_first_row(self):
+        path = Gtk.TreePath(0)
+        it = mod_store.get_iter(path)
+        self.get_selection().select_path(path)
+
     def get_column_at_index(self, index):
         select = self.get_selection()
         sels = select.get_selected_rows()
@@ -935,7 +997,7 @@ class TreeView(Gtk.TreeView):
             wait_dialog.destroy()
 
         parent = self.get_outer_window()
-        wait_dialog = GenericDialog(parent, "Refreshing player count", "WAIT")
+        wait_dialog = GenericDialog(parent, "Refreshing player count", Popup.WAIT)
         wait_dialog.show_all()
         select = self.get_selection()
         sels = select.get_selected_rows()
@@ -971,7 +1033,7 @@ class TreeView(Gtk.TreeView):
                     No servers returned. Possible network issue or API key on cooldown?
                     Return to the main menu, wait 60s, and try again.
                     If this issue persists, your API key may be defunct."""
-                spawn_dialog(self.get_outer_window(), textwrap.dedent(api_warn_msg), "NOTIFY")
+                spawn_dialog(self.get_outer_window(), textwrap.dedent(api_warn_msg), Popup.NOTIFY)
 
         grid = self.get_outer_grid()
         right_panel = grid.right_panel
@@ -996,15 +1058,29 @@ class TreeView(Gtk.TreeView):
             dialog.destroy()
             self.set_model(mod_store)
             self.grab_focus()
-            size = locale.format_string('%.3f', total_size, grouping=True)
-            grid.update_statusbar("Found %s mods taking up %s MiB" %(f'{total_mods:n}', size))
+            if abort is False:
+                size = locale.format_string('%.3f', total_size, grouping=True)
+                pretty = pluralize("mods", total_mods)
+                grid.update_statusbar(f"Found {total_mods:n} {pretty} taking up {size} MiB")
+            #2024-11-12
+            toggle_signal(self, self.selected_row, '_on_tree_selection_changed', True)
             toggle_signal(self, self, '_on_keypress', True)
+            self._focus_first_row()
 
         grid = self.get_outer_grid()
         right_panel = grid.right_panel
 
+        abort = False
         right_panel.set_filter_visibility(False)
         data = call_out(self, "list_mods", mode)
+
+        # suppress errors if no mods available on system
+        if data.returncode == 1:
+            abort = True
+            GLib.idle_add(load)
+            spawn_dialog(self.get_outer_window(), data.stdout, Popup.NOTIFY)
+            return 1
+
         result = parse_mod_rows(data)
         total_size = result[0]
         total_mods = result[1]
@@ -1082,6 +1158,8 @@ class TreeView(Gtk.TreeView):
         selected_map.clear()
         selected_map.append("Map=All maps")
 
+        self.set_selection_mode(Gtk.SelectionMode.SINGLE)
+
         for check in checks:
             toggle_signal(self.get_outer_grid().right_panel.filters_vbox, check, '_on_check_toggle', True)
         toggle_signal(self, self, '_on_keypress', True)
@@ -1097,7 +1175,7 @@ class TreeView(Gtk.TreeView):
                 return
             mode = mode + ":" + port
 
-        wait_dialog = GenericDialog(transient_parent, "Fetching server metadata", "WAIT")
+        wait_dialog = GenericDialog(transient_parent, "Fetching server metadata", Popup.WAIT)
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background, args=(wait_dialog, mode))
         thread.start()
@@ -1121,8 +1199,12 @@ class TreeView(Gtk.TreeView):
         cell.set_property('text', formatted)
         return
 
-    def _update_quad_column(self, mode):
-        # toggle_signal(self, self.selected_row, '_on_tree_selection_changed', False)
+    def set_selection_mode(self, mode):
+        sel = self.get_selection()
+        sel.set_mode(mode)
+
+    def update_quad_column(self, mode):
+        toggle_signal(self, self.selected_row, '_on_tree_selection_changed', False)
         for column in self.get_columns():
             self.remove_column(column)
 
@@ -1132,6 +1214,10 @@ class TreeView(Gtk.TreeView):
         if mode == "List installed mods":
             cols = mod_cols
             self.set_model(mod_store)
+            # attach button panel
+            grid = self.get_parent().get_parent()
+            grid.right_panel.pack_start(grid.sel_panel, False, False, 0)
+            grid.show_all()
         else:
             cols = log_cols
             self.set_model(log_store)
@@ -1143,22 +1229,20 @@ class TreeView(Gtk.TreeView):
                 if i == 3:
                     column.set_cell_data_func(renderer, self._format_float, func_data=None)
             column.set_sort_column_id(i)
-            #if (column_title == "Name"):
-            #    column.set_fixed_width(600)
             self.append_column(column)
 
         if mode == "List installed mods":
-            pass
+            self.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
         else:
             data = call_out(self, "show_log")
             res = parse_log_rows(data)
             if res == 1:
-                spawn_dialog(self.get_outer_window(), "Failed to load log file, possibly corrupted", "NOTIFY")
+                spawn_dialog(self.get_outer_window(), "Failed to load log file, possibly corrupted", Popup.NOTIFY)
             return
 
         transient_parent = self.get_outer_window()
 
-        wait_dialog = GenericDialog(transient_parent, "Checking mods", "WAIT")
+        wait_dialog = GenericDialog(transient_parent, "Checking mods", Popup.WAIT)
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background_quad, args=(wait_dialog, mode))
         thread.start()
@@ -1181,7 +1265,7 @@ class TreeView(Gtk.TreeView):
         qport = self.get_column_at_index(8)
         record = "%s:%s" %(addr, str(qport))
 
-        wait_dialog = GenericDialog(transient_parent, "Querying server and aligning mods", "WAIT")
+        wait_dialog = GenericDialog(transient_parent, "Querying server and aligning mods", Popup.WAIT)
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background_connection, args=(wait_dialog, record))
         thread.start()
@@ -1205,7 +1289,7 @@ class TreeView(Gtk.TreeView):
             if chosen_row == "Server browser":
                 cooldown = call_out(self, "test_cooldown", "", "")
                 if cooldown.returncode == 1:
-                    spawn_dialog(self.get_outer_window(), cooldown.stdout, "NOTIFY")
+                    spawn_dialog(self.get_outer_window(), cooldown.stdout, Popup.NOTIFY)
                     return 1
                 for check in checks:
                     toggle_signal(filters_vbox, check, '_on_check_toggle', False)
@@ -1227,7 +1311,7 @@ class TreeView(Gtk.TreeView):
             self.grab_focus()
         elif chosen_row == "List installed mods" or chosen_row == "Show debug log":
             toggle_signal(self, self.selected_row, '_on_tree_selection_changed', False)
-            self._update_quad_column(chosen_row)
+            self.update_quad_column(chosen_row)
             toggle_signal(self, self.selected_row, '_on_tree_selection_changed', True)
         elif any(map(context.__contains__, valid_contexts)):
             # implies activated row on any server list subcontext
@@ -1286,16 +1370,10 @@ def format_metadata(row_sel):
         return prefix
 
 
-def format_tooltip(sum, hits):
-    if hits == 1:
-        hit_suffix = "match"
-    else:
-        hit_suffix = "matches"
-    if sum == 1:
-        player_suffix = "player"
-    else:
-        player_suffix = "players"
-    tooltip = "Found %s %s with %s %s" %(f'{hits:n}', hit_suffix, f'{sum:n}', player_suffix)
+def format_tooltip(players, hits):
+    hits_pretty = pluralize("matches", hits)
+    players_pretty = pluralize("players", players)
+    tooltip = f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
     return tooltip
 
 
@@ -1323,7 +1401,7 @@ def filter_servers(transient_parent, filters_vbox, treeview, context):
     toggle_signal(filters_vbox, filters_vbox, '_on_button_release', False)
     toggle_signal(filters_vbox, filters_vbox.maps_combo, '_on_map_changed', False)
 
-    dialog = GenericDialog(transient_parent, "Filtering results", "WAIT")
+    dialog = GenericDialog(transient_parent, "Filtering results", Popup.WAIT)
     dialog.show_all()
     server_store.clear()
 
@@ -1343,6 +1421,12 @@ class Port(Enum):
     DEFAULT = 1
     CUSTOM = 2
 
+class Popup(Enum):
+    WAIT = 1
+    NOTIFY = 2
+    CONFIRM = 3
+    ENTRY = 4
+
 class GenericDialog(Gtk.MessageDialog):
     def __init__(self, parent, text, mode):
 
@@ -1351,19 +1435,19 @@ class GenericDialog(Gtk.MessageDialog):
             return True
 
         match mode:
-            case "WAIT":
+            case Popup.WAIT:
                 dialog_type = Gtk.MessageType.INFO
                 button_type = Gtk.ButtonsType.NONE
                 header_text = "Please wait"
-            case "NOTIFY":
+            case Popup.NOTIFY:
                 dialog_type = Gtk.MessageType.INFO
                 button_type = Gtk.ButtonsType.OK
                 header_text = "Notice"
-            case "CONFIRM":
+            case Popup.CONFIRM:
                 dialog_type = Gtk.MessageType.QUESTION
                 button_type = Gtk.ButtonsType.OK_CANCEL
                 header_text = "Confirmation"
-            case "ENTRY":
+            case Popup.ENTRY:
                 dialog_type = Gtk.MessageType.QUESTION
                 button_type = Gtk.ButtonsType.OK_CANCEL
                 header_text = "User input required"
@@ -1384,7 +1468,7 @@ class GenericDialog(Gtk.MessageDialog):
             modal=True,
         )
 
-        if mode == "WAIT":
+        if mode == Popup.WAIT:
             dialogBox = self.get_content_area()
             spinner = Gtk.Spinner()
             dialogBox.pack_end(spinner, False, False, 0)
@@ -1598,7 +1682,7 @@ class PingDialog(GenericDialog):
         dialogBox = self.get_content_area()
         self.set_default_response(Gtk.ResponseType.OK)
         self.set_size_request(500, 200)
-        wait_dialog = GenericDialog(parent, "Checking ping", "WAIT")
+        wait_dialog = GenericDialog(parent, "Checking ping", Popup.WAIT)
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background, args=(wait_dialog, parent, record))
         thread.start()
@@ -1642,7 +1726,7 @@ class ModDialog(GenericDialog):
             column.set_sort_column_id(i)
         dialogBox.pack_end(self.scrollable, True, True, 0)
 
-        wait_dialog = GenericDialog(parent, "Fetching modlist", "WAIT")
+        wait_dialog = GenericDialog(parent, "Fetching modlist", Popup.WAIT)
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background, args=(wait_dialog, parent, record))
         thread.start()
@@ -1651,7 +1735,7 @@ class ModDialog(GenericDialog):
         def _load():
             dialog.destroy()
             if data.returncode == 1:
-                spawn_dialog(parent, "Server has no mods installed or is unsupported in this mode", "NOTIFY")
+                spawn_dialog(parent, "Server has no mods installed or is unsupported in this mode", Popup.NOTIFY)
                 return
             self.show_all()
             self.set_markup("Modlist (%s mods)" %(mod_count))
@@ -1738,7 +1822,7 @@ class Grid(Gtk.Grid):
             self.scrollable_treelist.set_vexpand(True)
 
         self.right_panel = RightPanel(is_steam_deck)
-
+        self.sel_panel = ModSelectionPanel()
 
         self.bar = Gtk.Statusbar()
         self.scrollable_treelist.treeview.connect("on_distcalc_started", self._on_calclat_started)
@@ -1843,6 +1927,73 @@ class App(Gtk.Application):
     def _halt_window_subprocess(self, accel_group, window, code, flag):
         self.win.halt_proc_and_quit(self, None)
 
+
+class ModSelectionPanel(Gtk.Box):
+    def __init__(self):
+        super().__init__(spacing=6)
+        self.set_orientation(Gtk.Orientation.VERTICAL)
+
+        labels = [
+                "Select all",
+                "Unselect all",
+                "Delete selected"
+                ]
+
+        for l in labels:
+            button = Gtk.Button(label=l)
+            button.set_margin_start(10)
+            button.set_margin_end(10)
+            button.connect("clicked", self._on_button_clicked)
+            self.pack_start(button, False, True, 0)
+
+    def _on_button_clicked(self, button):
+        label = button.get_label()
+        widgets = relative_widget(self)
+        parent = widgets["outer"]
+        treeview = widgets["treeview"]
+        match label:
+            case "Select all":
+                treeview.toggle_selection(True)
+            case "Unselect all":
+                treeview.toggle_selection(False)
+            case "Delete selected":
+                (model, pathlist) = treeview.get_selection().get_selected_rows()
+                ct = len(pathlist)
+                if ct < 1:
+                    return
+
+                self._iterate_mod_deletion(model, pathlist, ct)
+
+    def _iterate_mod_deletion(self, model, pathlist, ct):
+        # hedge against large number of arguments
+        widgets = relative_widget(self)
+        parent = widgets["outer"]
+        treeview = widgets["treeview"]
+
+        pretty = pluralize("mods", ct)
+        conf_msg = f"You are going to delete {ct} {pretty}. Proceed?"
+        success_msg = f"Successfully deleted {ct} {pretty}."
+        fail_msg = "An error occurred during deletion. Aborting."
+
+        res = spawn_dialog(parent, conf_msg, Popup.CONFIRM)
+        if res != 0:
+            return
+
+        mods = []
+        for i in pathlist:
+            it = model.get_iter(i)
+            symlink = model.get_value(it, 1)
+            path = model.get_value(it, 2)
+            concat = symlink + " " + path + "\n"
+            mods.append(concat)
+        with open(mods_temp_file, "w") as outfile:
+            outfile.writelines(mods)
+        proc = call_out(parent, "delete")
+        if proc.returncode == 0:
+            spawn_dialog(parent, success_msg, Popup.NOTIFY)
+            treeview.update_quad_column("List installed mods")
+        else:
+            spawn_dialog(parent, fail_msg, Popup.NOTIFY)
 
 class FilterPanel(Gtk.Box):
     def __init__(self):

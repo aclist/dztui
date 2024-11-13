@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.5.0
+version=5.6.0
 
 #CONSTANTS
 aid=221100
@@ -38,6 +38,8 @@ lock_file="$state_path/$prefix.lock"
 #CACHE
 cache_dir="$HOME/.cache/$app_name"
 _cache_servers="$cache_dir/$prefix.servers"
+_cache_mods_temp="$cache_dir/$prefix.mods_temp"
+_cache_temp="$cache_dir/$prefix.temp"
 _cache_my_servers="$cache_dir/$prefix.my_servers"
 _cache_history="$cache_dir/$prefix.history"
 _cache_launch="$cache_dir/$prefix.launch_mods"
@@ -380,9 +382,30 @@ get_dist(){
     fi
 }
 get_remote_servers(){
-    local limit=20000
-    local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=$limit&key=$steam_api"
-    curl -Ls "$url" | jq -r '.response.servers'
+    params=(
+        "\\nor\1\map\chernarusplus\\nor\1\map\sakhal"
+        "\map\chernarusplus\empty\1"
+        "\map\chernarusplus\noplayers\1"
+        "\map\\sakhal"
+    )
+    local limit=10000
+    local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?"
+
+    _fetch(){
+        local param="$1"
+        curl -LsG "$url" \
+            -d filter="\appid\221100${param}" \
+            -d limit=$limit \
+            -d key=$steam_api \
+            | jq -M -r '.response.servers'
+
+    }
+
+    for ((i=0; i <${#params[@]}; i++ )); do
+        _fetch "${params[$i]}" > $_cache_temp.${i}
+    done
+
+    jq -n '[ [inputs]|add ].[]' $_cache_temp.* && rm $_cache_temp.*
 }
 get_unique_maps(){
     shift
@@ -558,12 +581,23 @@ parse_server_json(){
 }
 delete_local_mod(){
     shift
-    local symlink="$1"
-    local dir="$2"
-    [[ ! -d $workshop_dir/$dir ]] && return 1
-    [[ ! -L $game_dir/$symlink ]] && return 1
-    #SC2115
-    rm -rf "${workshop_dir:?}/$dir" && unlink "$game_dir/$symlink" || return 1
+    if [[ -z $1 ]]; then
+        # use multi mode
+        readarray -t symlinks < <(awk '{print $1}' $_cache_mods_temp)
+        readarray -t ids < <(awk '{print $2}' $_cache_mods_temp)
+        rm "$_cache_mods_temp"
+    else
+        local symlink="$1"
+        local dir="$2"
+        readarray -t symlinks <<< "$symlink"
+        readarray -t ids <<< "$dir"
+    fi
+    for ((i=0; i<${#symlinks[@]}; i++)); do
+        [[ ! -d $workshop_dir/${ids[$i]} ]] && return 1
+        [[ ! -L $game_dir/${symlinks[$i]} ]] && return 1
+        #SC2115
+        rm -rf "${workshop_dir:?}/${ids[$i]}" && unlink "$game_dir/${symlinks[$i]}" || return 1
+    done
 }
 test_cooldown(){
     [[ ! -f $_cache_cooldown ]] && return 0
@@ -649,7 +683,7 @@ test_ping(){
     local qport="$2"
     local res
     res=$(ping -c1 -4 -W0.5 $1 | grep time= | awk -F= '{print $4}')
-    [[ ! $? -eq 0 ]] && res="Unreachable"
+    [[ ! $? -eq 0 ]] && res="Timed out"
     printf "%s" "$res"
 }
 show_server_modlist(){
