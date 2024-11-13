@@ -172,10 +172,11 @@ status_tooltip = {
 }
 
 def relative_widget(child):
-    # get target widget relative to source widget
-    # chiefly used for transient modals and parent member functions
-    # when calling non-adjacent widgets
-    # positions are relative to grid members
+    # returns collection of outer widgets relative to source widget
+    # chiefly used for transient modals and accessing non-adjacent widget methods
+    # positions are always relative to grid sub-children
+    # containers and nested buttons should never need to call this function directly
+
     grid = child.get_parent().get_parent()
     treeview = grid.scrollable_treelist.treeview
     outer = grid.get_parent()
@@ -187,9 +188,9 @@ def relative_widget(child):
             }
 
     supported = [
-            "ModSelectionPanel",
-            "ButtonBox",
-            "TreeView"
+            "ModSelectionPanel", # Grid < RightPanel < ModSelectionPanel
+            "ButtonBox", # Grid < RightPanel < ButtonBox
+            "TreeView" # Grid < ScrollableTree < TreeView
             ]
 
     if child.__class__.__name__ not in supported:
@@ -590,6 +591,7 @@ class ButtonBox(Gtk.Box):
                 button.set_size_request(10, 10)
             else:
                 button.set_size_request(50,50)
+            #TODO: explore a more intuitive way of highlighting the active context
             button.set_opacity(0.6)
             self.buttons.append(button)
             button.connect("clicked", self._on_selection_button_clicked)
