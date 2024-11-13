@@ -969,6 +969,11 @@ class TreeView(Gtk.TreeView):
         else:
             return False
 
+    def _focus_first_row(self):
+        path = Gtk.TreePath(0)
+        it = mod_store.get_iter(path)
+        self.get_selection().select_path(path)
+
     def get_column_at_index(self, index):
         select = self.get_selection()
         sels = select.get_selected_rows()
@@ -1058,6 +1063,7 @@ class TreeView(Gtk.TreeView):
             #2024-11-12
             toggle_signal(self, self.selected_row, '_on_tree_selection_changed', True)
             toggle_signal(self, self, '_on_keypress', True)
+            self._focus_first_row()
 
         grid = self.get_outer_grid()
         right_panel = grid.right_panel
