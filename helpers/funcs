@@ -38,6 +38,7 @@ lock_file="$state_path/$prefix.lock"
 #CACHE
 cache_dir="$HOME/.cache/$app_name"
 _cache_servers="$cache_dir/$prefix.servers"
+_cache_mods_temp="$cache_dir/$prefix.mods_temp"
 _cache_temp="$cache_dir/$prefix.temp"
 _cache_my_servers="$cache_dir/$prefix.my_servers"
 _cache_history="$cache_dir/$prefix.history"
@@ -580,12 +581,23 @@ parse_server_json(){
 }
 delete_local_mod(){
     shift
-    local symlink="$1"
-    local dir="$2"
-    [[ ! -d $workshop_dir/$dir ]] && return 1
-    [[ ! -L $game_dir/$symlink ]] && return 1
-    #SC2115
-    rm -rf "${workshop_dir:?}/$dir" && unlink "$game_dir/$symlink" || return 1
+    if [[ -z $1 ]]; then
+        # use multi mode
+        readarray -t symlinks < <(awk '{print $1}' $_cache_mods_temp)
+        readarray -t ids < <(awk '{print $2}' $_cache_mods_temp)
+        rm "$_cache_mods_temp"
+    else
+        local symlink="$1"
+        local dir="$2"
+        readarray -t symlinks <<< "$symlink"
+        readarray -t ids <<< "$dir"
+    fi
+    for ((i=0; i<${#symlinks[@]}; i++)); do
+        [[ ! -d $workshop_dir/${ids[$i]} ]] && return 1
+        [[ ! -L $game_dir/${symlinks[$i]} ]] && return 1
+        #SC2115
+        rm -rf "${workshop_dir:?}/${ids[$i]}" && unlink "$game_dir/${symlinks[$i]}" || return 1
+    done
 }
 test_cooldown(){
     [[ ! -f $_cache_cooldown ]] && return 0
