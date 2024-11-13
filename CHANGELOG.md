@@ -1,5 +1,15 @@
 # Changelog
 
+## [5.6.0-beta.1] 2024-11-12
+### Added
+- Bulk delete mods (via 'List installed mods' list). Not compatible with Manual Mod install mode
+### Fixed
+- Fix for server list truncation causing some servers to not appear in results
+- Suppress signal emission when switching menu contexts
+- Focus first row when opening mods list
+### Changed
+- Clarify some error messages and normalize text formatting
+
 ## [5.5.0-beta.5] 2024-11-03
 ### Changed
 - Use updated A2S_RULES logic
