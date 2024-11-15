@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.6.0-beta.1
+version=5.6.0-beta.2
 
 #CONSTANTS
 aid=221100
@@ -572,7 +572,7 @@ fetch_helpers_by_sum(){
         ["ui.py"]="680ff0e4071681f26409fa3592a41e46"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="fa5eb43c454e6bf2903e94884fe64644"
+        ["funcs"]="acd5d85b27141082b25e07138f8b5b54"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
@@ -862,6 +862,18 @@ legacy_cols(){
     < $cols_file jq '.cols += { "Queue": 120 }' > $cols_file.new &&
     mv $cols_file.new $cols_file
 }
+stale_mod_signatures(){
+    local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
+    if [[ -d $workshop_dir ]]; then
+        readarray -t old_mod_ids < <(awk -F, '{print $1}' $versions_file)
+        for ((i=0; i<${#old_mod_ids[@]}; ++i)); do
+            if [[ ! -d $workshop_dir/${old_mod_ids[$i]} ]]; then
+                "$HOME/.local/share/$app_name/helpers/funcs" "align_local" "${old_mod_ids[$i]}"
+            fi
+        done
+    fi
+
+}
 initial_setup(){
     setup_dirs
     setup_state_files
@@ -882,6 +894,7 @@ initial_setup(){
     steam_deps
     migrate_files
     stale_symlinks
+    stale_mod_signatures
     local_latlon
     is_steam_running
     is_dzg_downloading

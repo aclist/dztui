@@ -117,6 +117,7 @@ declare -A funcs=(
 ["start_cooldown"]="start_cooldown"
 ["list_mods"]="list_mods"
 ["delete"]="delete_local_mod"
+["align_local"]="align_versions_file"
 ["show_server_modlist"]="show_server_modlist"
 ["test_ping"]="test_ping"
 ["is_in_favs"]="is_in_favs"
@@ -339,7 +340,7 @@ list_mods(){
     fi
 }
 installed_mods(){
-    ls -1 "$workshop_dir"
+    find "$workshop_dir" -maxdepth 1 -mindepth 1 -printf "%f\n"
 }
 local_latlon(){
     local url="http://ip-api.com/json/$local_ip"
@@ -579,6 +580,14 @@ parse_server_json(){
     "\(.addr|split(":")[1])"
     ' | sort -k1
 }
+align_versions_file(){
+    shift
+    local mod="$1"
+    [[ ! -f $versions_file ]] && return
+    < "$versions_file" awk -F, -v var="$mod" '$1 != var' > $versions_file.new &&
+        mv $versions_file.new $versions_file
+    logger INFO "Removed local signatures for the mod '$mod'"
+}
 delete_local_mod(){
     shift
     if [[ -z $1 ]]; then
@@ -597,6 +606,7 @@ delete_local_mod(){
         [[ ! -L $game_dir/${symlinks[$i]} ]] && return 1
         #SC2115
         rm -rf "${workshop_dir:?}/${ids[$i]}" && unlink "$game_dir/${symlinks[$i]}" || return 1
+        align_versions_file "align" "${ids[$i]}"
     done
 }
 test_cooldown(){
