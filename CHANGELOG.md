@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.6.0-beta.2] 2024-11-15
+### Fixed
+- Clean up local mod signatures from versions file when deleting mods
+
 ## [5.6.0-beta.1] 2024-11-12
 ### Added
 - Bulk delete mods (via 'List installed mods' list). Not compatible with Manual Mod install mode
