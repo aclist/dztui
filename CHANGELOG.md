@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.6.0-beta.3] 2024-11-18
+### Fixed
+- Improved handling for cases where there are no locally installed mods
+- Set up mod symlinks at boot, rather than only on server connect
+- Prevent context menus from opening when table is empty
+- When reloading table in-place, prevent duplicate panel elements from being added if already present
+- Clean up signal emission
+
 ## [5.6.0-beta.2] 2024-11-15
 ### Fixed
 - Clean up local mod signatures from versions file when deleting mods

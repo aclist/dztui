@@ -330,8 +330,8 @@ def spawn_dialog(transient_parent, msg, mode):
 
 
 def process_shell_return_code(transient_parent, msg, code, original_input):
+    logger.info("Processing return code '%s' for the input '%s', returned message '%s'" %(code, original_input, msg))
     match code:
-            #TODO: add logger output to each
         case 0:
             # success with notice popup
             spawn_dialog(transient_parent, msg, Popup.NOTIFY)
@@ -369,6 +369,13 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
             transient_parent.grid.update_statusbar(tooltip)
             spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             return
+        case 95:
+            # reload mods list
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
+            treeview = transient_parent.grid.scrollable_treelist.treeview
+            # re-block this signal before redrawing table contents
+            toggle_signal(treeview, treeview, '_on_keypress', False)
+            treeview.update_quad_column("List installed mods")
         case 100:
             # final handoff before launch
             final_conf = spawn_dialog(transient_parent, msg, Popup.CONFIRM)
@@ -427,6 +434,8 @@ def process_tree_option(input, treeview):
             else:
                 # non-blocking subprocess
                 subprocess.Popen(['/usr/bin/env', 'bash', funcs, "Open link", command])
+        case "Delete selected mods":
+            call_on_thread(True, context, "Deleting mods", command)
         case "Handshake":
             call_on_thread(True, context, "Waiting for DayZ", command)
         case _:
@@ -605,7 +614,9 @@ class ButtonBox(Gtk.Box):
 
         # only applicable when returning from mod list
         grid = widgets["grid"]
-        grid.right_panel.remove(grid.sel_panel)
+        grid_last_child = grid.right_panel.get_children()[-1]
+        if isinstance(grid_last_child, ModSelectionPanel):
+            grid.right_panel.remove(grid.sel_panel)
         right_panel = self.get_parent()
         right_panel.set_filter_visibility(False)
 
@@ -780,15 +791,15 @@ class TreeView(Gtk.TreeView):
                 success_msg = "Successfully deleted the mod '%s'." %(value)
                 fail_msg = "An error occurred during deletion. Aborting."
                 res = spawn_dialog(parent, conf_msg, Popup.CONFIRM)
-                symlink = self.get_column_at_index(1)
-                dir = self.get_column_at_index(2)
                 if res == 0:
-                    proc = call_out(parent, "delete", symlink, dir)
-                    if proc.returncode == 0:
-                        spawn_dialog(parent, success_msg, Popup.NOTIFY)
-                        self.update_quad_column("List installed mods")
-                    else:
-                        spawn_dialog(parent, fail_msg, Popup.NOTIFY)
+                    mods = []
+                    symlink = self.get_column_at_index(1)
+                    dir = self.get_column_at_index(2)
+                    concat = symlink + " " + dir + "\n"
+                    mods.append(concat)
+                    with open(mods_temp_file, "w") as outfile:
+                        outfile.writelines(mods)
+                    process_tree_option(["Delete selected mods", ""], self)
             case "Open in Steam Workshop":
                 record = self.get_column_at_index(2)
                 call_out(parent, "open_workshop_page", record)
@@ -851,6 +862,11 @@ class TreeView(Gtk.TreeView):
         self.menu.show_all()
 
         if event.type is Gdk.EventType.KEY_PRESS and event.keyval is Gdk.KEY_l:
+            sel = self.get_selection()
+            sels = sel.get_selected_rows()
+            (model, pathlist) = sels
+            if len(pathlist) < 1:
+                return
             self.menu.popup_at_widget(widget, Gdk.Gravity.CENTER, Gdk.Gravity.WEST)
         else:
             self.menu.popup_at_pointer(event)
@@ -973,8 +989,11 @@ class TreeView(Gtk.TreeView):
 
     def _focus_first_row(self):
         path = Gtk.TreePath(0)
-        it = mod_store.get_iter(path)
-        self.get_selection().select_path(path)
+        try:
+            it = mod_store.get_iter(path)
+            self.get_selection().select_path(path)
+        except ValueError:
+            pass
 
     def get_column_at_index(self, index):
         select = self.get_selection()
@@ -1056,31 +1075,42 @@ class TreeView(Gtk.TreeView):
     def _background_quad(self, dialog, mode):
         def load():
             dialog.destroy()
+            # detach button panel if store is empty
+            if isinstance(panel_last_child, ModSelectionPanel):
+                if total_mods == 0:
+                    right_panel.remove(grid.sel_panel)
+                    grid.show_all()
+                    right_panel.set_filter_visibility(False)
             self.set_model(mod_store)
             self.grab_focus()
-            if abort is False:
-                size = locale.format_string('%.3f', total_size, grouping=True)
-                pretty = pluralize("mods", total_mods)
-                grid.update_statusbar(f"Found {total_mods:n} {pretty} taking up {size} MiB")
+            size = locale.format_string('%.3f', total_size, grouping=True)
+            pretty = pluralize("mods", total_mods)
+            grid.update_statusbar(f"Found {total_mods:n} {pretty} taking up {size} MiB")
             #2024-11-12
             toggle_signal(self, self.selected_row, '_on_tree_selection_changed', True)
             toggle_signal(self, self, '_on_keypress', True)
             self._focus_first_row()
+            if total_mods == 0:
+                spawn_dialog(self.get_outer_window(), data.stdout, Popup.NOTIFY)
 
-        grid = self.get_outer_grid()
+        widgets = relative_widget(self)
+        grid = widgets["grid"]
         right_panel = grid.right_panel
-
-        abort = False
-        right_panel.set_filter_visibility(False)
         data = call_out(self, "list_mods", mode)
+        panel_last_child = right_panel.get_children()[-1]
 
         # suppress errors if no mods available on system
         if data.returncode == 1:
-            abort = True
+            total_mods = 0
+            total_size = 0
             GLib.idle_add(load)
-            spawn_dialog(self.get_outer_window(), data.stdout, Popup.NOTIFY)
             return 1
 
+        # attach button panel only if missing (prevents duplication when reloading in-place)
+        if not isinstance(panel_last_child, ModSelectionPanel):
+            right_panel.pack_start(grid.sel_panel, False, False, 0)
+            grid.show_all()
+            right_panel.set_filter_visibility(False)
         result = parse_mod_rows(data)
         total_size = result[0]
         total_mods = result[1]
@@ -1214,10 +1244,6 @@ class TreeView(Gtk.TreeView):
         if mode == "List installed mods":
             cols = mod_cols
             self.set_model(mod_store)
-            # attach button panel
-            grid = self.get_parent().get_parent()
-            grid.right_panel.pack_start(grid.sel_panel, False, False, 0)
-            grid.show_all()
         else:
             cols = log_cols
             self.set_model(log_store)
@@ -1988,12 +2014,7 @@ class ModSelectionPanel(Gtk.Box):
             mods.append(concat)
         with open(mods_temp_file, "w") as outfile:
             outfile.writelines(mods)
-        proc = call_out(parent, "delete")
-        if proc.returncode == 0:
-            spawn_dialog(parent, success_msg, Popup.NOTIFY)
-            treeview.update_quad_column("List installed mods")
-        else:
-            spawn_dialog(parent, fail_msg, Popup.NOTIFY)
+        process_tree_option(["Delete selected mods", ""], treeview)
 
 class FilterPanel(Gtk.Box):
     def __init__(self):

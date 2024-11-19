@@ -569,10 +569,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="680ff0e4071681f26409fa3592a41e46"
+        ["ui.py"]="4663cdda7bf91a0c594103d6f4382f15"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="acd5d85b27141082b25e07138f8b5b54"
+        ["funcs"]="5eae515ea2cac2ab38212a529415e86b"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
@@ -874,6 +874,9 @@ stale_mod_signatures(){
     fi
 
 }
+create_new_links(){
+    "$HOME/.local/share/$app_name/helpers/funcs" "update_symlinks"
+}
 initial_setup(){
     setup_dirs
     setup_state_files
@@ -895,6 +898,7 @@ initial_setup(){
     migrate_files
     stale_symlinks
     stale_mod_signatures
+    create_new_links
     local_latlon
     is_steam_running
     is_dzg_downloading

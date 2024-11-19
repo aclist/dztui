@@ -116,7 +116,7 @@ declare -A funcs=(
 ["query_config"]="query_config"
 ["start_cooldown"]="start_cooldown"
 ["list_mods"]="list_mods"
-["delete"]="delete_local_mod"
+["Delete selected mods"]="delete_local_mod"
 ["align_local"]="align_versions_file"
 ["show_server_modlist"]="show_server_modlist"
 ["test_ping"]="test_ping"
@@ -131,6 +131,7 @@ declare -A funcs=(
 ["Handshake"]="final_handshake"
 ["get_player_count"]="get_player_count"
 ["lan_scan"]="lan_scan"
+["update_symlinks"]="update_symlinks"
 )
 
 lan_scan(){
@@ -588,19 +589,34 @@ align_versions_file(){
         mv $versions_file.new $versions_file
     logger INFO "Removed local signatures for the mod '$mod'"
 }
+pluralize(){
+    local plural="$1"
+    local count="$2"
+    local mod
+    local suffix
+    local base
+    local ct
+    local s
+
+    if [[ "${plural: -2}" == "es" ]]; then
+        base="${plural::-2}"
+        suffix="${plural: -2}"
+        ct=$((count^2))
+        [[ $ct -ne 3 ]] && s="$suffix"
+    else
+        base="${plural::-1}"
+        suffix="${plural: -1}"
+        ct=$((count^1))
+        [[ $ct -gt 0 ]] && s="$suffix"
+    fi
+
+    printf "%s%s" "$base" "$s"
+}
 delete_local_mod(){
     shift
-    if [[ -z $1 ]]; then
-        # use multi mode
-        readarray -t symlinks < <(awk '{print $1}' $_cache_mods_temp)
-        readarray -t ids < <(awk '{print $2}' $_cache_mods_temp)
-        rm "$_cache_mods_temp"
-    else
-        local symlink="$1"
-        local dir="$2"
-        readarray -t symlinks <<< "$symlink"
-        readarray -t ids <<< "$dir"
-    fi
+    readarray -t symlinks < <(awk '{print $1}' $_cache_mods_temp)
+    readarray -t ids < <(awk '{print $2}' $_cache_mods_temp)
+    rm "$_cache_mods_temp"
     for ((i=0; i<${#symlinks[@]}; i++)); do
         [[ ! -d $workshop_dir/${ids[$i]} ]] && return 1
         [[ ! -L $game_dir/${symlinks[$i]} ]] && return 1
@@ -608,16 +624,17 @@ delete_local_mod(){
         rm -rf "${workshop_dir:?}/${ids[$i]}" && unlink "$game_dir/${symlinks[$i]}" || return 1
         align_versions_file "align" "${ids[$i]}"
     done
+    printf "Successfully deleted %s %s." "${#symlinks[@]}" "$(pluralize "mods" ${#symlinks[@]})"
+    return 95
 }
 test_cooldown(){
     [[ ! -f $_cache_cooldown ]] && return 0
     local old_time=$(< $_cache_cooldown)
     local cur_time=$(date +%s)
     local delta=$(($cur_time - $old_time))
-    local suffix="seconds"
     if [[ $delta -lt 60 ]]; then
         local remains=$((60 - $delta))
-        [[ $remains -eq 1 ]] && suffix="second"
+        local suffix=$(pluralize "seconds" $remains)
         printf "Global API cooldown in effect. Please wait %s %s." "$remains" "$suffix"
         exit 1
     fi
@@ -1104,7 +1121,11 @@ legacy_symlinks(){
             unlink "$d"
         fi
     done
-    for d in "$workshop_dir"/*; do
+    readarray -t mod_dirs < <(find "$workshop_dir" -maxdepth 1 -mindepth 1 -type d)
+    [[ ${#mod_dirs[@]} -eq 0 ]] && return
+    for d in "${mod_dirs[@]}"; do
+        # suppress errors if mods are downloading at boot
+        [[ ! -f "$d/meta.cpp" ]] && continue
         local id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
         local encoded_id=$(echo "$id" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g')
         if [[ -h "$game_dir/@$encoded_id" ]]; then
@@ -1113,7 +1134,11 @@ legacy_symlinks(){
     done
 }
 symlinks(){
-    for d in "$workshop_dir"/*; do
+    readarray -t mod_dirs < <(find "$workshop_dir" -maxdepth 1 -mindepth 1 -type d)
+    [[ ${#mod_dirs[@]} -eq 0 ]] && return
+    for d in "${mod_dirs[@]}"; do
+        # suppress errors if mods are downloading at boot
+        [[ ! -f "$d/meta.cpp" ]] && continue
         id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
         encoded_id=$(encode "$id")
         link="@$encoded_id"
