@@ -12,7 +12,6 @@ import subprocess
 import sys
 import textwrap
 import threading
-import time
 
 locale.setlocale(locale.LC_ALL, '')
 gi.require_version("Gtk", "3.0")
@@ -22,7 +21,6 @@ from enum import Enum
 # 5.6.0
 app_name = "DZGUI"
 
-start_time = 0
 
 cache = {}
 config_vals = []
@@ -874,15 +872,11 @@ class TreeView(Gtk.TreeView):
     def refresh_player_count(self):
         parent = self.get_outer_window()
 
-        global start_time
-        then = start_time
-        now = time.monotonic()
-        diff = now - then
-        cooldown = 30 - math.floor(diff)
-        if ((start_time > 0) and (now - then) < 30):
-            spawn_dialog(parent, "Global refresh cooldown not met. Wait %s second(s)." %(str(cooldown)), Popup.NOTIFY)
-            return
-        start_time = now
+        cooldown = call_out(self, "test_cooldown", "", "")
+        if cooldown.returncode == 1:
+            spawn_dialog(self.get_outer_window(), cooldown.stdout, Popup.NOTIFY)
+            return 1
+        call_out(self, "start_cooldown", "", "")
 
         thread = threading.Thread(target=self._background_player_count, args=())
         thread.start()
