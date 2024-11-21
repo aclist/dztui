@@ -1229,13 +1229,13 @@ class TreeView(Gtk.TreeView):
 
     def _on_tree_selection_changed(self, selection):
         # no statusbar queue on quad tables
-        if self.view == WindowContext.TABLE_MODS or context == "Timestamp":
-            return
 
         grid = self.get_outer_grid()
         context = self.get_first_col()
         row_sel = self.get_column_at_index(0)
         logger.info("Tree selection for context '%s' changed to '%s'" %(context, row_sel))
+        if self.view == WindowContext.TABLE_MODS or context == "Timestamp":
+            return
 
         if self.current_proc and self.current_proc.is_alive():
             self.current_proc.terminate()
