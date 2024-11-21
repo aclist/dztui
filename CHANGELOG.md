@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.6.0-beta.5] 2024-11-21
+### Added
+- Highlight stale mods in mods list
+### Fixed
+- Duplicate dialog title on Steam Deck
+
 ## [5.6.0-beta.4] 2024-11-20
 ### Added
 - Application header bar and controls

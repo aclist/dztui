@@ -34,8 +34,8 @@ checks = list()
 map_store = Gtk.ListStore(str)
 row_store = Gtk.ListStore(str)
 modlist_store = Gtk.ListStore(str, str, str)
-#cf. mod_cols
-mod_store = Gtk.ListStore(str, str, str, float)
+#cf. mod_cols, last column holds hex color
+mod_store = Gtk.ListStore(str, str, str, float, str)
 #cf. log_cols
 log_store = Gtk.ListStore(str, str, str, str)
 #cf. browser_cols
@@ -53,6 +53,7 @@ changelog_path = '%s/CHANGELOG.md' %(state_path)
 geometry_path = '%s/dzg.cols.json' %(state_path)
 funcs = '%s/funcs' %(helpers_path)
 mods_temp_file = '%s/dzg.mods_temp' %(cache_path)
+stale_mods_temp_file = '%s/dzg.stale_mods_temp' %(cache_path)
 
 logger = logging.getLogger(__name__)
 log_file = '%s/DZGUI_DEBUG.log' %(log_path)
@@ -77,7 +78,8 @@ mod_cols = [
     "Mod",
     "Symlink",
     "Dir",
-    "Size (MiB)"
+    "Size (MiB)",
+    "Color"
 ]
 log_cols = [
     "Timestamp",
@@ -120,6 +122,11 @@ class RowType(EnumWithAttrs):
     DYNAMIC = {
             "label": None,
             "tooltip": None,
+            }
+    HIGHLIGHT = {
+            "label": "Highlight stale",
+            "tooltip": None,
+            "wait_msg": "Looking for stale mods"
             }
     HANDSHAKE = {
             "label": "Handshake",
@@ -519,8 +526,9 @@ def parse_mod_rows(data):
     lines = data.stdout.splitlines()
     hits = len(lines)
     reader = csv.reader(lines, delimiter=delimiter)
+    # Nonetype inherits default GTK color
     try:
-        rows = [[row[0], row[1], row[2], locale.atof(row[3], func=float)] for row in reader if row]
+        rows = [[row[0], row[1], row[2], locale.atof(row[3], func=float), None] for row in reader if row]
     except IndexError:
         return 1
     for row in rows:
@@ -640,6 +648,10 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
             # re-block this signal before redrawing table contents
             toggle_signal(treeview, treeview, '_on_keypress', False)
             treeview.update_quad_column(RowType.LIST_MODS)
+        case 99:
+            # highlight stale mods
+            panel = transient_parent.grid.sel_panel
+            panel.colorize_cells(msg, True)
         case 100:
             # final handoff before launch
             final_conf = spawn_dialog(transient_parent, msg, Popup.CONFIRM)
@@ -690,6 +702,10 @@ def process_tree_option(input, treeview):
             process_shell_return_code(transient_parent, msg, rc, input)
 
     # help pages
+    if context == WindowContext.TABLE_MODS and command == RowType.HIGHLIGHT:
+        wait_msg = command.dict["wait_msg"]
+        call_on_thread(True, cmd_string, wait_msg, '')
+        return
     if context == WindowContext.HELP:
         match command:
             case RowType.CHANGELOG:
@@ -1589,12 +1605,14 @@ class TreeView(Gtk.TreeView):
 
         for i, column_title in enumerate(cols):
             renderer = Gtk.CellRendererText()
-            column = Gtk.TreeViewColumn(column_title, renderer, text=i)
+            column = Gtk.TreeViewColumn(column_title, renderer, text=i, foreground=4)
             if mode == RowType.LIST_MODS:
                 if i == 3:
                     column.set_cell_data_func(renderer, self._format_float, func_data=None)
             column.set_sort_column_id(i)
-            self.append_column(column)
+            # hidden color property column
+            if i != 4:
+                self.append_column(column)
 
         widgets = relative_widget(self)
         grid = widgets["grid"]
@@ -1848,7 +1866,7 @@ class GenericDialog(Gtk.MessageDialog):
             text=header_text,
             secondary_text=textwrap.fill(text, 50),
             buttons=button_type,
-            title=app_name,
+            title="DZGUI - Dialog",
             modal=True,
         )
 
@@ -1939,7 +1957,7 @@ class LanDialog(Gtk.MessageDialog):
             buttons=Gtk.ButtonsType.OK_CANCEL,
             text=text,
             secondary_text="Select the query port",
-            title=app_name,
+            title="DZGUI - Dialog",
             modal=True,
         )
 
@@ -2328,8 +2346,11 @@ class ModSelectionPanel(Gtk.Box):
         labels = [
                 "Select all",
                 "Unselect all",
-                "Delete selected"
+                "Delete selected",
+                "Highlight stale"
                 ]
+
+        self.active_button = None
 
         for l in labels:
             button = Gtk.Button(label=l)
@@ -2339,22 +2360,57 @@ class ModSelectionPanel(Gtk.Box):
             self.pack_start(button, False, True, 0)
 
     def _on_button_clicked(self, button):
+        self.active_button = button
         label = button.get_label()
         widgets = relative_widget(self)
         parent = widgets["outer"]
         treeview = widgets["treeview"]
+        (model, pathlist) = treeview.get_selection().get_selected_rows()
         match label:
             case "Select all":
                 treeview.toggle_selection(True)
             case "Unselect all":
                 treeview.toggle_selection(False)
             case "Delete selected":
-                (model, pathlist) = treeview.get_selection().get_selected_rows()
                 ct = len(pathlist)
                 if ct < 1:
                     return
-
                 self._iterate_mod_deletion(model, pathlist, ct)
+            case "Highlight stale":
+                process_tree_option([treeview.view, RowType.HIGHLIGHT], treeview)
+            case "Unhighlight stale":
+                self.colorize_cells(None, False)
+
+    def colorize_cells(self, mods, bool):
+        def _colorize(path, color):
+            mod_store[path][4] = color
+            
+        widgets = relative_widget(self)
+        parent = widgets["outer"]
+        treeview = widgets["treeview"]
+        (model, pathlist) = treeview.get_selection().get_selected_rows()
+
+        if bool is False:
+            default = None
+            for i in range (0, len(mod_store)):
+                path = Gtk.TreePath(i)
+                it = mod_store.get_iter(path)
+                _colorize(path, None)
+            self.active_button.set_label("Highlight stale")
+            return
+
+        with open(stale_mods_temp_file, "r") as infile:
+            lines = [line.rstrip('\n') for line in infile]
+
+        for i in range (0, len(mod_store)):
+            red = "#FF0000"
+            path = Gtk.TreePath(i)
+            it = mod_store.get_iter(path)
+            if model.get_value(it, 2) not in lines:
+                _colorize(path, red)
+            treeview.toggle_selection(False)
+            self.active_button.set_label("Unhighlight stale")
+
 
     def _iterate_mod_deletion(self, model, pathlist, ct):
         # hedge against large number of arguments

@@ -39,6 +39,7 @@ lock_file="$state_path/$prefix.lock"
 cache_dir="$HOME/.cache/$app_name"
 _cache_servers="$cache_dir/$prefix.servers"
 _cache_mods_temp="$cache_dir/$prefix.mods_temp"
+_cache_stale_mods_temp="$cache_dir/$prefix.stale_mods_temp"
 _cache_temp="$cache_dir/$prefix.temp"
 _cache_my_servers="$cache_dir/$prefix.my_servers"
 _cache_history="$cache_dir/$prefix.history"
@@ -95,6 +96,7 @@ else
 fi
 
 declare -A funcs=(
+["Highlight stale"]="find_stale_mods"
 ["My servers"]="dump_servers"
 ["Change player name"]="update_config_val"
 ["Change Steam API key"]="update_config_val"
@@ -143,6 +145,20 @@ lan_scan(){
     else
         printf "%s\n" "$res"
     fi
+}
+find_stale_mods(){
+    local res
+    local mods=()
+    > $_cache_stale_mods_temp
+    for i in "${ip_list[@]}"; do
+        local ip=$(<<< "$i" awk -F: '{print $1}')
+        local qport=$(<<< "$i" awk -F: '{print $3}')
+        res=$(a2s $ip $qport rules)
+        if [[ -n $res ]]; then
+            printf "%s\n" "$res" >> $_cache_stale_mods_temp
+        fi
+    done
+    return 99
 }
 get_player_count(){
     shift
