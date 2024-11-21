@@ -158,6 +158,7 @@ find_stale_mods(){
             printf "%s\n" "$res" >> $_cache_stale_mods_temp
         fi
     done
+    printf ""
     return 99
 }
 get_player_count(){

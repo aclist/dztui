@@ -651,7 +651,7 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
         case 99:
             # highlight stale mods
             panel = transient_parent.grid.sel_panel
-            panel.colorize_cells(msg, True)
+            panel.colorize_cells(True)
         case 100:
             # final handoff before launch
             final_conf = spawn_dialog(transient_parent, msg, Popup.CONFIRM)
@@ -2379,9 +2379,9 @@ class ModSelectionPanel(Gtk.Box):
             case "Highlight stale":
                 process_tree_option([treeview.view, RowType.HIGHLIGHT], treeview)
             case "Unhighlight stale":
-                self.colorize_cells(None, False)
+                self.colorize_cells(False)
 
-    def colorize_cells(self, mods, bool):
+    def colorize_cells(self, bool):
         def _colorize(path, color):
             mod_store[path][4] = color
             
