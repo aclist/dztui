@@ -115,19 +115,19 @@ declare -A funcs=(
 ["test_cooldown"]="test_cooldown"
 ["query_config"]="query_config"
 ["start_cooldown"]="start_cooldown"
-["list_mods"]="list_mods"
+["List installed mods"]="list_mods"
 ["Delete selected mods"]="delete_local_mod"
 ["align_local"]="align_versions_file"
 ["show_server_modlist"]="show_server_modlist"
 ["test_ping"]="test_ping"
 ["is_in_favs"]="is_in_favs"
 ["show_log"]="show_log"
-["gen_log"]="generate_log"
+["Output system info to log file"]="generate_log"
 ["open_workshop_page"]="open_workshop_page"
 ["Add to my servers"]="update_favs_from_table"
 ["Remove from my servers"]="update_favs_from_table"
 ["Remove from history"]="remove_from_history"
-["force_update"]="force_update"
+["Force update local mods"]="force_update"
 ["Handshake"]="final_handshake"
 ["get_player_count"]="get_player_count"
 ["lan_scan"]="lan_scan"
@@ -236,6 +236,7 @@ add_record(){
             fav_label=$(<<< "$res" jq -r '.[].name')
             fav_server="$record"
             update_config
+            echo "Updated favorite server to '$fav_server' ($fav_label)"
             return 90
             ;;
         "Add server by ID")

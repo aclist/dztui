@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.6.0-beta.3
+version=5.6.0-beta.4
 
 #CONSTANTS
 aid=221100
@@ -569,10 +569,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="353e6fcb8d2c674a3720c0ab8a2b3fd6"
+        ["ui.py"]="27ef5c9b811011521c81985ee2b32bb4"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="5eae515ea2cac2ab38212a529415e86b"
+        ["funcs"]="75afe0be7e73af2fb6a7e423b5ac9159"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
@@ -886,7 +886,7 @@ initial_setup(){
     watcher_deps
     check_architecture
     test_connection
-    fetch_helpers > >(pdialog "Checking helper files")
+#    fetch_helpers > >(pdialog "Checking helper files")
     varcheck
     source "$config_file"
     lock

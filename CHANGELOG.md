@@ -1,5 +1,15 @@
 # Changelog
 
+## [5.6.0-beta.4] 2024-11-20
+### Added
+- Application header bar and controls
+- Menu context subtitle in header bar
+### Changed
+- Refactor control flow for more robust contextual parsing
+- Stop sending modal dialog hints to outer window
+### Fixed
+- Favorite server message not updating correctly
+
 ## [5.6.0-beta.3] 2024-11-18
 ### Fixed
 - Improved handling for cases where there are no locally installed mods

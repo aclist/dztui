@@ -21,7 +21,6 @@ from enum import Enum
 # 5.6.0
 app_name = "DZGUI"
 
-
 cache = {}
 config_vals = []
 stored_keys = []
@@ -86,41 +85,6 @@ log_cols = [
     "Traceback",
     "Message"
 ]
-connect = [
-    ("Server browser",),
-    ("My saved servers",),
-    ("Quick-connect to favorite server",),
-    ("Recent servers",),
-    ("Connect by IP",),
-    ("Connect by ID",),
-    ("Scan LAN servers",)
-]
-manage = [
-    ("Add server by IP",),
-    ("Add server by ID",),
-    ("Change favorite server",),
-]
-options = [
-    ("List installed mods",),
-    ("Toggle release branch",),
-    ("Toggle mod install mode",),
-    ("Toggle Steam/Flatpak",),
-    ("Toggle DZGUI fullscreen boot",),
-    ("Change player name",),
-    ("Change Steam API key",),
-    ("Change Battlemetrics API key",),
-    ("Force update local mods",),
-    ("Output system info to log file",)
-]
-help = [
-    ("View changelog",),
-    ("Show debug log",),
-    ("Help file ⧉",),
-    ("Report a bug ⧉",),
-    ("Forum ⧉",),
-    ("Sponsor ⧉",),
-    ("Hall of fame ⧉",),
-]
 filters = {
     "1PP": True,
     "3PP": True,
@@ -132,42 +96,338 @@ filters = {
     "Non-ASCII": False,
     "Duplicate": False
 }
-side_buttons = [
-    "Main menu",
-    "Manage",
-    "Options",
-    "Help",
-    "Exit"
-]
-status_tooltip = {
-    "Server browser": "Used to browse the global server list",
-    "My saved servers": "Browse your saved servers. Unreachable/offline servers will be excluded",
-    "Quick-connect to favorite server": "Connect to your favorite server",
-    "Recent servers": "Shows the last 10 servers you connected to (includes attempts)",
-    "Connect by IP": "Connect to a server by IP",
-    "Connect by ID": "Connect to a server by Battlemetrics ID",
-    "Scan LAN servers": "Search for servers on your local network",
-    "Add server by IP": "Add a server by IP",
-    "Add server by ID": "Add a server by Battlemetrics ID",
-    "Change favorite server": "Update your quick-connect server",
-    "List installed mods": "Browse a list of locally-installed mods",
-    "Toggle release branch": "Switch between stable and testing branches",
-    "Toggle mod install mode": "Switch between manual and auto mod installation",
-    "Toggle Steam/Flatpak": "Switch the preferred client to use for launching DayZ",
-    "Toggle DZGUI fullscreen boot": "Whether to start DZGUI as a maximized window (desktop only)",
-    "Change player name": "Update your in-game name (required by some servers)",
-    "Change Steam API key": "Can be used if you revoked an old API key",
-    "Change Battlemetrics API key": "Can be used if you revoked an old API key",
-    "Force update local mods": "Synchronize the signatures of all local mods with remote versions (experimental)",
-    "Output system info to log file": "Generates a system log for troubleshooting",
-    "View changelog": "Opens the DZGUI changelog in a dialog window",
-    "Show debug log": "Read the DZGUI log generated since startup",
-    "Help file ⧉": "Opens the DZGUI documentation in a browser",
-    "Report a bug ⧉": "Opens the DZGUI issue tracker in a browser",
-    "Forum ⧉": "Opens the DZGUI discussion forum in a browser",
-    "Sponsor ⧉": "Sponsor the developer of DZGUI",
-    "Hall of fame ⧉": "A list of significant contributors and testers",
-}
+
+
+class EnumWithAttrs(Enum):
+
+    def __new__(cls, *args, **kwds):
+        value = len(cls.__members__) + 1
+        obj = object.__new__(cls)
+        obj._value_ = value
+        return obj
+    def __init__(self, a):
+        self.dict = a
+
+
+class RowType(EnumWithAttrs):
+    @classmethod
+    def str2rowtype(cls, str):
+        for member in cls:
+            if str == member.dict["label"]:
+                return member
+        return RowType.DYNAMIC
+
+    DYNAMIC = {
+            "label": None,
+            "tooltip": None,
+            }
+    HANDSHAKE = {
+            "label": "Handshake",
+            "tooltip": None,
+            "wait_msg": "Waiting for DayZ"
+            }
+    DELETE_SELECTED = {
+            "label": "Delete selected mods",
+            "tooltip": None,
+            "wait_msg": "Deleting mods"
+            }
+    SERVER_BROWSER = {
+            "label": "Server browser",
+            "tooltip": "Used to browse the global server list",
+            }
+    SAVED_SERVERS = {
+            "label": "My saved servers",
+            "tooltip": "Browse your saved servers. Unreachable/offline servers will be excluded",
+            }
+    QUICK_CONNECT = {
+            "label": "Quick-connect to favorite server",
+            "tooltip": "Connect to your favorite server",
+            "wait_msg": "Working",
+            "default": "unset",
+            "alt": None,
+            "val": "fav_label"
+            }
+    RECENT_SERVERS = {
+            "label": "Recent servers",
+            "tooltip": "Shows the last to servers you connected to (includes attempts)",
+            }
+    CONN_BY_IP = {
+            "label": "Connect by IP",
+            "tooltip": "Connect to a server by IP",
+            "prompt": "Enter IP in IP:Queryport format (e.g. 192.168.1.1:27016)",
+            "link_label": None,
+            }
+    CONN_BY_ID = {
+            "label": "Connect by ID",
+            "tooltip": "Connect to a server by Battlemetrics ID",
+            "prompt": "Enter server ID",
+            "link_label": "Open Battlemetrics",
+            }
+    SCAN_LAN = {
+            "label": "Scan LAN servers",
+            "tooltip": "Search for servers on your local network"
+            }
+    ADD_BY_IP = {
+            "label": "Add server by IP",
+            "tooltip": "Add a server by IP",
+            "prompt": "Enter IP in IP:Queryport format (e.g. 192.168.1.1:27016)",
+            "link_label": None,
+    }
+    ADD_BY_ID = {
+            "label": "Add server by ID",
+            "tooltip": "Add a server by Battlemetrics ID",
+            "prompt": "Enter server ID",
+            "link_label": "Open Battlemetrics",
+    }
+    CHNG_FAV = {
+            "label": "Change favorite server",
+            "tooltip": "Update your quick-connect server",
+            "prompt": "Enter IP in IP:Queryport format (e.g. 192.168.1.1:27016)",
+            "link_label": None,
+            "alt": None,
+            "default": "unset",
+            "val": "fav_label"
+    }
+    LIST_MODS = {
+            "label": "List installed mods",
+            "tooltip": "Browse a list of locally-installed mods",
+            "quad_label": "Mods"
+    }
+    TGL_BRANCH = {
+            "label": "Toggle release branch",
+            "tooltip": "Switch between stable and testing branches",
+            "default": None,
+            "val": "branch"
+    }
+    TGL_INSTALL = {
+            "label": "Toggle mod install mode",
+            "tooltip": "Switch between manual and auto mod installation",
+            "default": "manual",
+            "alt": "auto",
+            "val": "auto_install"
+            }
+    TGL_STEAM = {
+            "label": "Toggle Steam/Flatpak",
+            "tooltip": "Switch the preferred client to use for launching DayZ",
+            "alt": None,
+            "default": None,
+            "val": "preferred_client"
+    }
+    TGL_FULLSCREEN = {
+            "label": "Toggle DZGUI fullscreen boot",
+            "tooltip": "Whether to start DZGUI as a maximized window (desktop only)",
+            "alt": "true",
+            "default": "false",
+            "val": "fullscreen"
+    }
+    CHNG_PLAYER = {
+            "label": "Change player name",
+            "tooltip": "Update your in-game name (required by some servers)",
+            "prompt": "Enter new nickname",
+            "link_label": None,
+            "alt": None,
+            "default": None,
+            "val": "name"
+    }
+    CHNG_STEAM_API = {
+            "label": "Change Steam API key",
+            "tooltip": "Can be used if you revoked an old API key",
+            "prompt": "Enter new API key",
+            "link_label": "Open Steam API page",
+    }
+    CHNG_BM_API = {
+            "label": "Change Battlemetrics API key",
+            "tooltip": "Can be used if you revoked an old API key",
+            "link_label": "Open Battlemetrics API page",
+            "prompt": "Enter new API key",
+    }
+    FORCE_UPDATE = {
+            "label": "Force update local mods",
+            "tooltip": "Synchronize the signatures of all local mods with remote versions (experimental)",
+            "wait_msg": "Updating mods"
+            }
+    DUMP_LOG = {
+            "label": "Output system info to log file",
+            "tooltip": "Dump diagnostic data for troubleshooting",
+            "wait_msg": "Generating log"
+            }
+    CHANGELOG = {
+            "label": "View changelog",
+            "tooltip": "Opens the DZGUI changelog in a dialog window"
+            }
+    SHOW_LOG = {
+            "label": "Show debug log",
+            "tooltip": "Read the DZGUI log generated since startup",
+            "quad_label": "Debug log"
+            }
+    DOCS = {
+            "label": "Help file ⧉",
+            "tooltip": "Opens the DZGUI documentation in a browser"
+            }
+    BUGS = {
+            "label": "Report a bug ⧉",
+            "tooltip": "Opens the DZGUI issue tracker in a browser"
+            }
+    FORUM = {
+            "label": "Forum ⧉",
+            "tooltip": "Opens the DZGUI discussion forum in a browser"
+            }
+    SPONSOR = {
+            "label": "Sponsor ⧉",
+            "tooltip": "Sponsor the developer of DZGUI"
+            }
+    HOF = {
+            "label": "Hall of fame ⧉",
+            "tooltip": "A list of significant contributors and testers"
+            }
+
+
+class WindowContext(EnumWithAttrs):
+    @classmethod
+    def row2con(cls, row):
+        m = None
+        for member in cls:
+            if row in member.dict["rows"]:
+                    m = member
+            elif row in member.dict["called_by"]:
+                    m = member
+            else:
+                continue
+        return m
+
+
+    MAIN_MENU = {
+            "label": "",
+            "rows": [
+                RowType.SERVER_BROWSER,
+                RowType.SAVED_SERVERS,
+                RowType.QUICK_CONNECT,
+                RowType.RECENT_SERVERS,
+                RowType.CONN_BY_IP,
+                RowType.CONN_BY_ID,
+                RowType.SCAN_LAN
+                ],
+            "called_by": []
+            }
+    MANAGE = {
+            "label": "Manage",
+            "rows": [
+                RowType.ADD_BY_IP,
+                RowType.ADD_BY_ID,
+                RowType.CHNG_FAV
+                ],
+            "called_by": []
+            }
+    OPTIONS = {
+            "label": "Options",
+            "rows":[
+                RowType.LIST_MODS,
+                RowType.TGL_BRANCH,
+                RowType.TGL_INSTALL,
+                RowType.TGL_STEAM,
+                RowType.TGL_FULLSCREEN,
+                RowType.CHNG_PLAYER,
+                RowType.CHNG_STEAM_API,
+                RowType.CHNG_BM_API,
+                RowType.FORCE_UPDATE,
+                RowType.DUMP_LOG
+                ],
+            "called_by": []
+            }
+    HELP = {
+            "label": "Help",
+            "rows":[
+                RowType.CHANGELOG,
+                RowType.SHOW_LOG,
+                RowType.DOCS,
+                RowType.BUGS,
+                RowType.FORUM,
+                RowType.SPONSOR,
+                RowType.HOF
+                ],
+            "called_by": []
+            }
+    # inner server contexts
+    TABLE_API = {
+            "label": "",
+            "rows": [],
+            "called_by": [
+                RowType.SERVER_BROWSER
+                ],
+            }
+    TABLE_SERVER = {
+            "label": "",
+            "rows": [],
+            "called_by": [
+                RowType.SAVED_SERVERS,
+                RowType.RECENT_SERVERS,
+                RowType.SCAN_LAN
+                ],
+            }
+    TABLE_MODS = {
+            "label": "",
+            "rows": [],
+            "called_by": [
+                RowType.LIST_MODS,
+                ],
+            }
+    TABLE_LOG = {
+            "label": "",
+            "rows": [],
+            "called_by": [
+                RowType.SHOW_LOG
+                ],
+            }
+
+
+class WidgetType(Enum):
+    OUTER_WIN = 1
+    TREEVIEW = 2
+    GRID = 3
+    RIGHT_PANEL = 4
+    MOD_PANEL = 5
+    FILTER_PANEL = 6
+
+
+class Port(Enum):
+    DEFAULT = 1
+    CUSTOM = 2
+
+
+class Popup(Enum):
+    WAIT = 1
+    NOTIFY = 2
+    CONFIRM = 3
+    ENTRY = 4
+
+
+class ButtonType(EnumWithAttrs):
+    MAIN_MENU = {"label": "Main menu",
+                 "opens": WindowContext.MAIN_MENU
+                 }
+    MANAGE = {"label": "Manage",
+              "opens": WindowContext.MANAGE
+              }
+    OPTIONS = {"label": "Options",
+               "opens": WindowContext.OPTIONS
+               }
+    HELP = {"label": "Help",
+            "opens": WindowContext.HELP
+            }
+    EXIT = {"label": "Exit",
+            "opens": None
+            }
+
+
+class EnumeratedButton(Gtk.Button):
+    @GObject.Property
+    def button_type(self):
+       return self._button_type
+
+    @button_type.setter
+    def button_type(self, value):
+       self._button_type = value
+
 
 def relative_widget(child):
     # returns collection of outer widgets relative to source widget
@@ -196,6 +456,7 @@ def relative_widget(child):
 
     return widgets
 
+
 def pluralize(plural, count):
     suffix = plural[-2:]
     if suffix == "es":
@@ -205,9 +466,11 @@ def pluralize(plural, count):
         base = plural[:-1]
         return f"%s{'s'[:count^1]}" %(base)
 
+
 def format_ping(ping):
     ms = " | Ping: %s" %(ping)
     return ms
+
 
 def format_distance(distance):
     if distance == "Unknown":
@@ -237,6 +500,7 @@ def parse_modlist_rows(data):
         modlist_store.append(row)
     return hits
 
+
 def parse_log_rows(data):
     lines = data.stdout.splitlines()
     reader = csv.reader(lines, delimiter=delimiter)
@@ -246,6 +510,7 @@ def parse_log_rows(data):
         return 1
     for row in rows:
         log_store.append(row)
+
 
 def parse_mod_rows(data):
     # GTK pads trailing zeroes on floats
@@ -347,12 +612,13 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
             # for BM only
             spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             treeview = transient_parent.grid.scrollable_treelist.treeview
-            process_tree_option(["Options", "Change Battlemetrics API key"], treeview)
+            process_tree_option([treeview.view, RowType.CHNG_BM_API], treeview)
         case 5:
             # for steam only
+            # deprecated, Steam is mandatory now
             spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             treeview = transient_parent.grid.scrollable_treelist.treeview
-            process_tree_option(["Options", "Change Steam API key"], treeview)
+            process_tree_option([treeview.view, RowType.CHNG_STEAM_API], treeview)
         case 6:
             # return silently
             pass
@@ -373,14 +639,14 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
             treeview = transient_parent.grid.scrollable_treelist.treeview
             # re-block this signal before redrawing table contents
             toggle_signal(treeview, treeview, '_on_keypress', False)
-            treeview.update_quad_column("List installed mods")
+            treeview.update_quad_column(RowType.LIST_MODS)
         case 100:
             # final handoff before launch
             final_conf = spawn_dialog(transient_parent, msg, Popup.CONFIRM)
             treeview = transient_parent.grid.scrollable_treelist.treeview
             if final_conf == 1 or final_conf is None:
                 return
-            process_tree_option(["Handshake", ""], treeview)
+            process_tree_option([treeview.view, RowType.HANDSHAKE], treeview)
         case 255:
             spawn_dialog(transient_parent, "Update complete. Please close DZGUI and restart.", Popup.NOTIFY)
             Gtk.main_quit()
@@ -389,22 +655,22 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
 def process_tree_option(input, treeview):
     context = input[0]
     command = input[1]
+    cmd_string = command.dict["label"]
     logger.info("Parsing tree option '%s' for the context '%s'" %(command, context))
 
-    transient_parent = treeview.get_outer_window()
-    toggle_contexts = [
-            "Toggle mod install mode",
-            "Toggle release branch",
-            "Toggle Steam/Flatpak",
-            "Toggle DZGUI fullscreen boot"
-            ]
+    widgets = relative_widget(treeview)
+    transient_parent = widgets["outer"]
+    grid = widgets["grid"]
 
     def call_on_thread(bool, subproc, msg, args):
         def _background(subproc, args, dialog):
             def _load():
                 wait_dialog.destroy()
                 out = proc.stdout.splitlines()
-                msg = out[-1]
+                try:
+                    msg = out[-1]
+                except:
+                    msg = ''
                 rc = proc.returncode
                 logger.info("Subprocess returned code %s with message '%s'" %(rc, msg))
                 process_shell_return_code(transient_parent, msg, rc, input)
@@ -423,68 +689,82 @@ def process_tree_option(input, treeview):
             msg = out[-1]
             process_shell_return_code(transient_parent, msg, rc, input)
 
-    match context:
-        case "Help":
-            if command == "View changelog":
-                diag = ChangelogDialog(transient_parent, '', "Changelog -- content can be scrolled")
+    # help pages
+    if context == WindowContext.HELP:
+        match command:
+            case RowType.CHANGELOG:
+                diag = ChangelogDialog(transient_parent)
                 diag.run()
                 diag.destroy()
-            else:
-                # non-blocking subprocess
-                subprocess.Popen(['/usr/bin/env', 'bash', funcs, "Open link", command])
-        case "Delete selected mods":
-            call_on_thread(True, context, "Deleting mods", command)
-        case "Handshake":
-            call_on_thread(True, context, "Waiting for DayZ", command)
-        case _:
-            if command == "Output system info to log file":
-                call_on_thread(True, "gen_log", "Generating log", "")
-            elif command == "Force update local mods":
-                call_on_thread(True, "force_update", "Updating mods", "")
-            elif command == "Quick-connect to favorite server":
-                call_on_thread(True, command, "Working", "")
-            elif command in toggle_contexts:
-                if command == "Toggle release branch":
-                    call_on_thread(False, "toggle", "Updating DZGUI branch", command)
-                else:
-                    proc = call_out(transient_parent, "toggle", command)
-                    grid = treeview.get_parent().get_parent()
-                    grid.update_right_statusbar()
-                    tooltip = format_metadata(command)
-                    transient_parent.grid.update_statusbar(tooltip)
-            else:
-                # This branch is only used by interactive dialogs
-                match command:
-                    case "Connect by IP" | "Add server by IP" | "Change favorite server":
-                        flag = True
-                        link_label = ""
-                        prompt = "Enter IP in IP:Queryport format (e.g. 192.168.1.1:27016)"
-                    case "Connect by ID" | "Add server by ID":
-                        flag = True
-                        link_label = "Open Battlemetrics"
-                        prompt = "Enter server ID"
-                    case "Change player name":
-                        flag = False
-                        link_label = ""
-                        prompt = "Enter new nickname"
-                    case "Change Steam API key":
-                        flag = True
-                        link_label = "Open Steam API page"
-                        prompt = "Enter new API key"
-                    case "Change Battlemetrics API key":
-                        flag = True
-                        link_label = "Open Battlemetrics API page"
-                        prompt = "Enter new API key"
+            case _:
+                base_cmd = "Open link"
+                arg_string = cmd_string
+                subprocess.Popen(['/usr/bin/env', 'bash', funcs, base_cmd, arg_string])
+                pass
+        return
 
-                user_entry = EntryDialog(transient_parent, prompt, Popup.ENTRY, link_label)
-                res = user_entry.get_input()
-                if res is None:
-                    logger.info("User aborted entry dialog")
-                    return
-                logger.info("User entered: '%s'" %(res))
+    # config metadata toggles
+    toggle_commands = [
+            RowType.TGL_INSTALL,
+            RowType.TGL_BRANCH,
+            RowType.TGL_STEAM,
+            RowType.TGL_FULLSCREEN
+            ]
 
-                call_on_thread(flag, command, "Working", res)
+    if command in toggle_commands:
+        match command:
+            case RowType.TGL_BRANCH:
+                wait_msg = "Updating DZGUI branch"
+                call_on_thread(False, "toggle", wait_msg, cmd_string)
+            case _:
+                proc = call_out(transient_parent, "toggle", cmd_string)
+                grid.update_right_statusbar()
+                tooltip = format_metadata(command.dict["label"])
+                transient_parent.grid.update_statusbar(tooltip)
+        return
 
+    # entry dialogs
+    interactive_commands = [
+            RowType.CONN_BY_IP,
+            RowType.CONN_BY_ID,
+            RowType.ADD_BY_IP,
+            RowType.ADD_BY_ID,
+            RowType.CHNG_FAV,
+            RowType.CHNG_PLAYER,
+            RowType.CHNG_STEAM_API,
+            RowType.CHNG_BM_API
+            ]
+
+    if command in interactive_commands:
+        prompt = command.dict["prompt"]
+        flag = True
+        link_label = command.dict["link_label"]
+        wait_msg = "Working"
+
+        user_entry = EntryDialog(transient_parent, prompt, Popup.ENTRY, link_label)
+        res = user_entry.get_input()
+
+        if res is None:
+            logger.info("User aborted entry dialog")
+            return
+        logger.info("User entered: '%s'" %(res))
+
+        if command == RowType.CHNG_PLAYER: flag = False
+        call_on_thread(flag, cmd_string, wait_msg, res)
+        return
+
+    # standalone commands
+    misc_commands = [
+            RowType.DELETE_SELECTED,
+            RowType.HANDSHAKE,
+            RowType.DUMP_LOG,
+            RowType.FORCE_UPDATE,
+            RowType.QUICK_CONNECT
+            ]
+    if command in misc_commands:
+        wait_msg = command.dict["wait_msg"]
+        call_on_thread(True, cmd_string, wait_msg, '')
+    return
 
 def reinit_checks():
     toggled_checks.clear()
@@ -498,18 +778,30 @@ def reinit_checks():
 
 
 class OuterWindow(Gtk.Window):
+    @GObject.Property
+    def widget_type(self):
+       return self._widget_type
+
+    @widget_type.setter
+    def widget_type(self, value):
+       self._widget_type = value
+
     def __init__(self, is_steam_deck, is_game_mode):
         super().__init__(title=app_name)
 
-        self.connect("delete-event", self.halt_proc_and_quit)
-        # Deprecated in GTK 4.0
-        self.set_border_width(10)
-        self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+        self.hb = AppHeaderBar()
+        # steam deck taskbar may occlude elements
+        if is_steam_deck is False:
+            self.set_titlebar(self.hb)
 
-        """
-        app > win > grid > scrollable > treeview [row/server/mod store]
-        app > win > grid > vbox > buttonbox > filterpanel > combo [map store]
-        """
+        self.set_property("widget_type", WidgetType.OUTER_WIN)
+
+        self.connect("delete-event", self.halt_proc_and_quit)
+        self.set_border_width(10)
+
+        #app > win > grid > scrollable > treeview [row/server/mod store]
+        #app > win > grid > vbox > buttonbox > filterpanel > combo [map store]
+
         self.grid = Grid(is_steam_deck)
         self.add(self.grid)
         if is_game_mode is True:
@@ -521,6 +813,7 @@ class OuterWindow(Gtk.Window):
         # Hide FilterPanel on main menu
         self.show_all()
         self.grid.right_panel.set_filter_visibility(False)
+        self.grid.sel_panel.set_visible(False)
         self.grid.scrollable_treelist.treeview.grab_focus()
 
     def halt_proc_and_quit(self, window, event):
@@ -592,8 +885,11 @@ class ButtonBox(Gtk.Box):
         set_surrounding_margins(self, 10)
 
         self.buttons = list()
-        for side_button in side_buttons:
-            button = Gtk.Button(label=side_button)
+        self.is_steam_deck = is_steam_deck
+
+        for side_button in ButtonType:
+            button = EnumeratedButton(label=side_button.dict["label"])
+            button.set_property("button_type", side_button)
             if is_steam_deck is True:
                 button.set_size_request(10, 10)
             else:
@@ -614,14 +910,14 @@ class ButtonBox(Gtk.Box):
         grid = widgets["grid"]
         grid_last_child = grid.right_panel.get_children()[-1]
         if isinstance(grid_last_child, ModSelectionPanel):
-            grid.right_panel.remove(grid.sel_panel)
+            grid.sel_panel.set_visible(False)
         right_panel = self.get_parent()
         right_panel.set_filter_visibility(False)
 
         treeview = widgets["treeview"]
         treeview.set_selection_mode(Gtk.SelectionMode.SINGLE)
 
-        """Block maps combo when returning to main menu"""
+        # Block maps combo when returning to main menu
         toggle_signal(right_panel.filters_vbox, right_panel.filters_vbox.maps_combo, '_on_map_changed', False)
         right_panel.filters_vbox.keyword_entry.set_text("")
         keyword_filter.clear()
@@ -630,38 +926,49 @@ class ButtonBox(Gtk.Box):
 
         for column in treeview.get_columns():
             treeview.remove_column(column)
-        for i, column_title in enumerate([context]):
+        # used as a convenience for Steam Deck if it has no titlebar
+        for i, column_title in enumerate([context.dict["label"]]):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             treeview.append_column(column)
-        self._populate(context)
+
+        if self.is_steam_deck is False:
+            treeview.set_headers_visible(False)
+
+        self._populate(context.dict["opens"])
         toggle_signal(treeview, treeview, '_on_keypress', False)
         treeview.set_model(row_store)
         treeview.grab_focus()
 
     def _populate(self, context):
-        match context:
-            case 'Manage': array_context = manage
-            case 'Main menu': array_context = connect
-            case 'Options': array_context = options
-            case 'Help': array_context = help
-        row_store.clear()
-        status = array_context[0][0]
-        treeview = self.get_treeview()
-        grid = self.get_parent().get_parent()
+        widgets = relative_widget(self)
+        treeview = widgets["treeview"]
+        grid = widgets["grid"]
+        window = widgets["outer"]
 
-        for items in array_context:
-            row_store.append(list(items))
-        grid.update_statusbar(status_tooltip[status])
+        # set global window context
+        treeview.view = context
+
+        row_store.clear()
+        array = context.dict["rows"]
+
+        window.hb.set_subtitle(context.dict["label"])
+
+        for item in array:
+            label = item.dict["label"]
+            tooltip = item.dict["tooltip"]
+            t = (label, )
+            row_store.append(t)
+        grid.update_statusbar(tooltip)
         treeview.grab_focus()
 
     def _on_selection_button_clicked(self, button):
         treeview = self.get_treeview()
         toggle_signal(treeview, treeview.selected_row, '_on_tree_selection_changed', False)
-        context = button.get_label()
+        context = button.get_property("button_type")
         logger.info("User clicked '%s'" %(context))
 
-        if context == "Exit":
+        if context == ButtonType.EXIT:
             logger.info("Normal user exit")
             Gtk.main_quit()
             return
@@ -676,9 +983,10 @@ class ButtonBox(Gtk.Box):
         button.set_opacity(1.0)
 
         for col in cols:
-            col.set_title(context)
+            col.set_title(context.dict["label"])
 
-        self._populate(context)
+        # get destination WindowContext enum from button
+        self._populate(context.dict["opens"])
 
         toggle_signal(treeview, treeview.selected_row, '_on_tree_selection_changed', True)
 
@@ -714,9 +1022,19 @@ class CalcDist(multiprocessing.Process):
 
 class TreeView(Gtk.TreeView):
     __gsignals__ = {"on_distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())}
+    @GObject.Property
+    def widget_type(self):
+       return self._widget_type
+
+    @widget_type.setter
+    def widget_type(self, value):
+       self._widget_type = value
 
     def __init__(self, is_steam_deck):
         super().__init__()
+
+        self.set_property("widget_type", WidgetType.TREEVIEW)
+        self.view = WindowContext.MAIN_MENU
 
         self.queue = multiprocessing.Queue()
         self.current_proc = None
@@ -726,8 +1044,10 @@ class TreeView(Gtk.TreeView):
         self.set_search_column(-1)
 
         # Populate model with initial context
-        for rows in connect:
-            row_store.append(list(rows))
+        for row in WindowContext.MAIN_MENU.dict["rows"]:
+            label = row.dict["label"]
+            t = (label,)
+            row_store.append(t)
         self.set_model(row_store)
 
         for i, column_title in enumerate(
@@ -737,6 +1057,8 @@ class TreeView(Gtk.TreeView):
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             self.append_column(column)
 
+        if is_steam_deck is False:
+            self.set_headers_visible(False)
         self.connect("row-activated", self._on_row_activated)
         self.connect("key-press-event", self._on_keypress)
         self.connect("key-press-event", self._on_keypress_main_menu)
@@ -751,6 +1073,7 @@ class TreeView(Gtk.TreeView):
             self.current_proc.terminate()
 
     def _on_menu_click(self, menu_item):
+        #TODO: context menus use old stringwise parsing
         parent = self.get_outer_window()
         context = self.get_first_col()
         value = self.get_column_at_index(0)
@@ -797,7 +1120,7 @@ class TreeView(Gtk.TreeView):
                     mods.append(concat)
                     with open(mods_temp_file, "w") as outfile:
                         outfile.writelines(mods)
-                    process_tree_option(["Delete selected mods", ""], self)
+                    process_tree_option([self.view, RowType.DELETE_SELECTED], self)
             case "Open in Steam Workshop":
                 record = self.get_column_at_index(2)
                 call_out(parent, "open_workshop_page", record)
@@ -832,12 +1155,19 @@ class TreeView(Gtk.TreeView):
         self.menu = Gtk.Menu()
 
         mod_context_items = ["Open in Steam Workshop", "Delete mod"]
-        subcontext_items = {"Server browser": ["Add to my servers", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
-                  "My saved servers": ["Remove from my servers", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
-                  "Recent servers": ["Add to my servers", "Remove from history", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
+        subcontext_items = {
+                "Server browser":
+                            ["Add to my servers", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
+                  "My saved servers":
+                            ["Remove from my servers", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
+                  "Recent servers":
+                            ["Add to my servers", "Remove from history", "Copy IP to clipboard", "Show server-side mods", "Refresh player count"],
                   }
         # submenu hierarchy https://stackoverflow.com/questions/52847909/how-to-add-a-sub-menu-to-a-gtk-menu
-        if context == "Mod":
+
+        if self.view == WindowContext.TABLE_LOG:
+            return
+        if self.view == WindowContext.TABLE_MODS:
             items = mod_context_items
             subcontext = "List installed mods"
         elif "Name" in context:
@@ -908,7 +1238,7 @@ class TreeView(Gtk.TreeView):
         if self.current_proc and self.current_proc.is_alive():
             self.current_proc.terminate()
 
-        if "Name" in context:
+        if self.view == WindowContext.TABLE_API or self.view == WindowContext.TABLE_SERVER:
             addr = self.get_column_at_index(7)
             if addr is None:
                 return
@@ -1067,20 +1397,24 @@ class TreeView(Gtk.TreeView):
         GLib.idle_add(loadTable)
 
     def _background_quad(self, dialog, mode):
+        # currently only used by list mods method
         def load():
             dialog.destroy()
-            # detach button panel if store is empty
+            # suppress button panel if store is empty
             if isinstance(panel_last_child, ModSelectionPanel):
                 if total_mods == 0:
-                    right_panel.remove(grid.sel_panel)
+                    # nb. do not forcibly remove previously added widgets
+                    grid.sel_panel.set_visible(False)
                     grid.show_all()
                     right_panel.set_filter_visibility(False)
+
+            grid.sel_panel.set_visible(True)
             self.set_model(mod_store)
             self.grab_focus()
             size = locale.format_string('%.3f', total_size, grouping=True)
             pretty = pluralize("mods", total_mods)
             grid.update_statusbar(f"Found {total_mods:n} {pretty} taking up {size} MiB")
-            #2024-11-12
+
             toggle_signal(self, self.selected_row, '_on_tree_selection_changed', True)
             toggle_signal(self, self, '_on_keypress', True)
             self._focus_first_row()
@@ -1090,7 +1424,7 @@ class TreeView(Gtk.TreeView):
         widgets = relative_widget(self)
         grid = widgets["grid"]
         right_panel = grid.right_panel
-        data = call_out(self, "list_mods", mode)
+        data = call_out(self, mode.dict["label"], '')
         panel_last_child = right_panel.get_children()[-1]
 
         # suppress errors if no mods available on system
@@ -1100,11 +1434,9 @@ class TreeView(Gtk.TreeView):
             GLib.idle_add(load)
             return 1
 
-        # attach button panel only if missing (prevents duplication when reloading in-place)
+        # show button panel missing (prevents duplication when reloading in-place)
         if not isinstance(panel_last_child, ModSelectionPanel):
-            right_panel.pack_start(grid.sel_panel, False, False, 0)
-            grid.show_all()
-            right_panel.set_filter_visibility(False)
+            grid.sel_panel.set_visible(True)
         result = parse_mod_rows(data)
         total_size = result[0]
         total_mods = result[1]
@@ -1121,6 +1453,7 @@ class TreeView(Gtk.TreeView):
 
         title = col.get_title()
         size = col.get_width()
+        # steam deck column title workaround
         if "Name" in title:
             title = "Name"
 
@@ -1140,6 +1473,8 @@ class TreeView(Gtk.TreeView):
     def _update_multi_column(self, mode):
         # Local server lists may have different filter toggles from remote list
         # FIXME: tree selection updates twice here. attach signal later
+        self.set_headers_visible(True)
+
         toggle_signal(self, self.selected_row, '_on_tree_selection_changed', False)
         for column in self.get_columns():
             self.remove_column(column)
@@ -1175,8 +1510,14 @@ class TreeView(Gtk.TreeView):
 
             self.append_column(column)
 
-        self.update_first_col(mode)
-        transient_parent = self.get_outer_window()
+        self.update_first_col(mode.dict["label"])
+
+        widgets = relative_widget(self)
+        grid = widgets["grid"]
+        window = widgets["outer"]
+        window.hb.set_subtitle(mode.dict["label"])
+
+        transient_parent = window
 
         # Reset map selection
         selected_map.clear()
@@ -1188,20 +1529,21 @@ class TreeView(Gtk.TreeView):
             toggle_signal(self.get_outer_grid().right_panel.filters_vbox, check, '_on_check_toggle', True)
         toggle_signal(self, self, '_on_keypress', True)
 
-        if mode == "Scan LAN servers":
+        string = mode.dict["label"]
+        if mode == RowType.SCAN_LAN:
             lan_dialog = LanButtonDialog(self.get_outer_window())
             port = lan_dialog.get_selected_port()
             if port is None:
                 grid = self.get_outer_grid()
                 right_panel = grid.right_panel
                 vbox = right_panel.button_vbox
-                vbox._update_single_column("Main menu")
+                vbox._update_single_column(ButtonType.MAIN_MENU)
                 return
-            mode = mode + ":" + port
+            string = string + ":" + port
 
         wait_dialog = GenericDialog(transient_parent, "Fetching server metadata", Popup.WAIT)
         wait_dialog.show_all()
-        thread = threading.Thread(target=self._background, args=(wait_dialog, mode))
+        thread = threading.Thread(target=self._background, args=(wait_dialog, string))
         thread.start()
 
     def update_first_col(self, title):
@@ -1232,10 +1574,11 @@ class TreeView(Gtk.TreeView):
         for column in self.get_columns():
             self.remove_column(column)
 
+        self.set_headers_visible(True)
         mod_store.clear()
         log_store.clear()
 
-        if mode == "List installed mods":
+        if mode == RowType.LIST_MODS:
             cols = mod_cols
             self.set_model(mod_store)
         else:
@@ -1245,24 +1588,33 @@ class TreeView(Gtk.TreeView):
         for i, column_title in enumerate(cols):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
-            if mode == "List installed mods":
+            if mode == RowType.LIST_MODS:
                 if i == 3:
                     column.set_cell_data_func(renderer, self._format_float, func_data=None)
             column.set_sort_column_id(i)
             self.append_column(column)
 
-        if mode == "List installed mods":
+        widgets = relative_widget(self)
+        grid = widgets["grid"]
+        window = widgets["outer"]
+        try:
+            window.hb.set_subtitle(mode.dict["quad_label"])
+        except KeyError:
+            window.hb.set_subtitle(mode.dict["label"])
+
+        if mode == RowType.LIST_MODS:
             self.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
         else:
+            # short circuit and jump to debug log
             data = call_out(self, "show_log")
             res = parse_log_rows(data)
+            toggle_signal(self, self, '_on_keypress', True)
             if res == 1:
                 spawn_dialog(self.get_outer_window(), "Failed to load log file, possibly corrupted", Popup.NOTIFY)
             return
 
-        transient_parent = self.get_outer_window()
 
-        wait_dialog = GenericDialog(transient_parent, "Checking mods", Popup.WAIT)
+        wait_dialog = GenericDialog(window, "Checking mods", Popup.WAIT)
         wait_dialog.show_all()
         thread = threading.Thread(target=self._background_quad, args=(wait_dialog, mode))
         thread.start()
@@ -1293,23 +1645,58 @@ class TreeView(Gtk.TreeView):
     def _on_row_activated(self, treeview, tree_iter, col):
         context = self.get_first_col()
         chosen_row = self.get_column_at_index(0)
-        output = context, chosen_row
-        if context == "Mod" or context == "Timestamp":
+
+        # recycled from ModDialog
+        if self.view == WindowContext.TABLE_MODS:
+            select = treeview.get_selection()
+            sels = select.get_selected_rows()
+            (model, pathlist) = sels
+            if len(pathlist) < 1:
+                return
+            path = pathlist[0]
+            tree_iter = model.get_iter(path)
+            mod_id = model.get_value(tree_iter, 2)
+            base_cmd = "open_workshop_page"
+            subprocess.Popen(['/usr/bin/env', 'bash', funcs, base_cmd, mod_id])
             return
+
+        dynamic_contexts = [
+                WindowContext.TABLE_LOG,
+                WindowContext.TABLE_SERVER,
+                WindowContext.TABLE_API
+                ]
+
+        # if already in table, the row selection is arbitrary
+        if self.view in dynamic_contexts:
+                cr = RowType.DYNAMIC
+        else:
+            cr = RowType.str2rowtype(chosen_row)
+            wc = WindowContext.row2con(cr)
+            self.view = wc
+
+        output = self.view, cr
         logger.info("User selected '%s' for the context '%s'" %(chosen_row, context))
+
+        if self.view == WindowContext.TABLE_LOG and cr == RowType.DYNAMIC:
+            return
 
         outer = self.get_outer_window()
         right_panel = outer.grid.right_panel
         filters_vbox = right_panel.filters_vbox
 
-        valid_contexts = ["Server browser", "My saved servers", "Recent servers", "Scan LAN servers"]
-        if chosen_row in valid_contexts:
-            # server contexts share the same model type
+        server_contexts = [
+                          RowType.SCAN_LAN,
+                          RowType.SERVER_BROWSER,
+                          RowType.RECENT_SERVERS,
+                          RowType.SAVED_SERVERS
+                          ]
 
-            if chosen_row == "Server browser":
+        # server contexts share the same model type
+        if cr in server_contexts:
+            if cr == RowType.SERVER_BROWSER:
                 cooldown = call_out(self, "test_cooldown", "", "")
                 if cooldown.returncode == 1:
-                    spawn_dialog(self.get_outer_window(), cooldown.stdout, Popup.NOTIFY)
+                    spawn_dialog(outer, cooldown.stdout, Popup.NOTIFY)
                     return 1
                 for check in checks:
                     toggle_signal(filters_vbox, check, '_on_check_toggle', False)
@@ -1320,7 +1707,7 @@ class TreeView(Gtk.TreeView):
                     if check.get_label() not in toggled_checks:
                         toggled_checks.append(check.get_label())
                         check.set_active(True)
-            self._update_multi_column(chosen_row)
+            self._update_multi_column(cr)
 
             map_store.clear()
             map_store.append(["All maps"])
@@ -1329,12 +1716,13 @@ class TreeView(Gtk.TreeView):
             toggle_signal(filters_vbox, filters_vbox.maps_combo, '_on_map_changed', True)
             toggle_signal(self, self.selected_row, '_on_tree_selection_changed', True)
             self.grab_focus()
-        elif chosen_row == "List installed mods" or chosen_row == "Show debug log":
+            return
+
+        if self.view == WindowContext.TABLE_MODS or self.view == WindowContext.TABLE_LOG:
             toggle_signal(self, self.selected_row, '_on_tree_selection_changed', False)
-            self.update_quad_column(chosen_row)
+            self.update_quad_column(cr)
             toggle_signal(self, self.selected_row, '_on_tree_selection_changed', True)
-        elif any(map(context.__contains__, valid_contexts)):
-            # implies activated row on any server list subcontext
+        elif self.view == WindowContext.TABLE_SERVER or self.view == WindowContext.TABLE_API:
             self._attempt_connection()
         else:
             # implies any other non-server option selected from main menu
@@ -1342,7 +1730,10 @@ class TreeView(Gtk.TreeView):
 
 
 def format_metadata(row_sel):
-    prefix = status_tooltip[row_sel]
+    for i in RowType:
+        if i.dict["label"] == row_sel:
+            row = i
+            prefix = i.dict["tooltip"]
     vals = {
             "branch": config_vals[0],
             "debug": config_vals[1],
@@ -1352,38 +1743,19 @@ def format_metadata(row_sel):
             "preferred_client": config_vals[5],
             "fullscreen": config_vals[6]
             }
-    match row_sel:
-        case "Quick-connect to favorite server" | "Change favorite server":
-            default = "unset"
-            val = "fav_label"
-        case "Change player name":
-            val = "name"
-        case "Toggle mod install mode":
-            default = "manual"
-            alt = "auto"
-            val = "auto_install"
-        case "Toggle debug mode":
-            default = "normal"
-            alt = "debug"
-            val = "debug"
-        case "Toggle release branch":
-            val = "branch"
-        case "Toggle Steam/Flatpak":
-            val = "preferred_client"
-        case "Toggle DZGUI fullscreen boot":
-            default = "false"
-            alt = "true"
-            val = "fullscreen"
-        case _:
-            return prefix
-
+    try:
+        alt = row.dict["alt"]
+        default = row.dict["default"]
+        val = row.dict["val"]
+    except KeyError:
+        return prefix
     try:
         cur_val = vals[val]
         if cur_val == "":
-            return "%s | Current: %s" %(prefix, default)
+            return "%s | Current: '%s'" %(prefix, default)
         # TODO: migrate to human readable config values
         elif cur_val == "1":
-            return "%s | Current: %s" %(prefix, alt)
+            return "%s | Current: '%s'" %(prefix, alt)
         else:
             return "%s | Current: '%s'" %(prefix, cur_val)
     except KeyError:
@@ -1433,19 +1805,9 @@ class AppHeaderBar(Gtk.HeaderBar):
     def __init__(self):
         super().__init__()
         self.props.title = app_name
-        self.set_decoration_layout("menu:minimize,maximize,close")
+        self.set_decoration_layout(":minimize,maximize,close")
         self.set_show_close_button(True)
 
-class Port(Enum):
-    # Contains enums for LanButtonDialog ports
-    DEFAULT = 1
-    CUSTOM = 2
-
-class Popup(Enum):
-    WAIT = 1
-    NOTIFY = 2
-    CONFIRM = 3
-    ENTRY = 4
 
 class GenericDialog(Gtk.MessageDialog):
     def __init__(self, parent, text, mode):
@@ -1564,6 +1926,7 @@ class LanButtonDialog(Gtk.Window):
     def get_active_button():
         return self.buttonBox.active_button
 
+
 class LanDialog(Gtk.MessageDialog):
     # Custom dialog class that performs integer validation and blocks input if invalid port
     # Returns None if user cancels the dialog
@@ -1637,8 +2000,11 @@ class LanDialog(Gtk.MessageDialog):
                 return True
         return False
 
-def ChangelogDialog(parent, text, mode):
 
+def ChangelogDialog(parent):
+
+    text = ''
+    mode = "Changelog -- content can be scrolled"
     dialog = GenericDialog(parent, text, mode)
     dialogBox = dialog.get_content_area()
     dialog.set_default_response(Gtk.ResponseType.OK)
@@ -1722,6 +2088,7 @@ class PingDialog(GenericDialog):
         data = call_out(parent, "test_ping", ip, qport)
         GLib.idle_add(_load)
 
+
 class ModDialog(GenericDialog):
     def __init__(self, parent, text, mode, record):
         super().__init__(parent, text, mode)
@@ -1784,6 +2151,7 @@ class ModDialog(GenericDialog):
         mod_id = model.get_value(tree_iter, 1)
         subprocess.Popen(['/usr/bin/env', 'bash', funcs, "open_workshop_page", mod_id])
 
+
 class EntryDialog(GenericDialog):
     def __init__(self, parent, text, mode, link):
         super().__init__(parent, text, mode)
@@ -1803,7 +2171,7 @@ class EntryDialog(GenericDialog):
         self.userEntry.set_activates_default(True)
         self.dialogBox.pack_start(self.userEntry, False, False, 0)
 
-        if link != "":
+        if link is not None:
             button = Gtk.Button(label=link)
             button.set_margin_start(60)
             button.set_margin_end(60)
@@ -1843,6 +2211,8 @@ class Grid(Gtk.Grid):
 
         self.right_panel = RightPanel(is_steam_deck)
         self.sel_panel = ModSelectionPanel()
+        self.right_panel.pack_start(self.sel_panel, False, False, 0)
+        self.show_all()
 
         self.bar = Gtk.Statusbar()
         self.scrollable_treelist.treeview.connect("on_distcalc_started", self._on_calclat_started)
@@ -2008,7 +2378,8 @@ class ModSelectionPanel(Gtk.Box):
             mods.append(concat)
         with open(mods_temp_file, "w") as outfile:
             outfile.writelines(mods)
-        process_tree_option(["Delete selected mods", ""], treeview)
+        process_tree_option([treeview.view, RowType.DELETE_SELECTED], treeview)
+
 
 class FilterPanel(Gtk.Box):
     def __init__(self):
@@ -2188,6 +2559,7 @@ class FilterPanel(Gtk.Box):
                 logger.info("User selected map '%s'" %(selection))
                 filter_servers(transient_parent, self, treeview, context)
                 self.maps_entry.set_text(selection)
+
 
 def main():
 
