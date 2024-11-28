@@ -354,7 +354,7 @@ list_mods(){
             base_dir=$(basename $(readlink -f $game_dir/$symlink))
             size=$(du -s "$(readlink -f "$game_dir/$symlink")" | awk '{print $1}')
             size=$(python3 -c "n=($size/1024) +.005; print(round(n,4))")
-            printf "%s$sep%s$sep%s$sep%3.3f\n" "$name" "$symlink" "$base_dir" "$size"
+            LC_ALL=C printf "%s$sep%s$sep%s$sep%3.3f\n" "$name" "$symlink" "$base_dir" "$size"
         done | sort -k1
     fi
 }
