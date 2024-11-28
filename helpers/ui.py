@@ -1421,12 +1421,12 @@ class TreeView(Gtk.TreeView):
             # suppress button panel if store is empty
             if isinstance(panel_last_child, ModSelectionPanel):
                 if total_mods == 0:
-                    # nb. do not forcibly remove previously added widgets
+                    # do not forcibly remove previously added widgets when reloading in-place
                     grid.sel_panel.set_visible(False)
-                    grid.show_all()
                     right_panel.set_filter_visibility(False)
+                else:
+                    grid.sel_panel.set_visible(True)
 
-            grid.sel_panel.set_visible(True)
             self.set_model(mod_store)
             self.grab_focus()
             size = locale.format_string('%.3f', total_size, grouping=True)
@@ -1437,6 +1437,7 @@ class TreeView(Gtk.TreeView):
             toggle_signal(self, self, '_on_keypress', True)
             self._focus_first_row()
             if total_mods == 0:
+                logger.info("Nothing to do, spawning notice dialog")
                 spawn_dialog(self.get_outer_window(), data.stdout, Popup.NOTIFY)
 
         widgets = relative_widget(self)
@@ -1447,18 +1448,18 @@ class TreeView(Gtk.TreeView):
 
         # suppress errors if no mods available on system
         if data.returncode == 1:
+            logger.info("Failed to find mods on local system")
             total_mods = 0
             total_size = 0
             GLib.idle_add(load)
-            return 1
-
-        # show button panel missing (prevents duplication when reloading in-place)
-        if not isinstance(panel_last_child, ModSelectionPanel):
-            grid.sel_panel.set_visible(True)
-        result = parse_mod_rows(data)
-        total_size = result[0]
-        total_mods = result[1]
-        GLib.idle_add(load)
+        else:
+            # show button panel missing (prevents duplication when reloading in-place)
+            if not isinstance(panel_last_child, ModSelectionPanel):
+                grid.sel_panel.set_visible(True)
+            result = parse_mod_rows(data)
+            total_size = result[0]
+            total_mods = result[1]
+            GLib.idle_add(load)
 
     def _on_col_width_changed(self, col, width):
 

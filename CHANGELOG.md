@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.6.0-beta.6] 2024-11-28
+### Fixed
+- Race condition when checking for installed mods
+
 ## [5.6.0-beta.5] 2024-11-21
 ### Added
 - Highlight stale mods in mods list
