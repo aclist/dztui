@@ -1459,6 +1459,9 @@ class TreeView(Gtk.TreeView):
             result = parse_mod_rows(data)
             total_size = result[0]
             total_mods = result[1]
+            logger.info("Found mods on local system")
+            logger.info("Total mod size: %s" %(total_size))
+            logger.info("Total mod count: %s" %(total_mods))
             GLib.idle_add(load)
 
     def _on_col_width_changed(self, col, width):
