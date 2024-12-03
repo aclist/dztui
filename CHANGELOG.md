@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.5.1] 2024-12-03
+### Fixed
+- Support localized decimal separators when parsing installed mod sizes
+
 ## [5.5.0] 2024-11-10
 ### Added
 - Support servers running DLC content (fixes Frostline servers)
