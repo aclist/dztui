@@ -1721,6 +1721,8 @@ class TreeView(Gtk.TreeView):
                 cooldown = call_out(self, "test_cooldown", "", "")
                 if cooldown.returncode == 1:
                     spawn_dialog(outer, cooldown.stdout, Popup.NOTIFY)
+                    # reset context to main menu if navigation was blocked
+                    self.view = WindowContext.MAIN_MENU
                     return 1
                 for check in checks:
                     toggle_signal(filters_vbox, check, '_on_check_toggle', False)
