@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.6.0-beta.9] 2024-12-03
+### Fixed
+- Normalize user locale when parsing floats
+
 ## [5.6.0-beta.8] 2024-11-28
 ### Fixed
 - Normalize user locale when parsing floats
