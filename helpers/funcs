@@ -930,7 +930,7 @@ remove_from_favs(){
             break
         fi
     done
-    if [[ ${#ip_list} -gt 0 ]]; then
+    if [[ ${#ip_list[@]} -gt 0 ]]; then
         readarray -t ip_list < <(printf "%s\n" "${ip_list[@]}")
     fi
     update_config
@@ -938,6 +938,7 @@ remove_from_favs(){
     local cache="$(< "$_cache_my_servers")"
     <<< "$cache" grep -v -P "$r$" > $_cache_my_servers
     logger INFO "Removed the record $record from saved servers"
+    echo "Removed $record from saved servers"
     return 90
 }
 update_favs_from_table(){
