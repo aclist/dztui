@@ -343,7 +343,7 @@ list_mods(){
     local base_dir
     local size
     if [[ -z $(installed_mods) ]] || [[ -z $(find $workshop_dir -maxdepth 2 -name "*.cpp" | grep .cpp) ]]; then
-        echo "No mods currently installed or incorrect path set."
+        printf "No mods currently installed or incorrect path set."
         logger WARN "Found no locally installed mods"
         return 1
     else
