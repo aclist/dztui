@@ -1152,12 +1152,10 @@ class TreeView(Gtk.TreeView):
             case True:
                 for i in range (0, l):
                     path = Gtk.TreePath(i)
-                    it = mod_store.get_iter(path)
                     self.get_selection().select_path(path)
             case False:
                 for i in range (0, l):
                     path = Gtk.TreePath(i)
-                    it = mod_store.get_iter(path)
                     self.get_selection().unselect_path(path)
 
     def _on_button_release(self, widget, event):
