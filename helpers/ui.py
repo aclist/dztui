@@ -539,19 +539,14 @@ def parse_mod_rows(data):
 
 
 def parse_server_rows(data):
-    sum = 0
     lines = data.stdout.splitlines()
     reader = csv.reader(lines, delimiter=delimiter)
-    hits = len(lines)
     try:
         rows = [[row[0], row[1], row[2], row[3], int(row[4]), int(row[5]), int(row[6]), row[7], int(row[8])] for row in reader if row]
     except IndexError:
         return 1
     for row in rows:
         server_store.append(row)
-        players = int(row[4])
-        sum += players
-    return [sum, hits]
 
 
 def query_config(widget, key=""):
