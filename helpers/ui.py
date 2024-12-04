@@ -123,6 +123,11 @@ class RowType(EnumWithAttrs):
             "label": None,
             "tooltip": None,
             }
+    RESOLVE_IP = {
+            "label": "Resolve IP",
+            "tooltip": None,
+            "wait_msg": "Resolving remote IP"
+            }
     HIGHLIGHT = {
             "label": "Highlight stale",
             "tooltip": None,
@@ -156,7 +161,7 @@ class RowType(EnumWithAttrs):
             }
     RECENT_SERVERS = {
             "label": "Recent servers",
-            "tooltip": "Shows the last to servers you connected to (includes attempts)",
+            "tooltip": "Shows the last 10 servers you connected to (includes attempts)",
             }
     CONN_BY_IP = {
             "label": "Connect by IP",
@@ -539,19 +544,14 @@ def parse_mod_rows(data):
 
 
 def parse_server_rows(data):
-    sum = 0
     lines = data.stdout.splitlines()
     reader = csv.reader(lines, delimiter=delimiter)
-    hits = len(lines)
     try:
         rows = [[row[0], row[1], row[2], row[3], int(row[4]), int(row[5]), int(row[6]), row[7], int(row[8])] for row in reader if row]
     except IndexError:
         return 1
     for row in rows:
         server_store.append(row)
-        players = int(row[4])
-        sum += players
-    return [sum, hits]
 
 
 def query_config(widget, key=""):
@@ -642,16 +642,35 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
             spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             return
         case 95:
-            # reload mods list
+            # successful mod deletion
             spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             treeview = transient_parent.grid.scrollable_treelist.treeview
+            grid = treeview.get_parent().get_parent()
+            (model, pathlist) = treeview.get_selection().get_selected_rows()
+            for p in reversed(pathlist):
+                it = model.get_iter(p)
+                model.remove(it)
+            total_size = 0
+            total_mods = len(model)
+            for row in model:
+                total_size += row[3]
+            size = locale.format_string('%.3f', total_size, grouping=True)
+            pretty = pluralize("mods", total_mods)
+            grid.update_statusbar(f"Found {total_mods:n} {pretty} taking up {size} MiB")
+            # untoggle selection for visibility of other stale rows
+            treeview.toggle_selection(False)
+        case 96:
+            # unsuccessful mod deletion
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             # re-block this signal before redrawing table contents
+            treeview = transient_parent.grid.scrollable_treelist.treeview
             toggle_signal(treeview, treeview, '_on_keypress', False)
             treeview.update_quad_column(RowType.LIST_MODS)
         case 99:
             # highlight stale mods
             panel = transient_parent.grid.sel_panel
             panel.colorize_cells(True)
+            panel.toggle_select_stale_button(True)
         case 100:
             # final handoff before launch
             final_conf = spawn_dialog(transient_parent, msg, Popup.CONFIRM)
@@ -701,6 +720,11 @@ def process_tree_option(input, treeview):
             msg = out[-1]
             process_shell_return_code(transient_parent, msg, rc, input)
 
+    if command == RowType.RESOLVE_IP:
+        record = "%s:%s" %(treeview.get_column_at_index(7), treeview.get_column_at_index(8))
+        wait_msg = command.dict["wait_msg"]
+        call_on_thread(True, cmd_string, wait_msg, record)
+        return
     # help pages
     if context == WindowContext.TABLE_MODS and command == RowType.HIGHLIGHT:
         wait_msg = command.dict["wait_msg"]
@@ -1090,6 +1114,7 @@ class TreeView(Gtk.TreeView):
 
     def _on_menu_click(self, menu_item):
         #TODO: context menus use old stringwise parsing
+        # use enumerated contexts
         parent = self.get_outer_window()
         context = self.get_first_col()
         value = self.get_column_at_index(0)
@@ -1099,12 +1124,10 @@ class TreeView(Gtk.TreeView):
         match context_menu_label:
             case "Add to my servers" | "Remove from my servers":
                 record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
-                proc = call_out(parent, context_menu_label, record)
+                process_tree_option([self.view, RowType.RESOLVE_IP], self)
                 if context == "Name (My saved servers)":
                     iter = self.get_current_iter()
                     server_store.remove(iter)
-                msg = proc.stdout
-                res = spawn_dialog(parent, msg, Popup.NOTIFY)
             case "Remove from history":
                 record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
                 call_out(parent, context_menu_label, record)
@@ -1128,18 +1151,20 @@ class TreeView(Gtk.TreeView):
                 success_msg = "Successfully deleted the mod '%s'." %(value)
                 fail_msg = "An error occurred during deletion. Aborting."
                 res = spawn_dialog(parent, conf_msg, Popup.CONFIRM)
-                if res == 0:
-                    mods = []
-                    symlink = self.get_column_at_index(1)
-                    dir = self.get_column_at_index(2)
-                    concat = symlink + " " + dir + "\n"
-                    mods.append(concat)
-                    with open(mods_temp_file, "w") as outfile:
-                        outfile.writelines(mods)
-                    process_tree_option([self.view, RowType.DELETE_SELECTED], self)
+                if res != 0:
+                    return
+                mods = []
+                symlink = self.get_column_at_index(1)
+                dir = self.get_column_at_index(2)
+                concat = symlink + " " + dir + "\n"
+                mods.append(concat)
+                with open(mods_temp_file, "w") as outfile:
+                    outfile.writelines(mods)
+                process_tree_option([self.view, RowType.DELETE_SELECTED], self)
             case "Open in Steam Workshop":
                 record = self.get_column_at_index(2)
-                call_out(parent, "open_workshop_page", record)
+                base_cmd = "open_workshop_page"
+                subprocess.Popen(['/usr/bin/env', 'bash', funcs, base_cmd, record])
 
     def toggle_selection(self, bool):
         l = len(mod_store)
@@ -1147,12 +1172,10 @@ class TreeView(Gtk.TreeView):
             case True:
                 for i in range (0, l):
                     path = Gtk.TreePath(i)
-                    it = mod_store.get_iter(path)
                     self.get_selection().select_path(path)
             case False:
                 for i in range (0, l):
                     path = Gtk.TreePath(i)
-                    it = mod_store.get_iter(path)
                     self.get_selection().unselect_path(path)
 
     def _on_button_release(self, widget, event):
@@ -1259,8 +1282,11 @@ class TreeView(Gtk.TreeView):
         if self.view == WindowContext.TABLE_API or self.view == WindowContext.TABLE_SERVER:
             addr = self.get_column_at_index(7)
             if addr is None:
+                server_tooltip[0] = format_tooltip()
+                grid.update_statusbar(server_tooltip[0])
                 return
             if addr in cache:
+                server_tooltip[0] = format_tooltip()
                 dist = format_distance(cache[addr][0])
                 ping = format_ping(cache[addr][1])
 
@@ -1388,7 +1414,7 @@ class TreeView(Gtk.TreeView):
             self.grab_focus()
             for column in self.get_columns():
                 column.connect("notify::width", self._on_col_width_changed)
-            if hits == 0:
+            if len(server_store) == 0:
                 call_out(self, "start_cooldown", "", "")
                 api_warn_msg = """\
                     No servers returned. Possible network issue or API key on cooldown?
@@ -1403,10 +1429,8 @@ class TreeView(Gtk.TreeView):
         data = call_out(self, "dump_servers", mode, *filters)
 
         toggle_signal(self, self.selected_row, '_on_tree_selection_changed', False)
-        row_metadata = parse_server_rows(data)
-        sum = row_metadata[0]
-        hits = row_metadata[1]
-        server_tooltip[0] = format_tooltip(sum, hits)
+        parse_server_rows(data)
+        server_tooltip[0] = format_tooltip()
         grid.update_statusbar(server_tooltip[0])
 
         map_data = call_out(self, "get_unique_maps", mode)
@@ -1426,6 +1450,7 @@ class TreeView(Gtk.TreeView):
                     right_panel.set_filter_visibility(False)
                 else:
                     grid.sel_panel.set_visible(True)
+                    grid.sel_panel.initialize()
 
             self.set_model(mod_store)
             self.grab_focus()
@@ -1721,6 +1746,8 @@ class TreeView(Gtk.TreeView):
                 cooldown = call_out(self, "test_cooldown", "", "")
                 if cooldown.returncode == 1:
                     spawn_dialog(outer, cooldown.stdout, Popup.NOTIFY)
+                    # reset context to main menu if navigation was blocked
+                    self.view = WindowContext.MAIN_MENU
                     return 1
                 for check in checks:
                     toggle_signal(filters_vbox, check, '_on_check_toggle', False)
@@ -1786,7 +1813,11 @@ def format_metadata(row_sel):
         return prefix
 
 
-def format_tooltip(players, hits):
+def format_tooltip():
+    hits = len(server_store)
+    players = 0
+    for row in server_store:
+        players+= row[4]
     hits_pretty = pluralize("matches", hits)
     players_pretty = pluralize("players", players)
     tooltip = f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
@@ -1796,10 +1827,8 @@ def format_tooltip(players, hits):
 def filter_servers(transient_parent, filters_vbox, treeview, context):
     def filter(dialog):
         def clear_and_destroy():
-            row_metadata = parse_server_rows(data)
-            sum = row_metadata[0]
-            hits = row_metadata[1]
-            server_tooltip[0] = format_tooltip(sum, hits)
+            parse_server_rows(data)
+            server_tooltip[0] = format_tooltip()
             transient_parent.grid.update_statusbar(server_tooltip[0])
 
             toggle_signal(treeview, treeview.selected_row, '_on_tree_selection_changed', True)
@@ -2275,6 +2304,7 @@ class Grid(Gtk.Grid):
         self.scrollable_treelist.treeview.terminate_process()
 
     def _on_calclat_started(self, treeview):
+        server_tooltip[0] = format_tooltip()
         server_tooltip[1] = server_tooltip[0] + "| Distance: calculating..."
         self.update_statusbar(server_tooltip[1])
 
@@ -2363,6 +2393,19 @@ class ModSelectionPanel(Gtk.Box):
             button.connect("clicked", self._on_button_clicked)
             self.pack_start(button, False, True, 0)
 
+
+    def initialize(self):
+        l = len(self.get_children())
+        last = self.get_children()[l-1]
+        last_label = last.get_label()
+        for i in self.get_children():
+            match i.get_label():
+                case "Select stale":
+                    i.destroy()
+                case "Unhighlight stale":
+                    i.set_label("Highlight stale")
+
+
     def _on_button_clicked(self, button):
         self.active_button = button
         label = button.get_label()
@@ -2384,6 +2427,22 @@ class ModSelectionPanel(Gtk.Box):
                 process_tree_option([treeview.view, RowType.HIGHLIGHT], treeview)
             case "Unhighlight stale":
                 self.colorize_cells(False)
+                self._remove_last_button()
+            case "Select stale":
+                for i in range (0, len(mod_store)):
+                    if mod_store[i][4] == "#FF0000":
+                        path = Gtk.TreePath(i)
+                        treeview.get_selection().select_path(path)
+
+
+    def toggle_select_stale_button(self, bool):
+        if bool is True:
+            button = Gtk.Button(label="Select stale")
+            button.set_margin_start(10)
+            button.set_margin_end(10)
+            button.connect("clicked", self._on_button_clicked)
+            self.pack_start(button, False, True, 0)
+            self.show_all()
 
     def colorize_cells(self, bool):
         def _colorize(path, color):
@@ -2417,7 +2476,6 @@ class ModSelectionPanel(Gtk.Box):
 
 
     def _iterate_mod_deletion(self, model, pathlist, ct):
-        # hedge against large number of arguments
         widgets = relative_widget(self)
         parent = widgets["outer"]
         treeview = widgets["treeview"]
@@ -2438,6 +2496,7 @@ class ModSelectionPanel(Gtk.Box):
             path = model.get_value(it, 2)
             concat = symlink + " " + path + "\n"
             mods.append(concat)
+        # hedge against large number of arguments passed to shell
         with open(mods_temp_file, "w") as outfile:
             outfile.writelines(mods)
         process_tree_option([treeview.view, RowType.DELETE_SELECTED], treeview)
