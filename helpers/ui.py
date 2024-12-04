@@ -642,16 +642,35 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
             spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             return
         case 95:
-            # reload mods list
+            # successful mod deletion
             spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             treeview = transient_parent.grid.scrollable_treelist.treeview
+            grid = treeview.get_parent().get_parent()
+            (model, pathlist) = treeview.get_selection().get_selected_rows()
+            for p in reversed(pathlist):
+                it = model.get_iter(p)
+                model.remove(it)
+            total_size = 0
+            total_mods = len(model)
+            for row in model:
+                total_size += row[3]
+            size = locale.format_string('%.3f', total_size, grouping=True)
+            pretty = pluralize("mods", total_mods)
+            grid.update_statusbar(f"Found {total_mods:n} {pretty} taking up {size} MiB")
+            # untoggle selection for visibility of other stale rows
+            treeview.toggle_selection(False)
+        case 96:
+            # unsuccessful mod deletion
+            spawn_dialog(transient_parent, msg, Popup.NOTIFY)
             # re-block this signal before redrawing table contents
+            treeview = transient_parent.grid.scrollable_treelist.treeview
             toggle_signal(treeview, treeview, '_on_keypress', False)
             treeview.update_quad_column(RowType.LIST_MODS)
         case 99:
             # highlight stale mods
             panel = transient_parent.grid.sel_panel
             panel.colorize_cells(True)
+            panel.toggle_select_stale_button(True)
         case 100:
             # final handoff before launch
             final_conf = spawn_dialog(transient_parent, msg, Popup.CONFIRM)
@@ -1431,6 +1450,7 @@ class TreeView(Gtk.TreeView):
                     right_panel.set_filter_visibility(False)
                 else:
                     grid.sel_panel.set_visible(True)
+                    grid.sel_panel.initialize()
 
             self.set_model(mod_store)
             self.grab_focus()
@@ -2373,6 +2393,19 @@ class ModSelectionPanel(Gtk.Box):
             button.connect("clicked", self._on_button_clicked)
             self.pack_start(button, False, True, 0)
 
+
+    def initialize(self):
+        l = len(self.get_children())
+        last = self.get_children()[l-1]
+        last_label = last.get_label()
+        for i in self.get_children():
+            match i.get_label():
+                case "Select stale":
+                    i.destroy()
+                case "Unhighlight stale":
+                    i.set_label("Highlight stale")
+
+
     def _on_button_clicked(self, button):
         self.active_button = button
         label = button.get_label()
@@ -2394,6 +2427,22 @@ class ModSelectionPanel(Gtk.Box):
                 process_tree_option([treeview.view, RowType.HIGHLIGHT], treeview)
             case "Unhighlight stale":
                 self.colorize_cells(False)
+                self._remove_last_button()
+            case "Select stale":
+                for i in range (0, len(mod_store)):
+                    if mod_store[i][4] == "#FF0000":
+                        path = Gtk.TreePath(i)
+                        treeview.get_selection().select_path(path)
+
+
+    def toggle_select_stale_button(self, bool):
+        if bool is True:
+            button = Gtk.Button(label="Select stale")
+            button.set_margin_start(10)
+            button.set_margin_end(10)
+            button.connect("clicked", self._on_button_clicked)
+            self.pack_start(button, False, True, 0)
+            self.show_all()
 
     def colorize_cells(self, bool):
         def _colorize(path, color):
