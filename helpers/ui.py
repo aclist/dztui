@@ -156,7 +156,7 @@ class RowType(EnumWithAttrs):
             }
     RECENT_SERVERS = {
             "label": "Recent servers",
-            "tooltip": "Shows the last to servers you connected to (includes attempts)",
+            "tooltip": "Shows the last 10 servers you connected to (includes attempts)",
             }
     CONN_BY_IP = {
             "label": "Connect by IP",
