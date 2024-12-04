@@ -123,6 +123,11 @@ class RowType(EnumWithAttrs):
             "label": None,
             "tooltip": None,
             }
+    RESOLVE_IP = {
+            "label": "Resolve IP",
+            "tooltip": None,
+            "wait_msg": "Resolving remote IP"
+            }
     HIGHLIGHT = {
             "label": "Highlight stale",
             "tooltip": None,
@@ -696,6 +701,11 @@ def process_tree_option(input, treeview):
             msg = out[-1]
             process_shell_return_code(transient_parent, msg, rc, input)
 
+    if command == RowType.RESOLVE_IP:
+        record = "%s:%s" %(treeview.get_column_at_index(7), treeview.get_column_at_index(8))
+        wait_msg = command.dict["wait_msg"]
+        call_on_thread(True, cmd_string, wait_msg, record)
+        return
     # help pages
     if context == WindowContext.TABLE_MODS and command == RowType.HIGHLIGHT:
         wait_msg = command.dict["wait_msg"]
@@ -1095,12 +1105,10 @@ class TreeView(Gtk.TreeView):
         match context_menu_label:
             case "Add to my servers" | "Remove from my servers":
                 record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
-                proc = call_out(parent, context_menu_label, record)
+                process_tree_option([self.view, RowType.RESOLVE_IP], self)
                 if context == "Name (My saved servers)":
                     iter = self.get_current_iter()
                     server_store.remove(iter)
-                msg = proc.stdout
-                res = spawn_dialog(parent, msg, Popup.NOTIFY)
             case "Remove from history":
                 record = "%s:%s" %(self.get_column_at_index(7), self.get_column_at_index(8))
                 call_out(parent, context_menu_label, record)
