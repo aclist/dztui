@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.6.0-beta.10] 2024-12-04
+### Fixed
+- Untoggle highlight button when repopulating mod list
+- Resolve remote IP when saving records for game servers with multiple hosts
+- Update statusbar when removing servers from list/repopulating
+### Added:
+- "Select stale" button to bulk select mods marked as obsolete
+
 ## [5.6.0-beta.9] 2024-12-03
 ### Fixed
 - Normalize user locale when parsing floats
