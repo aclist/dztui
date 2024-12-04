@@ -1090,6 +1090,7 @@ class TreeView(Gtk.TreeView):
 
     def _on_menu_click(self, menu_item):
         #TODO: context menus use old stringwise parsing
+        # use enumerated contexts
         parent = self.get_outer_window()
         context = self.get_first_col()
         value = self.get_column_at_index(0)
