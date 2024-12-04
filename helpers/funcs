@@ -1020,7 +1020,7 @@ open_workshop_page(){
     shift
     local id="$1"
     local workshop_uri="steam://url/CommunityFilePage/$id"
-    $steam_cmd "$workshop_uri" $id
+    $steam_cmd "$workshop_uri" $id &
 }
 open_link(){
     shift

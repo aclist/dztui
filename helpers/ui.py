@@ -1139,7 +1139,8 @@ class TreeView(Gtk.TreeView):
                     process_tree_option([self.view, RowType.DELETE_SELECTED], self)
             case "Open in Steam Workshop":
                 record = self.get_column_at_index(2)
-                call_out(parent, "open_workshop_page", record)
+                base_cmd = "open_workshop_page"
+                subprocess.Popen(['/usr/bin/env', 'bash', funcs, base_cmd, record])
 
     def toggle_selection(self, bool):
         l = len(mod_store)
