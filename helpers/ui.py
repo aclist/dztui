@@ -1132,15 +1132,16 @@ class TreeView(Gtk.TreeView):
                 success_msg = "Successfully deleted the mod '%s'." %(value)
                 fail_msg = "An error occurred during deletion. Aborting."
                 res = spawn_dialog(parent, conf_msg, Popup.CONFIRM)
-                if res == 0:
-                    mods = []
-                    symlink = self.get_column_at_index(1)
-                    dir = self.get_column_at_index(2)
-                    concat = symlink + " " + dir + "\n"
-                    mods.append(concat)
-                    with open(mods_temp_file, "w") as outfile:
-                        outfile.writelines(mods)
-                    process_tree_option([self.view, RowType.DELETE_SELECTED], self)
+                if res != 0:
+                    return
+                mods = []
+                symlink = self.get_column_at_index(1)
+                dir = self.get_column_at_index(2)
+                concat = symlink + " " + dir + "\n"
+                mods.append(concat)
+                with open(mods_temp_file, "w") as outfile:
+                    outfile.writelines(mods)
+                process_tree_option([self.view, RowType.DELETE_SELECTED], self)
             case "Open in Steam Workshop":
                 record = self.get_column_at_index(2)
                 base_cmd = "open_workshop_page"
