@@ -1261,8 +1261,11 @@ class TreeView(Gtk.TreeView):
         if self.view == WindowContext.TABLE_API or self.view == WindowContext.TABLE_SERVER:
             addr = self.get_column_at_index(7)
             if addr is None:
+                server_tooltip[0] = format_tooltip()
+                grid.update_statusbar(server_tooltip[0])
                 return
             if addr in cache:
+                server_tooltip[0] = format_tooltip()
                 dist = format_distance(cache[addr][0])
                 ping = format_ping(cache[addr][1])
 
@@ -1390,7 +1393,7 @@ class TreeView(Gtk.TreeView):
             self.grab_focus()
             for column in self.get_columns():
                 column.connect("notify::width", self._on_col_width_changed)
-            if hits == 0:
+            if len(server_store) == 0:
                 call_out(self, "start_cooldown", "", "")
                 api_warn_msg = """\
                     No servers returned. Possible network issue or API key on cooldown?
@@ -1405,10 +1408,8 @@ class TreeView(Gtk.TreeView):
         data = call_out(self, "dump_servers", mode, *filters)
 
         toggle_signal(self, self.selected_row, '_on_tree_selection_changed', False)
-        row_metadata = parse_server_rows(data)
-        sum = row_metadata[0]
-        hits = row_metadata[1]
-        server_tooltip[0] = format_tooltip(sum, hits)
+        parse_server_rows(data)
+        server_tooltip[0] = format_tooltip()
         grid.update_statusbar(server_tooltip[0])
 
         map_data = call_out(self, "get_unique_maps", mode)
@@ -1790,7 +1791,11 @@ def format_metadata(row_sel):
         return prefix
 
 
-def format_tooltip(players, hits):
+def format_tooltip():
+    hits = len(server_store)
+    players = 0
+    for row in server_store:
+        players+= row[4]
     hits_pretty = pluralize("matches", hits)
     players_pretty = pluralize("players", players)
     tooltip = f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
@@ -1800,10 +1805,8 @@ def format_tooltip(players, hits):
 def filter_servers(transient_parent, filters_vbox, treeview, context):
     def filter(dialog):
         def clear_and_destroy():
-            row_metadata = parse_server_rows(data)
-            sum = row_metadata[0]
-            hits = row_metadata[1]
-            server_tooltip[0] = format_tooltip(sum, hits)
+            parse_server_rows(data)
+            server_tooltip[0] = format_tooltip()
             transient_parent.grid.update_statusbar(server_tooltip[0])
 
             toggle_signal(treeview, treeview.selected_row, '_on_tree_selection_changed', True)
@@ -2279,6 +2282,7 @@ class Grid(Gtk.Grid):
         self.scrollable_treelist.treeview.terminate_process()
 
     def _on_calclat_started(self, treeview):
+        server_tooltip[0] = format_tooltip()
         server_tooltip[1] = server_tooltip[0] + "| Distance: calculating..."
         self.update_statusbar(server_tooltip[1])
 
