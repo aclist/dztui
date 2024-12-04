@@ -2420,7 +2420,6 @@ class ModSelectionPanel(Gtk.Box):
 
 
     def _iterate_mod_deletion(self, model, pathlist, ct):
-        # hedge against large number of arguments
         widgets = relative_widget(self)
         parent = widgets["outer"]
         treeview = widgets["treeview"]
@@ -2441,6 +2440,7 @@ class ModSelectionPanel(Gtk.Box):
             path = model.get_value(it, 2)
             concat = symlink + " " + path + "\n"
             mods.append(concat)
+        # hedge against large number of arguments passed to shell
         with open(mods_temp_file, "w") as outfile:
             outfile.writelines(mods)
         process_tree_option([treeview.view, RowType.DELETE_SELECTED], treeview)
