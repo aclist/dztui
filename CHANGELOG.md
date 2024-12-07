@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.6.0-beta.11] 2024-12-07
+### Fixed
+- Add missing function definition
+
 ## [5.6.0-beta.10] 2024-12-04
 ### Fixed
 - Untoggle highlight button when repopulating mod list

@@ -2435,6 +2435,15 @@ class ModSelectionPanel(Gtk.Box):
                         treeview.get_selection().select_path(path)
 
 
+    def _remove_last_button(self):
+        children = self.get_children()
+        l = len(children)
+        tip = children[l-1]
+        label = tip.get_label()
+        if label == "Select stale":
+            tip.destroy()
+
+
     def toggle_select_stale_button(self, bool):
         if bool is True:
             button = Gtk.Button(label="Select stale")
