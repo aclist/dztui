@@ -10,7 +10,7 @@ Other options include the ability to connect by IP or ID or  set a favorite serv
 
 ## Setup and usage
 
-Refer to the [manual](https://aclist.github.io/dzgui/dzgui.html) for installation and setup instructions, a feature-by-feature breakdown, and Steam integration tutorials.
+Refer to the [manual](https://aclist.codeberg.page) for installation and setup instructions, a feature-by-feature breakdown, and Steam integration tutorials.
 
 ![Alt text](/images/example.png)
 
