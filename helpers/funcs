@@ -67,12 +67,14 @@ game_dir="$steam_path/steamapps/common/DayZ"
 #URLS
 author="aclist"
 repo="dztui"
+#TODO: this is hardcoded
+#2024-12-12
 gh_prefix="https://github.com"
 issues_url="$gh_prefix/$author/$repo/issues"
-url_prefix="https://raw.githubusercontent.com/$author/$repo"
+url_prefix="https://codeberg.org/$author/$repo/branch"
 stable_url="$url_prefix/dzgui"
 testing_url="$url_prefix/testing"
-releases_url="$gh_prefix/$author/$repo/releases/download/browser"
+releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
 km_helper_url="$releases_url/latlon"
 db_file="$releases_url/ips.csv.gz"
 sums_url="$stable_url/helpers/sums.md5"
@@ -773,7 +775,7 @@ dl_changelog(){
     local file="CHANGELOG.md"
     [[ $branch == "stable" ]] && mdbranch="dzgui"
     [[ $branch == "testing" ]] && mdbranch="testing"
-    local md="https://raw.githubusercontent.com/$author/$repo/${mdbranch}/$file"
+    local md="https://codeberg.org/$author/$repo/raw/branch/${mdbranch}/$file"
     curl -Ls "$md" > "$state_path/$file"
 }
 toggle(){
