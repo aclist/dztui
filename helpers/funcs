@@ -70,6 +70,8 @@ game_dir="$steam_path/steamapps/common/DayZ"
 #URLS
 author="aclist"
 repo="dztui"
+#TODO: this is hardcoded
+#2024-12-12
 gh_prefix="https://github.com"
 issues_url="$gh_prefix/$author/$repo/issues"
 url_prefix="https://codeberg.org/$author/$repo/branch"
