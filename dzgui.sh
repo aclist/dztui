@@ -889,6 +889,11 @@ test_connection(){
     if [[ $remote_host == "cb" ]]; then
         url_prefix="https://codeberg.org/$author/$repo/raw/branch"
         releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
+        # 2024-12-12: interpolate variables again
+        stable_url="$url_prefix/dzgui"
+        testing_url="$url_prefix/testing"
+        km_helper_url="$releases_url/latlon"
+        geo_file_url="$releases_url/ips.csv.gz"
     fi
 }
 legacy_cols(){
