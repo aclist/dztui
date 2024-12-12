@@ -1,6 +1,5 @@
 ## What this is
-DZGUI allows you to connect to both official and modded/community DayZ servers on Linux and provides a graphical interface for doing so. This overcomes certain limitations in the Linux client and 
-helps prepare the game to launch by doing the following:
+DZGUI allows you to connect to both official and modded/community DayZ servers on Linux and provides a graphical interface for doing so. This overcomes certain limitations in the Linux client and helps prepare the game to launch by doing the following:
 
 1. Search for and display server metadata in a table (server name, player count, ping, current gametime, distance, IP)
 2. Add/delete/manage favorite servers by IP or ID
