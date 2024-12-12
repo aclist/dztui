@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.6.0-beta.13
+version=5.6.0-beta.14
 
 #CONSTANTS
 aid=221100
@@ -874,9 +874,11 @@ test_connection(){
         ["github.com"]="https://github.com/$author"
         ["codeberg.org"]="https://codeberg.org/$author"
     )
-    # steam API is mandatory
-    res=$(get_response_code "${hr["steampowered.com"]}")
-    [[ $res -ne 200 ]] && raise_error_and_quit "$str ${hr["steampowered.com"]}"
+    # steam API is mandatory, except on initial setup
+    if [[ -n $steam_api ]]; then
+        res=$(get_response_code "${hr["steampowered.com"]}")
+        [[ $res -ne 200 ]] && raise_error_and_quit "$str ("steampowered.com")"
+    fi
 
     res=$(get_response_code "${hr["github.com"]}")
     if [[ $res -ne 200 ]]; then
@@ -885,7 +887,6 @@ test_connection(){
         res=$(get_response_code "${hr["codeberg.org"]}")
         [[ $res -ne 200 ]] && raise_error_and_quit "$str (${hr["codeberg.org"]})"
     fi
-
     if [[ $remote_host == "cb" ]]; then
         url_prefix="https://codeberg.org/$author/$repo/raw/branch"
         releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
