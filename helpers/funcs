@@ -71,7 +71,7 @@ repo="dztui"
 #2024-12-12
 gh_prefix="https://github.com"
 issues_url="$gh_prefix/$author/$repo/issues"
-url_prefix="https://codeberg.org/$author/$repo/branch"
+url_prefix="https://codeberg.org/$author/$repo/raw/branch"
 stable_url="$url_prefix/dzgui"
 testing_url="$url_prefix/testing"
 releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
