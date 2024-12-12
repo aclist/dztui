@@ -54,15 +54,17 @@ km_helper="$helpers_path/latlon"
 sums_path="$helpers_path/sums.md5"
 func_helper="$helpers_path/funcs"
 
-#URLS
+#REMOTE
+remote_host=gh
 author="aclist"
-repo="dzgui"
-url_prefix="https://codeberg.org/$author/$repo/raw/branch"
+repo="dztui"
+url_prefix="https://raw.githubusercontent.com/$author/$repo"
 stable_url="$url_prefix/dzgui"
 testing_url="$url_prefix/testing"
-releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
+releases_url="https://github.com/$author/$repo/releases/download/browser"
 km_helper_url="$releases_url/latlon"
 geo_file_url="$releases_url/ips.csv.gz"
+
 
 set_im_module(){
     #TODO: drop pending SteamOS changes
@@ -312,13 +314,14 @@ check_unmerged(){
 check_version(){
     local version_url=$(format_version_url)
     local upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
+    #2024-12-12: do not clobber local version if unreachable
+    [[ -z $upstream ]] && return
     logger INFO "Local branch: '$branch', local version: $version"
     if [[ $branch == "stable" ]]; then
         version_url="$stable_url/dzgui.sh"
     elif [[ $branch == "testing" ]]; then
         version_url="$testing_url/dzgui.sh"
     fi
-    local upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
     [[ ! -f "$freedesktop_path/$app_name.desktop" ]] && freedesktop_dirs
     if [[ $version == $upstream ]]; then
         logger INFO "Local version is same as upstream"
@@ -371,9 +374,14 @@ prompt_dl(){
 }
 dl_changelog(){
     local mdbranch
+    local md
     [[ $branch == "stable" ]] && mdbranch="dzgui"
     [[ $branch == "testing" ]] && mdbranch="testing"
-    local md="https://codeberg.org/$author/dzgui/raw/branch/${mdbranch}/CHANGELOG.md"
+    if [[ $remote_host == "gh" ]]; then
+        md="https://raw.githubusercontent.com/$author/$repo/${mdbranch}/CHANGELOG.md"
+    else
+        md="https://codeberg.org/$author/$repo/raw/branch/${mdbranch}/CHANGELOG.md"
+    fi
     curl -Ls "$md" > "$state_path/CHANGELOG.md"
 }
 test_display_mode(){
@@ -596,7 +604,13 @@ fetch_helpers_by_sum(){
         file="$i"
         sum="${sums[$i]}"
         full_path="$helpers_path/$file"
-        url="https://codeberg.org/$author/$repo/raw/branch/$realbranch/helpers/$file"
+
+        if [[ $remote_host == "gh" ]]; then
+            url="https://raw.githubusercontent.com/$author/$repo/$realbranch/helpers/$file"
+        else
+            url="https://codeberg.org/$author/$repo/raw/branch/$realbranch/helpers/$file"
+        fi
+
         if [[ -f "$full_path" ]] && [[ $(get_hash "$full_path") == $sum ]]; then
             logger INFO "$file is current"
         else
@@ -845,14 +859,32 @@ is_steam_running(){
         return 0
     fi
 }
+get_response_code(){
+    local url="$1"
+    curl -Ls -I -o /dev/null -w "%{http_code}" "$url"
+}
 test_connection(){
-    ping -c1 -4 github.com 1>/dev/null 2>&1
-    if [[ ! $? -eq 0 ]]; then
-        raise_error_and_quit "No connection could be established to the remote server (github.com)."
-    fi
-    ping -c1 -4 api.steampowered.com 1>/dev/null 2>&1
-    if [[ ! $? -eq 0 ]]; then
-        raise_error_and_quit "No connection could be established to the remote server (steampowered.com)."
+    source "$config_file"
+    declare -A hr
+    local res1
+    local res2
+    local str="No connection could be established to the remote server"
+    hr=(
+        ["steampowered.com"]="https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=$steam_api"
+        ["github.com"]="https://github.com/$author"
+        ["codeberg.org"]="https://codeberg.org/$author"
+    )
+    res=$(get_response_code "${hr["github.com"]}")
+    [[ $res -ne 200 ]] && remote_host=cb
+    res=$(get_response_code "${hr["codeberg.org"]}")
+    [[ $res -ne 200 ]] && raise_error_and_quit "$str (${hr["codeberg.org"]})"
+    # steam API is mandatory
+    res=$(get_response_code "${hr["steampowered.com"]}")
+    [[ $res -ne 200 ]] && raise_error_and_quit "$str ${hr["steampowered.com"]}"
+
+    if [[ $remote_host == "cb" ]]; then
+        url_prefix="https://codeberg.org/$author/$repo/raw/branch"
+        releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
     fi
 }
 legacy_cols(){
