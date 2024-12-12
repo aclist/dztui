@@ -56,11 +56,11 @@ func_helper="$helpers_path/funcs"
 
 #URLS
 author="aclist"
-repo="dztui"
-url_prefix="https://raw.githubusercontent.com/$author/$repo"
+repo="dzgui"
+url_prefix="https://codeberg.org/$author/$repo/raw/branch"
 stable_url="$url_prefix/dzgui"
 testing_url="$url_prefix/testing"
-releases_url="https://github.com/$author/$repo/releases/download/browser"
+releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
 km_helper_url="$releases_url/latlon"
 geo_file_url="$releases_url/ips.csv.gz"
 
@@ -373,7 +373,7 @@ dl_changelog(){
     local mdbranch
     [[ $branch == "stable" ]] && mdbranch="dzgui"
     [[ $branch == "testing" ]] && mdbranch="testing"
-    local md="https://raw.githubusercontent.com/$author/dztui/${mdbranch}/CHANGELOG.md"
+    local md="https://codeberg.org/$author/dzgui/raw/branch/${mdbranch}/CHANGELOG.md"
     curl -Ls "$md" > "$state_path/CHANGELOG.md"
 }
 test_display_mode(){
@@ -535,7 +535,7 @@ fetch_dzq(){
         return 0
     fi
     local sha=3088bbfb147b77bc7b6a9425581b439889ff3f7f
-    local author="aclist"
+    local author="yepoleb"
     local repo="dayzquery"
     local url="https://raw.githubusercontent.com/$author/$repo/$sha/dayzquery.py"
     curl -Ls "$url" > "$file"
@@ -572,11 +572,11 @@ fetch_helpers_by_sum(){
         ["ui.py"]="be3da1e542d14105f4358dd38901e25a"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="62f6b3fb2dcb56a78b7642c0f0aa7abe"
+        ["funcs"]="0cbec29142f4fcb03b2bd8367fe365e4"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
-    local repo="dztui"
+    local repo="dzgui"
     local realbranch
     local file
     local sum
@@ -596,7 +596,7 @@ fetch_helpers_by_sum(){
         file="$i"
         sum="${sums[$i]}"
         full_path="$helpers_path/$file"
-        url="https://raw.githubusercontent.com/$author/$repo/$realbranch/helpers/$file"
+        url="https://codeberg.org/$author/$repo/raw/branch/$realbranch/helpers/$file"
         if [[ -f "$full_path" ]] && [[ $(get_hash "$full_path") == $sum ]]; then
             logger INFO "$file is current"
         else
