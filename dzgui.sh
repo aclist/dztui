@@ -874,13 +874,17 @@ test_connection(){
         ["github.com"]="https://github.com/$author"
         ["codeberg.org"]="https://codeberg.org/$author"
     )
-    res=$(get_response_code "${hr["github.com"]}")
-    [[ $res -ne 200 ]] && remote_host=cb
-    res=$(get_response_code "${hr["codeberg.org"]}")
-    [[ $res -ne 200 ]] && raise_error_and_quit "$str (${hr["codeberg.org"]})"
     # steam API is mandatory
     res=$(get_response_code "${hr["steampowered.com"]}")
     [[ $res -ne 200 ]] && raise_error_and_quit "$str ${hr["steampowered.com"]}"
+
+    res=$(get_response_code "${hr["github.com"]}")
+    if [[ $res -ne 200 ]]; then
+        logger WARN "Remote host '${hr["github.com"]}' unreachable', trying fallback"
+        remote_host=cb
+        res=$(get_response_code "${hr["codeberg.org"]}")
+        [[ $res -ne 200 ]] && raise_error_and_quit "$str (${hr["codeberg.org"]})"
+    fi
 
     if [[ $remote_host == "cb" ]]; then
         url_prefix="https://codeberg.org/$author/$repo/raw/branch"
