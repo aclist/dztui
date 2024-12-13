@@ -73,10 +73,6 @@ url_prefix="https://raw.githubusercontent.com/$author/$repo"
 stable_url="$url_prefix/dzgui"
 testing_url="$url_prefix/testing"
 releases_url="$gh_prefix/$author/$repo/releases/download/browser"
-km_helper_url="$releases_url/latlon"
-db_file="$releases_url/ips.csv.gz"
-sums_url="$stable_url/helpers/sums.md5"
-#TODO: move adoc to index
 help_url="https://$author.github.io/dzgui/dzgui"
 forum_url="$gh_prefix/$author/$repo/discussions"
 sponsor_url="$gh_prefix/sponsors/$author"
@@ -748,7 +744,45 @@ format_version_url(){
     esac
     echo "$version_url"
 }
+get_response_code(){
+    local url="$1"
+    curl -Ls -I -o /dev/null -w "%{http_code}" "$url"
+}
+test_connection(){
+    source "$config_file"
+    declare -A hr
+    local res1
+    local res2
+    local str="No connection could be established to the remote server"
+    hr=(
+        ["github.com"]="https://github.com/$author"
+        ["codeberg.org"]="https://codeberg.org/$author"
+    )
+    res=$(get_response_code "${hr["github.com"]}")
+    if [[ $res -ne 200 ]]; then
+        logger WARN "Remote host '${hr["github.com"]}' unreachable', trying fallback"
+        remote_host=cb
+        res=$(get_response_code "${hr["codeberg.org"]}")
+        if [[ $res -ne 200 ]]; then
+            return 1
+        fi
+    fi
+    logger INFO "Set remote host to '${hr["codeberg.org"]}'"
+    if [[ $remote_host == "cb" ]]; then
+        url_prefix="https://codeberg.org/$author/$repo/raw/branch"
+        releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
+        stable_url="$url_prefix/dzgui"
+        testing_url="$url_prefix/testing"
+    fi
+}
 download_new_version(){
+    test_connection
+    rc=$?
+    if [[ $rc -eq 1 ]]; then
+        printf "Remote resource unavailable. Aborting"
+        logger WARN "Remote resource unavailable"
+        return 1
+    fi
     local version_url="$(format_version_url)"
     mv "$src_path" "$src_path.old"
     curl -Ls "$version_url" > "$src_path"
@@ -773,7 +807,7 @@ dl_changelog(){
     local file="CHANGELOG.md"
     [[ $branch == "stable" ]] && mdbranch="dzgui"
     [[ $branch == "testing" ]] && mdbranch="testing"
-    local md="https://raw.githubusercontent.com/$author/$repo/${mdbranch}/$file"
+    local md="$url_prefix/${mdbranch}/$file"
     curl -Ls "$md" > "$state_path/$file"
 }
 toggle(){
@@ -788,6 +822,7 @@ toggle(){
             fi
             update_config
             download_new_version
+            [[ $? -eq 1 ]] && return 1
             return 255
             ;;
         Toggle[[:space:]]mod[[:space:]]install[[:space:]]mode)
@@ -851,7 +886,7 @@ remove_from_favs(){
             break
         fi
     done
-    if [[ ${#ip_list} -gt 0 ]]; then
+    if [[ ${#ip_list[@]} -gt 0 ]]; then
         readarray -t ip_list < <(printf "%s\n" "${ip_list[@]}")
     fi
     update_config
