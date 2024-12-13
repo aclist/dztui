@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.6.0-beta.16] 2024-12-13
+### Fixed
+- Add remote resource health checks before downloading updates
+### Added
+- Add fallback repository
+
 ## [5.6.0-beta.11] 2024-12-07
 ### Fixed
 - Add missing function definition
