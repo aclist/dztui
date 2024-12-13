@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.5.2
+version=5.5.3
 
 #CONSTANTS
 aid=221100
@@ -314,8 +314,8 @@ check_unmerged(){
 check_version(){
     local version_url=$(format_version_url)
     local upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
-    #2024-12-12: do not clobber local version if unreachable
-    [[ -z $upstream ]] && return
+    local res=$(get_response_code "$version_url")
+    [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$version_url'"
     logger INFO "Local branch: '$branch', local version: $version"
     if [[ $branch == "stable" ]]; then
         version_url="$stable_url/dzgui.sh"
@@ -377,11 +377,7 @@ dl_changelog(){
     local md
     [[ $branch == "stable" ]] && mdbranch="dzgui"
     [[ $branch == "testing" ]] && mdbranch="testing"
-    if [[ $remote_host == "gh" ]]; then
-        md="https://raw.githubusercontent.com/$author/$repo/${mdbranch}/CHANGELOG.md"
-    else
-        md="https://codeberg.org/$author/$repo/raw/branch/${mdbranch}/CHANGELOG.md"
-    fi
+    local md="$url_prefix/${mdbranch}/$file"
     curl -Ls "$md" > "$state_path/CHANGELOG.md"
 }
 test_display_mode(){
@@ -523,6 +519,7 @@ get_hash(){
     md5sum "$1" | awk '{print $1}'
 }
 fetch_a2s(){
+    # this file is currently monolithic
     [[ -d $helpers_path/a2s ]] && { logger INFO "A2S helper is current"; return 0; }
     local sha=c7590ffa9a6d0c6912e17ceeab15b832a1090640
     local author="yepoleb"
@@ -530,6 +527,8 @@ fetch_a2s(){
     local url="https://github.com/$author/$repo/tarball/$sha"
     local prefix="${author^}-$repo-${sha:0:7}"
     local file="$prefix.tar.gz"
+    local res=$(get_response_code "$url")
+    [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$file'"
     curl -Ls "$url" > "$helpers_path/$file"
     tar xf "$helpers_path/$file" -C "$helpers_path" "$prefix/a2s" --strip=1
     rm "$helpers_path/$file"
@@ -546,6 +545,8 @@ fetch_dzq(){
     local author="yepoleb"
     local repo="dayzquery"
     local url="https://raw.githubusercontent.com/$author/$repo/$sha/dayzquery.py"
+    local res=$(get_response_code "$url")
+    [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: 'dayzquery.py'"
     curl -Ls "$url" > "$file"
     logger INFO "Updated DZQ to sha '$sha'"
 }
@@ -577,14 +578,14 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="be3da1e542d14105f4358dd38901e25a"
+        ["ui.py"]="dd7aa34df1d374739127cca3033a3f67"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="8aa9eac96c21a3aabbf73c44b643523b"
+        ["funcs"]="6d985948a3b9b71017c4e0c5f7f55fe0"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
-    local repo="dzgui"
+    local repo="dztui"
     local realbranch
     local file
     local sum
@@ -605,16 +606,14 @@ fetch_helpers_by_sum(){
         sum="${sums[$i]}"
         full_path="$helpers_path/$file"
 
-        if [[ $remote_host == "gh" ]]; then
-            url="https://raw.githubusercontent.com/$author/$repo/$realbranch/helpers/$file"
-        else
-            url="https://codeberg.org/$author/$repo/raw/branch/$realbranch/helpers/$file"
-        fi
+        url="${url_prefix}/$realbranch/helpers/$file"
 
         if [[ -f "$full_path" ]] && [[ $(get_hash "$full_path") == $sum ]]; then
             logger INFO "$file is current"
         else
             logger WARN "File '$full_path' checksum != '$sum'"
+            local res=$(get_response_code "$url")
+            [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$url'"
             curl -Ls "$url" > "$full_path"
             if [[ ! $? -eq 0 ]]; then
                 raise_error_and_quit "Failed to fetch the file '$file'. Possible timeout?"
@@ -635,11 +634,15 @@ fetch_geo_file(){
     local km_sum="b038fdb8f655798207bd28de3a004706"
     local gzip="$helpers_path/ips.csv.gz"
     if [[ ! -f $geo_file  ]] || [[ $(get_hash $geo_file) != $geo_sum ]]; then
+        local res=$(get_response_code "$geo_file_url")
+        [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$geo_file_url'"
         curl -Ls "$geo_file_url" > "$gzip"
         #force overwrite
         gunzip -f "$gzip"
     fi
     if [[ ! -f $km_helper ]] || [[ $(get_hash $km_helper) != $km_sum ]]; then
+        local res=$(get_response_code "$km_helper_url")
+        [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$km_helper_url'"
         curl -Ls "$km_helper_url" > "$km_helper"
         chmod +x "$km_helper"
     fi
@@ -887,10 +890,10 @@ test_connection(){
         res=$(get_response_code "${hr["codeberg.org"]}")
         [[ $res -ne 200 ]] && raise_error_and_quit "$str (${hr["codeberg.org"]})"
     fi
+    logger INFO "Set remote host to '${hr["codeberg.org"]}'"
     if [[ $remote_host == "cb" ]]; then
         url_prefix="https://codeberg.org/$author/$repo/raw/branch"
         releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
-        # 2024-12-12: interpolate variables again
         stable_url="$url_prefix/dzgui"
         testing_url="$url_prefix/testing"
         km_helper_url="$releases_url/latlon"
