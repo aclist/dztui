@@ -606,11 +606,7 @@ fetch_helpers_by_sum(){
         sum="${sums[$i]}"
         full_path="$helpers_path/$file"
 
-        if [[ $remote_host == "gh" ]]; then
-            url="https://raw.githubusercontent.com/$author/$repo/$realbranch/helpers/$file"
-        else
-            url="https://codeberg.org/$author/$repo/raw/branch/$realbranch/helpers/$file"
-        fi
+        url="${url_prefix}/$realbranch/helpers/$file"
 
         if [[ -f "$full_path" ]] && [[ $(get_hash "$full_path") == $sum ]]; then
             logger INFO "$file is current"
@@ -895,7 +891,6 @@ test_connection(){
         [[ $res -ne 200 ]] && raise_error_and_quit "$str (${hr["codeberg.org"]})"
     fi
     logger INFO "Set remote host to '${hr["codeberg.org"]}'"
-    remote_host=cb
     if [[ $remote_host == "cb" ]]; then
         url_prefix="https://codeberg.org/$author/$repo/raw/branch"
         releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
