@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.5.3] 2024-12-13
+### Fixed
+- Add remote resource health checks before downloading updates
+### Added
+- Add fallback repository
+
 ## [5.5.1] 2024-12-03
 ### Fixed
 - Support localized decimal separators when parsing installed mod sizes
