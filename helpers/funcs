@@ -843,7 +843,6 @@ test_connection(){
         remote_host=cb
         res=$(get_response_code "${hr["codeberg.org"]}")
         if [[ $res -ne 200 ]]; then
-            printf "Failed to fetch new version. Rolling back"
             return 1
         fi
     fi
@@ -857,6 +856,12 @@ test_connection(){
 }
 download_new_version(){
     test_connection
+    rc=$?
+    if [[ $rc -eq 1 ]]; then
+        printf "Remote resource unavailable. Aborting"
+        logger WARN "Remote resource unavailable"
+        return 1
+    fi
     local version_url="$(format_version_url)"
     mv "$src_path" "$src_path.old"
     curl -Ls "$version_url" > "$src_path"
@@ -896,6 +901,7 @@ toggle(){
             fi
             update_config
             download_new_version
+            [[ $? -eq 1 ]] && return 1
             return 255
             ;;
         Toggle[[:space:]]mod[[:space:]]install[[:space:]]mode)
