@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.6.0-beta.17] 2024-12-14
+### Added
+- Additional logging
+
 ## [5.6.0-beta.16] 2024-12-13
 ### Fixed
 - Add remote resource health checks before downloading updates

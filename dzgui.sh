@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.6.0-beta.16
+version=5.6.0-beta.17
 
 #CONSTANTS
 aid=221100
@@ -483,7 +483,7 @@ stale_symlinks(){
     local game_dir="$steam_path/steamapps/common/DayZ"
     for l in $(find "$game_dir" -xtype l); do
         logger DEBUG "Updating stale symlink '$l'"
-        unlink $l
+        unlink "$l"
     done
 }
 local_latlon(){
@@ -581,7 +581,7 @@ fetch_helpers_by_sum(){
         ["ui.py"]="be3da1e542d14105f4358dd38901e25a"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="10c7d9cb9fbb792626ec9e7a4a788ba5"
+        ["funcs"]="37897aa36bc2fb6286cee02c8bb07258"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
