@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.6.0-beta.18] 2024-12-14
+### Added
+- Open Steam workshop subscriptions
+
 ## [5.6.0-beta.17] 2024-12-14
 ### Added
 - Additional logging

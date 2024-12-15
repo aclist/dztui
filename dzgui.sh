@@ -578,10 +578,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="be3da1e542d14105f4358dd38901e25a"
+        ["ui.py"]="24d0525e71c0725a1487926fae7330e4"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="37897aa36bc2fb6286cee02c8bb07258"
+        ["funcs"]="4c1480fcfae15c4bc1c02a337d1de488"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
