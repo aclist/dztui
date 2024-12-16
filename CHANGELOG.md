@@ -3,6 +3,11 @@
 ## [5.6.0-beta.18] 2024-12-14
 ### Added
 - Open Steam workshop subscriptions
+### Fixed
+- Empty dialog popups if user manually deletes local mods while application is running
+- Abort DayZ path discovery if VDF if Steam files are not synched
+### Changed
+- Admonish user to restart Steam in error dialog if DayZ path could not be found
 
 ## [5.6.0-beta.17] 2024-12-14
 ### Added

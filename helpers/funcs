@@ -353,12 +353,13 @@ list_mods(){
     local name
     local base_dir
     local size
+    local mods
     if [[ -z $(installed_mods) ]] || [[ -z $(find $workshop_dir -maxdepth 2 -name "*.cpp" | grep .cpp) ]]; then
         printf "No mods currently installed or incorrect path set."
         logger WARN "Found no locally installed mods"
         return 1
     else
-        for dir in $(find $game_dir/* -maxdepth 1 -type l); do
+        mods=$(for dir in $(find $game_dir/* -maxdepth 1 -type l); do
             symlink=$(basename $dir)
             sep="␞"
             name=$(awk -F\" '/name/ {print $2}' "${dir}/meta.cpp")
@@ -366,7 +367,14 @@ list_mods(){
             size=$(du -s "$(readlink -f "$game_dir/$symlink")" | awk '{print $1}')
             size=$(python3 -c "n=($size/1024) +.005; print(round(n,4))")
             LC_NUMERIC=C printf "%s$sep%s$sep%s$sep%3.3f\n" "$name" "$symlink" "$base_dir" "$size"
-        done | sort -k1
+        done | sort -k1)
+        # user may have manually pruned mods out-of-band
+        # handle directory detritus but no actual mods
+        if [[ -z $mods ]]; then
+            printf "No mods currently installed or incorrect path set."
+            return 1
+        fi
+        echo "$mods"
     fi
 }
 installed_mods(){
