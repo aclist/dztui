@@ -2249,7 +2249,6 @@ class LinkDialog(GenericDialog):
         self.dialog.connect("response", self._on_dialog_response, parent, command)
 
     def _on_button_clicked(self, button, uid):
-        label = button.get_label()
         subprocess.Popen(['/usr/bin/env', 'bash', funcs, "open_user_workshop", uid])
 
     def _on_dialog_response(self, dialog, resp, parent, command):
