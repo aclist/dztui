@@ -578,10 +578,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="be3da1e542d14105f4358dd38901e25a"
+        ["ui.py"]="99544ccef6060125509c4b689a808a15"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="37897aa36bc2fb6286cee02c8bb07258"
+        ["funcs"]="98261fdba4323f77c6dd610c1efc4d11"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
@@ -747,7 +747,7 @@ find_library_folder(){
     local search_path="$1"
     steam_path="$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" \
         | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')"
-    if [[ ! $? -eq 0 ]]; then
+    if [[ ! $? -eq 0 ]] || [[ -z $steam_path ]]; then
         logger WARN "Failed to parse Steam path using '$search_path'"
         return 1
     fi
@@ -800,7 +800,7 @@ create_config(){
             find_library_folder "$default_steam_path"
             if [[ -z $steam_path ]]; then
                 logger raise_error "Steam path was empty"
-                zenity --question --text="DayZ not found or not installed at the Steam library given." --ok-label="Choose path manually" --cancel-label="Exit"
+                zenity --question --text="DayZ not found or not installed at the Steam library given. NOTE: if you recently installed DayZ or moved its location, you MUST restart Steam first for these changes to synch." --ok-label="Choose path manually" --cancel-label="Exit"
                 if [[ $? -eq 0 ]]; then
                     logger INFO "User selected file picker"
                     file_picker

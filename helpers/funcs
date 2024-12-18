@@ -104,6 +104,7 @@ declare -A funcs=(
 ["Connect by IP"]="validate_and_connect"
 ["Connect by ID"]="validate_and_connect"
 ["Connect from table"]="connect_from_table"
+["find_id"]="find_id"
 ["toggle"]="toggle"
 ["Open link"]="open_link"
 ["filter"]="dump_servers"
@@ -121,6 +122,7 @@ declare -A funcs=(
 ["is_in_favs"]="is_in_favs"
 ["show_log"]="show_log"
 ["Output system info to log file"]="generate_log"
+["open_user_workshop"]="open_user_workshop"
 ["open_workshop_page"]="open_workshop_page"
 ["Add to my servers"]="update_favs_from_table"
 ["Remove from my servers"]="update_favs_from_table"
@@ -332,18 +334,32 @@ is_in_favs(){
     done
     return 1
 }
+find_id(){
+    local file="$default_steam_path/config/loginusers.vdf"
+    [[ ! -f $file ]] && return 1
+    local res=$(python3 $HOME/.local/share/dzgui/helpers/vdf2json.py \
+    -i "$file" | jq -r '.users
+        |to_entries[]
+        |select(.value.MostRecent=="1")
+        |.key'
+    )
+    [[ -z $res ]] && return 1
+    printf "%s" "$res"
+    return 0
+}
 list_mods(){
     local symlink
     local sep
     local name
     local base_dir
     local size
+    local mods
     if [[ -z $(installed_mods) ]] || [[ -z $(find $workshop_dir -maxdepth 2 -name "*.cpp" | grep .cpp) ]]; then
         printf "No mods currently installed or incorrect path set."
         logger WARN "Found no locally installed mods"
         return 1
     else
-        for dir in $(find $game_dir/* -maxdepth 1 -type l); do
+        mods=$(for dir in $(find $game_dir/* -maxdepth 1 -type l); do
             symlink=$(basename $dir)
             sep="␞"
             name=$(awk -F\" '/name/ {print $2}' "${dir}/meta.cpp")
@@ -351,7 +367,14 @@ list_mods(){
             size=$(du -s "$(readlink -f "$game_dir/$symlink")" | awk '{print $1}')
             size=$(python3 -c "n=($size/1024) +.005; print(round(n,4))")
             LC_NUMERIC=C printf "%s$sep%s$sep%s$sep%3.3f\n" "$name" "$symlink" "$base_dir" "$size"
-        done | sort -k1
+        done | sort -k1)
+        # user may have manually pruned mods out-of-band
+        # handle directory detritus but no actual mods
+        if [[ -z $mods ]]; then
+            printf "No mods currently installed or incorrect path set."
+            return 1
+        fi
+        echo "$mods"
     fi
 }
 installed_mods(){
@@ -1051,6 +1074,12 @@ update_config_val(){
 show_log(){
     < "$debug_log" sed 's/Keyword␞/Keyword/'
 }
+open_user_workshop(){
+    shift
+    local id="$1"
+    url="https://steamcommunity.com/profiles/$id/myworkshopfiles/?appid=$aid&browsefilter=mysubscriptions"
+    $steam_cmd steam://openurl/$url &
+}
 open_workshop_page(){
     shift
     local id="$1"
@@ -1173,7 +1202,7 @@ legacy_symlinks(){
     logger INFO "Removing legacy symlinks"
     for d in "$game_dir"/*; do
         if [[ $d =~ @[0-9]+-.+ ]]; then
-            logger INFO "Unlinking $d"
+            logger INFO "Unlinking '$d'"
             unlink "$d"
         fi
     done
@@ -1183,11 +1212,14 @@ legacy_symlinks(){
     logger INFO "Removing legacy encoding format"
     for d in "${mod_dirs[@]}"; do
         # suppress errors if mods are downloading at boot
+        logger INFO "Testing directory '$d'"
         [[ ! -f "$d/meta.cpp" ]] && continue
         local id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
+        logger INFO "Given id is '$id'"
         local encoded_id=$(echo "$id" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g')
+        logger INFO "Resolved id is '$encoded_id'"
         if [[ -h "$game_dir/@$encoded_id" ]]; then
-            logger INFO "Unlinking $game_dir/@$encoded_id"
+            logger INFO "Unlinking '$game_dir/@$encoded_id'"
             unlink "$game_dir/@$encoded_id"
         fi
     done

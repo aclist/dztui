@@ -215,6 +215,7 @@ class RowType(EnumWithAttrs):
             "label": "Toggle mod install mode",
             "tooltip": "Switch between manual and auto mod installation",
             "default": "manual",
+            "link_label": "Open Steam Workshop",
             "alt": "auto",
             "val": "auto_install"
             }
@@ -756,6 +757,29 @@ def process_tree_option(input, treeview):
             case RowType.TGL_BRANCH:
                 wait_msg = "Updating DZGUI branch"
                 call_on_thread(False, "toggle", wait_msg, cmd_string)
+            case RowType.TGL_INSTALL:
+                if query_config(None, "auto_install")[0] == "1":
+                    proc = call_out(transient_parent, "toggle", cmd_string)
+                    grid.update_right_statusbar()
+                    tooltip = format_metadata(command.dict["label"])
+                    transient_parent.grid.update_statusbar(tooltip)
+                    return
+                # manual -> auto mode
+                proc = call_out(transient_parent, "find_id", "")
+                if proc.returncode == 1:
+                    link=None
+                    uid=None
+                else:
+                    link=command.dict["link_label"]
+                    uid=proc.stdout
+                manual_sub_msg = """\
+                    When switching from MANUAL to AUTO mod install mode,
+                    DZGUI will manage mod installation and deletion for you.
+                    To prevent conflicts with Steam Workshop subscriptions and old mods from being downloaded
+                    when Steam updates, you should unsubscribe from any existing Workshop mods you manually subscribed to.
+                    Open your Profile > Workshop Items and select 'Unsubscribe from all'
+                    on the right-hand side, then click OK below to enable AUTO mod install mode."""
+                LinkDialog(transient_parent, textwrap.dedent(manual_sub_msg), Popup.NOTIFY, link, command, uid)
             case _:
                 proc = call_out(transient_parent, "toggle", cmd_string)
                 grid.update_right_statusbar()
@@ -2203,6 +2227,40 @@ class ModDialog(GenericDialog):
         tree_iter = model.get_iter(path)
         mod_id = model.get_value(tree_iter, 1)
         subprocess.Popen(['/usr/bin/env', 'bash', funcs, "open_workshop_page", mod_id])
+
+
+class LinkDialog(GenericDialog):
+    def __init__(self, parent, text, mode, link, command, uid=None):
+        super().__init__(parent, text, mode)
+
+        self.dialog = GenericDialog(parent, text, mode)
+        self.dialogBox = self.dialog.get_content_area()
+        self.dialog.set_default_response(Gtk.ResponseType.OK)
+        self.dialog.set_size_request(500, 0)
+
+        if link is not None:
+            button = Gtk.Button(label=link)
+            button.set_margin_start(60)
+            button.set_margin_end(60)
+            button.connect("clicked", self._on_button_clicked, uid)
+            self.dialogBox.pack_end(button, False, False, 0)
+
+        self.dialog.show_all()
+        self.dialog.connect("response", self._on_dialog_response, parent, command)
+
+    def _on_button_clicked(self, button, uid):
+        subprocess.Popen(['/usr/bin/env', 'bash', funcs, "open_user_workshop", uid])
+
+    def _on_dialog_response(self, dialog, resp, parent, command):
+        match resp:
+            case Gtk.ResponseType.DELETE_EVENT:
+                return
+            case Gtk.ResponseType.OK:
+                self.dialog.destroy()
+                proc = call_out(parent, "toggle", command.dict["label"])
+                parent.grid.update_right_statusbar()
+                tooltip = format_metadata(command.dict["label"])
+                parent.grid.update_statusbar(tooltip)
 
 
 class EntryDialog(GenericDialog):
