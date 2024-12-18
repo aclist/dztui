@@ -7,6 +7,7 @@
 ### Fixed
 - Empty dialog popups if user manually deletes local mods while application is running
 - Abort DayZ path discovery if VDF if Steam files are not synched
+- Avoid sudo escalation if system map count is sufficient (jiriks74)
 ### Changed
 - Admonish user to restart Steam in error dialog if DayZ path could not be found
 
