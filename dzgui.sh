@@ -406,13 +406,20 @@ check_architecture(){
 }
 check_map_count(){
     [[ $is_steam_deck -gt 0 ]] && return 0
-    local count=1048576
+    local map_count_file="/proc/sys/vm/max_map_count"
+    local min_count=1048576
     local conf_file="/etc/sysctl.d/dayz.conf"
-    if [[ -f $conf_file ]]; then
-        logger DEBUG "System map count is already $count or higher"
+    local current_count
+    if [[ ! -f ${map_count_file} ]]; then
+        logger WARN "File '${map_count_file}' doesn't exist!"
+        return 1
+    fi
+    current_count=$(cat ${map_count_file})
+    if [[ $current_count -ge $min_count ]]; then
+        logger DEBUG "System map count is set to ${current_count}"
         return 0
     fi
-    qdialog "sudo password required to check system vm map count." "OK" "Cancel"
+    qdialog "sudo password required to set system vm map count." "OK" "Cancel"
     if [[ $? -eq 0 ]]; then
         local pass
         logger INFO "Prompting user for sudo escalation"
@@ -421,13 +428,11 @@ check_map_count(){
             logger WARN "User aborted password prompt"
             return 1
         fi
-        local ct=$(sudo -S <<< "$pass" sh -c "sysctl -q vm.max_map_count | awk -F'= ' '{print \$2}'")
-        logger DEBUG "Old map count is $ct"
-        local new_ct
-        [[ $ct -lt $count ]] && ct=$count
-        sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=$ct' > $conf_file"
+        logger DEBUG "Old map count is $current_count"
+        [[ $current_count -lt $min_count ]] && current_count=$min_count
+        sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=${current_count}' > $conf_file"
         sudo sysctl -p "$conf_file"
-        logger DEBUG "Updated map count to $count"
+        logger DEBUG "Updated map count to $min_count"
     else
         logger WARN "User aborted map count prompt"
         return 1
