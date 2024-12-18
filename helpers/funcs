@@ -739,6 +739,7 @@ logger(){
     local self="${BASH_SOURCE[0]}"
     local caller="${FUNCNAME[1]}"
     local line="${BASH_LINENO[0]}"
+    self="$(<<< "$self" sed 's@\(/[^/]*/\)\([^/]*\)\(.*\)@\1REDACTED\3@g')"
     printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" >> "$debug_log"
 }
 test_ping(){
