@@ -2263,8 +2263,6 @@ class LinkDialog(GenericDialog):
                 parent.grid.update_statusbar(tooltip)
 
 
-
-
 class EntryDialog(GenericDialog):
     def __init__(self, parent, text, mode, link):
         super().__init__(parent, text, mode)

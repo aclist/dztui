@@ -1202,7 +1202,7 @@ legacy_symlinks(){
     logger INFO "Removing legacy symlinks"
     for d in "$game_dir"/*; do
         if [[ $d =~ @[0-9]+-.+ ]]; then
-            logger INFO "Unlinking $d"
+            logger INFO "Unlinking '$d'"
             unlink "$d"
         fi
     done
@@ -1212,11 +1212,14 @@ legacy_symlinks(){
     logger INFO "Removing legacy encoding format"
     for d in "${mod_dirs[@]}"; do
         # suppress errors if mods are downloading at boot
+        logger INFO "Testing directory '$d'"
         [[ ! -f "$d/meta.cpp" ]] && continue
         local id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
+        logger INFO "Given id is '$id'"
         local encoded_id=$(echo "$id" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g')
+        logger INFO "Resolved id is '$encoded_id'"
         if [[ -h "$game_dir/@$encoded_id" ]]; then
-            logger INFO "Unlinking $game_dir/@$encoded_id"
+            logger INFO "Unlinking '$game_dir/@$encoded_id'"
             unlink "$game_dir/@$encoded_id"
         fi
     done
