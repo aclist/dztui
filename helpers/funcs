@@ -337,8 +337,9 @@ is_in_favs(){
 find_id(){
     local file="$default_steam_path/config/loginusers.vdf"
     [[ ! -f $file ]] && return 1
-    local res=$(python3 $HOME/.local/share/dzgui/helpers/vdf2json.py \
-    -i "$file" | jq -r '.users
+    local res=$(python3 "$helpers_path/vdf2json.py" \
+    -i "$file" \
+    | jq -r '.users
         |to_entries[]
         |select(.value.MostRecent=="1")
         |.key'
