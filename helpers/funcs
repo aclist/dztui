@@ -337,8 +337,9 @@ is_in_favs(){
 find_id(){
     local file="$default_steam_path/config/loginusers.vdf"
     [[ ! -f $file ]] && return 1
-    local res=$(python3 $HOME/.local/share/dzgui/helpers/vdf2json.py \
-    -i "$file" | jq -r '.users
+    local res=$(python3 "$helpers_path/vdf2json.py" \
+    -i "$file" \
+    | jq -r '.users
         |to_entries[]
         |select(.value.MostRecent=="1")
         |.key'
@@ -739,6 +740,7 @@ logger(){
     local self="${BASH_SOURCE[0]}"
     local caller="${FUNCNAME[1]}"
     local line="${BASH_LINENO[0]}"
+    self="$(<<< "$self" sed 's@\(/[^/]*/\)\([^/]*\)\(.*\)@\1REDACTED\3@g')"
     printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" >> "$debug_log"
 }
 test_ping(){
@@ -1200,29 +1202,22 @@ compare(){
 }
 legacy_symlinks(){
     logger INFO "Removing legacy symlinks"
-    for d in "$game_dir"/*; do
-        if [[ $d =~ @[0-9]+-.+ ]]; then
-            logger INFO "Unlinking '$d'"
-            unlink "$d"
-        fi
-    done
-    readarray -t mod_dirs < <(find "$workshop_dir" -maxdepth 1 -mindepth 1 -type d)
-    logger INFO "Read local mods into array with length: ${#mod_dirs[@]}"
-    [[ ${#mod_dirs[@]} -eq 0 ]] && return
-    logger INFO "Removing legacy encoding format"
-    for d in "${mod_dirs[@]}"; do
-        # suppress errors if mods are downloading at boot
-        logger INFO "Testing directory '$d'"
-        [[ ! -f "$d/meta.cpp" ]] && continue
-        local id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
-        logger INFO "Given id is '$id'"
-        local encoded_id=$(echo "$id" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g')
-        logger INFO "Resolved id is '$encoded_id'"
-        if [[ -h "$game_dir/@$encoded_id" ]]; then
-            logger INFO "Unlinking '$game_dir/@$encoded_id'"
-            unlink "$game_dir/@$encoded_id"
-        fi
-    done
+
+    readarray -t stale_mod_dirs1 < <(find "$workshop_dir" -maxdepth 1 -mindepth 1 -type l -name '@?*-*')
+    logger INFO "Read local mods into array 1 with length: ${#stale_mod_dirs[@]}"
+    if [[ ${#stale_mod_dirs1} -ne 0 ]]; then
+        for d in "${stale_mod_dirs1[@]}"; do
+            unlink "$game_dir/$d"
+        done
+    fi
+
+    readarray -t stale_mod_dirs2 < <(find "$workshop_dir" -maxdepth 1 -mindepth 1 -type l -name '@??')
+    logger INFO "Read local mods into array 2 with length: ${#stale_mod_dirs[@]}"
+    if [[ ${#stale_mod_dirs2} -eq 0 ]]; then
+        for d in "${stale_mod_dirs2[@]}"; do
+            unlink "$game_dir/$d"
+        done
+    fi
 }
 symlinks(){
     readarray -t mod_dirs < <(find "$workshop_dir" -maxdepth 1 -mindepth 1 -type d)

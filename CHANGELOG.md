@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.6.0-beta.19] 2024-12-18
+### Added
+- Redact usernames in log files
+### Fixed
+- More performant symlink traversal when checking for legacy links
+
 ## [5.6.0-beta.18] 2024-12-14
 ### Added
 - Open Steam workshop subscriptions dialog
