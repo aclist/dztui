@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.6.0-beta.20] 2024-12-23
+### Added
+- Output real and resolved mod ids to logs (temporary)
+- Added -steam launch parameter
+### Fixed
+- Only iterate on missing symlinks
+- Move logging up
+
 ## [5.6.0-beta.19] 2024-12-18
 ### Added
 - Redact usernames in log files
