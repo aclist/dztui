@@ -1168,10 +1168,10 @@ $(print_ip_list | sed 's/"//g')
 $(list_mods | sed 's/^/\t/g')
 	DOC
     #2024-12-13
-    find $workshop_dir -mindepth 1 -maxdepth 1 -type d | awk -F/ '{print $NF}' | sort > $mod_log
+    find $workshop_dir -mindepth 1 -maxdepth 1 -type d | awk -F/ '{print $NF}' | sort > "$mod_log"
     find $workshop_dir -mindepth 1 -name meta.cpp | while read -r line; do
         cat "$line" | awk '/publishedid/ {print $3}' | sed 's/;//g;s/\r//g'
-    done | sort > $meta_log
+    done | sort > "$meta_log"
     #END
     printf "Wrote system log to %s" "$system_log"
     return 0
