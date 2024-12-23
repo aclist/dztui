@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.6.0-beta.19
+version=5.6.0-beta.20
 
 #CONSTANTS
 aid=221100
@@ -587,7 +587,7 @@ fetch_helpers_by_sum(){
         ["ui.py"]="99544ccef6060125509c4b689a808a15"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="05f104fcdf27222f04046d41ec48d692"
+        ["funcs"]="5d69e8e3d7c3b3c499354b0b939ce76b"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
@@ -893,10 +893,10 @@ test_connection(){
     if [[ $res -ne 200 ]]; then
         logger WARN "Remote host '${hr["github.com"]}' unreachable', trying fallback"
         remote_host=cb
+        logger INFO "Set remote host to '${hr["codeberg.org"]}'"
         res=$(get_response_code "${hr["codeberg.org"]}")
         [[ $res -ne 200 ]] && raise_error_and_quit "$str (${hr["codeberg.org"]})"
     fi
-    logger INFO "Set remote host to '${hr["codeberg.org"]}'"
     if [[ $remote_host == "cb" ]]; then
         url_prefix="https://codeberg.org/$author/$repo/raw/branch"
         releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
@@ -1003,6 +1003,9 @@ main(){
     if [[ $1 == "--uninstall" ]] || [[ $1 == "-u" ]]; then
         uninstall &&
         exit 0
+    fi
+    if [[ $1 == "--steam" ]] || [[ $1 == "-s" ]]; then
+        export STEAM_LAUNCH=1
     fi
     
     set_im_module

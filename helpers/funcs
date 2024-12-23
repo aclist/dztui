@@ -29,6 +29,8 @@ prefix="dzg"
 log_path="$state_path/logs"
 debug_log="$log_path/DZGUI_DEBUG.log"
 system_log="$log_path/DZGUI_SYSTEM.log"
+mod_log="$log_path/DZGUI_MODIDS.log"
+meta_log="$log_path/DZGUI_META.log"
 
 #STATE FILES
 history_file="$state_path/$prefix.history"
@@ -866,12 +868,12 @@ test_connection(){
     if [[ $res -ne 200 ]]; then
         logger WARN "Remote host '${hr["github.com"]}' unreachable', trying fallback"
         remote_host=cb
+        logger INFO "Set remote host to '${hr["codeberg.org"]}'"
         res=$(get_response_code "${hr["codeberg.org"]}")
         if [[ $res -ne 200 ]]; then
             return 1
         fi
     fi
-    logger INFO "Set remote host to '${hr["codeberg.org"]}'"
     if [[ $remote_host == "cb" ]]; then
         url_prefix="https://codeberg.org/$author/$repo/raw/branch"
         releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
@@ -1165,6 +1167,12 @@ $(print_ip_list | sed 's/"//g')
 	Mods:
 $(list_mods | sed 's/^/\t/g')
 	DOC
+    #2024-12-13
+    find $workshop_dir -mindepth 1 -maxdepth 1 -type d | awk -F/ '{print $NF}' | sort > "$mod_log"
+    find $workshop_dir -mindepth 1 -name meta.cpp | while read -r line; do
+        cat "$line" | awk '/publishedid/ {print $3}' | sed 's/;//g;s/\r//g'
+    done | sort > "$meta_log"
+    #END
     printf "Wrote system log to %s" "$system_log"
     return 0
 }
@@ -1220,22 +1228,60 @@ legacy_symlinks(){
     fi
 }
 symlinks(){
-    readarray -t mod_dirs < <(find "$workshop_dir" -maxdepth 1 -mindepth 1 -type d)
-    [[ ${#mod_dirs[@]} -eq 0 ]] && return
-    logger INFO "Generating symlinks in new format"
-    for d in "${mod_dirs[@]}"; do
-        # suppress errors if mods are downloading at boot
-        [[ ! -f "$d/meta.cpp" ]] && continue
-        id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
-        encoded_id=$(encode "$id")
-        link="@$encoded_id"
-        if [[ -h "$game_dir/$link" ]]; then
-            logger INFO "Symlink already exists: '$link' for mod '$id'"
-            continue
+    _merge(){
+        comm -23 <(printf "%s\n" "${mods[@]}" | sort) <(printf "%s\n" "${targets[@]}" | sort)
+    }
+    _pulse(){
+        zenity --pulsate --progress --auto-close --no-cancel --title="DZGUI"
+    }
+    _create_links(){
+        local arr=("$@")
+        local encoded_id
+        local link
+        local mod
+        for ((i=0; i<${#arr[@]}; i++)); do
+            encoded_id=$(encode "${arr[$i]}")
+            link="@$encoded_id"
+            mod="${arr[$i]}"
+            logger INFO "Creating link '$game_dir/$link' for '$workshop_dir/$mod'"
+            [[ $STEAM_LAUNCH -eq 1 ]] && echo "# Creating mod link $((i+1))/${#arr[@]}"
+            ln -s "$workshop_dir/$mod" "$game_dir/$link"
+        done
+    }
+
+    readarray -t mods < <(find $workshop_dir -mindepth 1 -name meta.cpp | awk -F/ 'NF=NF-1{print $NF}')
+    readarray -t links < <(find $game_dir -type l)
+
+    if [[ ${#mods[@]} -eq 0 ]]; then
+        logger INFO "No mods present, aborting"
+        return
+    fi
+
+    if [[ ${#links[@]} -eq 0 ]]; then
+        logger INFO "No symlinks present in '$game_dir', creating them"
+        if [[ $STEAM_LAUNCH -eq 1 ]]; then
+            _create_links "${mods[@]}" > >(_pulse)
+        else
+            _create_links "${mods[@]}"
         fi
-        ln -fs "$d" "$game_dir/$link"
-        logger INFO "Created symlink '$link' for mod '$id'"
-    done
+        return
+    fi
+
+    readarray -t targets < <(printf "%s\n" "${links[@]}" | xargs readlink -f | awk -F/ '{print $NF}')
+    readarray -t hits < <(_merge)
+
+    if [[ ${#hits[@]} -eq 0 ]]; then
+        logger INFO "Symlinks are up to date, skipping"
+        return
+    fi
+
+    # update missing targets
+    logger INFO "Found ${#hits[@]} unlinked mods"
+    if [[ $STEAM_LAUNCH -eq 1 ]]; then
+        _create_links "${hits[@]}" > >(_pulse)
+    else
+        _create_links "${hits[@]}"
+    fi
 }
 update_history(){
     local record="$1"
