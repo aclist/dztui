@@ -1273,7 +1273,6 @@ symlinks(){
     if [[ ${#hits[@]} -eq 0 ]]; then
         logger INFO "Symlinks are up to date, skipping"
         return
-
     fi
 
     # update missing targets
