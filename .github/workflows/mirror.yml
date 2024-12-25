@@ -6,6 +6,7 @@ on:
       - main
       - dzgui
       - testing
+      - release/5.6.0-beta.20
   workflow_dispatch:
 
 jobs:
