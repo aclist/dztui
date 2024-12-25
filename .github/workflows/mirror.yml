@@ -2,6 +2,10 @@ name: Mirror to Codeberg
 
 on:
   push:
+    branches:
+      - main
+      - dzgui
+      - testing
   workflow_dispatch:
 
 jobs:
