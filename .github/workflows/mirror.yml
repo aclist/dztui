@@ -1,0 +1,23 @@
+name: Mirror to Codeberg
+
+on:
+  push:
+    branches:
+      - main
+      - dzgui
+      - testing
+      - release/5.6.0-beta.20
+  workflow_dispatch:
+
+jobs:
+  mirror-to-codeberg:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pixta-dev/repository-mirroring-action@v1
+        if: ${{ vars.GIT_REMOTE != '' }}
+        with:
+          target_repo_url: ${{ vars.GIT_REMOTE }}
+          ssh_private_key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
