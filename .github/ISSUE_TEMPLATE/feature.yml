@@ -38,7 +38,7 @@ body:
     attributes:
       label: Describe the feature
       description: A clear and detailed description
-      placeholder: "Add a dialog to the Options menu that automatically lets the user do Y"
+      placeholder: "E.g., Add a dialog to the Options menu that automatically lets the user do Y"
     validations:
       required: true
   - type: textarea
@@ -46,6 +46,6 @@ body:
     attributes:
       label: Describe the benefit
       description: How will this feature benefit large numbers of users?
-      placeholder: "Currently, users have to manually do X to achieve Y. Implementing this feature would achieve A, B, and C."
+      placeholder: "E.g., Currently, users have to manually do X to achieve Y. Implementing this feature would achieve A, B, and C."
     validations:
       required: true
