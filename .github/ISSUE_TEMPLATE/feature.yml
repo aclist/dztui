@@ -1,0 +1,51 @@
+name: Feature suggestion
+description: Submit requests for new features here
+title: "[FEAT]: "
+labels: ["feat"]
+assignees:
+  - aclist
+body:
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      description: DZGUI version
+      options:
+        - 5.5.0 (stable)
+        - 5.6.0 (testing)
+        - Version prior to 5.5.0
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: Device type
+      options:
+        - Desktop PC
+        - Steam Deck
+    validations:
+      required: true
+  - type: input
+    id: distro
+    attributes:
+      label: Linux distribution
+    validations:
+      required: true
+      placeholder: "Arch Linux"
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Describe the feature
+      description: A clear and detailed description
+      placeholder: "Add a dialog to the Options menu that automatically lets the user do Y"
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Describe the benefit
+      description: How will this feature benefit large numbers of users?
+      placeholder: "Currently, users have to manually do X to achieve Y. Implementing this feature would achieve A, B, and C."
+    validations:
+      required: true
