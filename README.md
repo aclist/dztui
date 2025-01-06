@@ -1,15 +1,15 @@
 ## What this is
 DZGUI allows you to connect to both official and modded/community DayZ servers on Linux and provides a graphical interface for doing so.
 
-This overcomes certain limitations in the Linux client and helps prepare the game to launch by providing the following:
+This overcomes certain limitations in the Linux client and helps prepare the game to launch by providing features like:
 
-1. Search for and display server metadata in a table (server name, player count, ping, queue size, current gametime, distance, IP)
-2. Add/delete/manage favorite servers by IP or ID
-3. Quick-connect to favorite/recent servers
-4. Find and prepare mods being requested by servers (choose from manual or automatic installation)
-5. Bulk delete/update local mods
-6. Concatenate launch options to pass to Steam
-7. Connect to mod-enabled LAN servers
+- Search for and display server metadata in a table (server name, player count, ping, queue size, current gametime, distance, IP)
+- Add/delete/manage favorite servers by IP or ID
+- Quick-connect to favorite/recent servers
+- Find and prepare mods being requested by servers (choose from manual or automatic installation)
+- Bulk delete/update local mods
+- Concatenate launch options to pass to Steam
+- Connect to mod-enabled LAN servers
 
 ## Setup and usage
 
@@ -19,7 +19,7 @@ Refer to the documentation for installation and setup instructions:
 - [Mirror (Codeberg)](https://aclist.codeberg.page)
 
 
-![Alt text](/images/example.png)
+![A screenshot of DZGUI](/images/example.png)
 
 ## Attribution
 
