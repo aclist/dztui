@@ -5,7 +5,7 @@ labels: ["bug"]
 assignees:
   - aclist
 body:
-- type: dropdown
+  - type: dropdown
     id: version
     attributes:
       label: Version
@@ -24,7 +24,6 @@ body:
       options:
         - Desktop PC
         - Steam Deck
-      default: 0
     validations:
       required: true
   - type: input
@@ -37,9 +36,9 @@ body:
   - type: textarea
     id: what-happened
     attributes:
-      label: Describe the bug
+      label: Description of the bug?
       description: What did you expect to happen?
-      placeholder: E.g., When doing X, Y occurred. Include as much detail as possible.
+      placeholder: "When doing X, Y occurred. Include as much detail as possible."
     validations:
       required: true
   - type: textarea
