@@ -79,7 +79,8 @@ stable_url="$url_prefix/dzgui"
 testing_url="$url_prefix/testing"
 releases_url="$gh_prefix/$author/$repo/releases/download/browser"
 help_url="https://$author.github.io/dzgui/dzgui"
-forum_url="$gh_prefix/$author/$repo/discussions"
+help_url2="https://$author.codeberg.page"
+forum_url="https://old.reddit.com/r/dzgui"
 sponsor_url="$gh_prefix/sponsors/$author"
 battlemetrics_server_url="https://www.battlemetrics.com/servers/dayz"
 steam_api_url="https://steamcommunity.com/dev/apikey"
@@ -1104,20 +1105,20 @@ open_link(){
         "Open Battlemetrics API page")
             url="$battlemetrics_api_url"
             ;;
-        "Help file ⧉")
+        "Documentation/help files (GitHub) ⧉")
             url="$help_url"
             ;;
-        "Report a bug ⧉")
+        "Documentation/help files (Codeberg mirror) ⧉")
+            url="$help_url2"
+            ;;
+        "Report a bug (GitHub) ⧉")
             url="$issues_url"
             ;;
-        "Forum ⧉")
+        "DZGUI Subreddit ⧉")
             url="$forum_url"
             ;;
-        "Sponsor ⧉")
+        "Sponsor (GitHub) ⧉")
             url="$sponsor_url"
-            ;;
-        "Hall of fame ⧉")
-            url="${help_url}#_hall_of_fame"
             ;;
     esac
 
@@ -1167,12 +1168,6 @@ $(print_ip_list | sed 's/"//g')
 	Mods:
 $(list_mods | sed 's/^/\t/g')
 	DOC
-    #2024-12-13
-    find $workshop_dir -mindepth 1 -maxdepth 1 -type d | awk -F/ '{print $NF}' | sort > "$mod_log"
-    find $workshop_dir -mindepth 1 -name meta.cpp | while read -r line; do
-        cat "$line" | awk '/publishedid/ {print $3}' | sed 's/;//g;s/\r//g'
-    done | sort > "$meta_log"
-    #END
     printf "Wrote system log to %s" "$system_log"
     return 0
 }

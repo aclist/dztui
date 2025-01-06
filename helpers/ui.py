@@ -1,22 +1,21 @@
 import csv
-import gi
 import json
 import locale
 import logging
-import math
 import multiprocessing
 import os
-import re
 import signal
 import subprocess
 import sys
 import textwrap
 import threading
+from enum import Enum
 
 locale.setlocale(locale.LC_ALL, '')
+
+import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
-from enum import Enum
 
 # 5.6.0
 app_name = "DZGUI"
@@ -274,24 +273,24 @@ class RowType(EnumWithAttrs):
             "quad_label": "Debug log"
             }
     DOCS = {
-            "label": "Help file ⧉",
+            "label": "Documentation/help files (GitHub) ⧉",
+            "tooltip": "Opens the DZGUI documentation in a browser"
+            }
+    DOCS_FALLBACK = {
+            "label": "Documentation/help files (Codeberg mirror) ⧉",
             "tooltip": "Opens the DZGUI documentation in a browser"
             }
     BUGS = {
-            "label": "Report a bug ⧉",
+            "label": "Report a bug (GitHub) ⧉",
             "tooltip": "Opens the DZGUI issue tracker in a browser"
             }
     FORUM = {
-            "label": "Forum ⧉",
+            "label": "DZGUI Subreddit ⧉",
             "tooltip": "Opens the DZGUI discussion forum in a browser"
             }
     SPONSOR = {
-            "label": "Sponsor ⧉",
+            "label": "Sponsor (GitHub) ⧉",
             "tooltip": "Sponsor the developer of DZGUI"
-            }
-    HOF = {
-            "label": "Hall of fame ⧉",
-            "tooltip": "A list of significant contributors and testers"
             }
 
 
@@ -353,10 +352,10 @@ class WindowContext(EnumWithAttrs):
                 RowType.CHANGELOG,
                 RowType.SHOW_LOG,
                 RowType.DOCS,
+                RowType.DOCS_FALLBACK,
                 RowType.BUGS,
                 RowType.FORUM,
                 RowType.SPONSOR,
-                RowType.HOF
                 ],
             "called_by": []
             }
@@ -416,19 +415,24 @@ class Popup(Enum):
 
 class ButtonType(EnumWithAttrs):
     MAIN_MENU = {"label": "Main menu",
-                 "opens": WindowContext.MAIN_MENU
+                 "opens": WindowContext.MAIN_MENU,
+                 "tooltip": "Search for and connect to servers"
                  }
     MANAGE = {"label": "Manage",
-              "opens": WindowContext.MANAGE
+              "opens": WindowContext.MANAGE,
+              "tooltip": "Manage/add to saved servers"
               }
     OPTIONS = {"label": "Options",
-               "opens": WindowContext.OPTIONS
+               "opens": WindowContext.OPTIONS,
+               "tooltip": "Change settings, list local mods and\nother advanced options"
                }
     HELP = {"label": "Help",
-            "opens": WindowContext.HELP
+            "opens": WindowContext.HELP,
+            "tooltip": "Links to documentation"
             }
     EXIT = {"label": "Exit",
-            "opens": None
+            "opens": None,
+            "tooltip": "Quits the application"
             }
 
 
@@ -906,12 +910,15 @@ class RightPanel(Gtk.Box):
         self.pack_start(self.filters_vbox, False, False, 0)
 
         self.debug_toggle = Gtk.ToggleButton(label="Debug mode")
+        self.debug_toggle.set_tooltip_text("Used to perform a dry run without\nactually connecting to a server")
+
         if query_config(None, "debug")[0] == '1':
             self.debug_toggle.set_active(True)
         self.debug_toggle.connect("toggled", self._on_button_toggled, "Toggle debug mode")
         set_surrounding_margins(self.debug_toggle, 10)
 
         self.question_button = Gtk.Button(label="?")
+        self.question_button.set_tooltip_text("Opens the keybindings dialog")
         self.question_button.set_margin_top(10)
         self.question_button.set_margin_start(50)
         self.question_button.set_margin_end(50)
@@ -954,6 +961,8 @@ class ButtonBox(Gtk.Box):
         for side_button in ButtonType:
             button = EnumeratedButton(label=side_button.dict["label"])
             button.set_property("button_type", side_button)
+            button.set_tooltip_text(side_button.dict["tooltip"])
+
             if is_steam_deck is True:
                 button.set_size_request(10, 10)
             else:
@@ -2436,16 +2445,17 @@ class ModSelectionPanel(Gtk.Box):
         self.set_orientation(Gtk.Orientation.VERTICAL)
 
         labels = [
-                "Select all",
-                "Unselect all",
-                "Delete selected",
-                "Highlight stale"
+                ["label": "Select all", "tooltip": "Bulk selects all mods"],
+                ["label": "Unselect all", "tooltip": "Bulk unselects all mods"],
+                ["label": "Delete selected", "tooltip": "Deletes selected mods from the system"],
+                ["label": "Highlight stale", "tooltip": "Shows locally-installed mods\nwhich are not used by any server\nin your Saved Servers"]
                 ]
 
         self.active_button = None
 
         for l in labels:
-            button = Gtk.Button(label=l)
+            button = Gtk.Button(label=l["label"])
+            button.set_tooltip_text(l["tooltip"])
             button.set_margin_start(10)
             button.set_margin_end(10)
             button.connect("clicked", self._on_button_clicked)
@@ -2505,6 +2515,7 @@ class ModSelectionPanel(Gtk.Box):
     def toggle_select_stale_button(self, bool):
         if bool is True:
             button = Gtk.Button(label="Select stale")
+            button.set_tooltip_text("Bulk selects all currently highlighted mods")
             button.set_margin_start(10)
             button.set_margin_end(10)
             button.connect("clicked", self._on_button_clicked)
@@ -2521,7 +2532,6 @@ class ModSelectionPanel(Gtk.Box):
         (model, pathlist) = treeview.get_selection().get_selected_rows()
 
         if bool is False:
-            default = None
             for i in range (0, len(mod_store)):
                 path = Gtk.TreePath(i)
                 it = mod_store.get_iter(path)
@@ -2540,6 +2550,7 @@ class ModSelectionPanel(Gtk.Box):
                 _colorize(path, red)
             treeview.toggle_selection(False)
             self.active_button.set_label("Unhighlight stale")
+            self.active_button.set_tooltip_text("Clears highlights and reverts\nthe table to a default state")
 
 
     def _iterate_mod_deletion(self, model, pathlist, ct):
@@ -2667,6 +2678,10 @@ class FilterPanel(Gtk.Box):
         match event.keyval:
             case Gdk.KEY_Escape:
                 GLib.idle_add(self.restore_focus_to_treeview)
+            case Gdk.KEY_Up:
+                return True
+            case Gdk.KEY_Down:
+                return True
             case _:
                 return False
 
