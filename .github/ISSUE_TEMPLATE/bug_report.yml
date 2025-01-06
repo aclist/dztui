@@ -1,0 +1,55 @@
+name: Bug report (TEST)
+description: Submit bugs that affect functionality here
+title: "[BUG]: "
+labels: ["bug"]
+assignees:
+  - aclist
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Description of the bug?
+      description: What did you expect to happen?
+      placeholder: Add detailed bug description here
+      value: "When doing X, Y occurred. Include as much detail as possible."
+    validations:
+      required: true
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      description: DZGUI version
+      options:
+        - 5.5.0 (stable)
+        - 5.6.0 (testing)
+        - Version prior to 5.5.0
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: Device type
+      multiple: true
+      options:
+        - Desktop PC
+        - Steam Deck
+      validations:
+        required: true
+  - type: input
+    id: distro
+    attributes:
+      label: Linux distribution
+      options:
+        - Desktop PC
+        - Steam Deck
+      validations:
+        required: true
+      placeholder: "Arch Linux"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Additional log output
+      Tip: You can attach log files by clicking this area to highlight it and then dragging files in.
+    validations:
+      required: false
