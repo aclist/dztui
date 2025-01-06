@@ -10,6 +10,8 @@
 - Update forum URL
 - Reword Help section links to include destination
 - Update README.md
+- Update IP database to 2025-01
+- Reduce IP database size by 50%
 ### Dropped
 - Removed temporary mod ID output in debug logs
 - Removed Hall of Fame section from button links, moved inside documentation
