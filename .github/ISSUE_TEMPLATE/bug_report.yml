@@ -8,10 +8,10 @@ body:
   - type: textarea
     id: what-happened
     attributes:
-      label: Description of the bug?
+      label: Describe the bug
       description: What did you expect to happen?
-      placeholder: Add detailed bug description here
-      value: "When doing X, Y occurred. Include as much detail as possible."
+      placeholder: E.g., When doing X, Y occurred.
+      value: ""
     validations:
       required: true
   - type: dropdown
@@ -30,10 +30,10 @@ body:
     id: browsers
     attributes:
       label: Device type
-      multiple: true
       options:
         - Desktop PC
         - Steam Deck
+      default: 0
     validations:
       required: true
   - type: input
