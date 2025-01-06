@@ -1,0 +1,47 @@
+name: Troubleshooting
+description: Submit user error/troubleshooting questions here
+title: "[HELP]: "
+labels: ["troubleshooting"]
+assignees:
+  - aclist
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Important: Is your issue already covered in the [Knowledge Base](https://aclist.codeberg.page/kb.html)?
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      description: DZGUI version
+      options:
+        - 5.5.0 (stable)
+        - 5.6.0 (testing)
+        - Version prior to 5.5.0
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: Device type
+      options:
+        - Desktop PC
+        - Steam Deck
+    validations:
+      required: true
+  - type: input
+    id: distro
+    attributes:
+      label: Linux distribution
+    validations:
+      required: true
+      placeholder: "Arch Linux"
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Describe the issue
+      description: A detailed description. What did you expect to happen?
+      placeholder: "Include as much detail as possible and state the steps leading up to the problem. E.g., First I do this, then I do this, then this happens."
+    validations:
+      required: true
