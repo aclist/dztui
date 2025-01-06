@@ -12,6 +12,7 @@
 - Update README.md
 - Update IP database to 2025-01
 - Reduce IP database size by 50%
+- Update documentation to 5.6.x standard
 ### Dropped
 - Removed temporary mod ID output in debug logs
 - Removed Hall of Fame section from button links, moved inside documentation
