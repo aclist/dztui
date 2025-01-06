@@ -1,7 +1,7 @@
 name: Feature suggestion
 description: Submit requests for new features here
 title: "[FEAT]: "
-labels: ["feat"]
+labels: ["enhancement"]
 assignees:
   - aclist
 body:
