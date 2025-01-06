@@ -1,6 +1,6 @@
 name: Bug report
 description: Submit bugs that affect functionality here
-title: "[BUG]: "
+title: "[BUG] "
 labels: ["bug"]
 assignees:
   - aclist
