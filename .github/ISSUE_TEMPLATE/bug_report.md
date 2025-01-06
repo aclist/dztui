@@ -1,8 +1,8 @@
 ---
 name: Bug report
 about: Submit bugs that affect functionality here
-title: ''
-labels: 'BUG'
+title: "[BUG] "
+labels: ["BUG"]
 assignees: 'aclist'
 
 ---
