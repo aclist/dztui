@@ -11,7 +11,6 @@ body:
       label: Describe the bug
       description: What did you expect to happen?
       placeholder: E.g., When doing X, Y occurred.
-      value: ""
     validations:
       required: true
   - type: dropdown
