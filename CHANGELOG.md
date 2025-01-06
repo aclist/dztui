@@ -1,5 +1,23 @@
 # Changelog
 
+## [5.6.0-beta.21] 2024-01-06
+### Added
+- Add in-app documentation link to Codeberg mirror
+- Hover tooltips to most buttons
+### Fixed
+- Prevent ArrowUp/ArrowDown input when inside keyword field
+### Changed
+- Update forum URL
+- Reword Help section links to include destination
+- Update README.md
+- Update IP database to 2025-01
+- Reduce IP database size by 50%
+- Update documentation to 5.6.x standard
+### Dropped
+- Removed temporary mod ID output in debug logs
+- Removed Hall of Fame section from button links, moved inside documentation
+- Remove unused imports
+
 ## [5.6.0-beta.20] 2024-12-23
 ### Added
 - Output real and resolved mod ids to logs (temporary)

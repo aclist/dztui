@@ -1,7 +1,0 @@
-[[DZG-005,DZG-005]]
-== DZG-005: Rendering problems with objects in the Winter Chernarus v2 mod 
-Last updated: {d}
-
-This mod has LOD (level of detail) bugs that may cause objects near the player, such as leaves, to render incorrectly, or cause distant trees to pop in abruptly. This is an acknowledged issue with the mod itself, not with DayZ or DZGUI.
-
-There is no user-side fix for this issue; it is a problem solely on the mod side.
