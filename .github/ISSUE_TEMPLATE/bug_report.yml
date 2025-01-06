@@ -1,4 +1,4 @@
-name: Bug report (TEST)
+name: Bug report
 description: Submit bugs that affect functionality here
 title: "[BUG]: "
 labels: ["bug"]
@@ -34,22 +34,19 @@ body:
       options:
         - Desktop PC
         - Steam Deck
-      validations:
-        required: true
+    validations:
+      required: true
   - type: input
     id: distro
     attributes:
       label: Linux distribution
-      options:
-        - Desktop PC
-        - Steam Deck
-      validations:
-        required: true
+    validations:
+      required: true
       placeholder: "Arch Linux"
   - type: textarea
     id: logs
     attributes:
       label: Additional log output
-      Tip: You can attach log files by clicking this area to highlight it and then dragging files in.
+      description: You can attach log files by clicking this area to highlight it and then dragging files in.
     validations:
       required: false
