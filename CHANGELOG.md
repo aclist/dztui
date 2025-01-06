@@ -1,197 +1,101 @@
 # Changelog
 
-## [5.6.0-beta.21] 2024-01-06
+## [5.6.0] 2024-01-06
 ### Added
-- Add in-app documentation link to Codeberg mirror
+- Application header bar and controls
+- Menu context subtitle in header bar
+- Bulk delete mods (via 'List installed mods' list). Not compatible with Manual Mod install mode
+- Highlight stale mods in mods list
+- Added --steam launch parameter
+- Open Steam workshop subscriptions dialog when switching from Manual to Auto mode
 - Hover tooltips to most buttons
+- Add in-app documentation link to Codeberg mirror
+- Additional logging
 ### Fixed
-- Prevent ArrowUp/ArrowDown input when inside keyword field
+- Avoid sudo escalation if system map count is sufficient (jiriks74)
+- Duplicate dialog title on Steam Deck
+- Resolve remote IP when saving records for game servers with multiple hosts
+- More performant symlink traversal when checking for legacy links
+- Only iterate on missing symlinks at boot (400% performance uplift)
+- Fix for server list truncation causing some servers to not appear in results
+- Empty dialog popups if user manually deletes local mods while application is running
+- Update statusbar when removing servers from list/repopulating
+- Abort DayZ path discovery if Steam files are not synched
+- Race condition when checking for installed mods
+- Favorite server message not updating correctly
+- Improved handling for cases where there are no locally installed mods
+- Set up mod symlinks at boot, rather than only on server connect
+- Prevent context menus from opening when table is empty
+- When reloading table in-place, prevent duplicate panel elements from being added if already present
+- Clean up local mod signatures from versions file when deleting mods
+- Focus first row when opening mods list
 ### Changed
+- Redact usernames in log files
+- Prevent ArrowUp/ArrowDown input when inside keyword field
+- Admonish user to restart Steam in error dialog if DayZ path could not be found
+- Refactor control flow for more robust contextual parsing
+- Stop sending modal dialog hints to outer window
+- Clean up signal emission
+- Clarify some error messages and normalize text formatting
 - Update forum URL
-- Reword Help section links to include destination
 - Update README.md
 - Update IP database to 2025-01
 - Reduce IP database size by 50%
 - Update documentation to 5.6.x standard
 ### Dropped
-- Removed temporary mod ID output in debug logs
-- Removed Hall of Fame section from button links, moved inside documentation
+- Removed Hall of Fame section from button links, to be moved inside documentation
 - Remove unused imports
 
-## [5.6.0-beta.20] 2024-12-23
-### Added
-- Output real and resolved mod ids to logs (temporary)
-- Added -steam launch parameter
-### Fixed
-- Only iterate on missing symlinks
-- Move logging up
-
-## [5.6.0-beta.19] 2024-12-18
-### Added
-- Redact usernames in log files
-### Fixed
-- More performant symlink traversal when checking for legacy links
-
-## [5.6.0-beta.18] 2024-12-14
-### Added
-- Open Steam workshop subscriptions dialog
-- Additional logging
-### Fixed
-- Empty dialog popups if user manually deletes local mods while application is running
-- Abort DayZ path discovery if VDF if Steam files are not synched
-- Avoid sudo escalation if system map count is sufficient (jiriks74)
-### Changed
-- Admonish user to restart Steam in error dialog if DayZ path could not be found
-
-## [5.6.0-beta.17] 2024-12-14
-### Added
-- Additional logging
-
-## [5.6.0-beta.16] 2024-12-13
+## [5.5.3] 2024-12-13
 ### Fixed
 - Add remote resource health checks before downloading updates
 ### Added
 - Add fallback repository
 
-## [5.6.0-beta.11] 2024-12-07
+## [5.5.1] 2024-12-03
 ### Fixed
-- Add missing function definition
+- Support localized decimal separators when parsing installed mod sizes
 
-## [5.6.0-beta.10] 2024-12-04
-### Fixed
-- Untoggle highlight button when repopulating mod list
-- Resolve remote IP when saving records for game servers with multiple hosts
-- Update statusbar when removing servers from list/repopulating
-### Added:
-- "Select stale" button to bulk select mods marked as obsolete
-
-## [5.6.0-beta.9] 2024-12-03
-### Fixed
-- Normalize user locale when parsing floats
-
-## [5.6.0-beta.8] 2024-11-28
-### Fixed
-- Normalize user locale when parsing floats
-
-## [5.6.0-beta.7] 2024-11-28
-### Changed
-- Add additional logging when fetching installed mods
-
-## [5.6.0-beta.6] 2024-11-28
-### Fixed
-- Race condition when checking for installed mods
-
-## [5.6.0-beta.5] 2024-11-21
-### Added
-- Highlight stale mods in mods list
-### Fixed
-- Duplicate dialog title on Steam Deck
-
-## [5.6.0-beta.4] 2024-11-20
-### Added
-- Application header bar and controls
-- Menu context subtitle in header bar
-### Changed
-- Refactor control flow for more robust contextual parsing
-- Stop sending modal dialog hints to outer window
-### Fixed
-- Favorite server message not updating correctly
-
-## [5.6.0-beta.3] 2024-11-18
-### Fixed
-- Improved handling for cases where there are no locally installed mods
-- Set up mod symlinks at boot, rather than only on server connect
-- Prevent context menus from opening when table is empty
-- When reloading table in-place, prevent duplicate panel elements from being added if already present
-- Clean up signal emission
-
-## [5.6.0-beta.2] 2024-11-15
-### Fixed
-- Clean up local mod signatures from versions file when deleting mods
-
-## [5.6.0-beta.1] 2024-11-12
-### Added
-- Bulk delete mods (via 'List installed mods' list). Not compatible with Manual Mod install mode
-### Fixed
-- Fix for server list truncation causing some servers to not appear in results
-- Suppress signal emission when switching menu contexts
-- Focus first row when opening mods list
-### Changed
-- Clarify some error messages and normalize text formatting
-
-## [5.5.0-beta.5] 2024-11-03
-### Changed
-- Use updated A2S_RULES logic
-### Fixed
-- Servers in saved servers list would populate context menu with same option when right-clicking in server browser
-
-## [5.5.0-beta.4] 2024-10-31
-### Added
-- Expose a toggle setting for whether to launch the application in fullscreen
-### Fixed
-- Enable adding/removing servers to/from My Saved Servers when in Recent Servers context
-
-## [5.5.0-beta.3] 2024-10-31
-### Fixed
-- Prevent maps combobox from duplicating contents
-
-## [5.5.0-beta.2] 2024-10-31
-### Fixed
-- Restore keyboard input to keyword entry field
-
-## [5.5.0-beta.1] 2024-10-30
+## [5.5.0] 2024-11-10
 ### Added
 - Support servers running DLC content (fixes Frostline servers)
-- Text autocompletion in maps search field
-- Add disk space warning to popup dialog
+- Expose a toggle setting for whether to launch the application in fullscreen
+- Text autocompletion in maps search field (partial search)
+- Add disk space warning to popup dialog when downloading mods
 ### Fixed
+- Servers in saved servers list would populate context menu with same option when right-clicking in server browser
+- Enable adding/removing servers to/from My Saved Servers when in Recent Servers context
+- Prevent maps combobox from duplicating contents
+- Restore keyboard input to keyword entry field
+### Changed
 - Abort fallback query method if DLC is required
 
-## [5.4.2-beta.1] 2024-10-05
+## [5.4.2] 2024-10-05
 ### Fixed
 - Sanitize third-party API IDs to remove UGC collisions
 
-## [5.4.1-beta.2] 2024-09-12
-### Fixed
-- Use fallback logic for modlist queries when user traverses networks
-
-## [5.4.1-beta.2] 2024-09-10
-### Fixed
-- Fix signal handling control flow for checkbox toggles
-
-## [5.4.1-beta.1] 2024-09-10
+## [5.4.1] 2024-09-25
 ### Added
 - Pre-boot validation check for users with self-compiled version of jq
 ### Fixed
+- Use fallback logic for modlist queries when user traverses networks
+- Fix signal handling control flow for checkbox toggles
 - When reloading the server browser, the map combobox selection would revert to the last selected map instead of All Maps
 - Server filter toggle signals were accessible from the main menu when switching between menu contexts
 - Global cooldown dialog could sometimes block filter toggles after cooldown reset
 - Normalized minor version number due to a previous clerical error
 
-## [5.4.0-beta.5] 2024-08-27
-### Added
-- Freedesktop application icons for system taskbar, tray, and other dialogs
-### Fixed
-- Errors being printed to the console when Exit button was explicitly clicked
-
-## [5.4.0-beta.4] 2024-08-21
-### Added
-- Emit CPU model name when exporting system debug log
-### Fixed
-- Detect Steam Deck OLED APU variant during initial setup
-
-## [5.4.0-beta.3] 2024-08-04
+## [5.4.0] 2024-08-27
 ### Added
 - Scan local area network for DayZ servers
-
-## [5.4.0-beta.2] 2024-08-03
+- Freedesktop application icons for system taskbar, tray, and other dialogs
+- Emit CPU model name when exporting system debug log
 ### Fixed
-- Clerical hotfix for previous player names fix
-- Test if DayZ directory is empty at startup, implying that the game was moved to a new library collection
-
-## [5.4.0-beta.1] 2024-07-16
-### Fixed
+- Errors being printed to the console when Exit button was explicitly clicked
+- Detect Steam Deck OLED APU variant during initial setup
 - Encapsulate player names correctly so that names with whitespace in them are supported
+- Test if DayZ directory is empty at startup, implying that the game was moved to a new library collection
+- Report WM_CLASS name to the window manager
 
 ## [5.3.2] 2024-07-02
 ### Fixed
