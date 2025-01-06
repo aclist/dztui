@@ -36,15 +36,15 @@ body:
   - type: textarea
     id: what-happened
     attributes:
-      label: Description of the bug?
+      label: Describe the bug
       description: What did you expect to happen?
-      placeholder: "When doing X, Y occurred. Include as much detail as possible."
+      placeholder: "E.g., When doing X, Y occurred. Include as much detail as possible."
     validations:
       required: true
   - type: textarea
     id: logs
     attributes:
       label: Additional log output
-      description: You can attach log files by clicking this area to highlight it and then dragging files in.
+      description: Attach the file `$HOME/.local/state/dzgui/DZGUI_DEBUG.log` by clicking this area to highlight it and then dragging the file in.
     validations:
       required: false
