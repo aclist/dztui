@@ -1,6 +1,6 @@
 name: Troubleshooting
 description: Submit user error/troubleshooting questions here
-title: "[HELP]: "
+title: "[HELP] "
 labels: ["troubleshooting"]
 assignees:
   - aclist
