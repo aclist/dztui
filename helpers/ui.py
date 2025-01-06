@@ -2445,10 +2445,10 @@ class ModSelectionPanel(Gtk.Box):
         self.set_orientation(Gtk.Orientation.VERTICAL)
 
         labels = [
-                ["label": "Select all", "tooltip": "Bulk selects all mods"],
-                ["label": "Unselect all", "tooltip": "Bulk unselects all mods"],
-                ["label": "Delete selected", "tooltip": "Deletes selected mods from the system"],
-                ["label": "Highlight stale", "tooltip": "Shows locally-installed mods\nwhich are not used by any server\nin your Saved Servers"]
+                {"label": "Select all", "tooltip": "Bulk selects all mods"},
+                {"label": "Unselect all", "tooltip": "Bulk unselects all mods"},
+                {"label": "Delete selected", "tooltip": "Deletes selected mods from the system"},
+                {"label": "Highlight stale", "tooltip": "Shows locally-installed mods\nwhich are not used by any server\nin your Saved Servers"}
                 ]
 
         self.active_button = None
