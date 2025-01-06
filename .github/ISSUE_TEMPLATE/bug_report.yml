@@ -5,15 +5,7 @@ labels: ["bug"]
 assignees:
   - aclist
 body:
-  - type: textarea
-    id: what-happened
-    attributes:
-      label: Describe the bug
-      description: What did you expect to happen?
-      placeholder: E.g., When doing X, Y occurred.
-    validations:
-      required: true
-  - type: dropdown
+- type: dropdown
     id: version
     attributes:
       label: Version
@@ -42,6 +34,14 @@ body:
     validations:
       required: true
       placeholder: "Arch Linux"
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Describe the bug
+      description: What did you expect to happen?
+      placeholder: E.g., When doing X, Y occurred. Include as much detail as possible.
+    validations:
+      required: true
   - type: textarea
     id: logs
     attributes:
