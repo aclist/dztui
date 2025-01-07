@@ -30,7 +30,6 @@ log_path="$state_path/logs"
 debug_log="$log_path/DZGUI_DEBUG.log"
 system_log="$log_path/DZGUI_SYSTEM.log"
 mod_log="$log_path/DZGUI_MODIDS.log"
-meta_log="$log_path/DZGUI_META.log"
 
 #STATE FILES
 history_file="$state_path/$prefix.history"
