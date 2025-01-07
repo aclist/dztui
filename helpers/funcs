@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.5.0
+version=5.6.0
 
 #CONSTANTS
 aid=221100
@@ -29,6 +29,7 @@ prefix="dzg"
 log_path="$state_path/logs"
 debug_log="$log_path/DZGUI_DEBUG.log"
 system_log="$log_path/DZGUI_SYSTEM.log"
+mod_log="$log_path/DZGUI_MODIDS.log"
 
 #STATE FILES
 history_file="$state_path/$prefix.history"
@@ -38,6 +39,9 @@ lock_file="$state_path/$prefix.lock"
 #CACHE
 cache_dir="$HOME/.cache/$app_name"
 _cache_servers="$cache_dir/$prefix.servers"
+_cache_mods_temp="$cache_dir/$prefix.mods_temp"
+_cache_stale_mods_temp="$cache_dir/$prefix.stale_mods_temp"
+_cache_temp="$cache_dir/$prefix.temp"
 _cache_my_servers="$cache_dir/$prefix.my_servers"
 _cache_history="$cache_dir/$prefix.history"
 _cache_launch="$cache_dir/$prefix.launch_mods"
@@ -73,8 +77,9 @@ url_prefix="https://raw.githubusercontent.com/$author/$repo"
 stable_url="$url_prefix/dzgui"
 testing_url="$url_prefix/testing"
 releases_url="$gh_prefix/$author/$repo/releases/download/browser"
-help_url="https://$author.github.io/dzgui/dzgui"
-forum_url="$gh_prefix/$author/$repo/discussions"
+help_url="https://$author.github.io/dzgui/index"
+help_url2="https://$author.codeberg.page"
+forum_url="https://old.reddit.com/r/dzgui"
 sponsor_url="$gh_prefix/sponsors/$author"
 battlemetrics_server_url="https://www.battlemetrics.com/servers/dayz"
 steam_api_url="https://steamcommunity.com/dev/apikey"
@@ -89,6 +94,7 @@ else
 fi
 
 declare -A funcs=(
+["Highlight stale"]="find_stale_mods"
 ["My servers"]="dump_servers"
 ["Change player name"]="update_config_val"
 ["Change Steam API key"]="update_config_val"
@@ -100,6 +106,7 @@ declare -A funcs=(
 ["Connect by IP"]="validate_and_connect"
 ["Connect by ID"]="validate_and_connect"
 ["Connect from table"]="connect_from_table"
+["find_id"]="find_id"
 ["toggle"]="toggle"
 ["Open link"]="open_link"
 ["filter"]="dump_servers"
@@ -109,21 +116,24 @@ declare -A funcs=(
 ["test_cooldown"]="test_cooldown"
 ["query_config"]="query_config"
 ["start_cooldown"]="start_cooldown"
-["list_mods"]="list_mods"
-["delete"]="delete_local_mod"
+["List installed mods"]="list_mods"
+["Delete selected mods"]="delete_local_mod"
+["align_local"]="align_versions_file"
 ["show_server_modlist"]="show_server_modlist"
 ["test_ping"]="test_ping"
 ["is_in_favs"]="is_in_favs"
 ["show_log"]="show_log"
-["gen_log"]="generate_log"
+["Output system info to log file"]="generate_log"
+["open_user_workshop"]="open_user_workshop"
 ["open_workshop_page"]="open_workshop_page"
 ["Add to my servers"]="update_favs_from_table"
 ["Remove from my servers"]="update_favs_from_table"
 ["Remove from history"]="remove_from_history"
-["force_update"]="force_update"
+["Force update local mods"]="force_update"
 ["Handshake"]="final_handshake"
 ["get_player_count"]="get_player_count"
 ["lan_scan"]="lan_scan"
+["update_symlinks"]="update_symlinks"
 )
 
 lan_scan(){
@@ -135,6 +145,21 @@ lan_scan(){
     else
         printf "%s\n" "$res"
     fi
+}
+find_stale_mods(){
+    local res
+    local mods=()
+    > $_cache_stale_mods_temp
+    for i in "${ip_list[@]}"; do
+        local ip=$(<<< "$i" awk -F: '{print $1}')
+        local qport=$(<<< "$i" awk -F: '{print $3}')
+        res=$(a2s $ip $qport rules)
+        if [[ -n $res ]]; then
+            printf "%s\n" "$res" >> $_cache_stale_mods_temp
+        fi
+    done
+    printf ""
+    return 99
 }
 get_player_count(){
     shift
@@ -228,6 +253,7 @@ add_record(){
             fav_label=$(<<< "$res" jq -r '.[].name')
             fav_server="$record"
             update_config
+            echo "Updated favorite server to '$fav_server' ($fav_label)"
             return 90
             ;;
         "Add server by ID")
@@ -310,18 +336,33 @@ is_in_favs(){
     done
     return 1
 }
+find_id(){
+    local file="$default_steam_path/config/loginusers.vdf"
+    [[ ! -f $file ]] && return 1
+    local res=$(python3 "$helpers_path/vdf2json.py" \
+    -i "$file" \
+    | jq -r '.users
+        |to_entries[]
+        |select(.value.MostRecent=="1")
+        |.key'
+    )
+    [[ -z $res ]] && return 1
+    printf "%s" "$res"
+    return 0
+}
 list_mods(){
     local symlink
     local sep
     local name
     local base_dir
     local size
+    local mods
     if [[ -z $(installed_mods) ]] || [[ -z $(find $workshop_dir -maxdepth 2 -name "*.cpp" | grep .cpp) ]]; then
-        echo "No mods currently installed or incorrect path set."
+        printf "No mods currently installed or incorrect path set."
         logger WARN "Found no locally installed mods"
         return 1
     else
-        for dir in $(find $game_dir/* -maxdepth 1 -type l); do
+        mods=$(for dir in $(find $game_dir/* -maxdepth 1 -type l); do
             symlink=$(basename $dir)
             sep="␞"
             name=$(awk -F\" '/name/ {print $2}' "${dir}/meta.cpp")
@@ -329,11 +370,18 @@ list_mods(){
             size=$(du -s "$(readlink -f "$game_dir/$symlink")" | awk '{print $1}')
             size=$(python3 -c "n=($size/1024) +.005; print(round(n,4))")
             LC_NUMERIC=C printf "%s$sep%s$sep%s$sep%3.3f\n" "$name" "$symlink" "$base_dir" "$size"
-        done | sort -k1
+        done | sort -k1)
+        # user may have manually pruned mods out-of-band
+        # handle directory detritus but no actual mods
+        if [[ -z $mods ]]; then
+            printf "No mods currently installed or incorrect path set."
+            return 1
+        fi
+        echo "$mods"
     fi
 }
 installed_mods(){
-    ls -1 "$workshop_dir"
+    find "$workshop_dir" -maxdepth 1 -mindepth 1 -printf "%f\n"
 }
 local_latlon(){
     local url="http://ip-api.com/json/$local_ip"
@@ -376,9 +424,30 @@ get_dist(){
     fi
 }
 get_remote_servers(){
-    local limit=20000
-    local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=$limit&key=$steam_api"
-    curl -Ls "$url" | jq -r '.response.servers'
+    params=(
+        "\\nor\1\map\chernarusplus\\nor\1\map\sakhal"
+        "\map\chernarusplus\empty\1"
+        "\map\chernarusplus\noplayers\1"
+        "\map\\sakhal"
+    )
+    local limit=10000
+    local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?"
+
+    _fetch(){
+        local param="$1"
+        curl -LsG "$url" \
+            -d filter="\appid\221100${param}" \
+            -d limit=$limit \
+            -d key=$steam_api \
+            | jq -M -r '.response.servers'
+
+    }
+
+    for ((i=0; i <${#params[@]}; i++ )); do
+        _fetch "${params[$i]}" > $_cache_temp.${i}
+    done
+
+    jq -n '[ [inputs]|add ].[]' $_cache_temp.* && rm $_cache_temp.*
 }
 get_unique_maps(){
     shift
@@ -552,24 +621,60 @@ parse_server_json(){
     "\(.addr|split(":")[1])"
     ' | sort -k1
 }
+align_versions_file(){
+    shift
+    local mod="$1"
+    [[ ! -f $versions_file ]] && return
+    < "$versions_file" awk -F, -v var="$mod" '$1 != var' > $versions_file.new &&
+        mv $versions_file.new $versions_file
+    logger INFO "Removed local signatures for the mod '$mod'"
+}
+pluralize(){
+    local plural="$1"
+    local count="$2"
+    local mod
+    local suffix
+    local base
+    local ct
+    local s
+
+    if [[ "${plural: -2}" == "es" ]]; then
+        base="${plural::-2}"
+        suffix="${plural: -2}"
+        ct=$((count^2))
+        [[ $ct -ne 3 ]] && s="$suffix"
+    else
+        base="${plural::-1}"
+        suffix="${plural: -1}"
+        ct=$((count^1))
+        [[ $ct -gt 0 ]] && s="$suffix"
+    fi
+
+    printf "%s%s" "$base" "$s"
+}
 delete_local_mod(){
     shift
-    local symlink="$1"
-    local dir="$2"
-    [[ ! -d $workshop_dir/$dir ]] && return 1
-    [[ ! -L $game_dir/$symlink ]] && return 1
-    #SC2115
-    rm -rf "${workshop_dir:?}/$dir" && unlink "$game_dir/$symlink" || return 1
+    readarray -t symlinks < <(awk '{print $1}' $_cache_mods_temp)
+    readarray -t ids < <(awk '{print $2}' $_cache_mods_temp)
+    rm "$_cache_mods_temp"
+    for ((i=0; i<${#symlinks[@]}; i++)); do
+        [[ ! -d $workshop_dir/${ids[$i]} ]] && return 1
+        [[ ! -L $game_dir/${symlinks[$i]} ]] && return 1
+        #SC2115
+        rm -rf "${workshop_dir:?}/${ids[$i]}" && unlink "$game_dir/${symlinks[$i]}" || return 1
+        align_versions_file "align" "${ids[$i]}"
+    done
+    printf "Successfully deleted %s %s." "${#symlinks[@]}" "$(pluralize "mods" ${#symlinks[@]})"
+    return 95
 }
 test_cooldown(){
     [[ ! -f $_cache_cooldown ]] && return 0
     local old_time=$(< $_cache_cooldown)
     local cur_time=$(date +%s)
     local delta=$(($cur_time - $old_time))
-    local suffix="seconds"
     if [[ $delta -lt 60 ]]; then
         local remains=$((60 - $delta))
-        [[ $remains -eq 1 ]] && suffix="second"
+        local suffix=$(pluralize "seconds" $remains)
         printf "Global API cooldown in effect. Please wait %s %s." "$remains" "$suffix"
         exit 1
     fi
@@ -637,6 +742,7 @@ logger(){
     local self="${BASH_SOURCE[0]}"
     local caller="${FUNCNAME[1]}"
     local line="${BASH_LINENO[0]}"
+    self="$(<<< "$self" sed 's@\(/[^/]*/\)\([^/]*\)\(.*\)@\1REDACTED\3@g')"
     printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" >> "$debug_log"
 }
 test_ping(){
@@ -645,7 +751,7 @@ test_ping(){
     local qport="$2"
     local res
     res=$(ping -c1 -4 -W0.5 $1 | grep time= | awk -F= '{print $4}')
-    [[ ! $? -eq 0 ]] && res="Unreachable"
+    [[ ! $? -eq 0 ]] && res="Timed out"
     printf "%s" "$res"
 }
 show_server_modlist(){
@@ -762,12 +868,12 @@ test_connection(){
     if [[ $res -ne 200 ]]; then
         logger WARN "Remote host '${hr["github.com"]}' unreachable', trying fallback"
         remote_host=cb
+        logger INFO "Set remote host to '${hr["codeberg.org"]}'"
         res=$(get_response_code "${hr["codeberg.org"]}")
         if [[ $res -ne 200 ]]; then
             return 1
         fi
     fi
-    logger INFO "Set remote host to '${hr["codeberg.org"]}'"
     if [[ $remote_host == "cb" ]]; then
         url_prefix="https://codeberg.org/$author/$repo/raw/branch"
         releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
@@ -894,6 +1000,7 @@ remove_from_favs(){
     local cache="$(< "$_cache_my_servers")"
     <<< "$cache" grep -v -P "$r$" > $_cache_my_servers
     logger INFO "Removed the record $record from saved servers"
+    echo "Removed $record from saved servers"
     return 90
 }
 update_favs_from_table(){
@@ -971,11 +1078,17 @@ update_config_val(){
 show_log(){
     < "$debug_log" sed 's/Keyword␞/Keyword/'
 }
+open_user_workshop(){
+    shift
+    local id="$1"
+    url="https://steamcommunity.com/profiles/$id/myworkshopfiles/?appid=$aid&browsefilter=mysubscriptions"
+    $steam_cmd steam://openurl/$url &
+}
 open_workshop_page(){
     shift
     local id="$1"
     local workshop_uri="steam://url/CommunityFilePage/$id"
-    $steam_cmd "$workshop_uri" $id
+    $steam_cmd "$workshop_uri" $id &
 }
 open_link(){
     shift
@@ -991,20 +1104,20 @@ open_link(){
         "Open Battlemetrics API page")
             url="$battlemetrics_api_url"
             ;;
-        "Help file ⧉")
+        "Documentation/help files (GitHub) ⧉")
             url="$help_url"
             ;;
-        "Report a bug ⧉")
+        "Documentation/help files (Codeberg mirror) ⧉")
+            url="$help_url2"
+            ;;
+        "Report a bug (GitHub) ⧉")
             url="$issues_url"
             ;;
-        "Forum ⧉")
+        "DZGUI Subreddit ⧉")
             url="$forum_url"
             ;;
-        "Sponsor ⧉")
+        "Sponsor (GitHub) ⧉")
             url="$sponsor_url"
-            ;;
-        "Hall of fame ⧉")
-            url="${help_url}#_hall_of_fame"
             ;;
     esac
 
@@ -1090,31 +1203,79 @@ compare(){
     echo "$diff"
 }
 legacy_symlinks(){
-    for d in "$game_dir"/*; do
-        if [[ $d =~ @[0-9]+-.+ ]]; then
-            unlink "$d"
-        fi
-    done
-    for d in "$workshop_dir"/*; do
-        local id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
-        local encoded_id=$(echo "$id" | awk '{printf("%c",$1)}' | base64 | sed 's/\//_/g; s/=//g; s/+/]/g')
-        if [[ -h "$game_dir/@$encoded_id" ]]; then
-            unlink "$game_dir/@$encoded_id"
-        fi
-    done
+    logger INFO "Removing legacy symlinks"
+
+    readarray -t stale_mod_dirs1 < <(find "$workshop_dir" -maxdepth 1 -mindepth 1 -type l -name '@?*-*')
+    logger INFO "Read local mods into array 1 with length: ${#stale_mod_dirs[@]}"
+    if [[ ${#stale_mod_dirs1} -ne 0 ]]; then
+        for d in "${stale_mod_dirs1[@]}"; do
+            unlink "$game_dir/$d"
+        done
+    fi
+
+    readarray -t stale_mod_dirs2 < <(find "$workshop_dir" -maxdepth 1 -mindepth 1 -type l -name '@??')
+    logger INFO "Read local mods into array 2 with length: ${#stale_mod_dirs[@]}"
+    if [[ ${#stale_mod_dirs2} -eq 0 ]]; then
+        for d in "${stale_mod_dirs2[@]}"; do
+            unlink "$game_dir/$d"
+        done
+    fi
 }
 symlinks(){
-    for d in "$workshop_dir"/*; do
-        id=$(awk -F"= " '/publishedid/ {print $2}' "$d"/meta.cpp | awk -F\; '{print $1}')
-        encoded_id=$(encode "$id")
-        link="@$encoded_id"
-        if [[ -h "$game_dir/$link" ]]; then
-            logger INFO "Symlink already exists: '$link' for mod '$id'"
-            continue
+    _merge(){
+        comm -23 <(printf "%s\n" "${mods[@]}" | sort) <(printf "%s\n" "${targets[@]}" | sort)
+    }
+    _pulse(){
+        zenity --pulsate --progress --auto-close --no-cancel --title="DZGUI"
+    }
+    _create_links(){
+        local arr=("$@")
+        local encoded_id
+        local link
+        local mod
+        for ((i=0; i<${#arr[@]}; i++)); do
+            encoded_id=$(encode "${arr[$i]}")
+            link="@$encoded_id"
+            mod="${arr[$i]}"
+            logger INFO "Creating link '$game_dir/$link' for '$workshop_dir/$mod'"
+            [[ $STEAM_LAUNCH -eq 1 ]] && echo "# Creating mod link $((i+1))/${#arr[@]}"
+            ln -s "$workshop_dir/$mod" "$game_dir/$link"
+        done
+    }
+
+    readarray -t mods < <(find $workshop_dir -mindepth 1 -name meta.cpp | awk -F/ 'NF=NF-1{print $NF}')
+    readarray -t links < <(find $game_dir -type l)
+
+    if [[ ${#mods[@]} -eq 0 ]]; then
+        logger INFO "No mods present, aborting"
+        return
+    fi
+
+    if [[ ${#links[@]} -eq 0 ]]; then
+        logger INFO "No symlinks present in '$game_dir', creating them"
+        if [[ $STEAM_LAUNCH -eq 1 ]]; then
+            _create_links "${mods[@]}" > >(_pulse)
+        else
+            _create_links "${mods[@]}"
         fi
-        ln -fs "$d" "$game_dir/$link"
-        logger INFO "Created symlink '$link' for mod '$id'"
-    done
+        return
+    fi
+
+    readarray -t targets < <(printf "%s\n" "${links[@]}" | xargs readlink -f | awk -F/ '{print $NF}')
+    readarray -t hits < <(_merge)
+
+    if [[ ${#hits[@]} -eq 0 ]]; then
+        logger INFO "Symlinks are up to date, skipping"
+        return
+    fi
+
+    # update missing targets
+    logger INFO "Found ${#hits[@]} unlinked mods"
+    if [[ $STEAM_LAUNCH -eq 1 ]]; then
+        _create_links "${hits[@]}" > >(_pulse)
+    else
+        _create_links "${hits[@]}"
+    fi
 }
 update_history(){
     local record="$1"

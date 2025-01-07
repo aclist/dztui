@@ -1,5 +1,51 @@
 # Changelog
 
+## [5.6.0] 2024-01-06
+### Added
+- Application header bar and controls
+- Menu context subtitle in header bar
+- Bulk delete mods (via 'List installed mods' list). Not compatible with Manual Mod install mode
+- Highlight stale mods in mods list
+- Added --steam launch parameter
+- Open Steam workshop subscriptions dialog when switching from Manual to Auto mode
+- Hover tooltips to most buttons
+- Add in-app documentation link to Codeberg mirror
+- Additional logging
+### Fixed
+- Avoid sudo escalation if system map count is sufficient (jiriks74)
+- Duplicate dialog title on Steam Deck
+- Resolve remote IP when saving records for game servers with multiple hosts
+- More performant symlink traversal when checking for legacy links
+- Only iterate on missing symlinks at boot (400% performance uplift)
+- Fix for server list truncation causing some servers to not appear in results
+- Empty dialog popups if user manually deletes local mods while application is running
+- Update statusbar when removing servers from list/repopulating
+- Abort DayZ path discovery if Steam files are not synched
+- Race condition when checking for installed mods
+- Favorite server message not updating correctly
+- Improved handling for cases where there are no locally installed mods
+- Set up mod symlinks at boot, rather than only on server connect
+- Prevent context menus from opening when table is empty
+- When reloading table in-place, prevent duplicate panel elements from being added if already present
+- Clean up local mod signatures from versions file when deleting mods
+- Focus first row when opening mods list
+### Changed
+- Redact usernames in log files
+- Prevent ArrowUp/ArrowDown input when inside keyword field
+- Admonish user to restart Steam in error dialog if DayZ path could not be found
+- Refactor control flow for more robust contextual parsing
+- Stop sending modal dialog hints to outer window
+- Clean up signal emission
+- Clarify some error messages and normalize text formatting
+- Update forum URL
+- Update README.md
+- Update IP database to 2025-01
+- Reduce IP database size by 50%
+- Update documentation to 5.6.x standard
+### Dropped
+- Hall of Fame section from button links, to be moved inside documentation
+- Unused imports
+
 ## [5.5.3] 2024-12-13
 ### Fixed
 - Add remote resource health checks before downloading updates

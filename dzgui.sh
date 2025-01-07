@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.5.3
+version=5.6.0
 
 #CONSTANTS
 aid=221100
@@ -83,6 +83,7 @@ logger(){
     local self="${BASH_SOURCE[0]}"
     local caller="${FUNCNAME[1]}"
     local line="${BASH_LINENO[0]}"
+    self="$(<<< "$self" sed 's@\(/[^/]*/\)\([^/]*\)\(.*\)@\1REDACTED\3@g')"
     printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" >> "$debug_log"
 }
 setup_dirs(){
@@ -406,13 +407,20 @@ check_architecture(){
 }
 check_map_count(){
     [[ $is_steam_deck -gt 0 ]] && return 0
-    local count=1048576
+    local map_count_file="/proc/sys/vm/max_map_count"
+    local min_count=1048576
     local conf_file="/etc/sysctl.d/dayz.conf"
-    if [[ -f $conf_file ]]; then
-        logger DEBUG "System map count is already $count or higher"
+    local current_count
+    if [[ ! -f ${map_count_file} ]]; then
+        logger WARN "File '${map_count_file}' doesn't exist!"
+        return 1
+    fi
+    current_count=$(cat ${map_count_file})
+    if [[ $current_count -ge $min_count ]]; then
+        logger DEBUG "System map count is set to ${current_count}"
         return 0
     fi
-    qdialog "sudo password required to check system vm map count." "OK" "Cancel"
+    qdialog "sudo password required to set system vm map count." "OK" "Cancel"
     if [[ $? -eq 0 ]]; then
         local pass
         logger INFO "Prompting user for sudo escalation"
@@ -421,13 +429,11 @@ check_map_count(){
             logger WARN "User aborted password prompt"
             return 1
         fi
-        local ct=$(sudo -S <<< "$pass" sh -c "sysctl -q vm.max_map_count | awk -F'= ' '{print \$2}'")
-        logger DEBUG "Old map count is $ct"
-        local new_ct
-        [[ $ct -lt $count ]] && ct=$count
-        sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=$ct' > $conf_file"
+        logger DEBUG "Old map count is $current_count"
+        [[ $current_count -lt $min_count ]] && current_count=$min_count
+        sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=${current_count}' > $conf_file"
         sudo sysctl -p "$conf_file"
-        logger DEBUG "Updated map count to $count"
+        logger DEBUG "Updated map count to $min_count"
     else
         logger WARN "User aborted map count prompt"
         return 1
@@ -483,7 +489,7 @@ stale_symlinks(){
     local game_dir="$steam_path/steamapps/common/DayZ"
     for l in $(find "$game_dir" -xtype l); do
         logger DEBUG "Updating stale symlink '$l'"
-        unlink $l
+        unlink "$l"
     done
 }
 local_latlon(){
@@ -578,10 +584,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="dd7aa34df1d374739127cca3033a3f67"
+        ["ui.py"]="d3ad9153d8599bea0eede9fd3121ee8e"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="6d985948a3b9b71017c4e0c5f7f55fe0"
+        ["funcs"]="baa2c9c93edacb98384ae9f319e3b27f"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
@@ -630,7 +636,7 @@ fetch_helpers_by_sum(){
 }
 fetch_geo_file(){
     # for binary releases
-    local geo_sum="7b6668eb4535bb432acb42016ba9cc47"
+    local geo_sum="28ccd75b3e03cf07a7011f22ef0cd69b"
     local km_sum="b038fdb8f655798207bd28de3a004706"
     local gzip="$helpers_path/ips.csv.gz"
     if [[ ! -f $geo_file  ]] || [[ $(get_hash $geo_file) != $geo_sum ]]; then
@@ -747,7 +753,7 @@ find_library_folder(){
     local search_path="$1"
     steam_path="$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" \
         | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')"
-    if [[ ! $? -eq 0 ]]; then
+    if [[ ! $? -eq 0 ]] || [[ -z $steam_path ]]; then
         logger WARN "Failed to parse Steam path using '$search_path'"
         return 1
     fi
@@ -800,7 +806,7 @@ create_config(){
             find_library_folder "$default_steam_path"
             if [[ -z $steam_path ]]; then
                 logger raise_error "Steam path was empty"
-                zenity --question --text="DayZ not found or not installed at the Steam library given." --ok-label="Choose path manually" --cancel-label="Exit"
+                zenity --question --text="DayZ not found or not installed at the Steam library given. NOTE: if you recently installed DayZ or moved its location, you MUST restart Steam first for these changes to synch." --ok-label="Choose path manually" --cancel-label="Exit"
                 if [[ $? -eq 0 ]]; then
                     logger INFO "User selected file picker"
                     file_picker
@@ -887,10 +893,10 @@ test_connection(){
     if [[ $res -ne 200 ]]; then
         logger WARN "Remote host '${hr["github.com"]}' unreachable', trying fallback"
         remote_host=cb
+        logger INFO "Set remote host to '${hr["codeberg.org"]}'"
         res=$(get_response_code "${hr["codeberg.org"]}")
         [[ $res -ne 200 ]] && raise_error_and_quit "$str (${hr["codeberg.org"]})"
     fi
-    logger INFO "Set remote host to '${hr["codeberg.org"]}'"
     if [[ $remote_host == "cb" ]]; then
         url_prefix="https://codeberg.org/$author/$repo/raw/branch"
         releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
@@ -906,6 +912,21 @@ legacy_cols(){
     [[ $has == "true" ]] && return
     < $cols_file jq '.cols += { "Queue": 120 }' > $cols_file.new &&
     mv $cols_file.new $cols_file
+}
+stale_mod_signatures(){
+    local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
+    if [[ -d $workshop_dir ]]; then
+        readarray -t old_mod_ids < <(awk -F, '{print $1}' $versions_file)
+        for ((i=0; i<${#old_mod_ids[@]}; ++i)); do
+            if [[ ! -d $workshop_dir/${old_mod_ids[$i]} ]]; then
+                "$HOME/.local/share/$app_name/helpers/funcs" "align_local" "${old_mod_ids[$i]}"
+            fi
+        done
+    fi
+
+}
+create_new_links(){
+    "$HOME/.local/share/$app_name/helpers/funcs" "update_symlinks"
 }
 initial_setup(){
     setup_dirs
@@ -927,6 +948,8 @@ initial_setup(){
     steam_deps
     migrate_files
     stale_symlinks
+    stale_mod_signatures
+    create_new_links
     local_latlon
     is_steam_running
     is_dzg_downloading
@@ -980,6 +1003,9 @@ main(){
     if [[ $1 == "--uninstall" ]] || [[ $1 == "-u" ]]; then
         uninstall &&
         exit 0
+    fi
+    if [[ $1 == "--steam" ]] || [[ $1 == "-s" ]]; then
+        export STEAM_LAUNCH=1
     fi
     
     set_im_module
