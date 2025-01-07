@@ -587,7 +587,7 @@ fetch_helpers_by_sum(){
         ["ui.py"]="d3ad9153d8599bea0eede9fd3121ee8e"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="5624b1e44a43c318775caa5d0ceef1f0"
+        ["funcs"]="baa2c9c93edacb98384ae9f319e3b27f"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
@@ -636,7 +636,7 @@ fetch_helpers_by_sum(){
 }
 fetch_geo_file(){
     # for binary releases
-    local geo_sum="7b6668eb4535bb432acb42016ba9cc47"
+    local geo_sum="28ccd75b3e03cf07a7011f22ef0cd69b"
     local km_sum="b038fdb8f655798207bd28de3a004706"
     local gzip="$helpers_path/ips.csv.gz"
     if [[ ! -f $geo_file  ]] || [[ $(get_hash $geo_file) != $geo_sum ]]; then
