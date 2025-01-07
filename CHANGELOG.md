@@ -43,8 +43,8 @@
 - Reduce IP database size by 50%
 - Update documentation to 5.6.x standard
 ### Dropped
-- Removed Hall of Fame section from button links, to be moved inside documentation
-- Remove unused imports
+- Hall of Fame section from button links, to be moved inside documentation
+- Unused imports
 
 ## [5.5.3] 2024-12-13
 ### Fixed
