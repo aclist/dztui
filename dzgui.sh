@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.7.0-beta.1
+version=5.7.0-beta.2
 
 #CONSTANTS
 aid=221100
@@ -76,6 +76,9 @@ set_im_module(){
         return
     fi
 }
+redact(){
+    sed 's@\(/home/\)\([^/]*\)\(.*\)@\1REDACTED\3@g'
+}
 logger(){
     local date="$(date "+%F %T,%3N")"
     local tag="$1"
@@ -83,8 +86,8 @@ logger(){
     local self="${BASH_SOURCE[0]}"
     local caller="${FUNCNAME[1]}"
     local line="${BASH_LINENO[0]}"
-    self="$(<<< "$self" sed 's@\(/[^/]*/\)\([^/]*\)\(.*\)@\1REDACTED\3@g')"
-    printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" >> "$debug_log"
+    printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" \
+        | redact >> "$debug_log"
 }
 setup_dirs(){
     for dir in "$state_path" "$cache_path" "$share_path" "$helpers_path" "$freedesktop_path" "$config_path" "$log_path"; do
@@ -587,7 +590,7 @@ fetch_helpers_by_sum(){
         ["ui.py"]="d3ad9153d8599bea0eede9fd3121ee8e"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="baa2c9c93edacb98384ae9f319e3b27f"
+        ["funcs"]="3dc91b7effed4c9493ddba488fe8d9ff"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
@@ -937,7 +940,7 @@ initial_setup(){
     watcher_deps
     check_architecture
     test_connection
-    fetch_helpers > >(pdialog "Checking helper files")
+#    fetch_helpers > >(pdialog "Checking helper files")
     varcheck
     source "$config_file"
     lock
