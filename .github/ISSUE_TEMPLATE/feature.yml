@@ -6,26 +6,22 @@ assignees:
   - aclist
 body:
   - type: dropdown
-    id: version
-    attributes:
-      label: Version
-      description: DZGUI version
-      options:
-        - 5.6.x (stable)
-        - 5.7.x (testing)
-        - Version prior to 5.6.0
-      default: 0
-    validations:
-      required: true
-  - type: dropdown
-    id: browsers
+    id: device
     attributes:
       label: Device type
       options:
         - Desktop PC
         - Steam Deck
+      default: 0
     validations:
       required: true
+  - type: input
+    id: version
+    attributes:
+      label: DZGUI version
+    validations:
+      required: true
+      placeholder: "5.6.0"
   - type: input
     id: distro
     attributes:
