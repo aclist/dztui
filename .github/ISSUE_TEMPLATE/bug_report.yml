@@ -5,6 +5,13 @@ labels: ["bug"]
 assignees:
   - aclist
 body:
+  - type: checkboxes
+    id: kb
+    attributes:
+      label: Did you check if this issue already exists?
+      options:
+        - label: I have checked the [Knowledge Base](https://aclist.github.io/dzgui/kb.html) and searched through [past issues](https://github.com/aclist/dztui/issues?q=is%3Aissue+is%3Aclosed) and did not find my issue there.
+          required: true
   - type: dropdown
     id: device
     attributes:
