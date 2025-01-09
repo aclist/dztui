@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.7.0-beta.2] 2024-01-07
+- Stricter redacting of usernames
+- Omit nested directories when traversing symlinks
+
+## [5.7.0-beta.1] 2024-01-07
+### Changed
+- Normalize version number
+
 ## [5.6.0-beta.21] 2024-01-06
 ### Added
 - Add in-app documentation link to Codeberg mirror
