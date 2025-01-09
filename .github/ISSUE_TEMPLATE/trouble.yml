@@ -18,9 +18,9 @@ body:
       label: Version
       description: DZGUI version
       options:
-        - 5.5.x (stable)
-        - 5.6.x (testing)
-        - Version prior to 5.5.0
+        - 5.6.x (stable)
+        - 5.7.x (testing)
+        - Version prior to 5.6.0
       default: 0
     validations:
       required: true
