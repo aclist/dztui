@@ -447,7 +447,9 @@ get_remote_servers(){
         _fetch "${params[$i]}" > $_cache_temp.${i}
     done
 
-    jq -n '[ [inputs]|add ].[]' $_cache_temp.* && rm $_cache_temp.*
+    # ubuntu variants do not support jq 1.7 chained operators
+    # https://github.com/jqlang/jq/releases/tag/jq-1.7
+    jq -n '[ [inputs]|add ][]' $_cache_temp.* && rm $_cache_temp.*
 }
 get_unique_maps(){
     shift
@@ -735,6 +737,9 @@ dump_servers(){
     logger INFO "Server context is '$subcontext', reading from file '$file'"
     filter_servers "$file" "$@"
 }
+redact(){
+    sed 's@\(/home/\)[^/]*@\1REDACTED@g'
+}
 logger(){
     local date="$(date "+%F %T,%3N")"
     local tag="$1"
@@ -742,8 +747,8 @@ logger(){
     local self="${BASH_SOURCE[0]}"
     local caller="${FUNCNAME[1]}"
     local line="${BASH_LINENO[0]}"
-    self="$(<<< "$self" sed 's@\(/[^/]*/\)\([^/]*\)\(.*\)@\1REDACTED\3@g')"
-    printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" >> "$debug_log"
+    printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" \
+        | redact >> "$debug_log"
 }
 test_ping(){
     shift
@@ -1243,8 +1248,8 @@ symlinks(){
         done
     }
 
-    readarray -t mods < <(find $workshop_dir -mindepth 1 -name meta.cpp | awk -F/ 'NF=NF-1{print $NF}')
-    readarray -t links < <(find $game_dir -type l)
+    readarray -t mods < <(find "$workshop_dir" -mindepth 1 -name meta.cpp | awk -F/ 'NF=NF-1{print $NF}')
+    readarray -t links < <(find "$game_dir" -maxdepth 1 -type l)
 
     if [[ ${#mods[@]} -eq 0 ]]; then
         logger INFO "No mods present, aborting"
