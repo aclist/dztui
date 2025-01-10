@@ -1,7 +1,0 @@
-[[DZG-003, DZG-003]]
-== DZG-003: On Steam Deck, DayZ becomes unresponsive/sluggish over time
-Last updated: {d}
-
-When DayZ is open for 1+ hours, a gradual loss in performance and FPS may occur on the Steam Deck.
-
-A solution that seems to work for most users is to install https://github.com/CryoByte33/steam-deck-utilities[Cryo Utilities], a third-party performance management application.

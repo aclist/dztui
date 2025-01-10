@@ -1,5 +1,0 @@
-[[DZG-002,DZG-002]]
-== DZG-002: Some servers appear locked in the official DayZ client, and are unreachable in DZGUI
-Last updated: {d}
-
-This is a variant of <<DZG-001>>.
