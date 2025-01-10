@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.7.0-beta.4
+version=5.7.0-beta.5
 
 #CONSTANTS
 aid=221100
@@ -77,7 +77,7 @@ set_im_module(){
     fi
 }
 redact(){
-    sed 's@\(/home/\)\([^/]*\)\(.*\)@\1REDACTED\3@g'
+    sed 's@\(/home/\)[^/]*@\1REDACTED@g'
 }
 logger(){
     local date="$(date "+%F %T,%3N")"
