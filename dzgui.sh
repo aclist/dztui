@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.7.0-beta.3
+version=5.7.0-beta.4
 
 #CONSTANTS
 aid=221100
@@ -940,7 +940,7 @@ initial_setup(){
     watcher_deps
     check_architecture
     test_connection
-#    fetch_helpers > >(pdialog "Checking helper files")
+    fetch_helpers > >(pdialog "Checking helper files")
     varcheck
     source "$config_file"
     lock
