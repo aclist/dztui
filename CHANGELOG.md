@@ -1,6 +1,14 @@
 # Changelog
 
+
+## [5.7.0-beta.3] 2024-01-10
+## Changed
+- Support legacy jq syntax for Ubuntu variants
+## Fixed
+- Stricter redacting of usernames (again)
+
 ## [5.7.0-beta.2] 2024-01-07
+## Fixed
 - Stricter redacting of usernames
 - Omit nested directories when traversing symlinks
 

@@ -447,7 +447,9 @@ get_remote_servers(){
         _fetch "${params[$i]}" > $_cache_temp.${i}
     done
 
-    jq -n '[ [inputs]|add ].[]' $_cache_temp.* && rm $_cache_temp.*
+    # ubuntu variants do not support jq 1.7 chained operators
+    # https://github.com/jqlang/jq/releases/tag/jq-1.7
+    jq -n '[ [inputs]|add ][]' $_cache_temp.* && rm $_cache_temp.*
 }
 get_unique_maps(){
     shift
@@ -736,7 +738,7 @@ dump_servers(){
     filter_servers "$file" "$@"
 }
 redact(){
-    sed 's@\(/home/\)\([^/]*\)\(.*\)@\1REDACTED\3@g'
+    sed 's@\(/home/\)[^/]*@\1REDACTED@g'
 }
 logger(){
     local date="$(date "+%F %T,%3N")"
