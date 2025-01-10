@@ -1814,10 +1814,16 @@ class TreeView(Gtk.TreeView):
 
 
 def format_metadata(row_sel):
+    # this function is recycled for the add by ip/id methods +
+    # the right-click context menu (add/remove servers)
+    # in the latter case, there is no metadata to update
+    # see grid.update_statusbar(), so the returned row is None
+    row = None
     for i in RowType:
         if i.dict["label"] == row_sel:
             row = i
             prefix = i.dict["tooltip"]
+            break
     vals = {
             "branch": config_vals[0],
             "debug": config_vals[1],
@@ -1827,6 +1833,8 @@ def format_metadata(row_sel):
             "preferred_client": config_vals[5],
             "fullscreen": config_vals[6]
             }
+    if row is None:
+        return None
     try:
         alt = row.dict["alt"]
         default = row.dict["default"]
@@ -2396,6 +2404,8 @@ class Grid(Gtk.Grid):
         return True
 
     def update_statusbar(self, string):
+        if string is None:
+            return
         meta = self.bar.get_context_id("Statusbar")
         self.bar.push(meta, string)
 
