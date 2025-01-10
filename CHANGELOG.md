@@ -1,11 +1,20 @@
 # Changelog
 
+## [5.7.0-beta.6] 2024-01-10
+## Fixed
+- Resolve regression introduced with IP resolution feature in 13c6813
+
+## [5.7.0-beta.5] 2024-01-10
+## Changed
+- Stricter redacting of usernames (again)
+
+## [5.7.0-beta.4] 2024-01-10
+## Fixed
+- Clerical hotfix
 
 ## [5.7.0-beta.3] 2024-01-10
 ## Changed
 - Support legacy jq syntax for Ubuntu variants
-## Fixed
-- Stricter redacting of usernames (again)
 
 ## [5.7.0-beta.2] 2024-01-07
 ## Fixed
