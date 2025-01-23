@@ -130,6 +130,7 @@ declare -A funcs=(
 ["Remove from my servers"]="update_favs_from_table"
 ["Remove from history"]="remove_from_history"
 ["Force update local mods"]="force_update"
+["Resolve IP"]="resolve_ip"
 ["Handshake"]="final_handshake"
 ["get_player_count"]="get_player_count"
 ["lan_scan"]="lan_scan"
@@ -160,6 +161,33 @@ find_stale_mods(){
     done
     printf ""
     return 99
+}
+resolve_ip(){
+    shift
+    local res
+    local record="$1"
+    local ip=$(<<< "$record" awk -F: '{print $1}')
+    local qport=$(<<< "$record" awk -F: '{print $3}')
+    res=$(a2s $ip $qport info)
+    if [[ ! $? -eq 0 ]]; then
+        printf "Server timed out \n"
+        return 1
+    fi
+    local gport=$(<<< "$res" jq -r '.[].gameport')
+    if [[ -z $gport ]]; then
+        printf "Failed to resolve server metadata\n"
+        return 1
+    fi
+
+    # incoming input can only be 'remove' or 'add'
+    # record is in favs => implies deletion
+    # record not in favs => implies addition
+    resolved_record="$ip:$gport:$qport"
+    if [[ ${ip_list[*]} =~ $resolved_record ]]; then
+        remove_from_favs "$resolved_record"
+    else
+        add_to_favs "$resolved_record"
+    fi
 }
 get_player_count(){
     shift

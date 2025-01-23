@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.6.2] 2024-01-22
+### Fixed
+- Resolve regression introduced with IP resolution feature in 5.6.0 (restores functionality of right-click action: Add to My Servers)
+
+## [5.6.1] 2024-01-10
+### Fixed
+- Add fallback support for jq 1.6
+
 ## [5.6.0] 2024-01-06
 ### Added
 - Application header bar and controls
