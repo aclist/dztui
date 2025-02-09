@@ -1,0 +1,53 @@
+name: Bug report
+description: Submit bugs that affect functionality here
+title: "[BUG] Your title here"
+labels: ["bug"]
+assignees:
+  - aclist
+body:
+  - type: checkboxes
+    id: kb
+    attributes:
+      label: Did you check if this issue already exists?
+      options:
+        - label: I have checked the [Knowledge Base](https://aclist.github.io/dzgui/kb.html) and searched through [past issues](https://github.com/aclist/dztui/issues?q=is%3Aissue+is%3Aclosed) and did not find my issue there.
+          required: true
+  - type: dropdown
+    id: device
+    attributes:
+      label: Device type
+      options:
+        - Desktop PC
+        - Steam Deck
+      default: 0
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: DZGUI version
+    validations:
+      required: true
+      placeholder: "5.6.0"
+  - type: input
+    id: distro
+    attributes:
+      label: Linux distribution
+    validations:
+      required: true
+      placeholder: "Arch Linux"
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Describe the bug
+      description: What did you expect to happen?
+      placeholder: "E.g., When doing X, Y occurred. Include as much detail as possible."
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Additional log output
+      description: Attach the file `$HOME/.local/state/dzgui/DZGUI_DEBUG.log` by clicking this area to highlight it and then dragging the file in.
+    validations:
+      required: false
