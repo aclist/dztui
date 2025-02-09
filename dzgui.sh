@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.5.0
+version=5.6.3
 
 #CONSTANTS
 aid=221100
@@ -54,7 +54,8 @@ km_helper="$helpers_path/latlon"
 sums_path="$helpers_path/sums.md5"
 func_helper="$helpers_path/funcs"
 
-#URLS
+#REMOTE
+remote_host=gh
 author="aclist"
 repo="dztui"
 url_prefix="https://raw.githubusercontent.com/$author/$repo"
@@ -63,6 +64,7 @@ testing_url="$url_prefix/testing"
 releases_url="https://github.com/$author/$repo/releases/download/browser"
 km_helper_url="$releases_url/latlon"
 geo_file_url="$releases_url/ips.csv.gz"
+
 
 set_im_module(){
     #TODO: drop pending SteamOS changes
@@ -74,6 +76,9 @@ set_im_module(){
         return
     fi
 }
+redact(){
+    sed 's@\(/home/\)[^/]*@\1REDACTED@g'
+}
 logger(){
     local date="$(date "+%F %T,%3N")"
     local tag="$1"
@@ -81,7 +86,8 @@ logger(){
     local self="${BASH_SOURCE[0]}"
     local caller="${FUNCNAME[1]}"
     local line="${BASH_LINENO[0]}"
-    printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" >> "$debug_log"
+    printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" \
+        | redact >> "$debug_log"
 }
 setup_dirs(){
     for dir in "$state_path" "$cache_path" "$share_path" "$helpers_path" "$freedesktop_path" "$config_path" "$log_path"; do
@@ -312,13 +318,14 @@ check_unmerged(){
 check_version(){
     local version_url=$(format_version_url)
     local upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
+    local res=$(get_response_code "$version_url")
+    [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$version_url'"
     logger INFO "Local branch: '$branch', local version: $version"
     if [[ $branch == "stable" ]]; then
         version_url="$stable_url/dzgui.sh"
     elif [[ $branch == "testing" ]]; then
         version_url="$testing_url/dzgui.sh"
     fi
-    local upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
     [[ ! -f "$freedesktop_path/$app_name.desktop" ]] && freedesktop_dirs
     if [[ $version == $upstream ]]; then
         logger INFO "Local version is same as upstream"
@@ -371,9 +378,10 @@ prompt_dl(){
 }
 dl_changelog(){
     local mdbranch
+    local md
     [[ $branch == "stable" ]] && mdbranch="dzgui"
     [[ $branch == "testing" ]] && mdbranch="testing"
-    local md="https://raw.githubusercontent.com/$author/dztui/${mdbranch}/CHANGELOG.md"
+    local md="$url_prefix/${mdbranch}/$file"
     curl -Ls "$md" > "$state_path/CHANGELOG.md"
 }
 test_display_mode(){
@@ -402,13 +410,20 @@ check_architecture(){
 }
 check_map_count(){
     [[ $is_steam_deck -gt 0 ]] && return 0
-    local count=1048576
+    local map_count_file="/proc/sys/vm/max_map_count"
+    local min_count=1048576
     local conf_file="/etc/sysctl.d/dayz.conf"
-    if [[ -f $conf_file ]]; then
-        logger DEBUG "System map count is already $count or higher"
+    local current_count
+    if [[ ! -f ${map_count_file} ]]; then
+        logger WARN "File '${map_count_file}' doesn't exist!"
+        return 1
+    fi
+    current_count=$(cat ${map_count_file})
+    if [[ $current_count -ge $min_count ]]; then
+        logger DEBUG "System map count is set to ${current_count}"
         return 0
     fi
-    qdialog "sudo password required to check system vm map count." "OK" "Cancel"
+    qdialog "sudo password required to set system vm map count." "OK" "Cancel"
     if [[ $? -eq 0 ]]; then
         local pass
         logger INFO "Prompting user for sudo escalation"
@@ -417,13 +432,11 @@ check_map_count(){
             logger WARN "User aborted password prompt"
             return 1
         fi
-        local ct=$(sudo -S <<< "$pass" sh -c "sysctl -q vm.max_map_count | awk -F'= ' '{print \$2}'")
-        logger DEBUG "Old map count is $ct"
-        local new_ct
-        [[ $ct -lt $count ]] && ct=$count
-        sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=$ct' > $conf_file"
+        logger DEBUG "Old map count is $current_count"
+        [[ $current_count -lt $min_count ]] && current_count=$min_count
+        sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=${current_count}' > $conf_file"
         sudo sysctl -p "$conf_file"
-        logger DEBUG "Updated map count to $count"
+        logger DEBUG "Updated map count to $min_count"
     else
         logger WARN "User aborted map count prompt"
         return 1
@@ -479,7 +492,7 @@ stale_symlinks(){
     local game_dir="$steam_path/steamapps/common/DayZ"
     for l in $(find "$game_dir" -xtype l); do
         logger DEBUG "Updating stale symlink '$l'"
-        unlink $l
+        unlink "$l"
     done
 }
 local_latlon(){
@@ -515,6 +528,7 @@ get_hash(){
     md5sum "$1" | awk '{print $1}'
 }
 fetch_a2s(){
+    # this file is currently monolithic
     [[ -d $helpers_path/a2s ]] && { logger INFO "A2S helper is current"; return 0; }
     local sha=c7590ffa9a6d0c6912e17ceeab15b832a1090640
     local author="yepoleb"
@@ -522,6 +536,8 @@ fetch_a2s(){
     local url="https://github.com/$author/$repo/tarball/$sha"
     local prefix="${author^}-$repo-${sha:0:7}"
     local file="$prefix.tar.gz"
+    local res=$(get_response_code "$url")
+    [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$file'"
     curl -Ls "$url" > "$helpers_path/$file"
     tar xf "$helpers_path/$file" -C "$helpers_path" "$prefix/a2s" --strip=1
     rm "$helpers_path/$file"
@@ -535,9 +551,11 @@ fetch_dzq(){
         return 0
     fi
     local sha=3088bbfb147b77bc7b6a9425581b439889ff3f7f
-    local author="aclist"
+    local author="yepoleb"
     local repo="dayzquery"
     local url="https://raw.githubusercontent.com/$author/$repo/$sha/dayzquery.py"
+    local res=$(get_response_code "$url")
+    [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: 'dayzquery.py'"
     curl -Ls "$url" > "$file"
     logger INFO "Updated DZQ to sha '$sha'"
 }
@@ -569,10 +587,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="dd7aa34df1d374739127cca3033a3f67"
+        ["ui.py"]="5a876efacf208d12b5fe761996425412"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="d8ae2662fbc3c62bdb5a51dec1935705"
+        ["funcs"]="417bd5eaffbefc905a843985c691dc64"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
@@ -596,11 +614,15 @@ fetch_helpers_by_sum(){
         file="$i"
         sum="${sums[$i]}"
         full_path="$helpers_path/$file"
-        url="https://raw.githubusercontent.com/$author/$repo/$realbranch/helpers/$file"
+
+        url="${url_prefix}/$realbranch/helpers/$file"
+
         if [[ -f "$full_path" ]] && [[ $(get_hash "$full_path") == $sum ]]; then
             logger INFO "$file is current"
         else
             logger WARN "File '$full_path' checksum != '$sum'"
+            local res=$(get_response_code "$url")
+            [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$url'"
             curl -Ls "$url" > "$full_path"
             if [[ ! $? -eq 0 ]]; then
                 raise_error_and_quit "Failed to fetch the file '$file'. Possible timeout?"
@@ -617,15 +639,19 @@ fetch_helpers_by_sum(){
 }
 fetch_geo_file(){
     # for binary releases
-    local geo_sum="7b6668eb4535bb432acb42016ba9cc47"
+    local geo_sum="9824e9b9a75a4830a2423932cc188b06"
     local km_sum="b038fdb8f655798207bd28de3a004706"
     local gzip="$helpers_path/ips.csv.gz"
     if [[ ! -f $geo_file  ]] || [[ $(get_hash $geo_file) != $geo_sum ]]; then
+        local res=$(get_response_code "$geo_file_url")
+        [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$geo_file_url'"
         curl -Ls "$geo_file_url" > "$gzip"
         #force overwrite
         gunzip -f "$gzip"
     fi
     if [[ ! -f $km_helper ]] || [[ $(get_hash $km_helper) != $km_sum ]]; then
+        local res=$(get_response_code "$km_helper_url")
+        [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$km_helper_url'"
         curl -Ls "$km_helper_url" > "$km_helper"
         chmod +x "$km_helper"
     fi
@@ -730,7 +756,7 @@ find_library_folder(){
     local search_path="$1"
     steam_path="$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" \
         | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')"
-    if [[ ! $? -eq 0 ]]; then
+    if [[ ! $? -eq 0 ]] || [[ -z $steam_path ]]; then
         logger WARN "Failed to parse Steam path using '$search_path'"
         return 1
     fi
@@ -783,7 +809,7 @@ create_config(){
             find_library_folder "$default_steam_path"
             if [[ -z $steam_path ]]; then
                 logger raise_error "Steam path was empty"
-                zenity --question --text="DayZ not found or not installed at the Steam library given." --ok-label="Choose path manually" --cancel-label="Exit"
+                zenity --question --text="DayZ not found or not installed at the Steam library given. NOTE: if you recently installed DayZ or moved its location, you MUST restart Steam first for these changes to synch." --ok-label="Choose path manually" --cancel-label="Exit"
                 if [[ $? -eq 0 ]]; then
                     logger INFO "User selected file picker"
                     file_picker
@@ -845,14 +871,42 @@ is_steam_running(){
         return 0
     fi
 }
+get_response_code(){
+    local url="$1"
+    curl -Ls -I -o /dev/null -w "%{http_code}" "$url"
+}
 test_connection(){
-    ping -c1 -4 github.com 1>/dev/null 2>&1
-    if [[ ! $? -eq 0 ]]; then
-        raise_error_and_quit "No connection could be established to the remote server (github.com)."
+    source "$config_file"
+    declare -A hr
+    local res1
+    local res2
+    local str="No connection could be established to the remote server"
+    hr=(
+        ["steampowered.com"]="https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=$steam_api"
+        ["github.com"]="https://github.com/$author"
+        ["codeberg.org"]="https://codeberg.org/$author"
+    )
+    # steam API is mandatory, except on initial setup
+    if [[ -n $steam_api ]]; then
+        res=$(get_response_code "${hr["steampowered.com"]}")
+        [[ $res -ne 200 ]] && raise_error_and_quit "$str ("steampowered.com")"
     fi
-    ping -c1 -4 api.steampowered.com 1>/dev/null 2>&1
-    if [[ ! $? -eq 0 ]]; then
-        raise_error_and_quit "No connection could be established to the remote server (steampowered.com)."
+
+    res=$(get_response_code "${hr["github.com"]}")
+    if [[ $res -ne 200 ]]; then
+        logger WARN "Remote host '${hr["github.com"]}' unreachable', trying fallback"
+        remote_host=cb
+        logger INFO "Set remote host to '${hr["codeberg.org"]}'"
+        res=$(get_response_code "${hr["codeberg.org"]}")
+        [[ $res -ne 200 ]] && raise_error_and_quit "$str (${hr["codeberg.org"]})"
+    fi
+    if [[ $remote_host == "cb" ]]; then
+        url_prefix="https://codeberg.org/$author/$repo/raw/branch"
+        releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
+        stable_url="$url_prefix/dzgui"
+        testing_url="$url_prefix/testing"
+        km_helper_url="$releases_url/latlon"
+        geo_file_url="$releases_url/ips.csv.gz"
     fi
 }
 legacy_cols(){
@@ -861,6 +915,21 @@ legacy_cols(){
     [[ $has == "true" ]] && return
     < $cols_file jq '.cols += { "Queue": 120 }' > $cols_file.new &&
     mv $cols_file.new $cols_file
+}
+stale_mod_signatures(){
+    local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
+    if [[ -d $workshop_dir ]]; then
+        readarray -t old_mod_ids < <(awk -F, '{print $1}' $versions_file)
+        for ((i=0; i<${#old_mod_ids[@]}; ++i)); do
+            if [[ ! -d $workshop_dir/${old_mod_ids[$i]} ]]; then
+                "$HOME/.local/share/$app_name/helpers/funcs" "align_local" "${old_mod_ids[$i]}"
+            fi
+        done
+    fi
+
+}
+create_new_links(){
+    "$HOME/.local/share/$app_name/helpers/funcs" "update_symlinks"
 }
 initial_setup(){
     setup_dirs
@@ -882,6 +951,8 @@ initial_setup(){
     steam_deps
     migrate_files
     stale_symlinks
+    stale_mod_signatures
+    create_new_links
     local_latlon
     is_steam_running
     is_dzg_downloading
@@ -935,6 +1006,9 @@ main(){
     if [[ $1 == "--uninstall" ]] || [[ $1 == "-u" ]]; then
         uninstall &&
         exit 0
+    fi
+    if [[ $1 == "--steam" ]] || [[ $1 == "-s" ]]; then
+        export STEAM_LAUNCH=1
     fi
     
     set_im_module
