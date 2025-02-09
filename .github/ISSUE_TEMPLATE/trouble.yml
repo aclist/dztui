@@ -1,0 +1,46 @@
+name: Troubleshooting
+description: Submit user error/troubleshooting questions here
+title: "[HELP] Your title here"
+labels: ["troubleshooting"]
+assignees:
+  - aclist
+body:
+  - type: dropdown
+    id: device
+    attributes:
+      label: Device type
+      options:
+        - Desktop PC
+        - Steam Deck
+      default: 0
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: DZGUI version
+    validations:
+      required: true
+      placeholder: "5.6.0"
+  - type: input
+    id: distro
+    attributes:
+      label: Linux distribution
+    validations:
+      required: true
+      placeholder: "Arch Linux"
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Describe the issue
+      description: A detailed description. What did you expect to happen?
+      placeholder: "Include as much detail as possible and state the steps leading up to the problem. E.g., First I do this, then I do this, then this happens."
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Additional log output
+      description: Attach the file `$HOME/.local/state/dzgui/DZGUI_DEBUG.log` by clicking this area to highlight it and then dragging the file in.
+    validations:
+      required: false
