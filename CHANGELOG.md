@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.6.6] 2024-02-09
+### Changed
+- Update IP database records for 2025-02
+
 ## [5.6.2] 2024-01-22
 ### Fixed
 - Resolve regression introduced with IP resolution feature in 5.6.0 (restores functionality of right-click action: Add to My Servers)
