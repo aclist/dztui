@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.7.0-beta.7] 2024-02-09
+## Changed
+- Update IP database records for 2025-02
+
 ## [5.7.0-beta.6] 2024-01-10
 ## Fixed
 - Resolve regression introduced with IP resolution feature in 13c6813
