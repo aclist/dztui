@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.7.0-beta.8] 2024-02-10
+## Changed
+- Drop launch flag and check for invocation through Steam automatically
+
 ## [5.7.0-beta.7] 2024-02-09
 ## Changed
 - Update IP database records for 2025-02
