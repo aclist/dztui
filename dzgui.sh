@@ -922,14 +922,14 @@ stale_mod_signatures(){
         readarray -t old_mod_ids < <(awk -F, '{print $1}' $versions_file)
         for ((i=0; i<${#old_mod_ids[@]}; ++i)); do
             if [[ ! -d $workshop_dir/${old_mod_ids[$i]} ]]; then
-                "$HOME/.local/share/$app_name/helpers/funcs" "align_local" "${old_mod_ids[$i]}"
+                "$func_helper" "align_local" "${old_mod_ids[$i]}"
             fi
         done
     fi
 
 }
 create_new_links(){
-    "$HOME/.local/share/$app_name/helpers/funcs" "update_symlinks"
+    "$func_helper" "update_symlinks"
 }
 initial_setup(){
     setup_dirs
