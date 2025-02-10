@@ -59,7 +59,6 @@ geo_file="$helpers_path/ips.csv"
 km_helper="$helpers_path/latlon"
 sums_path="$helpers_path/sums.md5"
 query_helper="$helpers_path/query_v2.py"
-func_helper="$helpers_path/funcs"
 lan_helper="$helpers_path/lan"
 
 #STEAM PATHS
