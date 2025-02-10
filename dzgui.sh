@@ -1007,10 +1007,7 @@ main(){
         uninstall &&
         exit 0
     fi
-    if [[ $1 == "--steam" ]] || [[ $1 == "-s" ]]; then
-        export STEAM_LAUNCH=1
-    fi
-    
+
     set_im_module
 
     printf "Initializing setup...\n"
