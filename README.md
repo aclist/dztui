@@ -15,7 +15,7 @@ This overcomes certain limitations in the Linux client and helps prepare the gam
 
 Refer to the documentation for installation and setup instructions:
 
-- [GitHub](https://aclist.github.io/dzgui/dzgui.html)
+- [GitHub](https://aclist.github.io/dzgui/index.html)
 - [Mirror (Codeberg)](https://aclist.codeberg.page)
 
 
