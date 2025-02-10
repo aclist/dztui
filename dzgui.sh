@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.6.3
+version=5.6.4
 
 #CONSTANTS
 aid=221100
@@ -590,7 +590,7 @@ fetch_helpers_by_sum(){
         ["ui.py"]="5a876efacf208d12b5fe761996425412"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="417bd5eaffbefc905a843985c691dc64"
+        ["funcs"]="3703739856936a5fa11d92a0d2964773"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
@@ -922,14 +922,14 @@ stale_mod_signatures(){
         readarray -t old_mod_ids < <(awk -F, '{print $1}' $versions_file)
         for ((i=0; i<${#old_mod_ids[@]}; ++i)); do
             if [[ ! -d $workshop_dir/${old_mod_ids[$i]} ]]; then
-                "$HOME/.local/share/$app_name/helpers/funcs" "align_local" "${old_mod_ids[$i]}"
+                "$func_helper" "align_local" "${old_mod_ids[$i]}"
             fi
         done
     fi
 
 }
 create_new_links(){
-    "$HOME/.local/share/$app_name/helpers/funcs" "update_symlinks"
+    "$func_helper" "update_symlinks"
 }
 initial_setup(){
     setup_dirs
@@ -1007,10 +1007,7 @@ main(){
         uninstall &&
         exit 0
     fi
-    if [[ $1 == "--steam" ]] || [[ $1 == "-s" ]]; then
-        export STEAM_LAUNCH=1
-    fi
-    
+
     set_im_module
 
     printf "Initializing setup...\n"

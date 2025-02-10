@@ -59,7 +59,6 @@ geo_file="$helpers_path/ips.csv"
 km_helper="$helpers_path/latlon"
 sums_path="$helpers_path/sums.md5"
 query_helper="$helpers_path/query_v2.py"
-func_helper="$helpers_path/funcs"
 lan_helper="$helpers_path/lan"
 
 #STEAM PATHS
@@ -1271,7 +1270,7 @@ symlinks(){
             link="@$encoded_id"
             mod="${arr[$i]}"
             logger INFO "Creating link '$game_dir/$link' for '$workshop_dir/$mod'"
-            [[ $STEAM_LAUNCH -eq 1 ]] && echo "# Creating mod link $((i+1))/${#arr[@]}"
+            [[ -n $STEAMSCRIPT ]] && echo "# Creating mod link $((i+1))/${#arr[@]}"
             ln -s "$workshop_dir/$mod" "$game_dir/$link"
         done
     }
@@ -1286,7 +1285,7 @@ symlinks(){
 
     if [[ ${#links[@]} -eq 0 ]]; then
         logger INFO "No symlinks present in '$game_dir', creating them"
-        if [[ $STEAM_LAUNCH -eq 1 ]]; then
+        if [[ -n $STEAMSCRIPT ]]; then
             _create_links "${mods[@]}" > >(_pulse)
         else
             _create_links "${mods[@]}"
@@ -1304,7 +1303,7 @@ symlinks(){
 
     # update missing targets
     logger INFO "Found ${#hits[@]} unlinked mods"
-    if [[ $STEAM_LAUNCH -eq 1 ]]; then
+    if [[ -n $STEAMSCRIPT ]]; then
         _create_links "${hits[@]}" > >(_pulse)
     else
         _create_links "${hits[@]}"
