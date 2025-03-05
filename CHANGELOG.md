@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.7.0-beta.9] 2024-03-04
+## Fixed
+- Livonia server results being dropped from batch queries
+
 ## [5.7.0-beta.8] 2024-02-10
 ## Changed
 - Drop launch flag and check for invocation through Steam automatically
