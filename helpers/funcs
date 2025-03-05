@@ -452,10 +452,15 @@ get_dist(){
 }
 get_remote_servers(){
     params=(
-        "\\nor\1\map\chernarusplus\\nor\1\map\sakhal"
+        "\\nor\1\map\chernarusplus\\nor\1\map\sakhal\\nor\1\map\enoch\empty\1\\nor\1\map\namalsk"
+        "\map\namalsk\empty\1"
+        "\map\namalsk\noplayers\1"
         "\map\chernarusplus\empty\1"
         "\map\chernarusplus\noplayers\1"
-        "\map\\sakhal"
+        "\map\\sakhal\empty\1"
+        "\map\\sakhal\noplayers\1"
+        "\map\\enoch\empty\1"
+        "\map\\enoch\noplayers\1"
     )
     local limit=10000
     local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?"
