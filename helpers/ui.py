@@ -896,7 +896,6 @@ class ScrollableTree(Gtk.ScrolledWindow):
         self.treeview = TreeView(is_steam_deck)
         self.add(self.treeview)
 
-
 class RightPanel(Gtk.Box):
     def __init__(self, is_steam_deck):
         super().__init__(spacing=6)
@@ -1582,6 +1581,7 @@ class TreeView(Gtk.TreeView):
                     column_title = "Name"
                 saved_size = data["cols"][column_title]
                 column.set_fixed_width(saved_size)
+                column.set_expand(True)
             else:
                 if ("Name" in column_title):
                     column.set_fixed_width(800)
@@ -2330,12 +2330,8 @@ class Grid(Gtk.Grid):
         self._version = "%s %s" %(app_name, sys.argv[2])
 
         self.scrollable_treelist = ScrollableTree(is_steam_deck)
-        if is_steam_deck is True:
-            self.scrollable_treelist.set_hexpand(False)
-            self.scrollable_treelist.set_vexpand(True)
-        else:
-            self.scrollable_treelist.set_hexpand(True)
-            self.scrollable_treelist.set_vexpand(True)
+        self.scrollable_treelist.set_hexpand(False)
+        self.scrollable_treelist.set_vexpand(True)
 
         self.right_panel = RightPanel(is_steam_deck)
         self.sel_panel = ModSelectionPanel()
@@ -2357,8 +2353,8 @@ class Grid(Gtk.Grid):
             self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 4, 1)
             self.attach_next_to(self.right_panel, self.scrollable_treelist, Gtk.PositionType.RIGHT, 1, 1)
         else:
-            self.attach(self.scrollable_treelist, 0, 0, 7, 5)
-            self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 7, 1)
+            self.attach(self.scrollable_treelist, 0, 0, 3, 1)
+            self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 3, 1)
             self.attach_next_to(self.right_panel, self.scrollable_treelist, Gtk.PositionType.RIGHT, 1, 1)
 
     def update_right_statusbar(self):
@@ -2437,6 +2433,15 @@ class App(Gtk.Application):
         GLib.set_prgname(app_name)
         self.win = OuterWindow(is_steam_deck, is_game_mode)
         self.win.set_icon_name("dzgui")
+
+        window = self.win.get_window()
+        screen = window.get_screen()
+        display = screen.get_display()
+        monitor = Gdk.Display.get_monitor_at_window(display, screen.get_root_window())
+        rect = monitor.get_geometry()
+        w = rect.width
+        h = rect.height
+        self.win.set_size_request((w/3), h/3)
 
         accel = Gtk.AccelGroup()
         accel.connect(Gdk.KEY_q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE, self._halt_window_subprocess)
