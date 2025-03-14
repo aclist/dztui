@@ -899,7 +899,7 @@ class OuterWindow(Gtk.Window):
 
     def halt_proc_and_quit(self, window, event):
         self.grid.terminate_treeview_process()
-        save_res_and_quit(self.win)
+        save_res_and_quit(window)
 
 
 class ScrollableTree(Gtk.ScrolledWindow):
@@ -2455,11 +2455,14 @@ class App(Gtk.Application):
         self.win.add_accel_group(accel)
 
 
-        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self._halt_window_subprocess)
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self._catch_sigint)
         Gtk.main()
 
+    def _catch_sigint(self):
+        self.win.halt_proc_and_quit(self.win, None)
+
     def _halt_window_subprocess(self, accel_group, window, code, flag):
-        self.win.halt_proc_and_quit(self, None)
+        self.win.halt_proc_and_quit(self.win, None)
 
 def save_res_and_quit(window):
     if window.props.is_maximized:
