@@ -899,7 +899,7 @@ class OuterWindow(Gtk.Window):
 
     def halt_proc_and_quit(self, window, event):
         self.grid.terminate_treeview_process()
-        Gtk.main_quit()
+        save_res_and_quit(self.win)
 
 
 class ScrollableTree(Gtk.ScrolledWindow):
@@ -2459,7 +2459,6 @@ class App(Gtk.Application):
         Gtk.main()
 
     def _halt_window_subprocess(self, accel_group, window, code, flag):
-        save_res_and_quit(self.win)
         self.win.halt_proc_and_quit(self, None)
 
 def save_res_and_quit(window):
