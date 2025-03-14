@@ -50,6 +50,7 @@ helpers_path = '%s/.local/share/dzgui/helpers' %(user_path)
 log_path = '%s/logs' %(state_path)
 changelog_path = '%s/CHANGELOG.md' %(state_path)
 geometry_path = '%s/dzg.cols.json' %(state_path)
+res_path = '%s/dzg.res.json' %(state_path)
 funcs = '%s/funcs' %(helpers_path)
 mods_temp_file = '%s/dzg.mods_temp' %(cache_path)
 stale_mods_temp_file = '%s/dzg.stale_mods_temp' %(cache_path)
@@ -88,10 +89,10 @@ log_cols = [
 ]
 filters = {
     "1PP": True,
-    "3PP": True,
     "Day": True,
-    "Night": True,
     "Empty": False,
+    "3PP": True,
+    "Night": True,
     "Full": False,
     "Low pop": True,
     "Non-ASCII": False,
@@ -685,7 +686,7 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
             process_tree_option([treeview.view, RowType.HANDSHAKE], treeview)
         case 255:
             spawn_dialog(transient_parent, "Update complete. Please close DZGUI and restart.", Popup.NOTIFY)
-            Gtk.main_quit()
+            save_res_and_quit(transient_parent)
 
 
 def process_tree_option(input, treeview):
@@ -878,8 +879,20 @@ class OuterWindow(Gtk.Window):
             if query_config(None, "fullscreen")[0] == "true":
                 self.maximize()
 
-        # Hide FilterPanel on main menu
+        if os.path.isfile(res_path):
+            with open(res_path, "r") as infile:
+                try:
+                    data = json.load(infile)
+                    valid_json = True
+                except json.decoder.JSONDecodeError:
+                    logger.critical("JSON decode error in '%s'" %(geometry_path))
+                    valid_json = False
+
+        if valid_json:
+            self.set_default_size(data["res"]["width"], data["res"]["height"])
+
         self.show_all()
+        # Hide FilterPanel on main menu
         self.grid.right_panel.set_filter_visibility(False)
         self.grid.sel_panel.set_visible(False)
         self.grid.scrollable_treelist.treeview.grab_focus()
@@ -970,7 +983,7 @@ class ButtonBox(Gtk.Box):
             button.set_opacity(0.6)
             self.buttons.append(button)
             button.connect("clicked", self._on_selection_button_clicked)
-            self.pack_start(button, False, False, True)
+            self.pack_start(button, False, False, 0)
 
         self.buttons[0].set_opacity(1.0)
 
@@ -1042,7 +1055,9 @@ class ButtonBox(Gtk.Box):
 
         if context == ButtonType.EXIT:
             logger.info("Normal user exit")
-            Gtk.main_quit()
+            widgets = relative_widget(self)
+            window = widgets["outer"]
+            save_res_and_quit(window)
             return
         cols = treeview.get_columns()
 
@@ -2434,25 +2449,46 @@ class App(Gtk.Application):
         self.win = OuterWindow(is_steam_deck, is_game_mode)
         self.win.set_icon_name("dzgui")
 
-        window = self.win.get_window()
-        screen = window.get_screen()
-        display = screen.get_display()
-        monitor = Gdk.Display.get_monitor_at_window(display, screen.get_root_window())
-        rect = monitor.get_geometry()
-        w = rect.width
-        h = rect.height
-        self.win.set_size_request((w/3), h/3)
 
         accel = Gtk.AccelGroup()
         accel.connect(Gdk.KEY_q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE, self._halt_window_subprocess)
         self.win.add_accel_group(accel)
 
-        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, Gtk.main_quit)
+
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self._halt_window_subprocess)
         Gtk.main()
 
     def _halt_window_subprocess(self, accel_group, window, code, flag):
+        save_res_and_quit(self.win)
         self.win.halt_proc_and_quit(self, None)
 
+def save_res_and_quit(window):
+    if window.props.is_maximized:
+        return
+    rect = window.get_size()
+
+    def write_json(rect):
+        data = {"res": { "width": rect.width, "height": rect.height } }
+        j = json.dumps(data, indent=2)
+        with open(res_path, "w") as outfile:
+            outfile.write(j)
+        logger.info("Wrote initial column widths to '%s'" %(res_path))
+
+    if os.path.isfile(res_path):
+        with open(res_path, "r") as infile:
+            try:
+                data = json.load(infile)
+                data["res"]["width"] = rect.width
+                data["res"]["height"] = rect.height
+                with open(res_path, "w") as outfile:
+                    outfile.write(json.dumps(data, indent=2))
+            except json.decoder.JSONDecodeError:
+                logger.critical("JSON decode error in '%s'" %(res_path))
+                write_json(rect)
+    else:
+        write_json(rect)
+
+    Gtk.main_quit()
 
 class ModSelectionPanel(Gtk.Box):
     def __init__(self):
@@ -2621,7 +2657,7 @@ class FilterPanel(Gtk.Box):
         self.keyword_entry.set_placeholder_text("Filter by keyword")
         self.keyword_entry.connect("activate", self._on_keyword_enter)
         self.keyword_entry.connect("key-press-event", self._on_esc_pressed)
-    
+
         completion = Gtk.EntryCompletion(inline_completion=True)
         completion.set_text_column(0)
         completion.set_minimum_key_length(1)
@@ -2630,7 +2666,7 @@ class FilterPanel(Gtk.Box):
         renderer_text = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
         self.maps_combo = Gtk.ComboBox.new_with_model_and_entry(map_store)
         self.maps_combo.set_entry_text_column(0)
-    
+
         # instantiate maps completer entry
         self.maps_entry = self.maps_combo.get_child()
         self.maps_entry.set_completion(completion)
@@ -2642,12 +2678,20 @@ class FilterPanel(Gtk.Box):
         self.maps_combo.connect("changed", self._on_map_changed)
         self.maps_combo.connect("key-press-event", self._on_esc_pressed)
 
-        self.pack_start(self.filters_label, False, False, True)
-        self.pack_start(self.keyword_entry, False, False, True)
-        self.pack_start(self.maps_combo, False, False, True)
+        self.pack_start(self.filters_label, False, False, 0)
+        self.pack_start(self.keyword_entry, False, False, 0)
+        self.pack_start(self.maps_combo, False, False, 0)
 
+        button_grid = Gtk.Grid()
+        row = 1
+        col = 0
         for i, check in enumerate(checks[0:]):
-            self.pack_start(checks[i], False, False, True)
+            col = col + 1
+            if (col > 3):
+                row = row + 1
+                col = 1
+            button_grid.attach(checks[i], col, row, 1, 1)
+        self.pack_start(button_grid, False, False, 0)
 
     def _on_map_entry_keypress(self, entry, event):
         match event.keyval:
