@@ -3,7 +3,6 @@
 ## [5.7.0-beta.10] 2024-03-15
 ## Added
 - Restore application size on subsequent startup
-
 ## Fixed
 - Grid scaling causes table to exceeds bounds of display viewport
 - Window exceeds taskbar on Steam Deck
