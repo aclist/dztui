@@ -875,21 +875,26 @@ class OuterWindow(Gtk.Window):
         self.add(self.grid)
         if is_game_mode is True:
             self.fullscreen()
+        elif query_config(None, "fullscreen")[0] == "true":
+            logger.info("User preference for 'fullscreen' is 'true'")
+            self.maximize()
         else:
-            if query_config(None, "fullscreen")[0] == "true":
-                self.maximize()
-
-        if os.path.isfile(res_path):
-            with open(res_path, "r") as infile:
-                try:
-                    data = json.load(infile)
-                    valid_json = True
-                except json.decoder.JSONDecodeError:
-                    logger.critical("JSON decode error in '%s'" %(geometry_path))
-                    valid_json = False
-
-        if valid_json:
-            self.set_default_size(data["res"]["width"], data["res"]["height"])
+            if os.path.isfile(res_path):
+                with open(res_path, "r") as infile:
+                    try:
+                        data = json.load(infile)
+                        valid_json = True
+                    except json.decoder.JSONDecodeError:
+                        logger.critical("JSON decode error in '%s'" %(geometry_path))
+                        valid_json = False
+            else:
+                valid_json = False
+            if valid_json:
+                res = data["res"]
+                w = res["width"]
+                h = res["height"]
+                logger.info("Restoring window size to %s,%s" %(w,h))
+                self.set_default_size(w, h)
 
         self.show_all()
         # Hide FilterPanel on main menu
@@ -2466,6 +2471,7 @@ class App(Gtk.Application):
 
 def save_res_and_quit(window):
     if window.props.is_maximized:
+        Gtk.main_quit()
         return
     rect = window.get_size()
 
@@ -2474,7 +2480,7 @@ def save_res_and_quit(window):
         j = json.dumps(data, indent=2)
         with open(res_path, "w") as outfile:
             outfile.write(j)
-        logger.info("Wrote initial column widths to '%s'" %(res_path))
+        logger.info("Wrote initial window size to '%s'" %(res_path))
 
     if os.path.isfile(res_path):
         with open(res_path, "r") as infile:
