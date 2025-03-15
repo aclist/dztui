@@ -1,5 +1,15 @@
 # Changelog
 
+## [5.7.0-beta.10] 2024-03-15
+## Added
+- Restore application size on subsequent startup
+
+## Fixed
+- Grid scaling causes table to exceeds bounds of display viewport
+- Window exceeds taskbar on Steam Deck
+## Changed
+- Packed filter checkbox buttons into a 3x3 grid
+
 ## [5.7.0-beta.9] 2024-03-04
 ## Fixed
 - Livonia server results being dropped from batch queries

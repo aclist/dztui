@@ -2463,6 +2463,7 @@ class App(Gtk.Application):
     def _halt_window_subprocess(self, accel_group, window, code, flag):
         self.win.halt_proc_and_quit(self.win, None)
 
+
 def save_res_and_quit(window):
     if window.props.is_maximized:
         Gtk.main_quit()
@@ -2514,7 +2515,6 @@ class ModSelectionPanel(Gtk.Box):
             button.connect("clicked", self._on_button_clicked)
             self.pack_start(button, False, True, 0)
 
-
     def initialize(self):
         l = len(self.get_children())
         last = self.get_children()[l-1]
@@ -2525,7 +2525,6 @@ class ModSelectionPanel(Gtk.Box):
                     i.destroy()
                 case "Unhighlight stale":
                     i.set_label("Highlight stale")
-
 
     def _on_button_clicked(self, button):
         self.active_button = button
@@ -2554,7 +2553,6 @@ class ModSelectionPanel(Gtk.Box):
                     if mod_store[i][4] == "#FF0000":
                         path = Gtk.TreePath(i)
                         treeview.get_selection().select_path(path)
-
 
     def _remove_last_button(self):
         children = self.get_children()
