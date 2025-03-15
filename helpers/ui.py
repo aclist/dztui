@@ -942,8 +942,7 @@ class RightPanel(Gtk.Box):
         self.question_button.connect("clicked", self._on_button_clicked)
 
         self.pack_start(self.debug_toggle, False, True, 0)
-        if is_steam_deck is False:
-            self.pack_start(self.question_button, False, True, 0)
+        self.pack_start(self.question_button, False, True, 0)
 
     def _on_button_toggled(self, button, command):
         grid = self.get_parent()
@@ -2368,14 +2367,9 @@ class Grid(Gtk.Grid):
         self.bar.add(self.status_right_label)
         self.update_right_statusbar()
 
-        if is_steam_deck is True:
-            self.attach(self.scrollable_treelist, 0, 0, 4, 1)
-            self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 4, 1)
-            self.attach_next_to(self.right_panel, self.scrollable_treelist, Gtk.PositionType.RIGHT, 1, 1)
-        else:
-            self.attach(self.scrollable_treelist, 0, 0, 3, 1)
-            self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 3, 1)
-            self.attach_next_to(self.right_panel, self.scrollable_treelist, Gtk.PositionType.RIGHT, 1, 1)
+        self.attach(self.scrollable_treelist, 0, 0, 3, 1)
+        self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 3, 1)
+        self.attach_next_to(self.right_panel, self.scrollable_treelist, Gtk.PositionType.RIGHT, 1, 1)
 
     def update_right_statusbar(self):
         config_vals.clear()
