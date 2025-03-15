@@ -8,6 +8,7 @@
 - Window exceeds taskbar on Steam Deck
 ## Changed
 - Packed filter checkbox buttons into a 3x3 grid
+- Updated IP database to 2025-03 records
 
 ## [5.7.0-beta.9] 2024-03-04
 ## Fixed
