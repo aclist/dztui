@@ -1091,12 +1091,13 @@ class ButtonBox(Gtk.Box):
 
 
 class CalcDist(multiprocessing.Process):
-    def __init__(self, widget, addr, result_queue, cache):
+    def __init__(self, widget, addr, qport, result_queue, cache):
         super().__init__()
 
         self.widget = widget
         self.result_queue = result_queue
         self.addr = addr
+        self.qport = str(qport)
         self.ip = addr.split(':')[0]
 
     def run(self):
@@ -1105,7 +1106,7 @@ class CalcDist(multiprocessing.Process):
             self.result_queue.put([self.addr, cache[self.addr][0], cache[self.addr][1]])
             return
         proc = call_out(self.widget, "get_dist", self.ip)
-        proc2 = call_out(self.widget, "test_ping", self.ip)
+        proc2 = call_out(self.widget, "test_ping", self.ip, self.qport)
         km = proc.stdout
         ping = proc2.stdout
         self.result_queue.put([self.addr, km, ping])
@@ -1332,6 +1333,7 @@ class TreeView(Gtk.TreeView):
 
         if self.view == WindowContext.TABLE_API or self.view == WindowContext.TABLE_SERVER:
             addr = self.get_column_at_index(7)
+            qport = self.get_column_at_index(8)
             if addr is None:
                 server_tooltip[0] = format_tooltip()
                 grid.update_statusbar(server_tooltip[0])
@@ -1345,7 +1347,7 @@ class TreeView(Gtk.TreeView):
                 grid.update_statusbar(tooltip)
                 return
             self.emit("on_distcalc_started")
-            self.current_proc = CalcDist(self, addr, self.queue, cache)
+            self.current_proc = CalcDist(self, addr, qport, self.queue, cache)
             self.current_proc.start()
         else:
             tooltip = format_metadata(row_sel)

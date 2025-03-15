@@ -6,6 +6,7 @@
 ## Fixed
 - Grid scaling causes table to exceeds bounds of display viewport
 - Window exceeds taskbar on Steam Deck
+- Reduce possibility of timeouts when pinging servers
 ## Changed
 - Packed filter checkbox buttons into a 3x3 grid
 - Updated IP database to 2025-03 records
