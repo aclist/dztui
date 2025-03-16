@@ -787,8 +787,6 @@ test_ping(){
     local time
     local ip="$1"
     local qport="$2"
-    log "$ip"
-    log "$qport"
     res=$(a2s $ip $qport info)
     if [[ -z $res ]]; then
         time="Timed out"
