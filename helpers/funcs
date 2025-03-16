@@ -785,6 +785,7 @@ logger(){
 test_ping(){
     shift
     local time
+    local res
     local ip="$1"
     local qport="$2"
     res=$(a2s $ip $qport info)
