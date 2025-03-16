@@ -885,7 +885,7 @@ class OuterWindow(Gtk.Window):
                         data = json.load(infile)
                         valid_json = True
                     except json.decoder.JSONDecodeError:
-                        logger.critical("JSON decode error in '%s'" %(geometry_path))
+                        logger.critical("JSON decode error in '%s'" %(res_path))
                         valid_json = False
             else:
                 valid_json = False
