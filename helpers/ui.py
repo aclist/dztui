@@ -17,7 +17,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.6.0
+# 5.7.0
 app_name = "DZGUI"
 
 cache = {}
@@ -50,6 +50,7 @@ helpers_path = '%s/.local/share/dzgui/helpers' %(user_path)
 log_path = '%s/logs' %(state_path)
 changelog_path = '%s/CHANGELOG.md' %(state_path)
 geometry_path = '%s/dzg.cols.json' %(state_path)
+res_path = '%s/dzg.res.json' %(state_path)
 funcs = '%s/funcs' %(helpers_path)
 mods_temp_file = '%s/dzg.mods_temp' %(cache_path)
 stale_mods_temp_file = '%s/dzg.stale_mods_temp' %(cache_path)
@@ -88,10 +89,10 @@ log_cols = [
 ]
 filters = {
     "1PP": True,
-    "3PP": True,
     "Day": True,
-    "Night": True,
     "Empty": False,
+    "3PP": True,
+    "Night": True,
     "Full": False,
     "Low pop": True,
     "Non-ASCII": False,
@@ -685,7 +686,7 @@ def process_shell_return_code(transient_parent, msg, code, original_input):
             process_tree_option([treeview.view, RowType.HANDSHAKE], treeview)
         case 255:
             spawn_dialog(transient_parent, "Update complete. Please close DZGUI and restart.", Popup.NOTIFY)
-            Gtk.main_quit()
+            save_res_and_quit(transient_parent)
 
 
 def process_tree_option(input, treeview):
@@ -874,19 +875,36 @@ class OuterWindow(Gtk.Window):
         self.add(self.grid)
         if is_game_mode is True:
             self.fullscreen()
+        elif query_config(None, "fullscreen")[0] == "true":
+            logger.info("User preference for 'fullscreen' is 'true'")
+            self.maximize()
         else:
-            if query_config(None, "fullscreen")[0] == "true":
-                self.maximize()
+            if os.path.isfile(res_path):
+                with open(res_path, "r") as infile:
+                    try:
+                        data = json.load(infile)
+                        valid_json = True
+                    except json.decoder.JSONDecodeError:
+                        logger.critical("JSON decode error in '%s'" %(res_path))
+                        valid_json = False
+            else:
+                valid_json = False
+            if valid_json:
+                res = data["res"]
+                w = res["width"]
+                h = res["height"]
+                logger.info("Restoring window size to %s,%s" %(w,h))
+                self.set_default_size(w, h)
 
-        # Hide FilterPanel on main menu
         self.show_all()
+        # Hide FilterPanel on main menu
         self.grid.right_panel.set_filter_visibility(False)
         self.grid.sel_panel.set_visible(False)
         self.grid.scrollable_treelist.treeview.grab_focus()
 
     def halt_proc_and_quit(self, window, event):
         self.grid.terminate_treeview_process()
-        Gtk.main_quit()
+        save_res_and_quit(window)
 
 
 class ScrollableTree(Gtk.ScrolledWindow):
@@ -895,7 +913,6 @@ class ScrollableTree(Gtk.ScrolledWindow):
 
         self.treeview = TreeView(is_steam_deck)
         self.add(self.treeview)
-
 
 class RightPanel(Gtk.Box):
     def __init__(self, is_steam_deck):
@@ -925,8 +942,7 @@ class RightPanel(Gtk.Box):
         self.question_button.connect("clicked", self._on_button_clicked)
 
         self.pack_start(self.debug_toggle, False, True, 0)
-        if is_steam_deck is False:
-            self.pack_start(self.question_button, False, True, 0)
+        self.pack_start(self.question_button, False, True, 0)
 
     def _on_button_toggled(self, button, command):
         grid = self.get_parent()
@@ -971,7 +987,7 @@ class ButtonBox(Gtk.Box):
             button.set_opacity(0.6)
             self.buttons.append(button)
             button.connect("clicked", self._on_selection_button_clicked)
-            self.pack_start(button, False, False, True)
+            self.pack_start(button, False, False, 0)
 
         self.buttons[0].set_opacity(1.0)
 
@@ -1043,7 +1059,9 @@ class ButtonBox(Gtk.Box):
 
         if context == ButtonType.EXIT:
             logger.info("Normal user exit")
-            Gtk.main_quit()
+            widgets = relative_widget(self)
+            window = widgets["outer"]
+            save_res_and_quit(window)
             return
         cols = treeview.get_columns()
 
@@ -1073,12 +1091,13 @@ class ButtonBox(Gtk.Box):
 
 
 class CalcDist(multiprocessing.Process):
-    def __init__(self, widget, addr, result_queue, cache):
+    def __init__(self, widget, addr, qport, result_queue, cache):
         super().__init__()
 
         self.widget = widget
         self.result_queue = result_queue
         self.addr = addr
+        self.qport = str(qport)
         self.ip = addr.split(':')[0]
 
     def run(self):
@@ -1087,7 +1106,7 @@ class CalcDist(multiprocessing.Process):
             self.result_queue.put([self.addr, cache[self.addr][0], cache[self.addr][1]])
             return
         proc = call_out(self.widget, "get_dist", self.ip)
-        proc2 = call_out(self.widget, "test_ping", self.ip)
+        proc2 = call_out(self.widget, "test_ping", self.ip, self.qport)
         km = proc.stdout
         ping = proc2.stdout
         self.result_queue.put([self.addr, km, ping])
@@ -1314,6 +1333,7 @@ class TreeView(Gtk.TreeView):
 
         if self.view == WindowContext.TABLE_API or self.view == WindowContext.TABLE_SERVER:
             addr = self.get_column_at_index(7)
+            qport = self.get_column_at_index(8)
             if addr is None:
                 server_tooltip[0] = format_tooltip()
                 grid.update_statusbar(server_tooltip[0])
@@ -1327,7 +1347,7 @@ class TreeView(Gtk.TreeView):
                 grid.update_statusbar(tooltip)
                 return
             self.emit("on_distcalc_started")
-            self.current_proc = CalcDist(self, addr, self.queue, cache)
+            self.current_proc = CalcDist(self, addr, qport, self.queue, cache)
             self.current_proc.start()
         else:
             tooltip = format_metadata(row_sel)
@@ -1582,6 +1602,7 @@ class TreeView(Gtk.TreeView):
                     column_title = "Name"
                 saved_size = data["cols"][column_title]
                 column.set_fixed_width(saved_size)
+                column.set_expand(True)
             else:
                 if ("Name" in column_title):
                     column.set_fixed_width(800)
@@ -2330,12 +2351,8 @@ class Grid(Gtk.Grid):
         self._version = "%s %s" %(app_name, sys.argv[2])
 
         self.scrollable_treelist = ScrollableTree(is_steam_deck)
-        if is_steam_deck is True:
-            self.scrollable_treelist.set_hexpand(False)
-            self.scrollable_treelist.set_vexpand(True)
-        else:
-            self.scrollable_treelist.set_hexpand(True)
-            self.scrollable_treelist.set_vexpand(True)
+        self.scrollable_treelist.set_hexpand(False)
+        self.scrollable_treelist.set_vexpand(True)
 
         self.right_panel = RightPanel(is_steam_deck)
         self.sel_panel = ModSelectionPanel()
@@ -2352,14 +2369,9 @@ class Grid(Gtk.Grid):
         self.bar.add(self.status_right_label)
         self.update_right_statusbar()
 
-        if is_steam_deck is True:
-            self.attach(self.scrollable_treelist, 0, 0, 4, 1)
-            self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 4, 1)
-            self.attach_next_to(self.right_panel, self.scrollable_treelist, Gtk.PositionType.RIGHT, 1, 1)
-        else:
-            self.attach(self.scrollable_treelist, 0, 0, 7, 5)
-            self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 7, 1)
-            self.attach_next_to(self.right_panel, self.scrollable_treelist, Gtk.PositionType.RIGHT, 1, 1)
+        self.attach(self.scrollable_treelist, 0, 0, 3, 1)
+        self.attach_next_to(self.bar, self.scrollable_treelist, Gtk.PositionType.BOTTOM, 3, 1)
+        self.attach_next_to(self.right_panel, self.scrollable_treelist, Gtk.PositionType.RIGHT, 1, 1)
 
     def update_right_statusbar(self):
         config_vals.clear()
@@ -2438,16 +2450,50 @@ class App(Gtk.Application):
         self.win = OuterWindow(is_steam_deck, is_game_mode)
         self.win.set_icon_name("dzgui")
 
+
         accel = Gtk.AccelGroup()
         accel.connect(Gdk.KEY_q, Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE, self._halt_window_subprocess)
         self.win.add_accel_group(accel)
 
-        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, Gtk.main_quit)
+
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self._catch_sigint)
         Gtk.main()
 
-    def _halt_window_subprocess(self, accel_group, window, code, flag):
-        self.win.halt_proc_and_quit(self, None)
+    def _catch_sigint(self):
+        self.win.halt_proc_and_quit(self.win, None)
 
+    def _halt_window_subprocess(self, accel_group, window, code, flag):
+        self.win.halt_proc_and_quit(self.win, None)
+
+
+def save_res_and_quit(window):
+    if window.props.is_maximized:
+        Gtk.main_quit()
+        return
+    rect = window.get_size()
+
+    def write_json(rect):
+        data = {"res": { "width": rect.width, "height": rect.height } }
+        j = json.dumps(data, indent=2)
+        with open(res_path, "w") as outfile:
+            outfile.write(j)
+        logger.info("Wrote initial window size to '%s'" %(res_path))
+
+    if os.path.isfile(res_path):
+        with open(res_path, "r") as infile:
+            try:
+                data = json.load(infile)
+                data["res"]["width"] = rect.width
+                data["res"]["height"] = rect.height
+                with open(res_path, "w") as outfile:
+                    outfile.write(json.dumps(data, indent=2))
+            except json.decoder.JSONDecodeError:
+                logger.critical("JSON decode error in '%s'" %(res_path))
+                write_json(rect)
+    else:
+        write_json(rect)
+
+    Gtk.main_quit()
 
 class ModSelectionPanel(Gtk.Box):
     def __init__(self):
@@ -2471,7 +2517,6 @@ class ModSelectionPanel(Gtk.Box):
             button.connect("clicked", self._on_button_clicked)
             self.pack_start(button, False, True, 0)
 
-
     def initialize(self):
         l = len(self.get_children())
         last = self.get_children()[l-1]
@@ -2482,7 +2527,6 @@ class ModSelectionPanel(Gtk.Box):
                     i.destroy()
                 case "Unhighlight stale":
                     i.set_label("Highlight stale")
-
 
     def _on_button_clicked(self, button):
         self.active_button = button
@@ -2511,7 +2555,6 @@ class ModSelectionPanel(Gtk.Box):
                     if mod_store[i][4] == "#FF0000":
                         path = Gtk.TreePath(i)
                         treeview.get_selection().select_path(path)
-
 
     def _remove_last_button(self):
         children = self.get_children()
@@ -2616,7 +2659,7 @@ class FilterPanel(Gtk.Box):
         self.keyword_entry.set_placeholder_text("Filter by keyword")
         self.keyword_entry.connect("activate", self._on_keyword_enter)
         self.keyword_entry.connect("key-press-event", self._on_esc_pressed)
-    
+
         completion = Gtk.EntryCompletion(inline_completion=True)
         completion.set_text_column(0)
         completion.set_minimum_key_length(1)
@@ -2625,7 +2668,7 @@ class FilterPanel(Gtk.Box):
         renderer_text = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
         self.maps_combo = Gtk.ComboBox.new_with_model_and_entry(map_store)
         self.maps_combo.set_entry_text_column(0)
-    
+
         # instantiate maps completer entry
         self.maps_entry = self.maps_combo.get_child()
         self.maps_entry.set_completion(completion)
@@ -2637,12 +2680,20 @@ class FilterPanel(Gtk.Box):
         self.maps_combo.connect("changed", self._on_map_changed)
         self.maps_combo.connect("key-press-event", self._on_esc_pressed)
 
-        self.pack_start(self.filters_label, False, False, True)
-        self.pack_start(self.keyword_entry, False, False, True)
-        self.pack_start(self.maps_combo, False, False, True)
+        self.pack_start(self.filters_label, False, False, 0)
+        self.pack_start(self.keyword_entry, False, False, 0)
+        self.pack_start(self.maps_combo, False, False, 0)
 
+        button_grid = Gtk.Grid()
+        row = 1
+        col = 0
         for i, check in enumerate(checks[0:]):
-            self.pack_start(checks[i], False, False, True)
+            col = col + 1
+            if (col > 3):
+                row = row + 1
+                col = 1
+            button_grid.attach(checks[i], col, row, 1, 1)
+        self.pack_start(button_grid, False, False, 0)
 
     def _on_map_entry_keypress(self, entry, event):
         match event.keyval:

@@ -1,5 +1,16 @@
 # Changelog
 
+## [5.7.0-beta.10] 2024-03-15
+## Added
+- Restore application size on subsequent startup
+## Fixed
+- Grid scaling causes table to exceeds bounds of display viewport
+- Window exceeds taskbar on Steam Deck
+- Reduce possibility of timeouts when pinging servers
+## Changed
+- Packed filter checkbox buttons into a 3x3 grid
+- Updated IP database to 2025-03 records
+
 ## [5.7.0-beta.9] 2024-03-04
 ## Fixed
 - Livonia server results being dropped from batch queries

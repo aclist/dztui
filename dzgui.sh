@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.7.0-beta.9
+version=5.7.0-beta.10
 
 #CONSTANTS
 aid=221100
@@ -587,10 +587,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="5a876efacf208d12b5fe761996425412"
+        ["ui.py"]="f6e8b113e586a4bb2ea40c9ee56ebc95"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="0d2d7a2b08f1112dc2474ba81a489002"
+        ["funcs"]="f6e8b113e586a4bb2ea40c9ee56ebc95"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
@@ -639,7 +639,7 @@ fetch_helpers_by_sum(){
 }
 fetch_geo_file(){
     # for binary releases
-    local geo_sum="9824e9b9a75a4830a2423932cc188b06"
+    local geo_sum="76ec9e25b92022de5d2e9c41baf88772"
     local km_sum="b038fdb8f655798207bd28de3a004706"
     local gzip="$helpers_path/ips.csv.gz"
     if [[ ! -f $geo_file  ]] || [[ $(get_hash $geo_file) != $geo_sum ]]; then
