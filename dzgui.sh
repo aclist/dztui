@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.7.0-beta.10
+version=5.7.0-beta.11
 
 #CONSTANTS
 aid=221100
@@ -882,7 +882,7 @@ test_connection(){
     local res2
     local str="No connection could be established to the remote server"
     hr=(
-        ["steampowered.com"]="https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=$steam_api"
+        ["steampowered.com"]="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api"
         ["github.com"]="https://github.com/$author"
         ["codeberg.org"]="https://codeberg.org/$author"
     )

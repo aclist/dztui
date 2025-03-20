@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.7.0-beta.11] 2024-03-20
+## Fixed
+- Reduce startup time when testing remote APIs
+
 ## [5.7.0-beta.10] 2024-03-15
 ## Added
 - Restore application size on subsequent startup
