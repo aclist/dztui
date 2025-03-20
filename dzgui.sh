@@ -36,6 +36,7 @@ history_file="$state_path/$prefix.history"
 versions_file="$state_path/$prefix.versions"
 lock_file="$state_path/$prefix.lock"
 cols_file="$state_path/$prefix.cols.json"
+scroll_fifo="$state_path/$prefix.fifo"
 
 #CACHE FILES
 coords_file="$cache_path/$prefix.coords"
@@ -53,6 +54,7 @@ geo_file="$helpers_path/ips.csv"
 km_helper="$helpers_path/latlon"
 sums_path="$helpers_path/sums.md5"
 func_helper="$helpers_path/funcs"
+scroll_helper="$helpers_path/scroll.py"
 
 #REMOTE
 remote_host=gh
@@ -64,7 +66,6 @@ testing_url="$url_prefix/testing"
 releases_url="https://github.com/$author/$repo/releases/download/browser"
 km_helper_url="$releases_url/latlon"
 geo_file_url="$releases_url/ips.csv.gz"
-
 
 set_im_module(){
     #TODO: drop pending SteamOS changes
@@ -90,13 +91,16 @@ logger(){
         | redact >> "$debug_log"
 }
 setup_dirs(){
+    scroll "STATUS" "Checking directories"
     for dir in "$state_path" "$cache_path" "$share_path" "$helpers_path" "$freedesktop_path" "$config_path" "$log_path"; do
         if [[ ! -d $dir ]]; then
             mkdir -p "$dir"
         fi
     done
+    scroll "RESULT" "OK"
 }
 setup_state_files(){
+    scroll STATUS "Checking state files"
     if [[ -f "$debug_log" ]]; then
         rm "$debug_log" && touch $debug_log
         logger INFO "Initializing DZGUI version $version"
@@ -113,6 +117,7 @@ setup_state_files(){
         done
         logger INFO "Wiped cache files"
     fi
+    scroll RESULT OK
 }
 print_config_vals(){
     local keys=(
@@ -134,13 +139,14 @@ print_config_vals(){
 
 }
 test_gobject(){
+    scroll STATUS "Checking PyGObject"
     python3 -c "import gi"
     if [[ ! $? -eq 0 ]]; then
-        logger CRITICAL "Missing PyGObject"
-        fdialog "Requires PyGObject (python-gobject)"
+        raise_error_and_quit "Requires PyGObject (python-gobject)" "silent"
         exit 1
     fi
     logger INFO "Found PyGObject in Python env"
+    scroll RESULT OK
 }
 update_config(){
     # handling for legacy files
@@ -222,11 +228,12 @@ src_path="$src_path"
 END
 }
 depcheck(){
+    scroll STATUS "Checking dependencies"
     for dep in "${!deps[@]}"; do
         command -v "$dep" 2>&1>/dev/null
         if [[ $? -eq 1 ]]; then
             local msg="Requires $dep >= ${deps[$dep]}"
-            raise_error_and_quit "$msg"
+            raise_error_and_quit "$msg" "silent"
         fi
     done
     local jqmsg="jq must be compiled with support for oniguruma"
@@ -234,22 +241,27 @@ depcheck(){
     jqtest=$(echo '{"test": "foo"}' | jq '.test | test("^foo$")')
     [[ $? -ne 0 ]] && raise_error_and_quit "$jqmsg"
     logger INFO "Initial dependencies satisfied"
+    scroll RESULT OK
 }
 check_pyver(){
+    scroll STATUS "Checking Python version"
     local pyver=$(python3 --version | awk '{print $2}')
     local minor=$(<<< $pyver awk -F. '{print $2}')
     if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]] || [[ $minor -lt 10 ]]; then
         local msg="Requires Python >=3.10"
-        raise_error_and_quit "$msg"
+        raise_error_and_quit "$msg" "silent"
     fi
     logger INFO "Found Python version: $pyver"
+    scroll RESULT OK
 }
 watcher_deps(){
+    scroll STATUS "Checking dialog dependencies"
     if [[ ! $(command -v wmctrl) ]] && [[ ! $(command -v xdotool) ]]; then
-        raise_error_and_quit "Missing dependency: requires 'wmctrl' or 'xdotool'"
+        raise_error_and_quit "Missing dependency: requires 'wmctrl' or 'xdotool'" "silent"
         exit 1
     fi
     logger INFO "Found DZG Watcher dependencies"
+    scroll "RESULT" "OK"
 }
 format_version_url(){
     [[ -z "$branch" ]] && branch="stable"
@@ -277,6 +289,7 @@ Categories=Game
 END
 }
 freedesktop_dirs(){
+    #scroll STATUS "Setting up Freedesktop dirs"
     local version_url=$(format_version_url)
     local img_url="$stable_url/images"
     curl -s "$version_url" > "$script_path"
@@ -287,22 +300,21 @@ freedesktop_dirs(){
     write_desktop_file > "$freedesktop_path/$app_name.desktop"
     [[ $is_steam_deck -eq 0 ]] && return
     write_desktop_file > "$HOME/Desktop/$app_name.desktop"
+    #scroll RESULT OK
 }
 legacy_vars(){
+    scroll "STATUS" "Checking for old config format"
     local suffix="fav"
-    local hr_msg="Config file contains values based on old API. Please update and re-run setup."
-    local msg="Config file contains legacy API value: '$suffix'"
+    local msg="Config file contains legacy API value '$suffix'. Please update and re-run setup."
     if [[ -n $fav ]]; then
-        logger WARN "$msg"
-        fdialog "$hr_msg"
-        exit 1
+        raise_error_and_quit "$msg" "silent"
     fi
     if [[ -n $whitelist ]]; then
         suffix="whitelist"
-        logger WARN "$msg"
-        fdialog "$hr_msg"
-        exit 1
+        msg="Config file contains legacy API value '$suffix'. Please update and re-run setup."
+        raise_error_and_quit "$msg" "silent"
     fi
+    scroll "RESULT" "OK"
 }
 merge_config(){
     [[ -z $staging_dir ]] && staging_dir="/tmp"
@@ -316,10 +328,11 @@ check_unmerged(){
     fi
 }
 check_version(){
+    scroll "STATUS" "Looking for version updates"
     local version_url=$(format_version_url)
     local upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
     local res=$(get_response_code "$version_url")
-    [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$version_url'"
+    [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$version_url'" "silent"
     logger INFO "Local branch: '$branch', local version: $version"
     if [[ $branch == "stable" ]]; then
         version_url="$stable_url/dzgui.sh"
@@ -332,8 +345,11 @@ check_version(){
         check_unmerged
     else
         logger WARN "Local and remote version mismatch: $version != $upstream"
+        scroll "RESULT" "WARN"
         prompt_dl
+        return 0
     fi
+    scroll "RESULT" "OK"
 }
 download_new_version(){
     local version_url="$(format_version_url)"
@@ -373,6 +389,7 @@ prompt_dl(){
     if [[ $? -eq 1 ]]; then
         return 0
     else
+        scroll "EXIT"
         download_new_version
     fi
 }
@@ -393,11 +410,13 @@ test_display_mode(){
     fi
 }
 check_architecture(){
+    scroll  "STATUS" "Setting architecture"
     local cpu=$(< /proc/cpuinfo awk -F": " '/AMD Custom APU [0-9]{4}$/ {print $2; exit}')
     read -a APU_MODEL <<< "$cpu"
     if [[ ${APU_MODEL[3]} != "0932" ]] && [[ ${APU_MODEL[3]} != "0405" ]]; then
         is_steam_deck=0
         logger INFO "Setting architecture to 'desktop'"
+        scroll "RESULT" "OK"
         return
     fi
 
@@ -407,20 +426,27 @@ check_architecture(){
         is_steam_deck=1
     fi
     logger INFO "Setting architecture to 'Steam Deck'"
+    scroll "RESULT" "OK"
 }
 check_map_count(){
-    [[ $is_steam_deck -gt 0 ]] && return 0
+    scroll "STATUS" "Checking system map count"
+    if [[ $is_steam_deck -gt 0 ]]; then
+        scroll "RESULT" "OK"
+        return 0
+    fi
     local map_count_file="/proc/sys/vm/max_map_count"
     local min_count=1048576
     local conf_file="/etc/sysctl.d/dayz.conf"
     local current_count
     if [[ ! -f ${map_count_file} ]]; then
+        scroll "RESULT" "FAIL"
         logger WARN "File '${map_count_file}' doesn't exist!"
         return 1
     fi
     current_count=$(cat ${map_count_file})
     if [[ $current_count -ge $min_count ]]; then
         logger DEBUG "System map count is set to ${current_count}"
+        scroll "RESULT" "OK"
         return 0
     fi
     qdialog "sudo password required to set system vm map count." "OK" "Cancel"
@@ -430,6 +456,7 @@ check_map_count(){
         pass=$($steamsafe_zenity --password)
         if [[ $? -eq 1 ]]; then
             logger WARN "User aborted password prompt"
+            scroll "RESULT" "FAIL"
             return 1
         fi
         logger DEBUG "Old map count is $current_count"
@@ -437,8 +464,10 @@ check_map_count(){
         sudo -S <<< "$pass" sh -c "echo 'vm.max_map_count=${current_count}' > $conf_file"
         sudo sysctl -p "$conf_file"
         logger DEBUG "Updated map count to $min_count"
+        scroll "RESULT" "OK"
     else
         logger WARN "User aborted map count prompt"
+        scroll "RESULT" "FAIL"
         return 1
     fi
 }
@@ -458,14 +487,14 @@ tdialog(){
     $steamsafe_zenity --info --text="$1" "${zenity_flags[@]}"
 }
 steam_deps(){
+    scroll "STATUS" "Checking Steam dependencies"
     local flatpak
     local steam
     [[ $(command -v flatpak) ]] && flatpak=$(flatpak list | grep valvesoftware.Steam)
     steam=$(command -v steam)
     if [[ -z "$steam" ]] && [[ -z "$flatpak" ]]; then
         local msg="Found neither Steam nor Flatpak Steam"
-        raise_error_and_quit "$msg"
-        exit 1
+        raise_error_and_quit "$msg" "silent"
     elif [[ -n "$steam" ]] && [[ -n "$flatpak" ]]; then
         [[ -n $preferred_client ]] && return 0
         if [[ -z $preferred_client ]]; then
@@ -478,24 +507,35 @@ steam_deps(){
     fi
     update_config
     logger INFO "Preferred client set to '$preferred_client'"
+    scroll "RESULT" "OK"
 }
 migrate_files(){
+    scroll "STATUS" "Checking legacy API files"
     if [[ ! -f $config_path/dztuirc.oldapi ]]; then
         cp $config_file $config_path/dztuirc.oldapi
         logger INFO "Migrated old API file"
     fi
-    [[ ! -f $hist_file ]] && return
+    if [[ ! -f $hist_file ]]; then
+        scroll "RESULT" "OK"
+        return
+    fi
     rm $hist_file
     logger INFO "Wiped old history file"
+    scroll "RESULT" "OK"
 }
 stale_symlinks(){
+    #TODO: test progress update
+    scroll "STATUS" "Cleaning stale symlinks"
     local game_dir="$steam_path/steamapps/common/DayZ"
     for l in $(find "$game_dir" -xtype l); do
+        scroll "PROGRESS" "Updating symlink '$l'"
         logger DEBUG "Updating stale symlink '$l'"
         unlink "$l"
     done
+    scroll "RESULT" "OK"
 }
 local_latlon(){
+    scroll "STATUS" "Getting geolocation"
     if [[ -z $(command -v dig) ]]; then
         local local_ip=$(curl -Ls "https://ipecho.net/plain")
     else
@@ -505,29 +545,40 @@ local_latlon(){
     local res=$(curl -Ls "$url" | jq -r '"\(.lat)\n\(.lon)"')
     if [[ -z "$res" ]]; then
         logger WARN "Failed to get local coordinates"
-        return 1
+        tdialog "Failed to get local coordinates"
+        scroll "RESULT" "WARN"
+        #this is non blocking, so scroller does not abort
+        return 0
     fi
     echo "$res" > "$coords_file"
+    scroll "RESULT" "OK"
 }
 lock(){
+    scroll "STATUS" "Checking for existing DZGUI"
+    #TODO: check for existing scroller from other context
+    #is_scroller_running
+    #[[ $? -eq 0 ]] && raise_error_and_quit "DZGUI is already running ($scroller_pid)" "silent"
     [[ ! -f $lock_file ]] && touch $lock_file
     local pid=$(cat $lock_file)
     ps -p $pid -o pid= >/dev/null 2>&1
     res=$?
     if [[ $res -eq 0 ]]; then
         local msg="DZGUI already running ($pid)"
-        raise_error_and_quit "$msg"
+        raise_error_and_quit "$msg" "silent"
     elif [[ $pid == $$ ]]; then
         :
     else
         echo $$ > $lock_file
     fi
+    scroll "RESULT" "OK"
 }
 get_hash(){
     local file="$1"
     md5sum "$1" | awk '{print $1}'
 }
 fetch_a2s(){
+    #scroll STATUS "Checking query helper"
+    #scroll PROGRESS "Checking A2S"
     # this file is currently monolithic
     [[ -d $helpers_path/a2s ]] && { logger INFO "A2S helper is current"; return 0; }
     local sha=c7590ffa9a6d0c6912e17ceeab15b832a1090640
@@ -537,13 +588,15 @@ fetch_a2s(){
     local prefix="${author^}-$repo-${sha:0:7}"
     local file="$prefix.tar.gz"
     local res=$(get_response_code "$url")
-    [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$file'"
+    [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$file'" "silent"
     curl -Ls "$url" > "$helpers_path/$file"
     tar xf "$helpers_path/$file" -C "$helpers_path" "$prefix/a2s" --strip=1
     rm "$helpers_path/$file"
     logger INFO "Updated A2S helper to sha '$sha'"
+    #scroll RESULT OK
 }
 fetch_dzq(){
+    #scroll PROGRESS "Checking DZQ"
     local sum="9caed1445c45832f4af87736ba3f9637"
     local file="$helpers_path/a2s/dayzquery.py"
     if [[ -f $file ]] && [[ $(get_hash "$file") == $sum ]]; then
@@ -555,11 +608,13 @@ fetch_dzq(){
     local repo="dayzquery"
     local url="https://raw.githubusercontent.com/$author/$repo/$sha/dayzquery.py"
     local res=$(get_response_code "$url")
-    [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: 'dayzquery.py'"
+    [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: 'dayzquery.py'" "silent"
     curl -Ls "$url" > "$file"
     logger INFO "Updated DZQ to sha '$sha'"
+    #scroll RESULT OK
 }
 fetch_icons(){
+    #scroll STATUS "Fetching icons"
     res=(
             "16"
             "24"
@@ -572,6 +627,7 @@ fetch_icons(){
     )
     url="$stable_url/images/icons"
     for i in "${res[@]}"; do
+        #scroll PROGRESS "Fetching size ${i}x${i}"
         size="${i}x${i}"
         dir="$HOME/.local/share/icons/hicolor/$size/apps"
         icon="$dir/$app_name.png"
@@ -582,8 +638,10 @@ fetch_icons(){
         logger INFO "Updating $size Freedesktop icon"
         curl -Ls "${url}/${i}.png" > "$icon"
     done
+    #scroll RESULT OK
 }
 fetch_helpers_by_sum(){
+    #scroll STATUS "Checking other helpers"
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
@@ -616,16 +674,17 @@ fetch_helpers_by_sum(){
         full_path="$helpers_path/$file"
 
         url="${url_prefix}/$realbranch/helpers/$file"
+        #scroll PROGRESS "Checking $file"
 
         if [[ -f "$full_path" ]] && [[ $(get_hash "$full_path") == $sum ]]; then
             logger INFO "$file is current"
         else
             logger WARN "File '$full_path' checksum != '$sum'"
             local res=$(get_response_code "$url")
-            [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$url'"
+            [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$url'" "silent"
             curl -Ls "$url" > "$full_path"
             if [[ ! $? -eq 0 ]]; then
-                raise_error_and_quit "Failed to fetch the file '$file'. Possible timeout?"
+                raise_error_and_quit "Failed to fetch the file '$file'. Possible timeout?" "silent"
             fi
             if [[ $(get_hash $full_path) != $sum ]]; then
                 logger WARN "Downloaded new '$file', but checksum != '$sum'"
@@ -635,26 +694,31 @@ fetch_helpers_by_sum(){
         [[ $file == "funcs" ]] && chmod +x "$full_path"
         [[ $file == "lan" ]] && chmod +x "$full_path"
     done
+    #scroll RESULT OK
     return 0
 }
 fetch_geo_file(){
+    #scroll STATUS "Checking geo file"
     # for binary releases
     local geo_sum="9824e9b9a75a4830a2423932cc188b06"
     local km_sum="b038fdb8f655798207bd28de3a004706"
     local gzip="$helpers_path/ips.csv.gz"
     if [[ ! -f $geo_file  ]] || [[ $(get_hash $geo_file) != $geo_sum ]]; then
         local res=$(get_response_code "$geo_file_url")
-        [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$geo_file_url'"
+        [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$geo_file_url'" "silent"
         curl -Ls "$geo_file_url" > "$gzip"
         #force overwrite
         gunzip -f "$gzip"
     fi
+    #scroll RESULT OK
+    #scroll STATUS "Checking km helper"
     if [[ ! -f $km_helper ]] || [[ $(get_hash $km_helper) != $km_sum ]]; then
         local res=$(get_response_code "$km_helper_url")
-        [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$km_helper_url'"
+        [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$km_helper_url'" "silent"
         curl -Ls "$km_helper_url" > "$km_helper"
         chmod +x "$km_helper"
     fi
+    #scroll RESULT OK
 }
 fetch_helpers(){
     fetch_a2s
@@ -667,7 +731,8 @@ fetch_helpers(){
 raise_error_and_quit(){
     local msg="$1"
     logger CRITICAL "$msg"
-    fdialog "$msg"
+    scroll "RESULT" "FAIL" "$msg"
+    [[ ! $2 == "silent" ]] && fdialog "$msg"
     exit 1
 }
 test_steam_api(){
@@ -828,9 +893,12 @@ create_config(){
     done
 }
 varcheck(){
+    #TODO: test branching scroller here
+    scroll  "STATUS" "Testing config variables"
     local msg="Config file '$config_file' missing. Start first-time setup now?"
     local msg2="The Steam paths set in your config file appear to be invalid. Restart first-time setup now?"
     if [[ ! -f $config_file ]]; then
+        scroll "EXIT"
         qdialog "$msg" "Yes" "Exit"
         if [[ $? -eq 1 ]]; then
             logger CRITICAL "Config file missing, but user aborted setup"
@@ -844,6 +912,9 @@ varcheck(){
     if [[ ! -d $steam_path ]] || [[ ! -d $game_dir ]] || [[ ! $(find $game_dir -type f) ]]; then
         logger WARN "DayZ path resolved to '$game_dir'"
         logger WARN "Workshop path resolved to '$workshop_dir'"
+        #scroller might already be destroyed from prior step
+        is_scroller_running
+        [[ $? -eq 0 ]] && scroll "EXIT"
         qdialog "$msg2" "Yes" "Exit"
         if [[ $? -eq 1 ]]; then
             logger CRITICAL "Malformed Steam path, but user aborted setup"
@@ -856,40 +927,54 @@ varcheck(){
         src_path=$(realpath "$0")
         update_config
     fi
+    is_scroller_running
+    [[ $? -eq 0 ]] && scroll "RESULT" "OK"
 }
 is_dzg_downloading(){
+    scroll "STATUS" "Checking if DayZ is up to date"
+    local msg="DayZ may be scheduling updates on Steam"
     if [[ -d $steam_path ]] && [[ -d $steam_path/downloading/$aid ]]; then
-        logger WARN "DayZ may be scheduling updates"
+        #this is non blocking, so scroller does not abort
+        #TODO: add a new scroller warning category
+        scroll "RESULT" "WARN"
+        tdialog "$msg"
+        logger WARN "$msg"
         return 0
     fi
+    scroll "RESULT" "OK"
 }
 is_steam_running(){
+    scroll  "STATUS" "Checking for Steam"
     local res=$(ps aux | grep "steamwebhelper" | grep -v grep)
     if [[ -z $res ]]; then
+        #this is non blocking, so scroller does not abort
+        #TODO: add a new scroller warning category
         logger WARN "Steam may not be running"
         tdialog "Is Steam running? For best results, make sure Steam is open in the background."
         return 0
     fi
+    scroll "RESULT" "OK"
 }
 get_response_code(){
     local url="$1"
     curl -Ls -I -o /dev/null -w "%{http_code}" "$url"
 }
 test_connection(){
+    scroll "STATUS" "Testing connection"
     source "$config_file"
     declare -A hr
     local res1
     local res2
     local str="No connection could be established to the remote server"
     hr=(
-        ["steampowered.com"]="https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=$steam_api"
+        ["steampowered.com"]="https://api.steampowered.com/IGameServersService/GetServerList/v1/?filter=\appid\221100&limit=10&key=$steam_api"
         ["github.com"]="https://github.com/$author"
         ["codeberg.org"]="https://codeberg.org/$author"
     )
     # steam API is mandatory, except on initial setup
     if [[ -n $steam_api ]]; then
         res=$(get_response_code "${hr["steampowered.com"]}")
-        [[ $res -ne 200 ]] && raise_error_and_quit "$str ("steampowered.com")"
+        [[ $res -ne 200 ]] && raise_error_and_quit "$str ("steampowered.com")" "silent"
     fi
 
     res=$(get_response_code "${hr["github.com"]}")
@@ -898,8 +983,9 @@ test_connection(){
         remote_host=cb
         logger INFO "Set remote host to '${hr["codeberg.org"]}'"
         res=$(get_response_code "${hr["codeberg.org"]}")
-        [[ $res -ne 200 ]] && raise_error_and_quit "$str (${hr["codeberg.org"]})"
+        [[ $res -ne 200 ]] && raise_error_and_quit "$str (${hr["codeberg.org"]})" "silent"
     fi
+    scroll "RESULT" "OK"
     if [[ $remote_host == "cb" ]]; then
         url_prefix="https://codeberg.org/$author/$repo/raw/branch"
         releases_url="https://codeberg.org/$author/$repo/releases/download/browser"
@@ -910,28 +996,38 @@ test_connection(){
     fi
 }
 legacy_cols(){
+    scroll "STATUS" "Checking column preferences"
     [[ ! -f $cols_file ]] && return
     local has=$(< "$cols_file" jq '.cols|has("Queue")')
-    [[ $has == "true" ]] && return
+    if [[ $has == "true" ]]; then
+        scroll "RESULT" "OK"
+        return
+    fi
     < $cols_file jq '.cols += { "Queue": 120 }' > $cols_file.new &&
     mv $cols_file.new $cols_file
+    scroll "RESULT" "OK"
 }
 stale_mod_signatures(){
+    scroll "STATUS" "Cleaning old mod signatures"
     local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
     if [[ -d $workshop_dir ]]; then
         readarray -t old_mod_ids < <(awk -F, '{print $1}' $versions_file)
         for ((i=0; i<${#old_mod_ids[@]}; ++i)); do
             if [[ ! -d $workshop_dir/${old_mod_ids[$i]} ]]; then
+                scroll "PROGRESS" "Updating mod '${old_mod_ids[$i]}'"
                 "$func_helper" "align_local" "${old_mod_ids[$i]}"
             fi
         done
     fi
-
+    scroll "RESULT" "OK"
 }
 create_new_links(){
+    scroll "STATUS" "Updating symlinks"
     "$func_helper" "update_symlinks"
+    scroll "RESULT" "OK"
 }
 initial_setup(){
+    lock
     setup_dirs
     setup_state_files
     depcheck
@@ -939,11 +1035,11 @@ initial_setup(){
     test_gobject
     watcher_deps
     check_architecture
-    test_connection
-    fetch_helpers > >(pdialog "Checking helper files")
     varcheck
+    test_connection
+    #TODO: test scroller with helper files
+#    fetch_helpers > >(pdialog "Checking helper files")
     source "$config_file"
-    lock
     legacy_vars
     legacy_cols
     check_version
@@ -1000,6 +1096,40 @@ uninstall(){
     rm "$self"
     echo "Uninstall routine complete"
 }
+
+is_scroller_running(){
+    [[ -z $scroller_pid ]] && return
+    ps -p $scroller_pid > /dev/null
+    [[ $? -eq 1 ]] && return 1
+    ps aux | grep scroll.py | grep -v grep > /dev/null
+    [[ $? -eq 1 ]] && return 1
+    return 0
+}
+
+scroll(){
+    #blocking process; abort if fifo is absent
+    [[ ! -p "$scroll_fifo" ]] && return
+
+    local flag="$1"
+    local str="$2"
+    local msg="$3"
+    sleep 0.1s
+    printf "%s␞%s␞%s" "$flag" "$str" "$msg" > "$scroll_fifo"
+}
+
+destroy_scroller(){
+    is_scroller_running
+    [[ $? -eq 0 ]] && scroll "EXIT"
+    logger INFO "Caught abort/hangup signal"
+    [[ -p "$scroll_fifo" ]] && rm "$scroll_fifo"
+    exit 1
+}
+
+write_pid(){
+    local dzg_pid=$$
+    echo "$dzg_pid" > "$state_path/$prefix.pid"
+}
+
 main(){
     local zenv=$(zenity --version 2>/dev/null)
     [[ -z $zenv ]] && { echo "Requires zenity >= ${deps[$steamsafe_zenity]}"; exit 1; }
@@ -1011,11 +1141,35 @@ main(){
     set_im_module
 
     printf "Initializing setup...\n"
+    #TODO: download scroller if missing
+    #cf. fetch_helpers
+    write_pid
+    [[ -p "$scroll_fifo" ]] && rm "$scroll_fifo"
+    if [[ -f "$scroll_helper" ]]; then
+        mkfifo "$scroll_fifo"
+        python3 "$scroll_helper" &
+        scroller_pid=$!
+    fi
     initial_setup
 
+    #if all ok, destroy scroller
+    scroll "EXIT"
     printf "All OK. Kicking off UI...\n"
     python3 "$ui_helper" "--init-ui" "$version" "$is_steam_deck"
 }
+
+quit_from_scroller(){
+    logger INFO "User triggered early abort from loading dialog"
+    exit 1
+}
+
+#early halt signals from script must destroy loader
+trap destroy_scroller SIGINT SIGHUP SIGQUIT SIGTERM
+
+#cancel button in loader will trigger this signal
+trap quit_from_scroller SIGUSR1
+
+
 main "$@"
 #TODO: tech debt: cruddy handling for steam forking
 [[ $? -eq 1 ]] && pkill -f dzgui.sh
