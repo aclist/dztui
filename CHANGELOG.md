@@ -4,7 +4,7 @@
 ## Dropped
 - Removed extraneous pre-boot API checks that could cause error messages to be printed if the user had not set up an API key yet
 
-## [5.6.6] 2024-04-04
+## [5.6.6] 2024-03-16
 ## Changed
 - Update IP database records for 2025-03
 
