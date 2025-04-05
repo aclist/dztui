@@ -876,21 +876,14 @@ get_response_code(){
     curl -Ls -I -o /dev/null -w "%{http_code}" "$url"
 }
 test_connection(){
-    source "$config_file"
     declare -A hr
     local res1
     local res2
     local str="No connection could be established to the remote server"
     hr=(
-        ["steampowered.com"]="https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=$steam_api"
         ["github.com"]="https://github.com/$author"
         ["codeberg.org"]="https://codeberg.org/$author"
     )
-    # steam API is mandatory, except on initial setup
-    if [[ -n $steam_api ]]; then
-        res=$(get_response_code "${hr["steampowered.com"]}")
-        [[ $res -ne 200 ]] && raise_error_and_quit "$str ("steampowered.com")"
-    fi
 
     res=$(get_response_code "${hr["github.com"]}")
     if [[ $res -ne 200 ]]; then

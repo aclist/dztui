@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.6.6] 2024-04-04
+## Dropped
+- Removed extraneous pre-boot API checks that could cause error messages to be printed if the user had not set up an API key yet
+
 ## [5.6.5] 2024-03-04
 ## Fixed
 - Livonia server results being dropped from batch queries
