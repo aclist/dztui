@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.7.0-beta.13] 2024-04-17
+## Fixed
+- Updated checksum for UI helper file
+
 ## [5.7.0-beta.12] 2024-04-04
 ## Dropped
 - Removed extraneous pre-boot API checks that could cause error messages to be printed if the user had not set up an API key yet
