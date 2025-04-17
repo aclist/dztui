@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.7.0-beta.12] 2024-04-17
+## Fixed
+- Use correct checksum for UI helper file
+## Dropped
+- Removed extraneous pre-boot API checks that could cause error messages to be printed if the user had not set up an API key yet
+
 ## [5.7.0-beta.11] 2024-03-20
 ## Fixed
 - Reduce startup time when testing remote APIs
