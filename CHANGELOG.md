@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.7.0] 2024-04-17
+## Added
+- Save application dimensions when quitting and restore on subsequent boot
+## Fixed
+- Issues with the window exceeding the bounds of the screen when displaying some table contexts
+## Changed
+- More direct server ping query method that should return marginally more accurate times
+
 ## [5.6.7] 2024-04-04
 ## Dropped
 - Removed extraneous pre-boot API checks that could cause error messages to be printed if the user had not set up an API key yet
