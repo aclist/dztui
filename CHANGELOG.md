@@ -3,20 +3,26 @@
 ## [5.8.0-beta.1] 2025-06-05
 ## Added
 - Automatically fetch geolocation records
+## Fixed
+- Corrected erroneous 2024 date in prior changelog entries
 
-## [5.7.0-beta.13] 2024-04-17
+## [5.7.1-beta.1] 2025-04-17
+## Changed
+- Updated geolocation records
+
+## [5.7.0-beta.13] 2025-04-17
 ## Fixed
 - Updated checksum for UI helper file
 
-## [5.7.0-beta.12] 2024-04-04
+## [5.7.0-beta.12] 2025-04-04
 ## Dropped
 - Removed extraneous pre-boot API checks that could cause error messages to be printed if the user had not set up an API key yet
 
-## [5.7.0-beta.11] 2024-03-20
+## [5.7.0-beta.11] 2025-03-20
 ## Fixed
 - Reduce startup time when testing remote APIs
 
-## [5.7.0-beta.10] 2024-03-15
+## [5.7.0-beta.10] 2025-03-15
 ## Added
 - Restore application size on subsequent startup
 ## Fixed
@@ -27,44 +33,44 @@
 - Packed filter checkbox buttons into a 3x3 grid
 - Updated IP database to 2025-03 records
 
-## [5.7.0-beta.9] 2024-03-04
+## [5.7.0-beta.9] 2025-03-04
 ## Fixed
 - Livonia server results being dropped from batch queries
 
-## [5.7.0-beta.8] 2024-02-10
+## [5.7.0-beta.8] 2025-02-10
 ## Changed
 - Drop launch flag and check for invocation through Steam automatically
 
-## [5.7.0-beta.7] 2024-02-09
+## [5.7.0-beta.7] 2025-02-09
 ## Changed
 - Update IP database records for 2025-02
 
-## [5.7.0-beta.6] 2024-01-10
+## [5.7.0-beta.6] 2025-01-10
 ## Fixed
 - Resolve regression introduced with IP resolution feature in 13c6813
 
-## [5.7.0-beta.5] 2024-01-10
+## [5.7.0-beta.5] 2025-01-10
 ## Changed
 - Stricter redacting of usernames (again)
 
-## [5.7.0-beta.4] 2024-01-10
+## [5.7.0-beta.4] 2025-01-10
 ## Fixed
 - Clerical hotfix
 
-## [5.7.0-beta.3] 2024-01-10
+## [5.7.0-beta.3] 2025-01-10
 ## Changed
 - Support legacy jq syntax for Ubuntu variants
 
-## [5.7.0-beta.2] 2024-01-07
+## [5.7.0-beta.2] 2025-01-07
 ## Fixed
 - Stricter redacting of usernames
 - Omit nested directories when traversing symlinks
 
-## [5.7.0-beta.1] 2024-01-07
+## [5.7.0-beta.1] 2025-01-07
 ### Changed
 - Normalize version number
 
-## [5.6.0-beta.21] 2024-01-06
+## [5.6.0-beta.21] 2025-01-06
 ### Added
 - Add in-app documentation link to Codeberg mirror
 - Hover tooltips to most buttons
