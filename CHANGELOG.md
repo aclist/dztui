@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.8.0-beta.1] 2025-06-05
+## Added
+- Automatically fetch geolocation records
+
 ## [5.7.0-beta.13] 2024-04-17
 ## Fixed
 - Updated checksum for UI helper file
