@@ -605,6 +605,20 @@ filter_servers(){
             <<< "$filtered" awk -F$separator '!seen[$1]++'
         fi
     }
+    filter_official(){
+        if [[ ${filters[*]} =~ Official ]]; then
+            echo -n "$filtered"
+        else
+            <<< "$filtered" awk -F$separator '$10 == "Community"'
+        fi
+    }
+    filter_community(){
+        if [[ ${filters[*]} =~ Unoffic ]]; then
+            echo -n "$filtered"
+        else
+            <<< "$filtered" awk -F$separator '$10 == "Official"'
+        fi
+    }
 
     filtered=$(filter_perspective)
     filtered=$(filter_full)
@@ -615,6 +629,8 @@ filter_servers(){
     filtered=$(filter_ascii)
     filtered=$(filter_duplicates)
     filtered=$(filter_keyword)
+    filtered=$(filter_official)
+    filtered=$(filter_community)
 
     if [[ -z "$filtered" ]]; then
         logger WARN "Filter result is empty"
@@ -652,7 +668,8 @@ parse_server_json(){
     "\(.max_players)␞" +
     "\(if .gametype == null then "0" elif .gametype|split("lqs")[1] == null then "0" else .gametype|split("lqs")[1]|split(",")[0] end)␞" +
     "\(.addr|split(":")[0]):\(if .gameport == null then "XXXX" else .gameport end)␞" +
-    "\(.addr|split(":")[1])"
+    "\(.addr|split(":")[1])␞" +
+    "\(if .gametype == null then "null" else (.gametype|split(",")|if any(. == "external") then "Community" else "Official" end) end)"
     ' | sort -k1
 }
 align_versions_file(){
