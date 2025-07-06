@@ -17,7 +17,6 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango
 
-# 5.7.0
 app_name = "DZGUI"
 
 cache = {}
@@ -38,7 +37,7 @@ mod_store = Gtk.ListStore(str, str, str, float, str)
 #cf. log_cols
 log_store = Gtk.ListStore(str, str, str, str)
 #cf. browser_cols
-server_store = Gtk.ListStore(str, str, str, str, int, int, int, str, int)
+server_store = Gtk.ListStore(str, str, str, str, int, int, int, str, int, str)
 
 default_tooltip = "Select a row to see its detailed description"
 server_tooltip = [None, None]
@@ -96,7 +95,9 @@ filters = {
     "Full": False,
     "Low pop": True,
     "Non-ASCII": False,
-    "Duplicate": False
+    "Duplicate": False,
+    "Official": True,
+    "Unoffic.": True,
 }
 
 
@@ -553,7 +554,7 @@ def parse_server_rows(data):
     lines = data.stdout.splitlines()
     reader = csv.reader(lines, delimiter=delimiter)
     try:
-        rows = [[row[0], row[1], row[2], row[3], int(row[4]), int(row[5]), int(row[6]), row[7], int(row[8])] for row in reader if row]
+        rows = [[row[0], row[1], row[2], row[3], int(row[4]), int(row[5]), int(row[6]), row[7], int(row[8]), row[9]] for row in reader if row]
     except IndexError:
         return 1
     for row in rows:
@@ -1609,7 +1610,8 @@ class TreeView(Gtk.TreeView):
                 if (column_title == "Map"):
                     column.set_fixed_width(300)
 
-            self.append_column(column)
+            if i != 10:
+                self.append_column(column)
 
         self.update_first_col(mode.dict["label"])
 

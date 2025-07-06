@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.8.0-beta.2] 2025-07-06
+## Added
+- Filter servers by official/unofficial status
+## Changed
+- Updated internal versioning of helper files
+
 ## [5.8.0-beta.1] 2025-06-05
 ## Added
 - Automatically fetch geolocation records
