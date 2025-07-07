@@ -3,8 +3,11 @@
 ## [5.8.0] 2025-07-06
 ## Added
 - Filter servers by official/unofficial status
+- Automatically fetch geolocation records
 ## Changed
 - Updated internal versioning of helper files
+## Fixed
+- Corrected erroneous 2024 date in prior changelog entries
 
 ## [5.7.0] 2025-04-17
 ## Added
