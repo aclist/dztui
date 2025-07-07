@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.7.0
+version=5.8.0
 
 #CONSTANTS
 aid=221100
@@ -49,10 +49,9 @@ freedesktop_path="$HOME/.local/share/applications"
 
 #HELPERS
 ui_helper="$helpers_path/ui.py"
-geo_file="$helpers_path/ips.csv"
 km_helper="$helpers_path/latlon"
-sums_path="$helpers_path/sums.md5"
 func_helper="$helpers_path/funcs"
+geo_helper="$helpers_path/ips.csv"
 
 #REMOTE
 remote_host=gh
@@ -63,7 +62,6 @@ stable_url="$url_prefix/dzgui"
 testing_url="$url_prefix/testing"
 releases_url="https://github.com/$author/$repo/releases/download/browser"
 km_helper_url="$releases_url/latlon"
-geo_file_url="$releases_url/ips.csv.gz"
 
 
 set_im_module(){
@@ -587,10 +585,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="a6fdbf3e3eb92b7bc78e6ae23882b10b"
+        ["ui.py"]="f128a97e744e9e11036d707198feb8a8"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="f6e8b113e586a4bb2ea40c9ee56ebc95"
+        ["funcs"]="94287c75a5ae0a06a95dd439711e6fba"
         ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
     )
     local author="aclist"
@@ -637,18 +635,8 @@ fetch_helpers_by_sum(){
     done
     return 0
 }
-fetch_geo_file(){
-    # for binary releases
-    local geo_sum="83bf7655a4197214b4be73dfa9a7b319"
+fetch_km_helper(){
     local km_sum="b038fdb8f655798207bd28de3a004706"
-    local gzip="$helpers_path/ips.csv.gz"
-    if [[ ! -f $geo_file  ]] || [[ $(get_hash $geo_file) != $geo_sum ]]; then
-        local res=$(get_response_code "$geo_file_url")
-        [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$geo_file_url'"
-        curl -Ls "$geo_file_url" > "$gzip"
-        #force overwrite
-        gunzip -f "$gzip"
-    fi
     if [[ ! -f $km_helper ]] || [[ $(get_hash $km_helper) != $km_sum ]]; then
         local res=$(get_response_code "$km_helper_url")
         [[ $res -ne 200 ]] && raise_error_and_quit "Remote resource unavailable: '$km_helper_url'"
@@ -656,10 +644,119 @@ fetch_geo_file(){
         chmod +x "$km_helper"
     fi
 }
+get_response_code(){
+    local url="$1"
+    curl -Ls -I -o /dev/null -w "%{http_code}" "$url"
+}
+raise_error_and_quit(){
+    echo "$1"
+    exit 1
+}
+fetch_ip_db(){
+    parse_dl_url(){
+        curl -Ls "$url" \
+        | grep "csv.gz" \
+        | awk -F"['']" '{print $2}'
+    }
+
+    parse_dl_url_date(){
+        local url="$1"
+        <<< "$url" \
+        awk -F/ '{print $5}' \
+        | awk -F"dbip-city-lite-" '{print $2}' \
+        | awk -F'.csv.gz' '{print $1}'
+    }
+
+    fetch(){
+        logger INFO "Triggering fetch routine"
+        local url="$1"
+
+        curl -Ls "$url" > "$base_file"
+        if [[ $? -ne 0 ]]; then
+            logger WARN "Abnormal exit while accessing '$url'"
+            return
+        fi
+
+        gunzip -f "$base_file"
+        if [[ $? -ne 0 ]]; then
+            rm "$base_file"
+            logger WARN "Abnormal exit while unpacking gzip '$base_file'"
+            return
+        fi
+
+        < "$extracted_file" grep -vE "^[a-z0-9]{4}:" | grep -v "::" > "$ip_file"
+        if [[ $? -ne 0 ]]; then
+            logger WARN "Abnormal exit while parsing IPs"
+            return
+        fi
+        rm "${state_path}/${month}.csv"
+
+        readarray -t records < <(cat $ip_file | awk -F, 'NR==1 {print $1} END {print $1}')
+        if [[ ${records[0]} != "0.0.0.0" ]] && [[ ${records[1]} != "224.0.0.0" ]]; then
+            logger WARN "Anchor records missing in '$ip_file', possibly malformed"
+            rm "$ip_file"
+            return
+        fi
+
+        mv "$ip_file" "$geo_helper"
+        if [[ $? -ne 0 ]]; then
+            logger WARN "Abnormal exit while moving '$ip_file' to '$helpers_path'"
+            rm "$ip_file"
+        fi
+
+        echo "$month" > "$month_file"
+        logger INFO "Wrote '$month' to stub '$month_file'"
+        logger INFO "Updated '$ip_file'"
+    }
+
+    local url="https://db-ip.com/db/download/ip-to-city-lite"
+    local month_file="${state_path}/.month"
+    local ip_file="${state_path}/ips.csv"
+
+    # test main url
+    local res=$(get_response_code "$url")
+    if [[ $res -ne 200 ]]; then
+        logger WARN "Failed to retrieve remote resource: '$url' ($res)"
+        return
+    fi
+    logger INFO "Resolved remote URL: '$url'"
+
+    # test dl url
+    local dl_url="$(parse_dl_url)"
+    local res=$(get_response_code "$dl_url")
+    if [[ $res -ne 200 ]]; then
+        logger WARN "Remote resource unavailable: '$dl_url' ($res)"
+        return
+    fi
+    logger INFO "Resolved download URL: '$dl_url'"
+
+    local month=$(parse_dl_url_date "$dl_url")
+    local base_file="${state_path}/${month}.csv.gz"
+    local extracted_file="${state_path}/${month}.csv"
+
+    # no stub file
+    if [[ ! -f $month_file ]]; then
+        logger WARN "No stub file '$month_file' present"
+        fetch "$dl_url"
+        return
+    fi
+
+    # local needs update
+    local last_month=$(< "$month_file")
+    if [[ $last_month != "$month" ]]; then
+        logger WARN "Local stub '$last_month' does not match remote stub '$month'"
+        fetch "$dl_url"
+        return
+    fi
+
+    # if stub is same date, abort
+    logger INFO "Local stub '$last_month' is identical to remote, skipping"
+}
 fetch_helpers(){
     fetch_a2s
     fetch_dzq
-    fetch_geo_file
+    fetch_km_helper
+    fetch_ip_db
     fetch_helpers_by_sum
     [[ ! -f $share_path/icon.png ]] && freedesktop_dirs
     fetch_icons
@@ -899,7 +996,6 @@ test_connection(){
         stable_url="$url_prefix/dzgui"
         testing_url="$url_prefix/testing"
         km_helper_url="$releases_url/latlon"
-        geo_file_url="$releases_url/ips.csv.gz"
     fi
 }
 legacy_cols(){
