@@ -114,6 +114,7 @@ declare -A funcs=(
 ["get_dist"]="get_dist"
 ["test_cooldown"]="test_cooldown"
 ["query_config"]="query_config"
+["query_favorites"]="query_favorites"
 ["start_cooldown"]="start_cooldown"
 ["List installed mods"]="list_mods"
 ["Delete selected mods"]="delete_local_mod"
@@ -145,6 +146,12 @@ lan_scan(){
     else
         printf "%s\n" "$res"
     fi
+}
+query_favorites(){
+    if [[ -z "${ip_list[@]}" ]]; then
+        return 1
+    fi
+    printf "%s\n" "${ip_list[@]}"
 }
 find_stale_mods(){
     local res
@@ -723,8 +730,8 @@ test_cooldown(){
     local old_time=$(< $_cache_cooldown)
     local cur_time=$(date +%s)
     local delta=$(($cur_time - $old_time))
-    if [[ $delta -lt 60 ]]; then
-        local remains=$((60 - $delta))
+    if [[ $delta -lt 30 ]]; then
+        local remains=$((30 - $delta))
         local suffix=$(pluralize "seconds" $remains)
         printf "Global API cooldown in effect. Please wait %s %s." "$remains" "$suffix"
         exit 1
@@ -752,20 +759,20 @@ dump_servers(){
     case "$subcontext" in
         *Server[[:space:]]browser*)
             local file="$_cache_servers"
-            if [[ ! $subcontext =~ Name ]]; then
+            if [[ ! $context =~ filter ]]; then
                 initialize_remote_servers
             fi
             ;;
         *My[[:space:]]saved[[:space:]]servers*)
             local file="$_cache_my_servers"
-            if [[ ! $subcontext =~ Name ]]; then
+            if [[ ! $context =~ filter ]]; then
                 [[ -f $file ]] && rm $file
                 _iterate "$file" "${ip_list[@]}"
             fi
             ;;
         *Recent[[:space:]]servers*)
             local file="$_cache_history"
-            if [[ ! $subcontext =~ Name ]]; then
+            if [[ ! $context =~ filter ]]; then
                 [[ -f $file ]] && rm $file
                 readarray -t iters < <(cat $history_file)
                 _iterate "$file" "${iters[@]}"
@@ -774,7 +781,7 @@ dump_servers(){
         *Scan[[:space:]]LAN[[:space:]]servers*)
             local port=$(<<< "$subcontext" awk -F: '{print $2}')
             local file="$_cache_lan"
-            if [[ ! $subcontext =~ Name ]]; then
+            if [[ ! $context =~ filter ]]; then
                 [[ -f $file ]] && rm $file
                 local lan=$(lan_scan $port)
                 readarray -t iters <<< "$lan"
@@ -1095,10 +1102,10 @@ test_steam_api(){
 }
 test_bm_api(){
     local key="$1"
-    if [[ ! $key =~ ^[0-9]+$ ]]; then
+    if [[ -z $key ]]; then
+        echo 1
         return
     fi
-    [[ -z $key ]] && return 1
     local code=$(curl -ILs "$bm_api" \
         -H "Authorization: Bearer "$key"" -G \
         -d "filter[game]=$game" \
@@ -1112,6 +1119,10 @@ update_config_val(){
     case $1 in
         "Change player name")
             key="name"
+            if [[ -z "${value// }" ]]; then
+                printf "Invalid name"
+                return 2
+            fi
             ;;
         "Change Steam API key")
             key="steam_api"
@@ -1348,6 +1359,9 @@ update_history(){
     echo "$record" >> "$history_file"
 }
 update_symlinks(){
+    if [[ ! -d "$workshop_dir" ]]; then
+        return
+    fi
     legacy_symlinks
     symlinks
 }

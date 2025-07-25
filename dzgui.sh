@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.8.0-beta.2
+version=6.0.0.beta-1
 
 #CONSTANTS
 aid=221100
@@ -585,11 +585,11 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="f128a97e744e9e11036d707198feb8a8"
+        ["ui.py"]="a68319e007172b36f7b4e4eaf0b03aab"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="94287c75a5ae0a06a95dd439711e6fba"
-        ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
+        ["funcs"]="5d244114c501754a630988354306e470"
+        ["servers.py"]="e77531286b215c6e94cf1f7d28ee640c"
     )
     local author="aclist"
     local repo="dztui"
@@ -631,7 +631,6 @@ fetch_helpers_by_sum(){
             logger INFO "Updated '$full_path' to sum '$sum'"
         fi
         [[ $file == "funcs" ]] && chmod +x "$full_path"
-        [[ $file == "lan" ]] && chmod +x "$full_path"
     done
     return 0
 }
@@ -926,7 +925,7 @@ create_config(){
 }
 varcheck(){
     local msg="Config file '$config_file' missing. Start first-time setup now?"
-    local msg2="The Steam paths set in your config file appear to be invalid. Restart first-time setup now?"
+    local msg2="The Steam paths set in your config file appear to be invalid (DayZ was moved or uninstalled). Restart first-time setup now?"
     if [[ ! -f $config_file ]]; then
         qdialog "$msg" "Yes" "Exit"
         if [[ $? -eq 1 ]]; then
