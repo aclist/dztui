@@ -1,11 +1,14 @@
+import json
 import os
 import re
-import requests
 import socket
 import subprocess
 import sys
 import typing  # noqa
 from typing import Union
+from urllib import request, parse
+from urllib.error import HTTPError
+from dataclasses import dataclass
 
 sys.path.append("a2s")
 import a2s  # noqa
@@ -53,7 +56,7 @@ def sanitize(name: str) -> str:
     return name
 
 
-def parse(json: list) -> list:
+def parse_json(json: list) -> list:
     """
     Server metadata is underspecified and server operators
     tend to insert random garbage in the headers. In case
@@ -166,7 +169,14 @@ def query_direct(ip: str, qport: int) -> dict | None:
         return None
 
 
-def query_api(key: str, param: str) -> requests.models.Response:
+@dataclass
+class Res:
+    status: int
+    parsed: bool
+    json: str
+
+
+def query_api(key: str, param: str) -> "HTTPResponse":
     LIMIT = 10000
     url = "https://api.steampowered.com/IGameServersService/GetServerList/v1/?"
 
@@ -175,5 +185,26 @@ def query_api(key: str, param: str) -> requests.models.Response:
         "limit": LIMIT,
         "key": key,
     }
-    r = requests.get(url, params=payload)
-    return r
+    par = parse.urlencode(payload)
+    url = f"{url}{par}"
+
+    status = 200
+    parsed = True
+    data = None
+
+    try:
+        with request.urlopen(url) as response:
+            if response.status != 200:
+                status = response.status
+            try:
+                parsed = True
+                data = json.load(response)
+            except json.decoder.JSONDecodeError:
+                parsed = False
+                data = None
+    except HTTPError:
+        status = 403
+        parsed = False
+        data = None
+    finally:
+        return Res(status, parsed, data)

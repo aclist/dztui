@@ -1005,6 +1005,7 @@ legacy_cols(){
     mv $cols_file.new $cols_file
 }
 stale_mod_signatures(){
+    [[ ! -f "$versions_file" ]] && return
     local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
     if [[ -d $workshop_dir ]]; then
         readarray -t old_mod_ids < <(awk -F, '{print $1}' $versions_file)
