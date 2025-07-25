@@ -2029,7 +2029,7 @@ class TreeView(Gtk.TreeView):
         GLib.idle_add(_load)
 
     def _dump_api(self):
-        key = query_config("steam_api")
+        key = query_config("steam_api")[0]
         job = Servers.query_api
         params = Servers.params
         with ThreadPoolExecutor() as executor:
@@ -2037,16 +2037,15 @@ class TreeView(Gtk.TreeView):
             wait(futures)
             serv = []
             for future in futures:
-                if future.result().status_code != 200:
+                res = future.result()
+                if res.status != 200 or not res.parsed:
                     ModelManager.set_store(None)
                     ModelManager.set_success(False)
                     GLib.idle_add(self._filter_cleanup)
                     return
-                j = future.result().json()
+                j = res.json
                 serv += j["response"]["servers"]
-            with open("banana", "w") as f:
-                f.write(json.dumps(serv))
-            parsed = Servers.parse(serv)
+            parsed = Servers.parse_json(serv)
         return parsed
 
     def _dump_lan(self, port: int) -> list | None:
@@ -2067,7 +2066,7 @@ class TreeView(Gtk.TreeView):
                 ModelManager.set_success(False)
                 GLib.idle_add(self._filter_cleanup)
                 return None
-            parsed = Servers.parse(servers)
+            parsed = Servers.parse_json(servers)
         return parsed
 
     def _dump_servers(self, ips: list) -> list | None:
@@ -2094,7 +2093,7 @@ class TreeView(Gtk.TreeView):
                 ModelManager.set_success(False)
                 GLib.idle_add(self._filter_cleanup)
                 return None
-            parsed = Servers.parse(serv)
+            parsed = Servers.parse_json(serv)
         return parsed
 
     def _query_servers(self, mode: RowType, port: int = 27016) -> None:
@@ -2543,6 +2542,7 @@ class TreeView(Gtk.TreeView):
         tree_iter: Gtk.TreePath,
         col: Gtk.TreeViewColumn,
     ) -> None:
+
         context = self.page
         chosen_row = self.get_value_at_index(0)
 
@@ -2576,6 +2576,16 @@ class TreeView(Gtk.TreeView):
                 cooldown = call_out("test_cooldown", "", "")
                 if cooldown.returncode == 1:
                     spawn_dialog(cooldown.stdout, Popup.NOTIFY)
+                    self.set_view(WindowContext.MAIN_MENU)
+                    return
+                try:
+                    key = query_config("steam_api")[0]
+                except IndexError:
+                    spawn_dialog("No Steam API key is set.", Popup.NOTIFY)
+                    self.set_view(WindowContext.MAIN_MENU)
+                    return
+                if len(key) < 1:
+                    spawn_dialog("No Steam API key is set.", Popup.NOTIFY)
                     self.set_view(WindowContext.MAIN_MENU)
                     return
                 App.grid.right_panel.filters_vbox.reinit_filters()
