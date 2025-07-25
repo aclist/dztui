@@ -5,10 +5,11 @@ import socket
 import subprocess
 import sys
 import typing  # noqa
-from typing import Union
+
+from dataclasses import dataclass
 from urllib import request, parse
 from urllib.error import HTTPError
-from dataclasses import dataclass
+from typing import Union
 
 sys.path.append("a2s")
 import a2s  # noqa
@@ -173,10 +174,10 @@ def query_direct(ip: str, qport: int) -> dict | None:
 class Res:
     status: int
     parsed: bool
-    json: str
+    json: Union[str, None]
 
 
-def query_api(key: str, param: str) -> "HTTPResponse":
+def query_api(key: str, param: str) -> Res:
     LIMIT = 10000
     url = "https://api.steampowered.com/IGameServersService/GetServerList/v1/?"
 
