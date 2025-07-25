@@ -1516,8 +1516,7 @@ class TreeView(Gtk.TreeView):
         column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
         self.append_column(column)
 
-        if not IS_STEAM_DECK:
-            self.set_headers_visible(False)
+        self.set_headers_visible(False)
 
         self.selected_row = self.get_selection()
         self.selected_row.connect("changed", self._on_tree_selection_changed)
@@ -2440,8 +2439,7 @@ class TreeView(Gtk.TreeView):
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             self.append_column(column)
 
-        if not IS_STEAM_DECK:
-            self.set_headers_visible(False)
+        self.set_headers_visible(False)
         self.set_model(row_store)
         self._populate(button_context.dict["opens"])
         self.grab_focus()
@@ -2640,6 +2638,7 @@ class GenericDialog(Gtk.MessageDialog):
                 button_type = Gtk.ButtonsType.OK
                 header_text = "Modlist"
 
+        # steam deck prints <2> if dialog title is duplicated
         Gtk.MessageDialog.__init__(
             self,
             transient_for=App.window,
@@ -2647,7 +2646,7 @@ class GenericDialog(Gtk.MessageDialog):
             text=header_text,
             secondary_text=textwrap.fill(text, 50),
             buttons=button_type,
-            title=f"{app_name}",
+            title=f"{app_name} - Dialog",
             modal=True,
         )
 
