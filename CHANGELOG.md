@@ -1,19 +1,20 @@
 # Changelog
 
-## [6.0.0-beta.1] 2025-07-25
+## [6.0.0-beta.1] 2025-07-28
 ## Added
-- Additional validation on entry dialogs to prevent submitting empty text
-- Added "Return to main menu" button to dialog windows when failing to load server table
-- Speed up load time of server tables
-- More robust threading and cache system when filtering servers
+- Ping column to server browsing contexts
 - Filter by modded servers
-- Refresh server ping context menu and hotkey
-- Disable "show mods" context menu if server has no mods
 - Breadcrumbs showing current menu context to top of window
-- 0, minus, and backslash keybindings for filter toggles
+- Speed up load time and navigation of server tables
 - Dedicated changelog page
 - Dedicated keybindings page
 - Vim-style navigation keybindings
+- Additional validation on entry dialogs to prevent submitting empty text
+- Added "Return to main menu" button to dialog windows when failing to load server table
+- More robust threading and cache system when filtering servers
+- Refresh server ping: context menu and hotkey
+- Disable "show mods" context menu if server has no mods
+- 0, minus, and backslash keybindings for filter toggles
 
 ## Fixed
 - Entry dialog sensitivity when validating API keys

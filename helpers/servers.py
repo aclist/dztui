@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import re
 import socket
@@ -123,6 +124,11 @@ def parse_json(json: list) -> list:
         except IndexError:
             continue
 
+        try:
+            ping = row["ping"]
+        except KeyError:
+            ping = 9999
+
         mapname = row["map"].lower()
         players = row["players"]
         max_players = row["max_players"]
@@ -136,6 +142,7 @@ def parse_json(json: list) -> list:
             int(queue),
             ip,
             int(qport),
+            ping,
             provider,
             modded,
         ]
@@ -143,9 +150,9 @@ def parse_json(json: list) -> list:
     return rows
 
 
-def query_direct(ip: str, qport: int) -> dict | None:
+def query_direct(ip: str, qport: int, TIMEOUT=3.0) -> dict | None:
     try:
-        info = a2s.info((ip, qport))
+        info = a2s.info((ip, qport), TIMEOUT)
 
         name = info.server_name
         mapname = info.map_name
@@ -155,6 +162,12 @@ def query_direct(ip: str, qport: int) -> dict | None:
         max_players = info.max_players
         keywords = info.keywords
 
+        try:
+            ping = info.ping
+            ping = math.floor(info.ping * 1000)
+        except AttributeError:
+            ping = 9999
+
         res = {}
         res["name"] = name
         res["map"] = mapname
@@ -163,6 +176,7 @@ def query_direct(ip: str, qport: int) -> dict | None:
         res["max_players"] = max_players
         res["addr"] = address
         res["gameport"] = gameport
+        res["ping"] = ping
         return res
     except TimeoutError:
         return None
@@ -175,6 +189,40 @@ class Res:
     status: int
     parsed: bool
     json: Union[str, None]
+
+
+@dataclass
+class Ping:
+    addr: str
+    iteration: int
+    ping: int
+
+
+def ping(iteration: int, row: list) -> Ping:
+    addr = row[7]
+    qport = row[8]
+
+    res = None
+
+    if row[9] != 9999:
+        return Ping(addr, iteration, row[9])
+
+    try:
+        ip = addr.split(":")[0]
+    except IndexError:
+        ping = 9999
+
+    try:
+        res = query_direct(ip, qport, 0.5)
+    except Exception as e:
+        pass
+
+    if res is None:
+        ping = 9999
+    else:
+        ping = res["ping"]
+
+    return Ping(addr, iteration, ping)
 
 
 def query_api(key: str, param: str) -> Res:

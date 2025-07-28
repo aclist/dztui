@@ -16,11 +16,12 @@ import warnings
 from enum import Enum
 from concurrent.futures import wait
 from concurrent.futures import ThreadPoolExecutor
+
 from collections.abc import Callable
 from typing import Literal, Self, Any
 
 sys.path.append("servers")
-import servers as Servers
+import servers as Servers  # noqa E402
 
 locale.setlocale(locale.LC_ALL, "")
 
@@ -1013,6 +1014,7 @@ class OuterWindow(Gtk.Window):
         self.show_all()
 
         self.grid.right_panel.filters_vbox.set_visible(False)
+        self.grid.right_panel.enable_ping_button(False)
         self.grid.sel_panel.set_visible(False)
 
         # convenience to avoid deep calls
@@ -1085,16 +1087,30 @@ class RightPanel(Gtk.Box):
         self.pack_start(self.button_vbox, False, False, 0)
         self.pack_start(self.filters_vbox, False, False, 0)
 
-        tooltip = (
+        debug_tooltip = (
             "Used to perform a dry run without\n"
             "actually connecting to a server"
         )
+        ping_tooltip = (
+            "Refresh the ping for visible servers.\n"
+            "Available once per unique filter context"
+        )
+
+        self.ping = Gtk.Button(
+            label="Ping servers",
+            margin_top=10,
+            margin_start=80,
+            margin_end=80,
+            tooltip_text=ping_tooltip,
+        )
+        self.ping.connect("clicked", self._on_ping_clicked)
+
         self.debug_toggle = Gtk.ToggleButton(
             label="Debug mode",
             margin_top=10,
             margin_start=80,
             margin_end=80,
-            tooltip_text=tooltip,
+            tooltip_text=debug_tooltip,
         )
 
         if query_config("debug")[0] == "1":
@@ -1110,8 +1126,12 @@ class RightPanel(Gtk.Box):
         )
         self.question.connect("clicked", self._on_question_clicked)
 
+        self.pack_start(self.ping, False, True, 0)
         self.pack_start(self.debug_toggle, False, True, 0)
         self.pack_start(self.question, False, True, 0)
+
+    def enable_ping_button(self, state: bool) -> None:
+        self.ping.set_visible(state)
 
     def reinit_maps(self, rows: list) -> None:
         map_store.clear()
@@ -1128,6 +1148,37 @@ class RightPanel(Gtk.Box):
         call_out("toggle", "Toggle debug mode")
         grid.statusbar.refresh()
         App.grid.notebook.focus_current()
+
+    def _on_ping_clicked(self, button: Gtk.Button) -> None:
+        block_signals()
+
+        def _update_pings():
+            rows = ModelManager.get_filtered()
+            with ThreadPoolExecutor(100) as executor:
+                futures = [
+                    executor.submit(Servers.ping, i, row)
+                    for i, row in enumerate(rows)
+                ]
+                wait(futures)
+                for future in futures:
+                    res = future.result()
+                    path = Gtk.TreePath.new_from_indices([res.iteration])
+                    temp_model[path][9] = res.ping
+                    ModelManager.ping_cache[res.addr] = res.ping
+            App.treeview.set_model(temp_model)
+            App.treeview.wait_dialog.destroy()
+            App.treeview.enable_ping_column(True)
+            App.treeview.grab_focus()
+            App.right_panel.ping.set_sensitive(False)
+
+            unblock_signals()
+
+        temp_model = App.treeview.get_model()
+        App.treeview.set_model(None)
+        App.treeview.wait_dialog = GenericDialog("Pinging servers", Popup.WAIT)
+        App.treeview.wait_dialog.show_all()
+        thread = threading.Thread(target=_update_pings, args=())
+        thread.start()
 
     def _on_question_clicked(self, button: Gtk.Button) -> None:
         App.grid.notebook.toggle_keybindings()
@@ -1250,6 +1301,7 @@ class ModelManagerSingleton:
     def __init__(self):
         # packed ListStores
         self.filter_cache = {}
+        self.ping_cache = {}
         # stringwise (list) representation of the model
         self.control_model = None
         self.filtered = None
@@ -1285,9 +1337,11 @@ class ModelManagerSingleton:
                 if prior_map == "All maps":
                     rows = self.filter_map(filters)
                 else:
+                    App.right_panel.ping.set_sensitive(True)
                     rows = self.filter_toggle_on(filters, *args)
 
             case FilterMode.KEYWORD:
+                App.right_panel.ping.set_sensitive(True)
                 rows = self.filter_toggle_on(filters, *args)
 
             case FilterMode.TOGGLE_OFF:
@@ -1296,7 +1350,13 @@ class ModelManagerSingleton:
                 rows = self.filtered
 
             case FilterMode.TOGGLE_ON:
+                App.right_panel.ping.set_sensitive(True)
                 rows = self.filter_toggle_on(filters, *args)
+
+        if mode is not FilterMode.INITIAL:
+            for row in rows:
+                if row[7] in self.ping_cache:
+                    row[9] = self.ping_cache[row[7]]
 
         if len(rows) > 0:
             clone = ModelManager.new_model()
@@ -1370,9 +1430,9 @@ class ModelManagerSingleton:
             case "1PP":
                 rows = [row for row in rows if row[2] != "1PP"]
             case "Official":
-                rows = [row for row in rows if row[9] != "Official"]
+                rows = [row for row in rows if row[10] != "Official"]
             case "Unoffic.":
-                rows = [row for row in rows if row[9] != "Unoffic."]
+                rows = [row for row in rows if row[10] != "Unoffic."]
             case "Empty":
                 rows = [row for row in rows if row[4] != 0]
             case "Full":
@@ -1397,7 +1457,7 @@ class ModelManagerSingleton:
             case "Low pop":
                 rows = [row for row in rows if (row[4] / row[5] * 100) > 30]
             case "Modded":
-                rows = [row for row in rows if not row[10]]
+                rows = [row for row in rows if not row[11]]
         return rows
 
     def filter_toggle_on(self, filters: tuple, *args: str) -> list:
@@ -1417,7 +1477,7 @@ class ModelManagerSingleton:
 
     def new_model(self) -> Gtk.ListStore:
         return Gtk.ListStore(
-            str, str, str, str, int, int, int, str, int, str, bool
+            str, str, str, str, int, int, int, str, int, int, str, bool
         )
 
     def resync_model(self, addr: str, qport: int) -> None:
@@ -1433,6 +1493,8 @@ class ModelManagerSingleton:
         filters = App.right_panel.filters_vbox.get_filters()
         refiltered = self.filter_toggle_on(filters)
         self.set_filtered(refiltered)
+        self.set_success(True)
+        GLib.idle_add(App.treeview._filter_cleanup)
 
     def convert_model_to_list(self, model: Gtk.ListStore) -> list:
         return [[el for el in row] for row in model]
@@ -1441,6 +1503,9 @@ class ModelManagerSingleton:
         if rows is None:
             rows = []
         self.filtered = rows
+
+    def get_filtered(self) -> list:
+        return self.filtered
 
     def set_store(self, model: Gtk.ListStore | None) -> None:
         self.store = model
@@ -1461,6 +1526,7 @@ class ModelManagerSingleton:
         self.success = True
         self.filtered = None
         self.filter_cache = {}
+        self.ping_cache = {}
         if full:
             self.control_model = None
 
@@ -1610,9 +1676,12 @@ class TreeView(Gtk.TreeView):
             addr = model.get_value(it, 7)
             qport = model.get_value(it, 8)
             model.remove(it)
-        print(addr)
 
-        ModelManager.resync_model(addr, qport)
+        block_signals()
+        thread = threading.Thread(
+            target=ModelManager.resync_model, args=(addr, qport)
+        )
+        thread.start()
 
     def remove_from_history(self) -> None:
         record = self.get_record_string()
@@ -1660,7 +1729,7 @@ class TreeView(Gtk.TreeView):
         (model, pathlist) = sels
         path = pathlist[0]
         tree_iter = model.get_iter(path)
-        mods = model.get_value(tree_iter, 10)
+        mods = model.get_value(tree_iter, 11)
         return mods
 
     def is_in_favs(self) -> bool:
@@ -1973,7 +2042,7 @@ class TreeView(Gtk.TreeView):
         path = pathlist[0]
         model = self.get_model()
         if not model:
-            return
+            return None
         addr = model[path][7]
         qport = model[path][8]
         ip = addr.split(":")[0]
@@ -1993,6 +2062,12 @@ class TreeView(Gtk.TreeView):
         model = self.get_model()
         path = self.get_mpath()
         model[path][6] = players
+
+    def enable_ping_column(self, state: bool) -> None:
+        columns = self.get_columns()
+        for column in columns:
+            if column.get_title() == "Ping":
+                column.set_visible(state)
 
     def select_first_row(self):
         sel = self.get_selection()
@@ -2102,8 +2177,11 @@ class TreeView(Gtk.TreeView):
             case RowType.SCAN_LAN:
                 parsed = self._dump_lan(port)
             case RowType.SERVER_BROWSER:
+                App.treeview.enable_ping_column(False)
+                App.right_panel.enable_ping_button(True)
                 parsed = self._dump_api()
             case RowType.SAVED_SERVERS:
+                App.treeview.enable_ping_column(True)
                 favs = query_favorites()
                 if not favs:
                     ModelManager.set_success(False)
@@ -2112,6 +2190,7 @@ class TreeView(Gtk.TreeView):
                     return
                 parsed = self._dump_servers(favs)
             case RowType.RECENT_SERVERS:
+                App.treeview.enable_ping_column(True)
                 history = query_history()
                 if not history:
                     ModelManager.set_success(False)
@@ -2309,6 +2388,7 @@ class TreeView(Gtk.TreeView):
             "Queue",
             "IP",
             "Qport",
+            "Ping",
         ]
         for i, column_title in enumerate(browser_cols):
             renderer = Gtk.CellRendererText()
@@ -2318,7 +2398,10 @@ class TreeView(Gtk.TreeView):
             column.set_sort_column_id(i)
 
             if valid_json:
-                saved_size = data["cols"][column_title]
+                try:
+                    saved_size = data["cols"][column_title]
+                except KeyError:
+                    saved_size = 100
                 column.set_fixed_width(saved_size)
                 column.set_expand(True)
             else:
@@ -2428,6 +2511,7 @@ class TreeView(Gtk.TreeView):
             model.clear()
         ModelManager.wipe_cache(full=True)
 
+        App.right_panel.enable_ping_button(False)
         App.right_panel.filters_vbox.reinit_panel()
         self.set_selection_mode(Gtk.SelectionMode.SINGLE)
 
