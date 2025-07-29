@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.0-beta.2] 2025-07-29
+## Fixed
+- Missing parameters when closing application via window decorations
+
 ## [6.0.0-beta.1] 2025-07-29
 ## Added
 - Ping column to server browsing contexts

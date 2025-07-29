@@ -1007,7 +1007,7 @@ class OuterWindow(Gtk.Window):
         if not IS_STEAM_DECK:
             self.set_titlebar(self.hb)
 
-        self.connect("delete-event", self.halt_proc_and_quit)
+        self.connect("delete-event", self._on_delete_event)
         self.connect("key-press-event", self._on_keypress)
 
         self.set_border_width(10)
@@ -1067,6 +1067,13 @@ class OuterWindow(Gtk.Window):
             w, h = res["width"], res["height"]
             logger.info(f"Restoring window size to {w},{h}")
             self.set_default_size(w, h)
+
+    def _on_delete_event(
+            self,
+            window: "OuterWindow",
+            event: Gdk.EventKey
+    ) -> None:
+        self.halt_proc_and_quit()
 
     def halt_proc_and_quit(self) -> None:
         App.grid.terminate_treeview_process()
