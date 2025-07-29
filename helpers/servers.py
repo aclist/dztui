@@ -14,6 +14,7 @@ from typing import Union
 
 sys.path.append("a2s")
 import a2s  # noqa
+from a2s import dayzquery
 
 params = [
     r"\nor\1\map\chernarusplus\nor\1\map\sakhal\nor\1\map\enoch\empty\1\nor\1\map\namalsk",
@@ -196,6 +197,80 @@ class Ping:
     addr: str
     iteration: int
     ping: int
+
+
+@dataclass
+class Details:
+    data: Union[list, None]
+    description: str
+    success: bool
+
+
+def details(ip: str, qport: int) -> Details:
+    default_str = "None provided"
+
+    try:
+        info = a2s.info((ip, qport))
+    except TimeoutError:
+        return Details(None, default_str, False)
+    try:
+        rules = dayzquery.dayz_rules((ip, int(qport)))
+    except TimeoutError:
+        return Details(None, default_str, False)
+
+    try:
+        keywords = info.keywords.split(",")
+    except AttributeError:
+        return Details(None, default_str, False)
+
+    battleeye = "Disabled"
+    if "battleye" in keywords:
+        battleye = "Enabled"
+
+    day_accel = 0.0
+    night_accel = 0.0
+    for keyword in keywords:
+        if "etm" in keyword:
+            day_accel = float(keyword.lstrip("etm"))
+            day_accel = f"{day_accel:g}"
+        if "entm" in keywords:
+            night_accel = float(keyword.lstrip("entm"))
+            night_accel = f"{night_accel:g}"
+
+    try:
+        dlc = rules.dlc_flags
+        if dlc == 0:
+            dlc = "None"
+        if dlc == 2:
+            dlc = "Frostline"
+    except AttributeError:
+        dlc = "not specified"
+
+    try:
+        platform = rules.platform
+        if platform == "win":
+            platform = "Windows"
+        if platform == "?":
+            platform = "Linux"
+    except AttributeError:
+        platform = "not specified"
+
+    try:
+        description = rules.description.strip()
+        if description == "":
+            description = default_str
+    except AttributeError:
+        description = default_str
+
+    rows = [
+        ["DLC", dlc],
+        ["Battleye", battleye],
+        ["Daytime acceleration", f"{day_accel}x"],
+        ["Night-time acceleration", f"{night_accel}x"],
+        ["Platform", platform],
+    ]
+
+    return Details(rows, description, True)
 
 
 def ping(iteration: int, row: list) -> Ping:
