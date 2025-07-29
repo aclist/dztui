@@ -100,6 +100,7 @@ class Popup(Enum):
     ENTRY = 4
     RETURN = 5
     MODLIST = 6
+    DETAILS = 7
 
 
 class NotebookPage(Enum):
@@ -388,7 +389,7 @@ class ContextMenu(EnumWithAttrs):
         "action": "copy_clipboard",
     }
     SHOW_MODS = {"label": "Show server-side mods", "action": "show_mods"}
-    REFRESH_PING = {"label": "Refresh ping", "action": "refresh_ping"}
+    SHOW_DETAILS = {"label": "Server details", "action": "show_details"}
     REFRESH_PLAYERS = {
         "label": "Refresh player count",
         "action": "refresh_player_count",
@@ -560,6 +561,9 @@ def load_css() -> None:
     }
     .left-label {
         font-size: 1.3rem;
+    }
+    .details-heading {
+        font-size: 1.2rem
     }
     """
     prov = Gtk.CssProvider()
@@ -1682,6 +1686,13 @@ class TreeView(Gtk.TreeView):
         call_out("Remove from history", record)
         self.resync_with_manager()
 
+    def show_details(self) -> None:
+        model = self.get_model()
+        it = self.get_current_iter()
+        name = model.get_value(it, 0)
+        record = self.get_record_dict()
+        DetailsDialog(name, record["ip"], record["qport"])
+
     def show_mods(self) -> None:
         record = self.get_record_string()
         ModDialog(record)
@@ -1766,23 +1777,23 @@ class TreeView(Gtk.TreeView):
                 ContextMenu.COPY_NAME,
                 ContextMenu.COPY_CLIPBOARD,
                 ContextMenu.SHOW_MODS,
+                ContextMenu.SHOW_DETAILS,
                 ContextMenu.REFRESH_PLAYERS,
-                ContextMenu.REFRESH_PING,
             ],
             RowType.SCAN_LAN: [
                 ContextMenu.COPY_NAME,
                 ContextMenu.COPY_CLIPBOARD,
                 ContextMenu.SHOW_MODS,
+                ContextMenu.SHOW_DETAILS,
                 ContextMenu.REFRESH_PLAYERS,
-                ContextMenu.REFRESH_PING,
             ],
             RowType.SAVED_SERVERS: [
                 ContextMenu.REMOVE_SERVER,
                 ContextMenu.COPY_NAME,
                 ContextMenu.COPY_CLIPBOARD,
                 ContextMenu.SHOW_MODS,
+                ContextMenu.SHOW_DETAILS,
                 ContextMenu.REFRESH_PLAYERS,
-                ContextMenu.REFRESH_PING,
             ],
             RowType.RECENT_SERVERS: [
                 ContextMenu.ADD_SERVER,
@@ -1790,8 +1801,8 @@ class TreeView(Gtk.TreeView):
                 ContextMenu.COPY_NAME,
                 ContextMenu.COPY_CLIPBOARD,
                 ContextMenu.SHOW_MODS,
+                ContextMenu.SHOW_DETAILS,
                 ContextMenu.REFRESH_PLAYERS,
-                ContextMenu.REFRESH_PING,
             ],
         }
 
@@ -2699,6 +2710,10 @@ class GenericDialog(Gtk.MessageDialog):
                 dialog_type = Gtk.MessageType.INFO
                 button_type = Gtk.ButtonsType.OK
                 header_text = "Modlist"
+            case Popup.DETAILS:
+                dialog_type = Gtk.MessageType.INFO
+                button_type = Gtk.ButtonsType.OK
+                header_text = "Server details"
 
         # steam deck prints <2> if dialog title is duplicated
         Gtk.MessageDialog.__init__(
@@ -2906,6 +2921,98 @@ class LanDialog(Gtk.MessageDialog):
                     self.entry.set_visible(True)
                     self.entry.grab_focus()
                     self.ok.set_sensitive(False)
+
+
+class DetailsDialog(GenericDialog):
+    def __init__(self, server_name: str, ip: str, qport: str):
+        super().__init__(server_name, Popup.DETAILS)
+
+        dialog_box = self.get_content_area()
+        self.set_default_response(Gtk.ResponseType.OK)
+        self.set_size_request(800, 700)
+
+        self.ip = ip.split(":")[0]
+        self.qport = int(qport)
+        self.store = Gtk.ListStore(str, str, Pango.Weight)
+
+        self.view = Gtk.TreeView(
+            enable_search=False,
+            search_column=-1,
+            headers_visible=False,
+        )
+        self.view.connect("row-activated", self._on_row_activated)
+
+        for i, column_title in enumerate(["Item", "Details"]):
+            renderer = Gtk.CellRendererText(xalign=0)
+            if i == 0:
+                column = Gtk.TreeViewColumn(
+                    column_title, renderer, text=i, weight=2
+                )
+            else:
+                column = Gtk.TreeViewColumn(column_title, renderer, text=i)
+            column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
+            if i != 2:
+                self.view.append_column(column)
+            column.set_sort_column_id(i)
+
+        scrollable_tree = Gtk.ScrolledWindow()
+        scrollable_tree.add(self.view)
+
+        scrollable_message = Gtk.ScrolledWindow()
+        desc = Gtk.Label(label="Server message", valign=Gtk.Align.START)
+        add_class(desc, "details-heading")
+        box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL, halign=Gtk.Align.CENTER
+        )
+        self.description = Gtk.Label(justify=Gtk.Justification.CENTER)
+        sep = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        sep.set_margin_bottom(10)
+        for el in desc, sep, self.description:
+            box.add(el)
+        scrollable_message.add(box)
+
+        dialog_box.pack_start(scrollable_tree, True, True, 0)
+        dialog_box.pack_start(scrollable_message, True, True, 0)
+
+        self.wait_dialog = GenericDialog("Fetching details", Popup.WAIT)
+        self.wait_dialog.show_all()
+        thread = threading.Thread(
+            target=self._background, args=(self.wait_dialog, ip, qport)
+        )
+        thread.start()
+
+    def _on_row_activated(
+        self,
+        treeview: Gtk.TreeView,
+        tree_iter: Gtk.TreeIter,
+        col: Gtk.TreeViewColumn,
+    ) -> None:
+        self.destroy()
+
+    def _load(self) -> None:
+        if self.wait_dialog:
+            self.wait_dialog.destroy()
+        if self.success is False:
+            msg = """Error while contacting server, possibly timed out.
+            Please wait and try again.
+            """
+            spawn_dialog(msg, Popup.NOTIFY)
+            return
+        self.show_all()
+        self.run()
+        self.destroy()
+
+    def _background(
+        self, dialog: "GenericDialog", ip: str, qport: int
+    ) -> None:
+        response = Servers.details(self.ip, self.qport)
+        if response.success:
+            for row in response.data:
+                self.store.append(row + [Pango.Weight.BOLD])
+            self.view.set_model(self.store)
+            self.description.set_text(response.description)
+        self.success = response.success
+        GLib.idle_add(self._load)
 
 
 class ModDialog(GenericDialog):
