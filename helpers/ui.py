@@ -38,7 +38,7 @@ app_name_lower = app_name.lower()
 app_name_abbr = "dzg"
 delimiter = "␞"
 
-cache: dict[str, tuple[int, int]] = {}
+cache: dict[str, int] = {}
 config_vals: list[str] = []
 
 _VERSION: str
@@ -1261,7 +1261,6 @@ class CalcDist(multiprocessing.Process):
         self,
         widget: Gtk.Widget,
         addr: str,
-        qport: int,
         result_queue: multiprocessing.Queue,
         cache: dict,
     ):
@@ -1270,21 +1269,16 @@ class CalcDist(multiprocessing.Process):
         self.widget = widget
         self.result_queue = result_queue
         self.addr = addr
-        self.qport = str(qport)
         self.ip = addr.split(":")[0]
 
     def run(self) -> None:
         if self.addr in cache:
             logger.info(f"Address '{self.addr}' already in cache")
-            self.result_queue.put(
-                [self.addr, cache[self.addr][0], cache[self.addr][1]]
-            )
+            self.result_queue.put([self.addr, cache[self.addr]])
             return
         proc = call_out("get_dist", self.ip)
-        proc2 = call_out("test_ping", self.ip, self.qport)
         km = proc.stdout
-        ping = proc2.stdout
-        self.result_queue.put([self.addr, km, ping])
+        self.result_queue.put([self.addr, km])
 
 
 class ModelManagerSingleton:
@@ -1832,18 +1826,6 @@ class TreeView(Gtk.TreeView):
             self.menu.popup_at_pointer(event)
         self.menu.select_first(False)
 
-    def refresh_ping(self) -> None:
-        if not self.is_server_context(self.view):
-            return
-        record = App.treeview.get_record_dict()
-        try:
-            ip = record["ip"]
-            cache.pop(ip)
-        except KeyError:
-            pass
-        sel = App.treeview.get_selection()
-        App.treeview._on_tree_selection_changed(sel)
-
     def refresh_player_count(self) -> None:
         if not self.is_server_context(self.view):
             return
@@ -1886,14 +1868,12 @@ class TreeView(Gtk.TreeView):
                 grid.statusbar.update_server_meta()
                 return
             ip = record["ip"]
-            qport = record["qport"]
             if ip in cache:
-                km = cache[ip][0]
-                ping = cache[ip][1]
-                grid.statusbar.append_distance(km, ping)
+                km = cache[ip]
+                grid.statusbar.append_distance(km)
                 return
             self.emit("on_distcalc_started")
-            self.current_proc = CalcDist(self, ip, qport, self.queue, cache)
+            self.current_proc = CalcDist(self, ip, self.queue, cache)
             self.current_proc.start()
         else:
             grid.statusbar.refresh()
@@ -1941,8 +1921,6 @@ class TreeView(Gtk.TreeView):
             match event.keyval:
                 case Gdk.KEY_l:
                     self._on_button_release(self, event)
-                case Gdk.KEY_p:
-                    self.refresh_ping()
                 case Gdk.KEY_r:
                     self.refresh_player_count()
                 case Gdk.KEY_f:
@@ -3444,14 +3422,13 @@ class Statusbar(Gtk.Statusbar):
         if len(formatted) > 0:
             self.set_text(formatted)
 
-    def append_distance(self, dist: str, ping: str) -> None:
+    def append_distance(self, dist: str) -> None:
         if dist == "Unknown":
             dist = f"| Distance: {dist}"
         else:
             d = int(dist)
             dist = f"| Distance: {d:n} km"
-        ping = f" | Ping: {ping}"
-        self.set_text(self.players + dist + ping)
+        self.set_text(self.players + dist)
 
     def update_server_meta(self) -> None:
         model = App.treeview.get_model()
@@ -3558,9 +3535,8 @@ class Grid(Gtk.Grid):
         if latest_result:
             addr = latest_result[0]
             km = latest_result[1]
-            ping = latest_result[2]
-            cache[addr] = km, ping
-            self.statusbar.append_distance(km, ping)
+            cache[addr] = km
+            self.statusbar.append_distance(km)
         return True
 
 
