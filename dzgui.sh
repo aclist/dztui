@@ -542,13 +542,13 @@ fetch_a2s(){
     logger INFO "Updated A2S helper to sha '$sha'"
 }
 fetch_dzq(){
-    local sum="9caed1445c45832f4af87736ba3f9637"
+    local sum="0a334e1e144e76e560419d155435c91e"
     local file="$helpers_path/a2s/dayzquery.py"
     if [[ -f $file ]] && [[ $(get_hash "$file") == $sum ]]; then
         logger INFO "DZQ is current"
         return 0
     fi
-    local sha=3088bbfb147b77bc7b6a9425581b439889ff3f7f
+    local sha=a22a9f428cbe075d7dda62f78000296955eea92a
     local author="yepoleb"
     local repo="dayzquery"
     local url="https://raw.githubusercontent.com/$author/$repo/$sha/dayzquery.py"
@@ -585,11 +585,11 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="168865d5a0e7936e0f72da59dde6b6f4"
+        ["ui.py"]="ca457a16e9ac403f2d10e867fae60c7b"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["funcs"]="5d244114c501754a630988354306e470"
-        ["servers.py"]="dc23a9f15e5014be171054792cf3fc16"
+        ["servers.py"]="51839211af7f65bdc04bab5557bf9466"
     )
     local author="aclist"
     local repo="dztui"
