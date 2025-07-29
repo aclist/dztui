@@ -2939,6 +2939,7 @@ class DetailsDialog(GenericDialog):
             enable_search=False,
             search_column=-1,
             headers_visible=False,
+            fixed_height_mode=True
         )
         self.view.connect("row-activated", self._on_row_activated)
 
@@ -2954,6 +2955,7 @@ class DetailsDialog(GenericDialog):
             if i != 2:
                 self.view.append_column(column)
             column.set_sort_column_id(i)
+            column.set_expand(True)
 
         scrollable_tree = Gtk.ScrolledWindow()
         scrollable_tree.add(self.view)
@@ -3025,18 +3027,25 @@ class ModDialog(GenericDialog):
         self.set_size_request(800, 500)
 
         self.scrollable = Gtk.ScrolledWindow()
-        self.view = Gtk.TreeView(enable_search=False, search_column=-1)
+        self.view = Gtk.TreeView(
+                enable_search=False,
+                search_column=-1,
+                fixed_height_mode=True
+                )
         self.scrollable.add(self.view)
         set_surrounding_margins(self.scrollable, 20)
 
         self.view.connect("row-activated", self._on_row_activated)
 
         for i, column_title in enumerate(["Mod", "ID", "Installed"]):
-            renderer = Gtk.CellRendererText()
+            renderer = Gtk.CellRendererText(
+                    ellipsize=Pango.EllipsizeMode.END
+                    )
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             self.view.append_column(column)
             column.set_sort_column_id(i)
+            column.set_fixed_width(350)
         dialogBox.pack_end(self.scrollable, True, True, 0)
 
         wait_dialog = GenericDialog("Fetching modlist", Popup.WAIT)
