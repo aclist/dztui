@@ -1,5 +1,44 @@
 # Changelog
 
+## [6.0.0-beta.1] 2025-07-29
+## Added
+- Ping column to server browsing contexts
+- Server details dialog to server browsing contexts
+- Filter by modded servers
+- Breadcrumbs showing current menu context to top of window
+- Speed up load time and navigation of server tables
+- More robust threading and cache system when filtering servers
+- Dedicated changelog page
+- Dedicated keybindings page
+- Vim-style navigation keybindings
+- Additional validation on entry dialogs to prevent submitting empty text
+- Added "Return to main menu" button to dialog windows when failing to load server table
+- Dynamic context menus for modded servers
+- Additional keybindings for filter toggles
+
+## Fixed
+- Entry dialog sensitivity when validating API keys
+- Normalized buttons in dialogs and restored proper padding
+- GTK errors being emitted to stdout when inserting debug table
+- Suppress errors during pre-boot checks when mods are not installed
+- Centered filter checkboxes within panel
+- Do not pop unhighlight/select stale buttons if no stale mods exist
+- Improved keybinding interaction with side panels
+- Key stickiness when quickly navigating through entries in tables
+- Suppress typeahead search in mod dialogs
+- Do not trigger global API cooldown if no LAN/favorite servers are found
+- Fix table column expansion in server mod dialogs
+
+## Changed
+- Reduced global API cooldown from 60s to 30s
+- Clarify dialog messages when DayZ path could not be found
+- Auto-focus first item when opening context menus
+- Opacity setting on side buttons when in a different context
+- Refactored BM API key validation to account for new key format
+
+## Dropped
+- Ping readout in statusbar
+
 ## [5.8.0-beta.2] 2025-07-06
 ## Added
 - Filter servers by official/unofficial status

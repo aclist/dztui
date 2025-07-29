@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.8.0-beta.2
+version=6.0.0.beta-1
 
 #CONSTANTS
 aid=221100
@@ -542,13 +542,13 @@ fetch_a2s(){
     logger INFO "Updated A2S helper to sha '$sha'"
 }
 fetch_dzq(){
-    local sum="9caed1445c45832f4af87736ba3f9637"
+    local sum="0a334e1e144e76e560419d155435c91e"
     local file="$helpers_path/a2s/dayzquery.py"
     if [[ -f $file ]] && [[ $(get_hash "$file") == $sum ]]; then
         logger INFO "DZQ is current"
         return 0
     fi
-    local sha=3088bbfb147b77bc7b6a9425581b439889ff3f7f
+    local sha=a22a9f428cbe075d7dda62f78000296955eea92a
     local author="yepoleb"
     local repo="dayzquery"
     local url="https://raw.githubusercontent.com/$author/$repo/$sha/dayzquery.py"
@@ -585,11 +585,11 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="f128a97e744e9e11036d707198feb8a8"
+        ["ui.py"]="d6db191dca9e50bec32458a04eaac3a6"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="94287c75a5ae0a06a95dd439711e6fba"
-        ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
+        ["funcs"]="1cef1a9fab4b6428fdba5572ad002614"
+        ["servers.py"]="51839211af7f65bdc04bab5557bf9466"
     )
     local author="aclist"
     local repo="dztui"
@@ -631,7 +631,6 @@ fetch_helpers_by_sum(){
             logger INFO "Updated '$full_path' to sum '$sum'"
         fi
         [[ $file == "funcs" ]] && chmod +x "$full_path"
-        [[ $file == "lan" ]] && chmod +x "$full_path"
     done
     return 0
 }
@@ -926,7 +925,7 @@ create_config(){
 }
 varcheck(){
     local msg="Config file '$config_file' missing. Start first-time setup now?"
-    local msg2="The Steam paths set in your config file appear to be invalid. Restart first-time setup now?"
+    local msg2="The Steam paths set in your config file appear to be invalid (DayZ was moved or uninstalled). Restart first-time setup now?"
     if [[ ! -f $config_file ]]; then
         qdialog "$msg" "Yes" "Exit"
         if [[ $? -eq 1 ]]; then
@@ -1006,6 +1005,7 @@ legacy_cols(){
     mv $cols_file.new $cols_file
 }
 stale_mod_signatures(){
+    [[ ! -f "$versions_file" ]] && return
     local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
     if [[ -d $workshop_dir ]]; then
         readarray -t old_mod_ids < <(awk -F, '{print $1}' $versions_file)
