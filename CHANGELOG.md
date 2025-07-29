@@ -27,6 +27,7 @@
 - Key stickiness when quickly navigating through entries in tables
 - Suppress typeahead search in mod dialogs
 - Do not trigger global API cooldown if no LAN/favorite servers are found
+- Fix table column expansion in server mod dialogs
 
 ## Changed
 - Reduced global API cooldown from 60s to 30s
