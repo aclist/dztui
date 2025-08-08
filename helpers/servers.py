@@ -14,10 +14,10 @@ from typing import Union
 
 sys.path.append("a2s")
 import a2s  # noqa
-from a2s import dayzquery
+from a2s import dayzquery  # noqa
 
 params = [
-    r"\nor\1\map\chernarusplus\nor\1\map\sakhal\nor\1\map\enoch\empty\1\nor\1\map\namalsk",
+    r"\nor\1\map\chernarusplus\nor\1\map\sakhal\nor\1\map\enoch\empty\1\nor\1\map\namalsk",  # noqa
     r"\map\namalsk\empty\1",
     r"\map\namalsk\noplayers\1",
     r"\map\chernarusplus\empty\1",
@@ -223,7 +223,7 @@ def details(ip: str, qport: int) -> Details:
     except AttributeError:
         return Details(None, default_str, False)
 
-    battleeye = "Disabled"
+    battleye = "Disabled"
     if "battleye" in keywords:
         battleye = "Enabled"
 
@@ -289,7 +289,7 @@ def ping(iteration: int, row: list) -> Ping:
 
     try:
         res = query_direct(ip, qport, 0.5)
-    except Exception as e:
+    except Exception:
         pass
 
     if res is None:
