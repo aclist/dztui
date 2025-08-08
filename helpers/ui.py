@@ -2969,6 +2969,7 @@ class DetailsDialog(GenericDialog):
 
         scrollable_tree = Gtk.ScrolledWindow()
         scrollable_tree.add(self.view)
+        scrollable_tree.set_size_request(700, 200)
 
         scrollable_message = Gtk.ScrolledWindow()
         desc = Gtk.Label(label="Server message", valign=Gtk.Align.START)
@@ -2976,7 +2977,9 @@ class DetailsDialog(GenericDialog):
         box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL, halign=Gtk.Align.CENTER
         )
-        self.description = Gtk.Label(justify=Gtk.Justification.CENTER)
+        self.description = Gtk.Label(
+            justify=Gtk.Justification.CENTER, wrap=True
+        )
         sep = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         sep.set_margin_bottom(10)
         for el in desc, sep, self.description:
