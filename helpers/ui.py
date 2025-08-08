@@ -63,8 +63,8 @@ funcs = f"{helpers_path}/funcs"
 mods_temp_file = f"{cache_path}/{app_name_abbr}.mods_temp"
 stale_mods_temp_file = f"{cache_path}/{app_name_abbr}.stale_mods_temp"
 servers_path = f"{cache_path}/{app_name_abbr}.servers"
-config_path = f"{user_path}/.config"
-config_file = f"{user_path}/.config/dztuirc"
+config_path = f"{user_path}/.config/dztui"
+config_file = f"{config_path}/dztuirc"
 history_file = f"{state_path}/{app_name_abbr}.history"
 
 logger = logging.getLogger(__name__)
