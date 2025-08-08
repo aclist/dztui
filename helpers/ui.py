@@ -1201,6 +1201,8 @@ class RightPanel(Gtk.Box):
         self.filters_vbox.set_unique_maps(rows)
 
     def toggle_debug(self) -> None:
+        if type(App.window.get_focus()) is Gtk.Entry:
+            return
         state = self.debug_toggle.get_active()
         self.debug_toggle.set_active(not state)
 
