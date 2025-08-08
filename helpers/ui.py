@@ -1154,7 +1154,6 @@ class Toast(Gtk.EventBox):
         self.set_visible(True)
 
     def _defer_fade(self) -> Literal[False]:
-        """Defers fade out of toast"""
         GLib.timeout_add(30, self.fade_out)
         return False
 
