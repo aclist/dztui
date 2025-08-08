@@ -2677,6 +2677,17 @@ class TreeView(Gtk.TreeView):
             case WindowContext.TABLE_MODS | WindowContext.TABLE_LOG:
                 self.update_quad_column(cr)
             case WindowContext.TABLE_SERVER | WindowContext.TABLE_API:
+                record = self.get_record_dict()
+                if record is None:
+                    return
+                if Servers.is_passworded(record["ip"], int(record["qport"])):
+                    msg = (
+                        "This server is password-protected and you will be "
+                        "prompted when connecting. Do you want to proceed?"
+                    )
+                    res = spawn_dialog(msg, Popup.CONFIRM)
+                    if res is True:
+                        return
                 self._attempt_connection()
             case _:  # any other non-server option from the main menu
                 process_tree_option(output)
