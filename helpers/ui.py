@@ -611,7 +611,7 @@ def block_signals(state: bool = True) -> None:
         )
 
 
-def save_res_and_quit() -> None:
+def save_res_and_quit(*args) -> None:
     if App.window.props.is_maximized:
         Gtk.main_quit()
         return
@@ -622,7 +622,7 @@ def save_res_and_quit() -> None:
         j = json.dumps(data, indent=2)
         with open(res_path, "w") as outfile:
             outfile.write(j)
-        logger.info(f"Wrote initial window size to '{res_path}'")
+        logger.info(f"Wrote window size to '{res_path}'")
 
     if os.path.isfile(res_path):
         with open(res_path, "r") as infile:
