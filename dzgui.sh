@@ -513,7 +513,7 @@ lock(){
     ps -p $pid -o pid= >/dev/null 2>&1
     res=$?
     if [[ $res -eq 0 ]]; then
-        local msg="DZGUI already running ($pid)"
+        local msg="DZGUI is already running ($pid)"
         raise_error_and_quit "$msg"
     elif [[ $pid == $$ ]]; then
         :
