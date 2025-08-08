@@ -931,7 +931,7 @@ def process_tree_option(choice: RowType) -> None:
         return
 
     if command == RowType.CHANGELOG:
-        App.grid.notebook.set_page_enum(NotebookPage.CHANGELOG)
+        App.grid.notebook.set_page_by_enum(NotebookPage.CHANGELOG)
         return
 
     match command.dict["type"]:
@@ -1032,7 +1032,7 @@ class OuterWindow(Gtk.Window):
 
         load_css()
         App.ready = True
-        App.grid.notebook.set_page_enum(NotebookPage.MAIN)
+        App.grid.notebook.set_page_by_enum(NotebookPage.MAIN)
         App.treeview.grab_focus()
 
     def _on_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
@@ -2494,7 +2494,7 @@ class TreeView(Gtk.TreeView):
             row = (label,)
             row_store.append(row)
         App.grid.statusbar.refresh()
-        App.grid.notebook.set_page_enum(NotebookPage.MAIN)
+        App.grid.notebook.set_page_by_enum(NotebookPage.MAIN)
         self.grab_focus()
 
     @signal_emission
@@ -3487,7 +3487,7 @@ class Notebook(Gtk.Notebook):
             self.set_current_page(self.prior_page)
         else:
             self.prior_page = self.get_current_page()
-            self.set_page_enum(NotebookPage.KEYS)
+            self.set_page_by_enum(NotebookPage.KEYS)
 
     def focus_current(self) -> None:
         widget = self.get_page()
@@ -3502,7 +3502,7 @@ class Notebook(Gtk.Notebook):
             return None
         return widget
 
-    def set_page_enum(self, enum: NotebookPage) -> None:
+    def set_page_by_enum(self, enum: NotebookPage) -> None:
         self.prior_page = self.get_current_page()
         self.set_current_page(enum.value)
         self.focus_current()
