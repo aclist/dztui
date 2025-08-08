@@ -1071,9 +1071,7 @@ class OuterWindow(Gtk.Window):
             self.set_default_size(w, h)
 
     def _on_delete_event(
-            self,
-            window: "OuterWindow",
-            event: Gdk.EventKey
+        self, window: "OuterWindow", event: Gdk.EventKey
     ) -> None:
         self.halt_proc_and_quit()
 
@@ -2951,7 +2949,7 @@ class DetailsDialog(GenericDialog):
             enable_search=False,
             search_column=-1,
             headers_visible=False,
-            fixed_height_mode=True
+            fixed_height_mode=True,
         )
         self.view.connect("row-activated", self._on_row_activated)
 
@@ -3040,19 +3038,15 @@ class ModDialog(GenericDialog):
 
         self.scrollable = Gtk.ScrolledWindow()
         self.view = Gtk.TreeView(
-                enable_search=False,
-                search_column=-1,
-                fixed_height_mode=True
-                )
+            enable_search=False, search_column=-1, fixed_height_mode=True
+        )
         self.scrollable.add(self.view)
         set_surrounding_margins(self.scrollable, 20)
 
         self.view.connect("row-activated", self._on_row_activated)
 
         for i, column_title in enumerate(["Mod", "ID", "Installed"]):
-            renderer = Gtk.CellRendererText(
-                    ellipsize=Pango.EllipsizeMode.END
-                    )
+            renderer = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             self.view.append_column(column)
