@@ -3224,7 +3224,7 @@ class EntryDialog(GenericDialog):
 
 
 class ScrollableNote(Gtk.Box):
-    def __init__(self, content_box: Gtk.Box):
+    def __init__(self, content_box: Gtk.Box, back_button=True):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
         self.scrollable = Gtk.ScrolledWindow()
@@ -3233,12 +3233,13 @@ class ScrollableNote(Gtk.Box):
         self.back_button = Gtk.Button(
             label="Back", hexpand=True, halign=Gtk.Align.CENTER
         )
-        self.back_button.connect("clicked", self._on_back_clicked)
 
         self.gutter = Gtk.Box(
             orientation=Gtk.Orientation.HORIZONTAL, valign=Gtk.Align.END
         )
-        self.gutter.add(self.back_button)
+        if back_button:
+            self.gutter.add(self.back_button)
+            self.back_button.connect("clicked", self._on_back_clicked)
 
         self.scrollable.add(content_box)
         self.add(self.scrollable)
