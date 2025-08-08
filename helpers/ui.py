@@ -101,6 +101,7 @@ class Popup(Enum):
     RETURN = 5
     MODLIST = 6
     DETAILS = 7
+    QUIT = 8
 
 
 class NotebookPage(Enum):
@@ -860,8 +861,7 @@ def process_shell_return_code(
             process_tree_option(RowType.HANDSHAKE)
         case 255:  # dzgui version update
             msg = "Update complete. Please close DZGUI and restart."
-            spawn_dialog(msg, Popup.NOTIFY)
-            save_res_and_quit()
+            spawn_dialog(msg, Popup.QUIT)
 
 
 def call_on_thread(
@@ -2697,11 +2697,7 @@ class GenericDialog(Gtk.MessageDialog):
                 dialog_type = Gtk.MessageType.INFO
                 button_type = Gtk.ButtonsType.NONE
                 header_text = "Please wait"
-            case Popup.NOTIFY:
-                dialog_type = Gtk.MessageType.INFO
-                button_type = Gtk.ButtonsType.OK
-                header_text = "Notice"
-            case Popup.RETURN:
+            case Popup.NOTIFY | Popup.RETURN | Popup.QUIT:
                 dialog_type = Gtk.MessageType.INFO
                 button_type = Gtk.ButtonsType.OK
                 header_text = "Notice"
@@ -2747,6 +2743,13 @@ class GenericDialog(Gtk.MessageDialog):
             ok.set_label(button_label)
             ok.connect("clicked", self._return_to_main_menu)
             self.connect("delete-event", self._return_to_main_menu)
+
+        if mode == Popup.QUIT:
+            button_label = "Exit"
+            ok = self.action_area.get_children()[0]
+            ok.set_label(button_label)
+            ok.connect("clicked", save_res_and_quit)
+            self.connect("delete-event", save_res_and_quit)
 
         self.set_default_response(Gtk.ResponseType.OK)
         self.set_size_request(500, 0)
