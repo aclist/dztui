@@ -88,6 +88,15 @@ If this issue persists, your API key may be defunct.
 """
 
 
+class Preferences(Enum):
+    STEAM = 1
+    BM = 2
+    WINDOW = 3
+    CLIENT = 4
+    NAME = 5
+    INSTALL = 6
+
+
 class Port(Enum):
     DEFAULT = 1
     CUSTOM = 2
@@ -105,10 +114,11 @@ class Popup(Enum):
 
 
 class NotebookPage(Enum):
+    # enums correspond to the page in linear order
     MAIN = 0
     CHANGELOG = 1
     KEYS = 2
-    SETTINGS = 3
+    OPTIONS = 3
 
 
 class Command(Enum):
@@ -206,6 +216,7 @@ class RowType(EnumWithAttrs):
         "label": "View changelog",
         "tooltip": "Opens the DZGUI changelog in a dialog window",
     }
+    OPTIONS = {"label": "Options", "tooltip": None}
     KEYBINDINGS = {"label": "Keybindings", "tooltip": None}
     SHOW_LOG = {
         "label": "Show debug log",
@@ -435,13 +446,17 @@ class WindowContext(EnumWithAttrs):
     }
     MANAGE = {
         "label": "Manage",
-        "rows": [RowType.ADD_BY_IP, RowType.ADD_BY_ID, RowType.CHNG_FAV],
+        "rows": [
+            RowType.ADD_BY_IP,
+            RowType.ADD_BY_ID,
+            RowType.CHNG_FAV,
+            RowType.LIST_MODS,
+        ],
         "called_by": [],
     }
     OPTIONS = {
-        "label": "Options",
+        "label": "OPTIONS",
         "rows": [
-            RowType.LIST_MODS,
             RowType.TGL_BRANCH,
             RowType.TGL_INSTALL,
             RowType.TGL_STEAM,
@@ -450,7 +465,6 @@ class WindowContext(EnumWithAttrs):
             RowType.CHNG_STEAM_API,
             RowType.CHNG_BM_API,
             RowType.FORCE_UPDATE,
-            RowType.DUMP_LOG,
         ],
         "called_by": [],
     }
@@ -459,6 +473,7 @@ class WindowContext(EnumWithAttrs):
         "rows": [
             RowType.CHANGELOG,
             RowType.SHOW_LOG,
+            RowType.DUMP_LOG,
             RowType.DOCS,
             RowType.DOCS_FALLBACK,
             RowType.BUGS,
@@ -562,6 +577,10 @@ def load_css() -> None:
         font-size: 1.5rem;
         font-weight: 800;
         margin-bottom: 0.5rem;
+    }
+    .settings-subheading {
+        font-size: 1.2rem;
+        font-weight: 700;
     }
     .left-label {
         font-size: 1.3rem;
@@ -843,6 +862,20 @@ def process_shell_return_code(
             process_tree_option(RowType.CHNG_STEAM_API)
         case 6:  # return silently
             pass
+        case 78:  # failed settings update
+            spawn_dialog("Invalid Steam API key, reverting", Popup.NOTIFY)
+            App.notebook.settings.revert(Preferences.STEAM)
+        case 79:  # failed settings update
+            spawn_dialog(
+                "Invalid Battlemetrics API key, reverting", Popup.NOTIFY
+            )
+            App.notebook.settings.revert(Preferences.BM)
+        case 80:  # pop toast after successful settings change
+            config_vals.clear()
+            for i in query_config():
+                config_vals.append(i)
+            App.window.toast.set_text_and_fade("Settings updated!")
+            App.notebook.settings.populate_settings()
         case 90:  # used to update configs and metadata in-place
             config_vals.clear()
             for i in query_config():
@@ -991,9 +1024,6 @@ def process_user_input(enum: RowType) -> None:
     logger.info(f"User entered: '{response}'")
 
     show_wait_dialog = True
-    # this is the only instantaneous toggle, no wait dialog necessary
-    if enum == RowType.CHNG_PLAYER:
-        show_wait_dialog = False
     wait_msg = "Working"
     call_on_thread(
         show_wait_dialog, cmd_string, wait_msg, response, choice=enum
@@ -1283,6 +1313,11 @@ class ButtonBox(Gtk.Box):
         if context == ButtonType.EXIT:
             logger.info("Normal user exit")
             save_res_and_quit()
+            return
+
+        if context == ButtonType.OPTIONS:
+            App.notebook.settings.populate_settings()
+            App.notebook.set_page_by_enum(NotebookPage.OPTIONS)
             return
 
         cols = App.treeview.get_columns()
@@ -3311,10 +3346,436 @@ class ScrollableNote(Gtk.Box):
 
     @update_window_labels
     def _on_back_clicked(self, button: Gtk.Button) -> None:
-        if App.notebook.get_page() == NotebookPage.KEYS.value:
-            App.notebook.toggle_keybindings()
+        App.notebook.return_prior()
+
+
+class InfoEventBox(Gtk.EventBox):
+    def __init__(self, text: str):
+        super().__init__(margin_start=10)
+
+        self.text = text
+
+        self.icon = Gtk.Image.new_from_icon_name(
+            "help-about-symbolic", Gtk.IconSize.LARGE_TOOLBAR
+        )
+        self.icon.set_opacity(0.8)
+        box = Gtk.Box()
+        box.add(self.icon)
+
+        self.connect("enter-notify-event", self._on_enter_tooltip)
+        self.connect("leave-notify-event", self._on_leave_tooltip)
+        self.add(box)
+
+    def _on_enter_tooltip(
+        self, eventbox: Gtk.EventBox, eventcrossing: Gdk.EventCrossing
+    ) -> None:
+        self.icon.set_opacity(1)
+        App.grid.statusbar.set_text(self.text)
+
+    def _on_leave_tooltip(
+        self, eventbox: Gtk.EventBox, eventcrossing: Gdk.EventCrossing
+    ) -> None:
+        self.icon.set_opacity(0.8)
+        App.grid.statusbar.set_text("")
+
+
+class LeftLabel(Gtk.Label):
+    def __init__(self, text: str, tooltip: str = ""):
+        super().__init__(
+            label=text,
+            halign=Gtk.Align.START,
+        )
+        self.set_tooltip_text(tooltip)
+        pass
+
+
+class Options(Gtk.Box):
+    def __init__(self):
+        super().__init__(
+            orientation=Gtk.Orientation.VERTICAL,
+            margin_start=10,
+            margin_end=10,
+        )
+
+        self.DEFAULT_WIDTH = 1
+        self.DEFAULT_HEIGHT = 1
+
+        label = Gtk.Label(label="Options")
+        label.set_halign(Gtk.Align.CENTER)
+        add_class(label, "page-heading")
+        self.add(label)
+
+        self.steam_entry = None
+        self.bm_entry = None
+
+        self.steam_box = self._make_submit_field(
+            "Enter your Steam API key", Preferences.STEAM, True
+        )
+        self.bm_box = self._make_submit_field(
+            "Enter your Battlemetrics API key", Preferences.BM, True
+        )
+        api_rows = [
+            [LeftLabel("Steam API key"), self.steam_box],
+            [LeftLabel("Battlemetrics API key"), self.bm_box],
+        ]
+
+        self.player_box = self._make_submit_field(
+            "Identifies you to other players in-game", Preferences.NAME
+        )
+        self.fullscreen_toggle = self.make_binary_radio(
+            "Last used dimensions",
+            "Always fullscreen",
+            Preferences.WINDOW,
+        )
+        self.steam_toggle = self.make_binary_radio(
+            "Steam", "Flatpak (experimental)", Preferences.CLIENT
+        )
+
+        pref_rows = [
+            [LeftLabel("Steam client"), self.steam_toggle],
+            [LeftLabel("Window size at boot"), self.fullscreen_toggle],
+            [LeftLabel("Player name"), self.player_box],
+        ]
+
+        self.mod_install_toggle = self.make_binary_radio(
+            "Manual", "Auto", Preferences.INSTALL
+        )
+        self.force_button = Gtk.Button(label="Update")
+        self.force_button.connect("clicked", self._on_force_update_clicked)
+        # sensitivity state is set after config file is loaded
+        self.force_button.set_sensitive(False)
+
+        msg = (
+            "Manual: prompt to subscribe to mods in Steam. "
+            "Auto: unmanned downloads."
+        )
+        eb = InfoEventBox(msg)
+
+        msg = "Synchronize all local mods. Automatic mode must be enabled."
+        eb2 = InfoEventBox(msg)
+
+        mod_rows = [
+            [LeftLabel("Mod install mode"), self.mod_install_toggle, eb],
+            [LeftLabel("Force update local mods"), self.force_button, eb2],
+        ]
+
+        self.branch_combo = Gtk.ComboBoxText()
+        self.branch_combo.append_text("Stable")
+        self.branch_combo.append_text("Testing")
+        self.branch_combo.set_active(0)
+        self.branch_combo.connect("changed", self._on_branch_changed)
+
+        msg = (
+            "Stable: only contains stable features. "
+            "Testing: pre-release beta, contains new features."
+        )
+        eb = InfoEventBox(msg)
+
+        version_rows = [[LeftLabel("Branch"), self.branch_combo, eb]]
+
+        api_grid = self._make_grid(api_rows)
+        prefs_grid = self._make_grid(pref_rows)
+        mods_grid = self._make_grid(mod_rows)
+        version_grid = self._make_grid(version_rows)
+
+        col = 1
+        row = 1
+        grid = Gtk.Grid(
+            orientation=Gtk.Orientation.VERTICAL,
+            row_spacing=30,
+            hexpand=True,
+        )
+
+        for frame in [
+            self.make_frame(api_grid, "API Keys"),
+            self.make_frame(prefs_grid, "Preferences"),
+            self.make_frame(mods_grid, "Mods"),
+            self.make_frame(version_grid, "Version"),
+        ]:
+            grid.attach(
+                frame, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT
+            )
+            row += 1
+
+        self.scrollable = Gtk.ScrolledWindow(vexpand=True)
+        self.scrollable.add(grid)
+        self.add(self.scrollable)
+
+    def _make_submit_field(
+        self,
+        placeholder: str,
+        context: Preferences,
+        private: bool = False,
+    ) -> Gtk.Box:
+
+        entry = Gtk.Entry(placeholder_text=placeholder, hexpand=True)
+        button = Gtk.Button(label="Save")
+
+        entry.sibling = button
+        entry.get_property("buffer").sibling = button
+
+        button.connect("clicked", self._on_save_clicked, entry, context)
+        entry.connect("insert-text", self._on_text_typed, context)
+        entry.connect("activate", self._on_field_activated, context)
+        entry.get_property("buffer").connect(
+            "deleted-text", self._on_text_deleted, context
+        )
+
+        if private:
+            entry.set_icon_from_icon_name(
+                Gtk.EntryIconPosition.SECONDARY, "view-reveal-symbolic"
+            )
+            entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
+            entry.connect("icon-release", self._on_icon_release)
+            entry.set_visibility(False)
+
+            if context == Preferences.STEAM:
+                self.steam_entry = entry
+            else:
+                self.bm_entry = entry
+
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        box.add(entry)
+        box.add(button)
+
+        return box
+
+    def _on_field_activated(
+        self, entry: Gtk.Entry, context: Preferences
+    ) -> None:
+        text = entry.get_text()
+        if not self._is_valid_text(text, context):
             return
-        App.notebook.set_page_enum(NotebookPage.MAIN)
+        self._on_save_clicked(None, entry, context)
+
+    def _make_grid(self, rows: list) -> Gtk.Grid:
+        grid = Gtk.Grid(
+            orientation=Gtk.Orientation.VERTICAL,
+            column_spacing=10,
+            row_spacing=5,
+            margin_start=5,
+            margin_end=5,
+            margin_top=10,
+            margin_bottom=10,
+        )
+        row = 1
+        for record in rows:
+            col = 1
+            for el in record:
+                grid.attach(
+                    el, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT
+                )
+                col += 1
+            row += 1
+        return grid
+
+    def _on_save_clicked(
+        self, button: Gtk.Button | None, entry: Gtk.Entry, context: Preferences
+    ) -> None:
+        show_wait_dialog = True
+        wait_msg = "Working"
+        button.set_sensitive(False)
+        match context:
+            case Preferences.NAME:
+                toggle = RowType.CHNG_PLAYER
+                show_wait_dialog = False
+                text = entry.get_text().strip()
+            case Preferences.STEAM:
+                toggle = RowType.CHNG_STEAM_API
+                text = "".join(entry.get_text().split())
+            case Preferences.BM:
+                toggle = RowType.CHNG_BM_API
+                text = "".join(entry.get_text().split())
+        cmd_string = toggle.dict["label"]
+        call_on_thread(show_wait_dialog, cmd_string, wait_msg, text)
+
+    def revert(self, mode: Preferences) -> None:
+        if mode == Preferences.STEAM:
+            self.steam_entry.set_text(self.old_steam)
+        else:
+            self.bm_entry.set_text(self.old_bm)
+        pass
+
+    def _on_force_update_clicked(self, button: Gtk.Button) -> None:
+        wait_msg = "Updating mods"
+        cmd = "Force update local mods"
+        show_wait_dialog = True
+        call_on_thread(show_wait_dialog, cmd, wait_msg, "")
+
+    def _on_branch_changed(self, combo: Gtk.ComboBoxText) -> None:
+        # prevent triggering on initial init
+        if App.treeview.subpage is None:
+            return
+        # TODO: process_toggle(RowType.TGL_BRANCH)
+
+    def _on_radio_toggled(
+        self, button: Gtk.RadioButton, context: Preferences
+    ) -> None:
+        if App.treeview.subpage is None:
+            return
+        match context:
+            case Preferences.CLIENT:
+                toggle = RowType.TGL_STEAM
+            case Preferences.INSTALL:
+                toggle = RowType.TGL_INSTALL
+                state = button.get_group()[0].get_active()
+                self.force_button.set_sensitive(state)
+            case Preferences.WINDOW:
+                toggle = RowType.TGL_FULLSCREEN
+        process_toggle(toggle)
+
+    def _is_valid_text(self, text: str, context: Preferences) -> bool:
+        if text.isspace():
+            return False
+        if len(text) == 0:
+            return False
+
+        match context:
+            case Preferences.NAME:
+                old = self.old_name
+            case Preferences.STEAM:
+                old = self.old_steam
+            case Preferences.BM:
+                old = self.old_bm
+        if text == old:
+            return False
+        return True
+
+    def _on_text_deleted(
+        self,
+        buffer: Gtk.EntryBuffer,
+        position: int,
+        chars: int,
+        context: Preferences,
+    ) -> None:
+
+        text = buffer.get_text()
+        state = self._is_valid_text(text, context)
+        buffer.sibling.set_sensitive(state)
+
+    def _on_text_typed(
+        self,
+        entry: Gtk.Entry,
+        text: str,
+        length: int,
+        pos: int,
+        context: Preferences,
+    ) -> None:
+
+        buffer = entry.get_property("buffer")
+        text = buffer.get_text() + text
+        state = self._is_valid_text(text, context)
+        entry.sibling.set_sensitive(state)
+
+    def make_binary_radio(
+        self,
+        first_option: str,
+        second_option: str,
+        context: Preferences,
+    ) -> Gtk.Box:
+
+        hbox = Gtk.Box(spacing=5, halign=Gtk.Align.START)
+        radio1 = Gtk.RadioButton.new_with_label(None, first_option)
+        radio2 = Gtk.RadioButton.new_from_widget(radio1)
+        radio2.set_label(second_option)
+        radio1.connect("toggled", self._on_radio_toggled, context)
+        hbox.pack_start(radio1, False, False, 0)
+        hbox.pack_start(radio2, False, False, 0)
+
+        return hbox
+
+    def make_frame(self, widget: Gtk.Widget, text: str) -> Gtk.Box:
+        label = Gtk.Label(label=text)
+        label.set_halign(Gtk.Align.START)
+        add_class(label, "settings-subheading")
+
+        frame = Gtk.Frame(hexpand=True)
+        frame.add(widget)
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        box.add(label)
+        box.add(frame)
+
+        return box
+
+    def populate_settings(self) -> None:
+        if not os.path.isfile(config_file):
+            msg = (
+                "DZGUI configuration file not found. "
+                "Please exit and restart to regenerate it."
+            )
+            spawn_dialog(msg, Popup.QUIT)
+        config_vals.clear()
+        for i in query_config():
+            config_vals.append(i)
+
+        branch = config_vals[0]
+        install = config_vals[2]
+        name = config_vals[3]
+        client = config_vals[5]
+        fullscreen = config_vals[6]
+
+        try:
+            steam = query_config("steam_api")[0]
+            bm = query_config("api_key")[0]
+        except IndexError:
+            return
+
+        self.old_steam = steam
+        self.old_bm = bm
+        self.old_name = name
+
+        self.steam_entry.set_text(steam)
+        self.bm_entry.set_text(bm)
+        self.player_box.get_children()[0].set_text(name)
+
+        if install == "1":
+            radio = 1
+            self.force_button.set_sensitive(True)
+        else:
+            radio = 0
+        self.mod_install_toggle.get_children()[radio].set_active(True)
+
+        if client == "flatpak":
+            radio = 1
+        else:
+            radio = 0
+        self.steam_toggle.get_children()[radio].set_active(True)
+
+        if fullscreen == "true":
+            radio = 1
+        else:
+            radio = 0
+        self.fullscreen_toggle.get_children()[radio].set_active(True)
+
+        for field in (
+            [name, self.player_box],
+            [steam, self.steam_box],
+            [bm, self.bm_box],
+        ):
+            if field[0] == "":
+                field[1].get_children()[1].set_sensitive(False)
+
+        if branch == "testing":
+            self.branch_combo.set_active(1)
+        else:
+            self.branch_combo.set_active(0)
+
+    def _on_icon_release(
+        self,
+        widget: Gtk.Entry,
+        icon_pos: Gtk.EntryIconPosition,
+        event: Gdk.Event,
+    ) -> None:
+        visible = widget.get_visibility()
+        if visible:
+            icon = "view-reveal-symbolic"
+            state = False
+        else:
+            icon = "view-conceal-symbolic"
+            state = True
+        widget.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, icon)
+        widget.set_visibility(state)
 
 
 class KeybindingsDialog(Gtk.Box):
@@ -3490,12 +3951,16 @@ class Notebook(Gtk.Notebook):
         self.clog.show_all()
         self.append_page(self.clog)
         self.prior_page: int
-        self.prior_subpage = None
 
         self.keys = ScrollableNote(KeybindingsDialog())
         self.keys.type = RowType.KEYBINDINGS
         self.keys.show_all()
         self.append_page(self.keys)
+
+        self.settings = Options()
+        self.settings.type = RowType.OPTIONS
+        self.settings.show_all()
+        self.append_page(self.settings)
 
         self.connect("switch-page", self._on_page_changed)
         self.connect("key-press-event", self._on_keypress)
@@ -3541,9 +4006,22 @@ class Notebook(Gtk.Notebook):
             case Gdk.KEY_G:
                 self._set_adjustment(VAdjustment.BOTTOM)
 
+    def return_prior(self) -> None:
+        page = self.get_nth_page(self.prior_page)
+        if hasattr(page, "steam_entry"):
+            # Gtk.Notebook focuses the first input field when changing pages
+            entries = page.steam_entry, page.bm_entry
+            for entry in entries:
+                entry.set_position(-1)
+                entry.set_can_focus(False)
+            self.set_current_page(self.prior_page)
+            for entry in entries:
+                entry.set_can_focus(True)
+        self.set_current_page(self.prior_page)
+
     def toggle_keybindings(self) -> None:
         if self.get_current_page() == NotebookPage.KEYS.value:
-            self.set_current_page(self.prior_page)
+            self.return_prior()
         else:
             self.prior_page = self.get_current_page()
             self.set_page_by_enum(NotebookPage.KEYS)
