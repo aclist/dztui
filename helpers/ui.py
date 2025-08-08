@@ -1059,8 +1059,7 @@ class OuterWindow(Gtk.Window):
             return
         elif query_config("fullscreen")[0] == "true":
             logger.info("User preference for 'fullscreen' is 'true'")
-            self.maximize()
-            return
+            self.fullscreen()
 
         try:
             with open(res_path, "r") as infile:
