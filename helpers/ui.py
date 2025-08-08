@@ -3507,12 +3507,7 @@ class Notebook(Gtk.Notebook):
     def _on_page_changed(
         self, notebook: "Notebook", page: Gtk.Widget, page_num: int
     ) -> None:
-        pass
-        if page.type is None:
-            App.treeview.subpage = self.prior_subpage
-        else:
-            self.prior_subpage = App.treeview.subpage
-            App.treeview.subpage = page.type
+        App.treeview.subpage = page.type
 
 
 class Statusbar(Gtk.Statusbar):
