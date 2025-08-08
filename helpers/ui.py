@@ -551,6 +551,9 @@ def load_css() -> None:
     .frame {
         border: 0px;
     }
+    .toast-label {
+        padding: 10px;
+    }
     .frame > border {
         border-radius: 5px;
         padding: 5px;
@@ -1016,8 +1019,14 @@ class OuterWindow(Gtk.Window):
         self._set_resolution()
 
         self.grid = Grid()
-        self.add(self.grid)
+        self.toast = Toast()
+        self.overlay = Gtk.Overlay()
+        self.overlay.add_overlay(self.grid)
+        self.overlay.add_overlay(self.toast)
+        self.add(self.overlay)
+
         self.show_all()
+        self.toast.set_visible(False)
 
         self.grid.right_panel.filters_vbox.set_visible(False)
         self.grid.right_panel.enable_ping_button(False)
@@ -1078,6 +1087,47 @@ class OuterWindow(Gtk.Window):
     def halt_proc_and_quit(self) -> None:
         App.grid.terminate_treeview_process()
         save_res_and_quit()
+
+
+class Toast(Gtk.EventBox):
+    def __init__(self):
+        super().__init__()
+
+        self.label = Gtk.Label()
+        self.box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            halign=Gtk.Align.CENTER,
+            valign=Gtk.Align.CENTER,
+        )
+        self.box.add(self.label)
+        self.add(self.box)
+        self.box.set_size_request(200, 100)
+
+        add_class(self.box, "toast-label")
+
+    def set_text(self, text: str) -> None:
+        self.label.set_text(text)
+
+    def set_text_and_fade(self, text: str) -> None:
+        self.set_text(text)
+        self.pop()
+        self._defer_fade()
+
+    def fade_out(self) -> bool:
+        if self.get_opacity() == 0:
+            self.set_visible(False)
+            self.set_opacity(1)
+            return False
+        self.set_opacity(self.get_opacity() - 0.03)
+        return True
+
+    def pop(self) -> None:
+        self.set_visible(True)
+
+    def _defer_fade(self) -> Literal[False]:
+        """Defers fade out of toast"""
+        GLib.timeout_add(30, self.fade_out)
+        return False
 
 
 class ScrollableTree(Gtk.ScrolledWindow):
