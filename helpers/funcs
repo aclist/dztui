@@ -1128,14 +1128,14 @@ update_config_val(){
             key="steam_api"
             if [[ ${#value} -lt 32 ]] || [[ $(test_steam_api "$value") -eq 1 ]]; then
                 printf "Invalid API key"
-                return 2
+                return 78
             fi
             ;;
         "Change Battlemetrics API key")
             key="api_key"
             if [[ $(test_bm_api "$value") -eq 1 ]]; then
                 printf "Invalid API key"
-                return 2
+                return 79
             fi
             ;;
     esac
@@ -1143,7 +1143,7 @@ update_config_val(){
     nr="$value"
     update_config
     echo "Updated the key '$key' to '$value'"
-    return 90
+    return 80
 }
 show_log(){
     < "$debug_log" sed 's/Keyword␞/Keyword/'
