@@ -455,7 +455,7 @@ class WindowContext(EnumWithAttrs):
         "called_by": [],
     }
     OPTIONS = {
-        "label": "OPTIONS",
+        "label": "Options",
         "rows": [
             RowType.TGL_BRANCH,
             RowType.TGL_INSTALL,
@@ -862,10 +862,10 @@ def process_shell_return_code(
             process_tree_option(RowType.CHNG_STEAM_API)
         case 6:  # return silently
             pass
-        case 78:  # failed settings update
+        case 78:  # failed settings update (steam)
             spawn_dialog("Invalid Steam API key, reverting", Popup.NOTIFY)
             App.notebook.settings.revert(Preferences.STEAM)
-        case 79:  # failed settings update
+        case 79:  # failed settings update (bm)
             spawn_dialog(
                 "Invalid Battlemetrics API key, reverting", Popup.NOTIFY
             )
@@ -4008,7 +4008,12 @@ class Notebook(Gtk.Notebook):
     def return_prior(self) -> None:
         page = self.get_nth_page(self.prior_page)
         if hasattr(page, "steam_entry"):
-            # Gtk.Notebook focuses the first input field when changing pages
+            """
+            Gtk.Notebook focuses the first input field when changing pages;
+            this workaround unhighlights the selected region and makes entry fields
+            unfocusable prior to the page 'switch-page' signal,
+            then makes them focusable again
+            """
             entries = page.steam_entry, page.bm_entry
             for entry in entries:
                 entry.set_position(-1)
