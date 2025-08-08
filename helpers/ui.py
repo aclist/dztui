@@ -665,6 +665,10 @@ def pluralize(plural: str, count: int) -> str:
 
 
 def format_metadata(row_sel: str) -> str:
+    """
+    Currently only being used for legacy
+    favorite server tooltip, cf Statusbar.update_app_meta()
+    """
     row = None
     for i in RowType:
         if i.dict["label"] == row_sel:
@@ -956,7 +960,6 @@ def process_toggle(command: RowType) -> None:
         case RowType.TGL_INSTALL:
             if query_config("auto_install")[0] == "1":
                 proc = call_out("toggle", cmd_string)
-                App.grid.statusbar.refresh()
                 return
             # manual -> auto mode
             proc = call_out("find_id", "")
@@ -969,7 +972,6 @@ def process_toggle(command: RowType) -> None:
             LinkDialog(manual_sub_msg, link, command, user_id)
         case _:
             proc = call_out("toggle", cmd_string)
-            App.grid.statusbar.refresh()
 
 
 def process_user_input(enum: RowType) -> None:
@@ -3537,7 +3539,15 @@ class Statusbar(Gtk.Statusbar):
         self.push(meta, string)
 
     def refresh(self) -> None:
-        self.update_app_meta()
+        unsupported_contexts = [
+            RowType.KEYBINDINGS,
+            RowType.SHOW_LOG,
+            RowType.CHANGELOG,
+            RowType.OPTIONS,
+        ]
+        if App.treeview.subpage in unsupported_contexts:
+            self.set_text("")
+            return
         command = App.treeview.get_value_at_index(0)
         formatted = format_metadata(command)
         if len(formatted) > 0:
@@ -3578,14 +3588,7 @@ class Statusbar(Gtk.Statusbar):
         config_vals.clear()
         for i in query_config():
             config_vals.append(i)
-        _branch = config_vals[0]
-        _branch = _branch.upper()
-        _debug = config_vals[1]
-        if _debug == "":
-            _debug = "NORMAL"
-        else:
-            _debug = "DEBUG"
-        concat_label = f"{_branch} | {_debug} | {_VERSION}"
+        concat_label = f"{_VERSION}"
         self.status_right_label.set_text(concat_label)
 
 
