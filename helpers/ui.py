@@ -2719,7 +2719,7 @@ class TreeView(Gtk.TreeView):
                     return
                 App.grid.right_panel.filters_vbox.reinit_filters()
             else:
-                # local server lists need not be restricted
+                # local server lists need not be filter-restricted
                 App.right_panel.filters_vbox.enable_all_filters()
             self._update_multi_column(cr)
             return
