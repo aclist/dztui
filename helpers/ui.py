@@ -3420,8 +3420,7 @@ class Notebook(Gtk.Notebook):
     def __init__(self):
         super().__init__(show_tabs=False, show_border=False)
 
-        clog = Changelog()
-        self.clog = ScrollableNote(clog)
+        self.clog = ScrollableNote(Changelog())
         self.clog.type = RowType.CHANGELOG
         self.clog.show_all()
         self.append_page(self.clog)
