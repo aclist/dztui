@@ -585,11 +585,11 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="52183c5d29d10ebd0bf91693e41f197b"
+        ["funcs"]="b3a45a42bc748dbcbebcd1a7748609cd"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
+        ["servers.py"]="4c5013aaf694806cfecd4f1c905bdc9a"
+        ["ui.py"]="3dfddc8260449d59f4ca71bc4b8d2989"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="19440a79345b66154a49882b25cfa7c5"
-        ["servers.py"]="51839211af7f65bdc04bab5557bf9466"
     )
     local author="aclist"
     local repo="dztui"
