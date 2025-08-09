@@ -3605,7 +3605,7 @@ class Options(Gtk.Box):
         # prevent triggering on initial init
         if App.treeview.subpage is None:
             return
-        # TODO: process_toggle(RowType.TGL_BRANCH)
+        process_toggle(RowType.TGL_BRANCH)
 
     def _on_radio_toggled(
         self, button: Gtk.RadioButton, context: Preferences

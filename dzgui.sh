@@ -588,7 +588,7 @@ fetch_helpers_by_sum(){
         ["funcs"]="b3a45a42bc748dbcbebcd1a7748609cd"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="4c5013aaf694806cfecd4f1c905bdc9a"
-        ["ui.py"]="4bddab2e4672cb2fadb80575576ce5b2"
+        ["ui.py"]="5335d86ef1dae543894cd8bdff67b018"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
     )
     local author="aclist"
