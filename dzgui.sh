@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=6.0.0.beta-1
+version=6.0.0.beta-3
 
 #CONSTANTS
 aid=221100
@@ -513,7 +513,7 @@ lock(){
     ps -p $pid -o pid= >/dev/null 2>&1
     res=$?
     if [[ $res -eq 0 ]]; then
-        local msg="DZGUI already running ($pid)"
+        local msg="DZGUI is already running ($pid)"
         raise_error_and_quit "$msg"
     elif [[ $pid == $$ ]]; then
         :
@@ -585,11 +585,11 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="52183c5d29d10ebd0bf91693e41f197b"
+        ["funcs"]="c2aec0a2fc153a2535e6493b3751ca81"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
+        ["servers.py"]="4c5013aaf694806cfecd4f1c905bdc9a"
+        ["ui.py"]="294a7daf544a96e2a108d252df5e0676"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="19440a79345b66154a49882b25cfa7c5"
-        ["servers.py"]="51839211af7f65bdc04bab5557bf9466"
     )
     local author="aclist"
     local repo="dztui"

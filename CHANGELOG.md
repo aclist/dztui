@@ -1,5 +1,18 @@
 # Changelog
 
+## [6.0.0-beta.3] 2025-08-08
+## Added
+- Additional server metadata to details dialog
+- Prompt user when connecting if a server is locked
+- Dedicated settings page ("Options")
+
+## Fixed
+- Statusbar contents not updating on certain pages
+- Breadcrumbs not updating when returning from keybindings page
+- Wrap long descriptions in server details
+- Prevent debug button from activating when in certain input fields
+- Window size not updating correctly when unmaximizing window after changing "fullscreen at boot" setting
+
 ## [6.0.0-beta.2] 2025-07-29
 ## Fixed
 - Missing parameters when closing application via window decorations

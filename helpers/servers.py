@@ -14,10 +14,10 @@ from typing import Union
 
 sys.path.append("a2s")
 import a2s  # noqa
-from a2s import dayzquery
+from a2s import dayzquery  # noqa
 
 params = [
-    r"\nor\1\map\chernarusplus\nor\1\map\sakhal\nor\1\map\enoch\empty\1\nor\1\map\namalsk",
+    r"\nor\1\map\chernarusplus\nor\1\map\sakhal\nor\1\map\enoch\empty\1\nor\1\map\namalsk",  # noqa
     r"\map\namalsk\empty\1",
     r"\map\namalsk\noplayers\1",
     r"\map\chernarusplus\empty\1",
@@ -206,6 +206,19 @@ class Details:
     success: bool
 
 
+def is_passworded(ip: str, qport: int) -> bool:
+    try:
+        info = a2s.info((ip, qport))
+    except TimeoutError:
+        return False
+
+    try:
+        password = info.password_protected
+    except AttributeError:
+        return False
+    return password
+
+
 def details(ip: str, qport: int) -> Details:
     default_str = "None provided"
 
@@ -223,7 +236,7 @@ def details(ip: str, qport: int) -> Details:
     except AttributeError:
         return Details(None, default_str, False)
 
-    battleeye = "Disabled"
+    battleye = "Disabled"
     if "battleye" in keywords:
         battleye = "Enabled"
 
@@ -236,6 +249,29 @@ def details(ip: str, qport: int) -> Details:
         if "entm" in keywords:
             night_accel = float(keyword.lstrip("entm"))
             night_accel = f"{night_accel:g}"
+
+    try:
+        password = info.password_protected
+        if password is False:
+            password = "Disabled"
+        else:
+            password = "Enabled"
+    except AttributeError:
+        password = "-"
+
+    try:
+        vac = info.vac_enabled
+        if vac is False:
+            vac = "Disabled"
+        else:
+            vac = "Enabled"
+    except AttributeError:
+        vac = "-"
+
+    try:
+        version = info.version
+    except AttributeError:
+        version = "-"
 
     try:
         dlc = rules.dlc_flags
@@ -263,11 +299,14 @@ def details(ip: str, qport: int) -> Details:
         description = default_str
 
     rows = [
-        ["DLC", dlc],
         ["Battleye", battleye],
         ["Daytime acceleration", f"{day_accel}x"],
+        ["DLC", dlc],
         ["Night-time acceleration", f"{night_accel}x"],
+        ["Password", password],
         ["Platform", platform],
+        ["Valve Anti-Cheat", vac],
+        ["Version", version],
     ]
 
     return Details(rows, description, True)
@@ -289,7 +328,7 @@ def ping(iteration: int, row: list) -> Ping:
 
     try:
         res = query_direct(ip, qport, 0.5)
-    except Exception as e:
+    except Exception:
         pass
 
     if res is None:
