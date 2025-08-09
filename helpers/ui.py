@@ -3543,9 +3543,10 @@ class Options(Gtk.Box):
         self, entry: Gtk.Entry, context: Preferences
     ) -> None:
         text = entry.get_text()
+        button = entry.sibling
         if not self._is_valid_text(text, context):
             return
-        self._on_save_clicked(None, entry, context)
+        self._on_save_clicked(button, entry, context)
 
     def _make_grid(self, rows: list) -> Gtk.Grid:
         grid = Gtk.Grid(
@@ -3569,7 +3570,7 @@ class Options(Gtk.Box):
         return grid
 
     def _on_save_clicked(
-        self, button: Gtk.Button | None, entry: Gtk.Entry, context: Preferences
+        self, button: Gtk.Button, entry: Gtk.Entry, context: Preferences
     ) -> None:
         show_wait_dialog = True
         wait_msg = "Working"

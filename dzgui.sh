@@ -588,7 +588,7 @@ fetch_helpers_by_sum(){
         ["funcs"]="b3a45a42bc748dbcbebcd1a7748609cd"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="4c5013aaf694806cfecd4f1c905bdc9a"
-        ["ui.py"]="5335d86ef1dae543894cd8bdff67b018"
+        ["ui.py"]="294a7daf544a96e2a108d252df5e0676"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
     )
     local author="aclist"
@@ -1029,13 +1029,13 @@ initial_setup(){
     watcher_deps
     check_architecture
     test_connection
-    fetch_helpers > >(pdialog "Checking helper files")
+#    fetch_helpers > >(pdialog "Checking helper files")
     varcheck
     source "$config_file"
     lock
     legacy_vars
     legacy_cols
-    check_version
+#    check_version
     check_map_count
     steam_deps
     migrate_files
