@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=6.0.0.beta-3
+version=6.0.0.beta-4
 
 #CONSTANTS
 aid=221100
@@ -1029,13 +1029,13 @@ initial_setup(){
     watcher_deps
     check_architecture
     test_connection
-    fetch_helpers > >(pdialog "Checking helper files")
+#    fetch_helpers > >(pdialog "Checking helper files")
     varcheck
     source "$config_file"
     lock
     legacy_vars
     legacy_cols
-    check_version
+#    check_version
     check_map_count
     steam_deps
     migrate_files
