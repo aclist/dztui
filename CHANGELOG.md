@@ -2,7 +2,7 @@
 
 ## [6.0.0-beta.4] 2025-08-13
 ## Fixed
-- Branch toggle signal being emitted when entering Settings menu from other contexts
+- Branch toggle signal being emitted when entering Options menu from other contexts
 
 ## [6.0.0-beta.3] 2025-08-08
 ## Added
