@@ -3604,7 +3604,7 @@ class Options(Gtk.Box):
 
     def _on_branch_changed(self, combo: Gtk.ComboBoxText) -> None:
         # prevent triggering on initial init
-        if App.treeview.subpage is None:
+        if App.treeview.subpage is not RowType.OPTIONS:
             return
         process_toggle(RowType.TGL_BRANCH)
 
