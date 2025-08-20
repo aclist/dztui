@@ -88,7 +88,11 @@ def parse_json(json: list) -> list:
             except KeyError:
                 continue
 
-        r = row["gametype"].split(",")
+        try:
+            r = row["gametype"].split(",")
+        except KeyError:
+            continue
+
         if "no3rd" in r:
             view = "1PP"
         else:

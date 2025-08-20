@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.0-beta.5] 2025-08-20
+## Fixed
+- Servers returning malformed A2S_INFO blocking server browser from loading
+
 ## [6.0.0-beta.4] 2025-08-13
 ## Fixed
 - Branch toggle signal being emitted when entering Options menu from other contexts
