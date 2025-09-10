@@ -4276,9 +4276,8 @@ class ModSelectionPanel(Gtk.Box):
             },
             {
                 "label": "Highlight stale",
-                "tooltip": """Shows locally-installed mods
-                    which are not used by any server
-                    in your Saved Servers""",
+                "tooltip": "Shows locally-installed mods which are not\n"
+                           "used by any server in your Saved Servers",
             },
         ]
 
