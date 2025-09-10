@@ -1778,7 +1778,7 @@ foreground(){
 }
 main(){
     local params="$(printf '"%s", ' "$@")"
-    logger INFO "Received request from UI constructor with params [${params::-2}]"
+    logger INFO "Received request from UI with params [${params::-2}]"
     func=${funcs["$1"]}
     [[ -z $func ]] && return 1
     if [[ -z $2 ]]; then
