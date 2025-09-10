@@ -249,10 +249,10 @@ def details(ip: str, qport: int) -> Details:
     for keyword in keywords:
         if "etm" in keyword:
             day_accel = float(keyword.lstrip("etm"))
-            day_accel = f"{day_accel:g}"
+            day_accel = float(f"{day_accel:g}")
         if "entm" in keywords:
             night_accel = float(keyword.lstrip("entm"))
-            night_accel = f"{night_accel:g}"
+            night_accel = float(f"{night_accel:g}")
 
     try:
         password = info.password_protected
