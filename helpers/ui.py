@@ -780,7 +780,7 @@ def set_surrounding_margins(widget: Gtk.Widget, margin: int) -> None:
 def query_history() -> list | None:
     try:
         with open(history_file, "r") as f:
-            rows = [row for row in f]
+            rows = [row.rstrip("\n") for row in f]
     except OSError:
         rows = None
     finally:
