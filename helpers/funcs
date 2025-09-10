@@ -1626,6 +1626,9 @@ concat_mods(){
     local encoded_id
     local link
     for i in "${concat_arr[@]}"; do
+        until [[ -f $workshop_dir/$i/meta.cpp ]]; do
+            sleep 0.1s
+        done
         id=$(awk -F"= " '/publishedid/ {print $2}' "$workshop_dir"/$i/meta.cpp | awk -F\; '{print $1}')
         encoded_id=$(encode $id)
         link="@$encoded_id;"
