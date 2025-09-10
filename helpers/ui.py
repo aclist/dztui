@@ -3133,9 +3133,20 @@ class DetailsDialog(GenericDialog):
             for row in response.data:
                 self.store.append(row + [Pango.Weight.BOLD])
             self.view.set_model(self.store)
-            self.description.set_text(response.description)
+
+            text = response.description
+            reg = r"\s(www\.*?)"
+            text = re.sub(reg, " http://" + r"\1", text)
+            reg2 = r"(http.*?)([ ,\r\n]|$)"
+            text = re.sub(reg2, comp(r"\1")+r"\2", text)
+
+            self.description.set_markup(text)
         self.success = response.success
         GLib.idle_add(self._load)
+
+
+def comp(string):
+    return f'<a href="{string}">{string}</a>'
 
 
 class ModDialog(GenericDialog):
