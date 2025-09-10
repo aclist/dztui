@@ -82,7 +82,6 @@ forum_url="https://old.reddit.com/r/dzgui"
 sponsor_url="$gh_prefix/sponsors/$author"
 battlemetrics_server_url="https://www.battlemetrics.com/servers/dayz"
 steam_api_url="https://steamcommunity.com/dev/apikey"
-#TODO: update link in docs
 battlemetrics_api_url="https://www.battlemetrics.com/developers"
 bm_api="https://api.battlemetrics.com/servers"
 
@@ -94,7 +93,6 @@ fi
 
 declare -A funcs=(
 ["Highlight stale"]="find_stale_mods"
-["My servers"]="dump_servers"
 ["Change player name"]="update_config_val"
 ["Change Steam API key"]="update_config_val"
 ["Change Battlemetrics API key"]="update_config_val"
@@ -108,9 +106,6 @@ declare -A funcs=(
 ["find_id"]="find_id"
 ["toggle"]="toggle"
 ["Open link"]="open_link"
-["filter"]="dump_servers"
-["dump_servers"]="dump_servers"
-["get_unique_maps"]="get_unique_maps"
 ["get_dist"]="get_dist"
 ["test_cooldown"]="test_cooldown"
 ["query_config"]="query_config"
@@ -133,20 +128,9 @@ declare -A funcs=(
 ["Resolve IP"]="resolve_ip"
 ["Handshake"]="final_handshake"
 ["get_player_count"]="get_player_count"
-["lan_scan"]="lan_scan"
 ["update_symlinks"]="update_symlinks"
 )
 
-lan_scan(){
-    local port="$1"
-    local res
-    res=$("$lan_helper" "$port")
-    if [[ -z $res ]]; then
-        printf "\n"
-    else
-        printf "%s\n" "$res"
-    fi
-}
 query_favorites(){
     if [[ -z "${ip_list[@]}" ]]; then
         return 1
@@ -329,13 +313,6 @@ start_cooldown(){
     logger WARN "API response empty. Started 60s cooldown at $(date +%s)"
     date +%s > $_cache_cooldown
 }
-initialize_remote_servers(){
-    local file="$_cache_servers"
-    [[ -f $file ]] && rm "$file"
-    local res
-    res=$(get_remote_servers)
-    parse_server_json "$res" >> "$file"
-}
 is_dlc(){
     local dlc
     local ip="$1"
@@ -457,56 +434,6 @@ get_dist(){
         logger INFO "Distance: $dist km"
     fi
 }
-get_remote_servers(){
-    params=(
-        "\\nor\1\map\chernarusplus\\nor\1\map\sakhal\\nor\1\map\enoch\empty\1\\nor\1\map\namalsk"
-        "\map\namalsk\empty\1"
-        "\map\namalsk\noplayers\1"
-        "\map\chernarusplus\empty\1"
-        "\map\chernarusplus\noplayers\1"
-        "\map\\sakhal\empty\1"
-        "\map\\sakhal\noplayers\1"
-        "\map\\enoch\empty\1"
-        "\map\\enoch\noplayers\1"
-    )
-    local limit=10000
-    local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?"
-
-    _fetch(){
-        local param="$1"
-        curl -LsG "$url" \
-            -d filter="\appid\221100${param}" \
-            -d limit=$limit \
-            -d key=$steam_api \
-            | jq -M -r '.response.servers'
-
-    }
-
-    for ((i=0; i <${#params[@]}; i++ )); do
-        _fetch "${params[$i]}" > $_cache_temp.${i}
-    done
-
-    # ubuntu variants do not support jq 1.7 chained operators
-    # https://github.com/jqlang/jq/releases/tag/jq-1.7
-    jq -n '[ [inputs]|add ][]' $_cache_temp.* && rm $_cache_temp.*
-}
-get_unique_maps(){
-    shift
-    local context="$1"
-    local filter_file
-    case "$context" in
-        "My saved servers")
-            filter_file="$_cache_my_servers"
-            ;;
-        "Server browser")
-            filter_file="$_cache_servers"
-            ;;
-        "Recent servers")
-            filter_file="$_cache_history"
-    esac
-    logger INFO "Map filter context is: '$context', using cached file at '$filter_file'"
-    < "$filter_file" awk -F$separator '{print $2}' | sort -u
-}
 query_config(){
     [[ -n $2 ]] && local key=$2
     keys=(
@@ -530,154 +457,6 @@ query_config(){
     for i in "${keys[@]}"; do
         echo "${!i}"
     done
-}
-filter_servers(){
-    local filtered="$(< "$1")"
-    shift
-    readarray -t filters < <(printf  "%s\n" "$@")
-
-    for ((i=0; i< ${#filters[@]}; ++i)); do
-        if [[ ${filters[$i]} =~ Keyword ]]; then
-            keyword=$(<<< ${filters[$i]} awk -F␞ '{print $2}')
-        elif [[ ${filters[$i]} =~ Map ]]; then
-            map=$(<<< ${filters[$i]} awk -F= '{print $2}')
-        fi
-    done
-
-    filter_ascii(){
-        if [[ ${filters[*]} =~ Non ]]; then
-            echo -n "$filtered"
-        else
-            <<< "$filtered" sed 's/␞/@@DZGUI_PLACEHOLDER@@/g' | grep -v -P '[^[:ascii:]]' | sed 's/@@DZGUI_PLACEHOLDER@@/␞/g'
-        fi
-    }
-    filter_time(){
-        if [[ ${filters[*]} =~ Day ]] && [[ ${filters[*]} =~ Night ]]; then
-            echo -n "$filtered"
-        elif [[ ${filters[*]} =~ Day ]]; then
-            <<< "$filtered" awk -F$separator '$4~/^([0][6-9]:|[1][0-6])/'
-        elif [[ ${filters[*]} =~ Night ]]; then
-            <<< "$filtered" awk -F$separator '$4~/^([1][7-9]:|[2][0-3]:|[0][0-5])/'
-        else
-            echo -n ""
-        fi
-    }
-    filter_perspective(){
-        if [[ ${filters[*]} =~ 1PP ]] && [[ ${filters[*]} =~ 3PP ]]; then
-            echo -n "$filtered"
-        elif [[ ${filters[*]} =~ 1PP ]]; then
-            <<< "$filtered" awk '!/3PP/'
-        elif [[ ${filters[*]} =~ 3PP ]]; then
-            <<< "$filtered" awk '!/1PP/'
-        else
-            echo -n ""
-        fi
-    }
-    filter_lowpop(){
-        if [[ ${filters[*]} =~ Low ]]; then
-            echo -n "$filtered"
-        else
-            <<< "$filtered" awk -F$separator '{if (($5 > 0) && ($5/$6)*100 >=30){print $0}}'
-        fi
-    }
-    filter_full(){
-        if [[ ${filters[*]} =~ Full ]]; then
-            echo -n "$filtered"
-        else
-            <<< "$filtered" awk -F$separator '$5 != $6'
-        fi
-    }
-    filter_empty(){
-        if [[ ${filters[*]} =~ Empty ]]; then
-            echo -n "$filtered"
-        else
-            <<< "$filtered" awk -F$separator '$5 != "0"'
-        fi
-    }
-    filter_map(){
-        if [[ $map == "All maps" ]]; then
-            echo "$filtered"
-        else
-            <<< "$filtered" awk -v var="$map" -F$separator '$2 == var'
-        fi
-    }
-    filter_keyword(){
-        keyword=$(sanitize "$keyword")
-        <<< "$filtered" awk -F$separator -v keyword="$keyword" 'tolower($0) ~ tolower(keyword)'
-    }
-    filter_duplicates(){
-        if [[ ${filters[*]} =~ Duplicate ]]; then
-            echo -n "$filtered"
-        else
-            <<< "$filtered" awk -F$separator '!seen[$1]++'
-        fi
-    }
-    filter_official(){
-        if [[ ${filters[*]} =~ Official ]]; then
-            echo -n "$filtered"
-        else
-            <<< "$filtered" awk -F$separator '$10 == "Community"'
-        fi
-    }
-    filter_community(){
-        if [[ ${filters[*]} =~ Unoffic ]]; then
-            echo -n "$filtered"
-        else
-            <<< "$filtered" awk -F$separator '$10 == "Official"'
-        fi
-    }
-
-    filtered=$(filter_perspective)
-    filtered=$(filter_full)
-    filtered=$(filter_empty)
-    filtered=$(filter_time)
-    filtered=$(filter_map)
-    filtered=$(filter_lowpop)
-    filtered=$(filter_ascii)
-    filtered=$(filter_duplicates)
-    filtered=$(filter_keyword)
-    filtered=$(filter_official)
-    filtered=$(filter_community)
-
-    if [[ -z "$filtered" ]]; then
-        logger WARN "Filter result is empty"
-        echo -n ""
-        return
-    fi
-
-    logger INFO "Returning sorted server list back to UI"
-    printf "%s\n" "$filtered" | sort -k1
-}
-sanitize(){
-    echo "$1" | sed \
-    -e 's/\//\\\//g' \
-    -e 's/\$/\\$/g' \
-    -e 's/\[/\\[/g' \
-    -e 's/\]/\\]/g' \
-    -e 's/\#/\\#/g' \
-    -e 's/\./\\./g' \
-    -e 's/\^/\\^/g' \
-    -e 's/\=/\\=/g' \
-    -e 's/|/\\|/g' \
-    -e 's/\+/\\+/g' \
-    -e 's/(/\\(/g' \
-    -e 's/)/\\)/g'
-}
-parse_server_json(){
-    local response="$1"
-    # some servers pad SOH in name
-    <<< "$response" sed 's/\\u0001//g' | jq -r '
-    .[]|"\(.name)␞" +
-    "\(.map|if type == "string" then ascii_downcase else "null" end)␞" +
-    "\(if .gametype == null then "null" else (.gametype|split(",")|if any(. == "no3rd") then "1PP" else "3PP" end) end)␞" +
-    "\(if .gametype == null then "null" else (.gametype as $time|$time|test("[0-9]{2}:[0-9]{2}$") as $match|(if $match == true then ($time|scan("[0-9]{2}:[0-9]{2}$")) else "XXXX" end)) end)␞" +
-    "\(.players)␞" +
-    "\(.max_players)␞" +
-    "\(if .gametype == null then "0" elif .gametype|split("lqs")[1] == null then "0" else .gametype|split("lqs")[1]|split(",")[0] end)␞" +
-    "\(.addr|split(":")[0]):\(if .gameport == null then "XXXX" else .gameport end)␞" +
-    "\(.addr|split(":")[1])␞" +
-    "\(if .gametype == null then "null" else (.gametype|split(",")|if any(. == "external") then "Community" else "Official" end) end)"
-    ' | sort -k1
 }
 align_versions_file(){
     shift
@@ -736,62 +515,6 @@ test_cooldown(){
         printf "Global API cooldown in effect. Please wait %s %s." "$remains" "$suffix"
         exit 1
     fi
-}
-dump_servers(){
-    local context="$1"
-    local subcontext="$2"
-    local ip
-    local qport
-    local res
-    _iterate(){
-        local file="$1"
-        shift
-        for server in "$@"; do
-            ip=$(<<< $server awk -F: '{print $1}')
-            qport=$(<<< $server awk -F: '{print $3}')
-            res=$(a2s "$ip" "$qport" info)
-            if [[ ! $? -eq 0 ]]; then
-                continue
-            fi
-            parse_server_json "$res" >> "$file"
-        done
-    }
-    case "$subcontext" in
-        *Server[[:space:]]browser*)
-            local file="$_cache_servers"
-            if [[ ! $context =~ filter ]]; then
-                initialize_remote_servers
-            fi
-            ;;
-        *My[[:space:]]saved[[:space:]]servers*)
-            local file="$_cache_my_servers"
-            if [[ ! $context =~ filter ]]; then
-                [[ -f $file ]] && rm $file
-                _iterate "$file" "${ip_list[@]}"
-            fi
-            ;;
-        *Recent[[:space:]]servers*)
-            local file="$_cache_history"
-            if [[ ! $context =~ filter ]]; then
-                [[ -f $file ]] && rm $file
-                readarray -t iters < <(cat $history_file)
-                _iterate "$file" "${iters[@]}"
-            fi
-            ;;
-        *Scan[[:space:]]LAN[[:space:]]servers*)
-            local port=$(<<< "$subcontext" awk -F: '{print $2}')
-            local file="$_cache_lan"
-            if [[ ! $context =~ filter ]]; then
-                [[ -f $file ]] && rm $file
-                local lan=$(lan_scan $port)
-                readarray -t iters <<< "$lan"
-                _iterate "$file" "${iters[@]}"
-            fi
-            ;;
-    esac
-    shift
-    logger INFO "Server context is '$subcontext', reading from file '$file'"
-    filter_servers "$file" "$@"
 }
 redact(){
     sed 's@\(/home/\)[^/]*@\1REDACTED@g'
@@ -1214,11 +937,6 @@ connect_from_table(){
     local record="$1"
     try_connect  "$record"
 }
-pretty_print(){
-    while read -r line; do
-        printf "\t%s\n" "$line"
-    done < "$@"
-}
 generate_log(){
     source $config_file
 	cat <<-DOC > $system_log
@@ -1451,68 +1169,6 @@ check_architecture(){
         echo 0
     fi
 }
-focus_beta_client(){
-    _wid(){
-        wmctrl -ilx |\
-            awk 'tolower($3) == "steamwebhelper.steam"' |\
-            awk '$5 ~ /^Steam|Steam Games List/' |\
-            awk '{print $1}'
-        }
-    $steam_cmd steam://open/library 2>/dev/null 1>&2 &&
-    $steam_cmd steam://open/console 2>/dev/null 1>&2 &&
-    sleep 1s
-    until [[ -n $(_wid) ]]; do
-        sleep 0.1s
-    done
-    wmctrl -ia $(_wid)
-    sleep 0.1s
-
-    local wid=$(xdotool getactivewindow)
-    local geo=$(xdotool getwindowgeometry $wid)
-    local pos=$(<<< "$geo" awk 'NR==2 {print $2}' | sed 's/,/ /')
-    local dim=$(<<< "$geo" awk 'NR==3 {print $2}' | sed 's/x/ /')
-    local pos1=$(<<< "$pos" awk '{print $1}')
-    local pos2=$(<<< "$pos" awk '{print $2}')
-    local dim1=$(<<< "$dim" awk '{print $1}')
-    local dim2=$(<<< "$dim" awk '{print $2}')
-    local dim1=$(((dim1/2)+pos1))
-    local dim2=$(((dim2/2)+pos2))
-
-    xdotool mousemove $dim1 $dim2
-    xdotool click 1
-    $steam_cmd steam://open/library 2>/dev/null 1>&2 &&
-    $steam_cmd steam://open/console 2>/dev/null 1>&2
-}
-auto_mod_install(){
-    # currently unused, merged with manual method
-    local ip="$1"
-    local gameport="$2"
-    local diff="$3"
-    local sanitized_mods="$4"
-
-    console_dl "$diff" &&
-    $steam_cmd steam://open/downloads
-
-    local total=$(<<< "$diff" wc -l)
-    until [[ -z $(compare "$diff") ]]; do
-        local missing=$(compare "$diff" | wc -l)
-        echo "# Downloaded $(($total-missing)) of $total mods. ESC cancels"
-    done | $steamsafe_zenity --pulsate --progress --title="DZG Watcher" --auto-close --no-cancel --width=500 2>/dev/null
-    if [[ ! $? -eq 0 ]]; then
-        echo "User aborted connect process. Steam may have mods pending for download."
-        exit 1
-    fi
-
-    local diff=$(compare "$sanitized_mods")
-
-    if [[ -z $diff ]]; then
-        #wipe old version file and replace with latest stamps
-        rm "$versions_file"
-        check_timestamps
-        logger INFO "Local modlist matches remote, initiating launch request"
-        launch "$ip" "$gameport" "$sanitized_mods"
-    fi
-}
 force_update(){
     if [[ ! $auto_install -eq 1 ]]; then
         printf "Only available when mod auto-install is ON"
@@ -1523,17 +1179,6 @@ force_update(){
     manual_mod_install "null" "null" "$update" "null" "force"
     echo "Finished requesting mod updates."
     return 0
-}
-console_dl(){
-    readarray -t modids <<< "$@"
-    focus_beta_client
-    sleep 1.5s
-    for i in "${modids[@]}"; do
-        xdotool type --delay 0 "workshop_download_item $aid $i"
-        sleep 0.5s
-        xdotool key Return
-        sleep 0.5s
-    done
 }
 get_local_stamps(){
     readarray -t modlist < <(printf "%s\n" "$@")
