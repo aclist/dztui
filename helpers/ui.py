@@ -1107,6 +1107,8 @@ class OuterWindow(Gtk.Window):
             w, h = res["width"], res["height"]
             logger.info(f"Restoring window size to {w},{h}")
             self.set_default_size(w, h)
+        else:
+            self.set_default_size(1400, 800)
 
     def _on_delete_event(
         self, window: "OuterWindow", event: Gdk.EventKey
