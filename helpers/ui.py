@@ -13,21 +13,24 @@ import threading
 import typing  # noqa
 import warnings
 
+from dataclasses import dataclass
 from enum import Enum
+from collections.abc import Callable
 from concurrent.futures import wait
 from concurrent.futures import ThreadPoolExecutor
-
-from collections.abc import Callable
 from typing import Literal, Self, Any
 
 import servers as Servers  # noqa E402
+import pefile as PeFile  # noqa E402
+
+from pefile import VDFLoadError, AppNotInstalledError, AppMovedError, PeFileError
+from pefile import VersionMatch
 
 locale.setlocale(locale.LC_ALL, "")
 
 import gi  # noqa E402
-
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa: E402
+from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 
 # https://bugzilla.gnome.org/show_bug.cgi?id=708676
 warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
@@ -36,6 +39,9 @@ app_name = "DZGUI"
 app_name_lower = app_name.lower()
 app_name_abbr = "dzg"
 delimiter = "␞"
+
+APPID_DAYZ = 221100
+APPID_DAYZ_EXP = 1024020
 
 cache: dict[str, int] = {}
 config_vals: list[str] = []
@@ -85,6 +91,13 @@ no servers in favorites/history, local network issue, or API key on cooldown.
 Return to the main menu, wait 30s, and try again.
 If this issue persists, your API key may be defunct.
 """
+
+
+@dataclass
+class Record:
+    ip: str
+    gameport: int
+    qport: int
 
 
 class Preferences(Enum):
@@ -345,6 +358,12 @@ class RowType(EnumWithAttrs):
     }
     HANDSHAKE = {
         "label": "Handshake",
+        "tooltip": None,
+        "wait_msg": "Waiting for DayZ",
+        "type": Command.ONESHOT,
+    }
+    HANDSHAKE_EXP = {
+        "label": "Handshake_EXP",
         "tooltip": None,
         "wait_msg": "Waiting for DayZ",
         "type": Command.ONESHOT,
@@ -666,6 +685,7 @@ def save_res_and_quit(*args) -> None:
 def suppress_signal(
     owner: Gtk.Widget, widget: Gtk.Widget, func_name: str, state: bool
 ) -> None:
+
     func = getattr(owner, func_name)
     if state:
         logger.debug(f"Blocking {func_name} for {widget}")
@@ -705,6 +725,7 @@ def format_metadata(row_sel: str) -> str:
         "fav_label": config_vals[4],
         "preferred_client": config_vals[5],
         "fullscreen": config_vals[6],
+        "default_steam_path": config_vals[7]
     }
     if row is None:
         return ""
@@ -899,6 +920,11 @@ def process_shell_return_code(
             if final_conf == 1 or final_conf is None:
                 return
             process_tree_option(RowType.HANDSHAKE)
+        case 101:  # final handshake, exp
+            final_conf = spawn_dialog(msg, Popup.CONFIRM)
+            if final_conf == 1 or final_conf is None:
+                return
+            process_tree_option(RowType.HANDSHAKE_EXP)
         case 255:  # dzgui version update
             msg = "Update complete. Please close DZGUI and restart."
             spawn_dialog(msg, Popup.QUIT)
@@ -973,6 +999,22 @@ def process_tree_option(choice: RowType) -> None:
         App.grid.notebook.set_page_by_enum(NotebookPage.CHANGELOG)
         return
 
+    if command == RowType.QUICK_CONNECT:
+        record = query_config("fav_server")[0]
+        if record == "":
+            spawn_dialog("No favorite server currently set", Popup.NOTIFY)
+            return
+
+        record = str_to_record(record)
+        thread_new_with_dialog(
+            App.treeview.prepare_connection,
+            parse_shell_output,
+            "Querying server",
+            command,
+            [record]
+        )
+        return
+
     match command.dict["type"]:
         case Command.HELP:
             call_bash_func("Open link", cmd_string)
@@ -987,6 +1029,61 @@ def process_tree_option(choice: RowType) -> None:
         case _:
             return
     return
+
+
+def parse_shell_output(proc: subprocess.CompletedProcess, row: RowType):
+    out = proc.stdout.splitlines()
+    try:
+        msg = out[-1]
+    except IndexError:
+        msg = ""
+    process_shell_return_code(msg, proc.returncode, row)
+
+
+def thread_new_with_dialog(
+    func: Callable,
+    callback: Callable | None,
+    msg: str,
+    row: RowType | None,
+    args: list
+) -> None:
+
+    """
+    Pop a GenericDialog transient to App.treeview and
+    call a function on a thread, with optional callback.
+    Chiefly used for connection-related subprocesses.
+
+    After completion, the dialog is destroyed in the main event loop
+    and additional exception handling occurs.
+
+    This is intended as a bridge between legacy shell methods and the UI.
+    A more abstracted version of call_on_thread() for when extra threaded
+    processing occurs before calls to shell subprocesses.
+    """
+
+    def background(*args):
+        def cleanup():
+            App.treeview.dialog_hide()
+            if exception is not None:
+                spawn_dialog(str(exception), Popup.NOTIFY)
+                process_user_input(row)
+                return
+            if callback is not None and proc is not None:
+                callback(proc, row)
+
+        exception = None
+        proc = None
+        try:
+            proc = func(*args)
+        except Exception as e:
+            exception = e
+            GLib.idle_add(cleanup)
+            return
+        GLib.idle_add(cleanup)
+
+    App.treeview.dialog_show(msg)
+    thread = threading.Thread(target=background, args=(args))
+    thread.start()
 
 
 def process_toggle(command: RowType) -> None:
@@ -1013,10 +1110,59 @@ def process_toggle(command: RowType) -> None:
             proc = call_out("toggle", cmd_string)
 
 
+def str_to_record(record: str) -> Record | None:
+    r = record.split(":")
+    if len(r) != 3:
+        return None
+    return Record(r[0], int(r[1]), int(r[2]))
+
+
+def record_to_str(record: Record) -> str:
+    return f"{record.ip}:{record.gameport}:{record.qport}"
+
+
+def connect_by_ip(enum: RowType, response: str) -> None:
+    def _prep(response: str) -> None:
+        record = Servers.validate_ip(response)
+        proc = App.treeview.prepare_connection(record)
+        return proc
+
+    thread_new_with_dialog(
+        _prep,
+        parse_shell_output,
+        "Querying IP",
+        enum,
+        [response]
+    )
+    return
+
+
+def connect_by_id(enum: RowType, response: str, key: str) -> None:
+    def _prep(key: str, response: str) -> None:
+        record = Servers.query_bm_api(key, response)
+        proc = App.treeview.prepare_connection(record)
+        return proc
+
+    thread_new_with_dialog(
+        _prep,
+        parse_shell_output,
+        "Querying API",
+        enum,
+        [key, response]
+    )
+    return
+
+
 def process_user_input(enum: RowType) -> None:
     prompt = enum.dict["prompt"]
     link_label = enum.dict["link_label"]
     cmd_string = enum.dict["label"]
+
+    if enum == RowType.CONN_BY_ID:
+        key = query_config("api_key")[0]
+        if len(key) == 0:
+            spawn_dialog("No Battlemetrics API key is set; see Options", Popup.NOTIFY)
+            return
 
     user_entry = EntryDialog(prompt, Popup.ENTRY, link_label)
     response = user_entry.get_input()
@@ -1025,6 +1171,14 @@ def process_user_input(enum: RowType) -> None:
         logger.info("User aborted entry dialog")
         return
     logger.info(f"User entered: '{response}'")
+
+    if enum == RowType.CONN_BY_IP:
+        connect_by_ip(enum, response)
+        return
+
+    if enum == RowType.CONN_BY_ID:
+        connect_by_id(enum, response, key)
+        return
 
     show_wait_dialog = True
     wait_msg = "Working"
@@ -1789,7 +1943,7 @@ class TreeView(Gtk.TreeView):
         it = self.get_current_iter()
         name = model.get_value(it, 0)
         record = self.get_record_dict()
-        DetailsDialog(name, record["ip"], record["qport"])
+        DetailsDialog(name, record.ip, record.qport)
 
     def show_mods(self) -> None:
         record = self.get_record_string()
@@ -1976,7 +2130,7 @@ class TreeView(Gtk.TreeView):
             if not record:
                 grid.statusbar.update_server_meta()
                 return
-            ip = record["ip"]
+            ip = record.ip
             if ip in cache:
                 km = cache[ip]
                 grid.statusbar.append_distance(km)
@@ -2135,8 +2289,8 @@ class TreeView(Gtk.TreeView):
         addr = model[path][7]
         qport = model[path][8]
         ip = addr.split(":")[0]
-        qport = str(qport)
-        return {"ip": ip, "qport": qport}
+        gameport = int(addr.split(":")[1])
+        return Record(ip, gameport, qport)
 
     def update_players(self, players: int) -> None:
         model = self.get_model()
@@ -2183,9 +2337,7 @@ class TreeView(Gtk.TreeView):
         record = self.get_record_dict()
         if not record:
             return
-        ip = record["ip"]
-        qport = record["qport"]
-        data = call_out("get_player_count", ip, qport)
+        data = call_out("get_player_count", record.ip, str(record.qport))
         if data.returncode == 1:
             wait_dialog.destroy()
             return
@@ -2195,10 +2347,10 @@ class TreeView(Gtk.TreeView):
         key = query_config("steam_api")[0]
         job = Servers.query_api
         params = Servers.params
+        serv = []
         with ThreadPoolExecutor() as executor:
-            futures = [executor.submit(job, key, param) for param in params]
+            futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
             wait(futures)
-            serv = []
             for future in futures:
                 res = future.result()
                 if res.status != 200 or not res.parsed:
@@ -2208,7 +2360,13 @@ class TreeView(Gtk.TreeView):
                     return
                 j = res.json
                 serv += j["response"]["servers"]
-            parsed = Servers.parse_json(serv)
+
+        res = Servers.query_api(key, APPID_DAYZ_EXP, "")
+        if res.status == 200 and res.parsed is True:
+            j = res.json
+            serv += j["response"]["servers"]
+
+        parsed = Servers.parse_json(serv)
         return parsed
 
     def _dump_lan(self, port: int) -> list | None:
@@ -2649,27 +2807,15 @@ class TreeView(Gtk.TreeView):
             )
             thread.start()
 
-    def _background_connection(
-        self, dialog: "GenericDialog", record: str
-    ) -> None:
-        def load():
-            dialog.destroy()
-            out = proc.stdout.splitlines()
-            msg = out[-1]
-            process_shell_return_code(msg, proc.returncode, record)
+    def dialog_hide(self) -> None:
+        if hasattr(self, "wait_dialog"):
+            self.wait_dialog.destroy()
 
-        proc = call_out("Connect from table", record)
-        GLib.idle_add(load)
-
-    def _attempt_connection(self) -> None:
-        record = self.get_record_string()
-        msg = "Querying server and aligning mods"
-        wait_dialog = GenericDialog(msg, Popup.WAIT)
-        wait_dialog.show_all()
-        thread = threading.Thread(
-            target=self._background_connection, args=(wait_dialog, record)
-        )
-        thread.start()
+    def dialog_show(self, msg: str) -> None:
+        if hasattr(self, "wait_dialog"):
+            self.wait_dialog.destroy()
+        self.wait_dialog = GenericDialog(msg, Popup.WAIT)
+        self.wait_dialog.show_all()
 
     def is_row_to_server_context(self, view: RowType) -> bool:
         """Row activation that jumps into a server table"""
@@ -2708,6 +2854,86 @@ class TreeView(Gtk.TreeView):
 
     def get_view(self):
         return self.view
+
+    def prepare_connection(self, record: Record) -> subprocess.CompletedProcess | None:
+        """
+        Always called on a thread with a dialog on the transient parent window
+        """
+        prereqs = Servers.get_prereqs(record.ip, record.qport)
+        if prereqs.appid is None:
+            msg = "Timed out when querying server, check IP or try again later"
+            spawn_dialog(msg, Popup.NOTIFY)
+            return None
+
+        if prereqs.version is not None:
+            path = query_config("default_steam_path")[0]
+            result = PeFile.compare_versions(prereqs.version, prereqs.appid, path)
+
+            if result.error is not None:
+                logger.warning(result.error)
+
+            if result.match == VersionMatch.FAIL:
+                if isinstance(result.error, VDFLoadError) or isinstance(result.error, PeFileError):
+                    # permissive; file exists, but could not determine version
+                    pass
+                if isinstance(result.error, AppNotInstalledError):
+                    if prereqs.appid == 1024020:
+                        msg = (
+                            "This server is running DayZ Experimental, a beta build. "
+                            "You can install DayZ Experimental by searching for it in "
+                            "your Steam library."
+                        )
+                        spawn_dialog(msg, Popup.NOTIFY)
+                    return None
+                if isinstance(result.error, AppMovedError):
+                    msg = (
+                        f"Steam is reporting that {result.build} is installed at a non-existent location. "
+                        f"If you recently installed {result.build} or moved it to a different drive, "
+                        "restart Steam to allow these changes to synchronize, then try again."
+                    )
+                    spawn_dialog(msg, Popup.NOTIFY)
+                    return None
+
+            if result.match == VersionMatch.LOCAL_OLDER:
+                msg = (
+                    f"This server is running a newer build ({result.remote}) of {result.build} than "
+                    f"your local version ({result.local}). You may be unable to connect. Proceed anyway?"
+                )
+                res = spawn_dialog(msg, Popup.CONFIRM)
+                if res is True:
+                    return None
+
+            if result.match == VersionMatch.LOCAL_NEWER:
+                msg = (
+                    f"This server is running an out-of-date build ({result.remote}) of {result.build}. "
+                    "You may be unable to connect. Proceed anyway?"
+                )
+                res = spawn_dialog(msg, Popup.CONFIRM)
+                if res is True:
+                    return None
+
+        if prereqs.password is True:
+            msg = (
+                "This server is password-protected and you will be "
+                "prompted when connecting. Do you want to proceed?"
+            )
+            res = spawn_dialog(msg, Popup.CONFIRM)
+            if res is True:
+                return None
+
+        """
+        When using RowType.CONN_BY_IP, the gameport needs to be interpolated
+        """
+
+        record.gameport = prereqs.gameport
+        addr = record_to_str(record)
+        proc = call_out(
+            "try_connect",
+            addr,
+            str(prereqs.appid),
+            str(result.path)
+        )
+        return proc
 
     @signal_emission
     @update_window_labels
@@ -2777,15 +3003,13 @@ class TreeView(Gtk.TreeView):
                 record = self.get_record_dict()
                 if record is None:
                     return
-                if Servers.is_passworded(record["ip"], int(record["qport"])):
-                    msg = (
-                        "This server is password-protected and you will be "
-                        "prompted when connecting. Do you want to proceed?"
-                    )
-                    res = spawn_dialog(msg, Popup.CONFIRM)
-                    if res is True:
-                        return
-                self._attempt_connection()
+                thread_new_with_dialog(
+                    self.prepare_connection,
+                    parse_shell_output,
+                    "Querying server",
+                    None,
+                    [record]
+                )
             case _:  # any other non-server option from the main menu
                 process_tree_option(output)
 
@@ -3042,7 +3266,7 @@ class LanDialog(Gtk.MessageDialog):
 
 
 class DetailsDialog(GenericDialog):
-    def __init__(self, server_name: str, ip: str, qport: str):
+    def __init__(self, server_name: str, ip: str, qport: int):
         super().__init__(server_name, Popup.DETAILS)
 
         dialog_box = self.get_content_area()
@@ -3050,7 +3274,7 @@ class DetailsDialog(GenericDialog):
         self.set_size_request(800, 700)
 
         self.ip = ip.split(":")[0]
-        self.qport = int(qport)
+        self.qport = qport
         self.store = Gtk.ListStore(str, str, Pango.Weight)
 
         self.view = Gtk.TreeView(
@@ -3203,12 +3427,10 @@ class ModDialog(GenericDialog):
             self.run()
             self.destroy()
 
-        addr = App.treeview.get_record_dict()
-        if not addr:
+        record = App.treeview.get_record_dict()
+        if not record:
             return
-        ip = addr["ip"]
-        qport = addr["qport"]
-        data = call_out("show_server_modlist", ip, qport)
+        data = call_out("show_server_modlist", record.ip, str(record.qport))
         mod_count = self._parse_modlist_rows(data)
         self.view.set_model(modlist_store)
         GLib.idle_add(_load)
@@ -3487,6 +3709,9 @@ class Options(Gtk.Box):
             [LeftLabel("Force update local mods"), self.force_button, eb2],
         ]
 
+        self.dayz_version_label = Gtk.Label(label="-")
+        self.dayz_exp_version_label = Gtk.Label(label="-")
+
         self.branch_combo = Gtk.ComboBoxText()
         self.branch_combo.append_text("Stable")
         self.branch_combo.append_text("Testing")
@@ -3499,7 +3724,11 @@ class Options(Gtk.Box):
         )
         eb = InfoEventBox(msg)
 
-        version_rows = [[LeftLabel("Branch"), self.branch_combo, eb]]
+        version_rows = [
+            [LeftLabel("DayZ"), self.dayz_version_label],
+            [LeftLabel("DayZ Experimental"), self.dayz_exp_version_label],
+            [LeftLabel("DZGUI branch"), self.branch_combo, eb]
+        ]
 
         api_grid = self._make_grid(api_rows)
         prefs_grid = self._make_grid(pref_rows)
@@ -3743,6 +3972,7 @@ class Options(Gtk.Box):
         name = config_vals[3]
         client = config_vals[5]
         fullscreen = config_vals[6]
+        default_steam_path = config_vals[7]
 
         try:
             steam = query_config("steam_api")[0]
@@ -3784,6 +4014,21 @@ class Options(Gtk.Box):
         ):
             if field[0] == "":
                 field[1].get_children()[1].set_sensitive(False)
+
+        try:
+            pe_file_path = PeFile.get_pefile_path(default_steam_path, APPID_DAYZ)
+            dayz_version = PeFile.get_dayz_version_str(pe_file_path)
+        except Exception:
+            dayz_version = "-"
+
+        try:
+            exp_file_path = PeFile.get_pefile_path(default_steam_path, APPID_DAYZ_EXP)
+            dayz_exp_version = PeFile.get_dayz_version_str(exp_file_path)
+        except Exception:
+            dayz_exp_version = "-"
+
+        self.dayz_version_label.set_text(dayz_version)
+        self.dayz_exp_version_label.set_text(dayz_exp_version)
 
         if branch == "testing":
             self.branch_combo.set_active(1)

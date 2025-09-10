@@ -29,6 +29,18 @@ params = [
 ]
 
 
+class BmAPIError(Exception):
+    pass
+
+
+class BmIdError(Exception):
+    pass
+
+
+class InvalidIpError(Exception):
+    pass
+
+
 def get_netmask() -> str:
     hostname = os.uname()[1]
     i = socket.gethostbyname(hostname)
@@ -196,7 +208,7 @@ class Res:
     json: Union[str, None]
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class Ping:
     addr: str
     iteration: int
@@ -210,17 +222,33 @@ class Details:
     success: bool
 
 
-def is_passworded(ip: str, qport: int) -> bool:
+@dataclass
+class Prereqs:
+    password: bool
+    gameport: int
+    appid: Union[int, None]
+    version: Union[str, None]
+
+
+@dataclass(slots=True)
+class Record:
+    ip: str
+    gameport: int
+    qport: int
+
+
+def get_prereqs(ip: str, qport: int) -> Prereqs:
     try:
         info = a2s.info((ip, qport))
     except TimeoutError:
-        return False
+        return Prereqs(False, 0, None, None)
 
-    try:
-        password = info.password_protected
-    except AttributeError:
-        return False
-    return password
+    gameport = getattr(info, "port", 0)
+    is_password = getattr(info, "password_protected", False)
+    appid = getattr(info, "game_id", None)
+    version = getattr(info, "version", None)
+
+    return Prereqs(is_password, gameport, appid, version)
 
 
 def details(ip: str, qport: int) -> Details:
@@ -343,12 +371,12 @@ def ping(iteration: int, row: list) -> Ping:
     return Ping(addr, iteration, ping)
 
 
-def query_api(key: str, param: str) -> Res:
+def query_api(key: str, appid: int, param: str) -> Res:
     LIMIT = 10000
     url = "https://api.steampowered.com/IGameServersService/GetServerList/v1/?"
 
     payload: dict[str, Union[int, str]] = {
-        "filter": r"\appid\221100" + param,
+        "filter": r"\appid" + fr"\{appid}" + param,
         "limit": LIMIT,
         "key": key,
     }
@@ -375,3 +403,62 @@ def query_api(key: str, param: str) -> Res:
         data = None
     finally:
         return Res(status, parsed, data)
+
+
+def query_bm_api(api_key: str, bm_id: str) -> Record:
+    if bm_id.isnumeric() is False:
+        raise BmIdError("ID must be numeric only")
+
+    payload: dict[str, Union[int, str]] = {
+        "sort": "-players",
+        "filter[game]": "dayz",
+        "filter[ids][whitelist]": bm_id,
+    }
+
+    url = "https://api.battlemetrics.com/servers?"
+    par = parse.urlencode(payload)
+    url = f"{url}{par}"
+
+    hdr = {"Authorization": "Bearer " + api_key}
+    r = request.Request(url, headers=hdr)
+
+    try:
+        with request.urlopen(r) as response:
+            try:
+                j = json.load(response)
+            except json.decoder.JSONDecodeError:
+                raise BmAPIError("Malformed response from Battlemetrics")
+
+            if len(j["data"]) < 1:
+                raise BmAPIError("Not a valid Battlemetrics ID")
+            j = j["data"][0]["attributes"]
+            return Record(j["ip"], j["port"], j["portQuery"])
+    except HTTPError:
+        raise BmAPIError("Failed to query Battlemetrics")
+
+
+def validate_ip(addr: str):
+    fields = addr.split(":")
+    if len(fields) != 2:
+        raise InvalidIpError("Address must be formatted as IP:Queryport")
+
+    ip = fields[0]
+    port = fields[1]
+
+    try:
+        int(port)
+    except ValueError:
+        raise InvalidIpError(f"'{port}' is not a valid port")
+
+    if int(port) > 65535 or int(port) < 0:
+        raise InvalidIpError(f"'{port}' is not a valid port")
+
+    try:
+        socket.inet_aton(ip)
+    except OSError:
+        raise InvalidIpError(f"'{ip}' is not a valid IP")
+
+    ip = addr.split(":")[0]
+    qport = int(addr.split(":")[1])
+    record = Record(ip, 0, qport)
+    return record

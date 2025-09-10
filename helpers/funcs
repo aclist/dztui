@@ -4,6 +4,7 @@ version="6.0.0-beta.5"
 
 #CONSTANTS
 aid=221100
+exp=1024020
 game="dayz"
 app_name="dzgui"
 app_name_upper="DZGUI"
@@ -46,6 +47,7 @@ _cache_my_servers="$cache_dir/$prefix.my_servers"
 _cache_history="$cache_dir/$prefix.history"
 _cache_launch="$cache_dir/$prefix.launch_mods"
 _cache_address="$cache_dir/$prefix.launch_address"
+_cache_binary="$cache_dir/$prefix.binary"
 _cache_coords="$cache_path/$prefix.coords"
 _cache_cooldown="$cache_path/$prefix.cooldown"
 _cache_lan="$cache_path/$prefix.lan"
@@ -97,12 +99,9 @@ declare -A funcs=(
 ["Change Steam API key"]="update_config_val"
 ["Change Battlemetrics API key"]="update_config_val"
 ["Change favorite server"]="add_record"
-["Quick-connect to favorite server"]="quick_connect"
 ["Add server by IP"]="add_record"
 ["Add server by ID"]="add_record"
-["Connect by IP"]="validate_and_connect"
-["Connect by ID"]="validate_and_connect"
-["Connect from table"]="connect_from_table"
+["try_connect"]="try_connect"
 ["find_id"]="find_id"
 ["toggle"]="toggle"
 ["Open link"]="open_link"
@@ -126,11 +125,26 @@ declare -A funcs=(
 ["Remove from history"]="remove_from_history"
 ["Force update local mods"]="force_update"
 ["Resolve IP"]="resolve_ip"
-["Handshake"]="final_handshake"
+["Handshake"]="handshake"
+["Handshake_EXP"]="handshake_exp"
 ["get_player_count"]="get_player_count"
 ["update_symlinks"]="update_symlinks"
 )
 
+clone_symlinks(){
+    local path="$(< $_cache_binary)"
+    path=$(dirname "$path")
+    for dir in $(find $game_dir -type l); do
+        local link=$(basename $dir)
+        ln -sf "${dir}" "${path}/${link}"
+    done
+}
+handshake(){
+    final_handshake "$aid"
+}
+handshake_exp(){
+    final_handshake "$exp"
+}
 query_favorites(){
     if [[ -z "${ip_list[@]}" ]]; then
         return 1
@@ -191,44 +205,6 @@ get_player_count(){
     printf "%s\n%s" "$players" "$queue"
 }
 
-validate_and_connect(){
-    local context="$1"
-    local addr="$2"
-
-    local record
-    case "$context" in
-        "Connect by ID")
-            if [[ -z "$api_key" ]]; then
-                printf "No Battlemetrics API key set"
-                return 4
-            fi
-            record=$(map_id_to_ip "$addr")
-            if [[ $? -eq 1 ]]; then
-                logger WARN "Not a valid record: '$addr'"
-                printf "Not a valid ID"
-                return 2
-            fi
-            logger INFO "Battlemetrics ID resolved to IP $record"
-            ;;
-        "Connect by IP")
-            if [[ $(validate_ip "$addr") -eq 1 ]]; then
-                printf "Not a valid IP format. Supply IP:Queryport"
-                return 2
-            fi
-            local ip=$(<<< $addr awk -F: '{print $1}')
-            local qport=$(<<< $addr awk -F: '{print $2}')
-            local res
-            res=$(a2s $ip $qport info)
-            if [[ ! $? -eq 0 ]]; then
-                printf "Timed out when querying the server. Is this a valid server?"
-                return 2
-            fi
-            local gameport="$(<<< $res jq -r '.[].gameport')"
-            record="${ip}:${gameport}:${qport}"
-            logger INFO "Record resolved to $record"
-    esac
-    try_connect "$record"
-}
 map_id_to_ip(){
     local id="$1"
     local res=$(curl -s "$bm_api" -H "Authorization: Bearer "$api_key"" \
@@ -293,21 +269,6 @@ add_record(){
             add_to_favs "$record"
             ;;
     esac
-}
-connect_by_id(){
-    if [[ $(validate_ip "$addr") -eq 1 ]]; then
-        printf "Not a valid IP format. Supply IP:Queryport"
-        return 2
-    fi
-    local ip=$(<<< $addr awk -F: '{print $1}')
-    local qport=$(<<< $addr awk -F: '{print $2}')
-    local res
-    res=$(a2s $ip $qport info)
-    if [[ ! $? -eq 0 ]]; then
-        printf "Timed out when querying the server. Is this a valid server?"
-        return 2
-    fi
-    #res contains modlist
 }
 start_cooldown(){
     logger WARN "API response empty. Started 60s cooldown at $(date +%s)"
@@ -444,6 +405,7 @@ query_config(){
         "fav_label"
         "preferred_client"
         "fullscreen"
+        "default_steam_path"
     )
     if [[ -n $key ]]; then
         if [[ -n ${!key} ]]; then
@@ -924,19 +886,6 @@ open_link(){
         xdg-open "$url"
     fi
 }
-
-quick_connect(){
-    if [[ -z $fav_server ]]; then
-        printf "No favorite server currently set"
-        return 1
-    fi
-    try_connect "$fav_server"
-}
-connect_from_table(){
-    shift
-    local record="$1"
-    try_connect  "$record"
-}
 generate_log(){
     source $config_file
 	cat <<-DOC > $system_log
@@ -1126,10 +1075,17 @@ try_fallback(){
     esac
 }
 try_connect(){
+    shift
     local record="$1"
+    local appid="$2"
+    local binary="$3"
+
     local ip=$(<<< $record awk -F: '{print $1}')
     local gameport=$(<<< $record awk -F: '{print $2}')
     local qport=$(<<< $record awk -F: '{print $3}')
+
+    echo "$binary" > $_cache_binary
+
     local remote_mods
     remote_mods=$(a2s $ip $qport rules)
     if [[ $? -eq 1 ]]; then
@@ -1154,11 +1110,11 @@ try_connect(){
             return 1
         fi
         case $auto_install in
-            "") manual_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods";;
-            1|2) manual_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods" "auto" ;;
+            "") manual_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods" "$appid";;
+            1|2) manual_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods" "auto" "$appid" ;;
         esac
     else
-        launch "$ip" "$gameport" "$sanitized_mods"
+        launch "$ip" "$gameport" "$sanitized_mods" "$appid"
     fi
 }
 check_architecture(){
@@ -1176,7 +1132,7 @@ force_update(){
     fi
     rm "$versions_file"
     local update=$(check_timestamps)
-    manual_mod_install "null" "null" "$update" "null" "force"
+    manual_mod_install "null" "null" "$update" "null" "force" "null"
     echo "Finished requesting mod updates."
     return 0
 }
@@ -1293,6 +1249,8 @@ launch(){
     local ip="$1"
     local gameport="$2"
     local mods="$3"
+    local appid="$4"
+
     local concat
     if [[ -n $mods ]]; then
         concat=$(concat_mods "$mods")
@@ -1301,18 +1259,22 @@ launch(){
     fi
 
     update_symlinks
+    [[ $appid -eq $exp ]] && clone_symlinks
+
     if [[ $debug -eq 1 ]]; then
-        local launch_options="$steam_cmd -applaunch $aid -connect=$ip:$gameport -nolauncher -nosplash -name=$name -skipintro -mod=$concat"
+        local launch_options="$steam_cmd -applaunch $appid -connect=$ip:$gameport -nolauncher -nosplash -name=$name -skipintro -mod=$concat"
         printf "Debug mode: these options would have been used to launch the game: $launch_options"
         return 0
     fi
     echo "$concat" > "$_cache_launch"
     echo "$ip:$gameport" > "$_cache_address"
     logger INFO "Saved launch params: '$concat'"
-    printf "Launch conditions satisfied. DayZ will now launch after you confirm this dialog."
-    return 100
+    printf "Launch conditions satisfied. DayZ will launch after you confirm this dialog."
+    [[ $appid == "$aid" ]] && return 100
+    [[ $appid == "$exp" ]] && return 101
 }
 final_handshake(){
+    local appid="$1"
     local saved_mods=$(< "$_cache_launch")
     local saved_address=$(< "$_cache_address")
     local res=$(is_dayz_running)
@@ -1329,7 +1291,7 @@ final_handshake(){
     params+=("-skipintro")
     params+=("-name=$name")
     params+=("-mod=$saved_mods")
-    $steam_cmd -applaunch $aid "${params[@]}" &
+    $steam_cmd -applaunch $appid "${params[@]}" &
     until [[ $(is_dayz_running) -eq 1 ]]; do
         sleep 0.1s
     done
@@ -1343,6 +1305,7 @@ manual_mod_install(){
     local diff="$3"
     local sanitized_mods="$4"
     local mode="$5"
+    local appid="$6"
     local ex="$state_path/dzg.watcher"
 
     readarray -t stage_mods <<< "$diff"
@@ -1400,7 +1363,7 @@ manual_mod_install(){
             rm "$versions_file"
             check_timestamps
         fi
-        launch "$ip" "$gameport" "$sanitized_mods"
+        launch "$ip" "$gameport" "$sanitized_mods" "$appid"
     else
         printf "User aborted download process, or some mods may have failed to download. Try connecting again to resync."
         exit 1
