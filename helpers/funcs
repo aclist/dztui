@@ -453,7 +453,7 @@ get_dist(){
     else
         logger INFO "Resolved remote server geolocation to '$remote_lat, $remote_lon'"
         local dist=$($km_helper "$local_lat" "$local_lon" "$remote_lat" "$remote_lon")
-        LC_NUMERIC=C printf "%d" "$dist"
+        LC_NUMERIC=C printf "%.0f" "$dist"
         logger INFO "Distance: $dist km"
     fi
 }
