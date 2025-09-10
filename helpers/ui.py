@@ -3155,7 +3155,13 @@ class ModDialog(GenericDialog):
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             self.view.append_column(column)
             column.set_sort_column_id(i)
-            column.set_fixed_width(350)
+            match column_title:
+                case "Mod":
+                    column.set_fixed_width(350)
+                case "ID":
+                    column.set_fixed_width(200)
+                case _:
+                    pass
         dialogBox.pack_end(self.scrollable, True, True, 0)
 
         wait_dialog = GenericDialog("Fetching modlist", Popup.WAIT)
