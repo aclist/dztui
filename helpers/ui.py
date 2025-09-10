@@ -2562,6 +2562,10 @@ class TreeView(Gtk.TreeView):
                     column.set_cell_data_func(
                         renderer, self._format_float, func_data=None
                     )
+                if column_title == "Mod":
+                    column.set_fixed_width(500)
+                else:
+                    column.set_fixed_width(150)
             else:
                 # WindowContext.TABLE_LOG uses undecorated columns
                 column = Gtk.TreeViewColumn(column_title, renderer, text=i)
