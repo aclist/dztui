@@ -907,6 +907,9 @@ def process_shell_return_code(
 def call_on_thread(
     state: bool, subproc: str, msg: str, args: str, choice: RowType = None
 ) -> None:
+    """
+    Exclusively used for threaded subprocesses
+    """
     def _background(subproc: str, args: str, dialog):
         def _load() -> None:
             wait_dialog.destroy()
@@ -4022,8 +4025,8 @@ class Notebook(Gtk.Notebook):
         if hasattr(page, "steam_entry"):
             """
             Gtk.Notebook focuses the first input field when changing pages;
-            this workaround unhighlights the selected region and makes entry fields
-            unfocusable prior to the page 'switch-page' signal,
+            this workaround unhighlights the selected region and makes entry
+            fields unfocusable prior to the page 'switch-page' signal,
             then makes them focusable again
             """
             entries = page.steam_entry, page.bm_entry
