@@ -669,11 +669,12 @@ def suppress_signal(
 ) -> None:
     func = getattr(owner, func_name)
     if state:
-        logger.debug(f"Unblocking {func_name} for {widget}")
+        logger.debug(f"Blocking {func_name} for {widget}")
         widget.handler_block_by_func(func)
     else:
-        logger.debug(f"Blocking {func_name} for {widget}")
+        logger.debug(f"Unblocking {func_name} for {widget}")
         widget.handler_unblock_by_func(func)
+    App.treeview.sel_blocked = state
 
 
 def pluralize(plural: str, count: int) -> str:
@@ -1650,6 +1651,7 @@ class TreeView(Gtk.TreeView):
         self.view = WindowContext.MAIN_MENU
         self.page = WindowContext.MAIN_MENU
         self.subpage = None
+        self.sel_blocked = False
 
         self.set_fixed_height_mode(True)
 
@@ -2038,12 +2040,13 @@ class TreeView(Gtk.TreeView):
                     return False
         else:
             if is_navkey(event.keyval):
-                suppress_signal(
-                    App.treeview,
-                    App.treeview.selected_row,
-                    "_on_tree_selection_changed",
-                    True,
-                )
+                if self.sel_blocked is False:
+                    suppress_signal(
+                        App.treeview,
+                        App.treeview.selected_row,
+                        "_on_tree_selection_changed",
+                        True,
+                    )
             if keyname.isnumeric() and int(keyname) > 0:
                 digit = int(keyname) - 1
                 grid.right_panel.filters_vbox.toggle_check(digit)
@@ -2078,12 +2081,13 @@ class TreeView(Gtk.TreeView):
         Suppresses spamming on keydown
         """
         if is_navkey(event.keyval):
-            suppress_signal(
-                App.treeview,
-                App.treeview.selected_row,
-                "_on_tree_selection_changed",
-                False,
-            )
+            if self.sel_blocked is True:
+                suppress_signal(
+                    App.treeview,
+                    App.treeview.selected_row,
+                    "_on_tree_selection_changed",
+                    False,
+                )
             selection = self.get_selection()
             self._on_tree_selection_changed(selection)
 
