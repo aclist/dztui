@@ -20,7 +20,6 @@ from concurrent.futures import ThreadPoolExecutor
 from collections.abc import Callable
 from typing import Literal, Self, Any
 
-sys.path.append("servers")
 import servers as Servers  # noqa E402
 
 locale.setlocale(locale.LC_ALL, "")
