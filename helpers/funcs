@@ -1705,7 +1705,6 @@ manual_mod_install(){
     _watcher(){
         for((i=0;i<${#stage_mods[@]};i++)); do
             [[ -f $ex ]] && return 1
-            log ${stage_mods[$i]}
 
             if [[ $mode == "auto" ]] || [[ $mode == "force" ]]; then
                 $steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}+workshop_download_item $aid ${stage_mods[$i]}"
