@@ -201,7 +201,7 @@ def query_direct(ip: str, qport: int, TIMEOUT=3.0) -> dict | None:
         return None
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class Res:
     status: int
     parsed: bool
@@ -215,14 +215,14 @@ class Ping:
     ping: int
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class Details:
     data: Union[list, None]
     description: str
     success: bool
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class Prereqs:
     password: bool
     gameport: int
@@ -231,6 +231,9 @@ class Prereqs:
 
 
 @dataclass(slots=True)
+"""
+The gameport field is manipulated by the RowType.CONN_BY_IP method
+"""
 class Record:
     ip: str
     gameport: int

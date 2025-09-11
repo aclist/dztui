@@ -99,7 +99,7 @@ If this issue persists, your API key may be defunct.
 """
 
 
-@dataclass
+@dataclass(slots=True)
 class Record:
     ip: str
     gameport: int
