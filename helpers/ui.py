@@ -23,12 +23,18 @@ from typing import Literal, Self, Any
 import servers as Servers  # noqa E402
 import pefile as PeFile  # noqa E402
 
-from pefile import VDFLoadError, AppNotInstalledError, AppMovedError, PeFileError
+from pefile import (
+    VDFLoadError,
+    AppNotInstalledError,
+    AppMovedError,
+    PeFileError,
+)
 from pefile import VersionMatch, DayZVersion
 
 locale.setlocale(locale.LC_ALL, "")
 
 import gi  # noqa E402
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 
@@ -725,7 +731,7 @@ def format_metadata(row_sel: str) -> str:
         "fav_label": config_vals[4],
         "preferred_client": config_vals[5],
         "fullscreen": config_vals[6],
-        "default_steam_path": config_vals[7]
+        "default_steam_path": config_vals[7],
     }
     if row is None:
         return ""
@@ -936,6 +942,7 @@ def call_on_thread(
     """
     Exclusively used for threaded subprocesses
     """
+
     def _background(subproc: str, args: str, dialog):
         def _load() -> None:
             wait_dialog.destroy()
@@ -1011,7 +1018,7 @@ def process_tree_option(choice: RowType) -> None:
             parse_shell_output,
             "Querying server",
             command,
-            [record]
+            [record],
         )
         return
 
@@ -1045,9 +1052,8 @@ def thread_new_with_dialog(
     callback: Callable | None,
     msg: str,
     row: RowType | None,
-    args: list
+    args: list,
 ) -> None:
-
     """
     Pop a GenericDialog transient to App.treeview and
     call a function on a thread, with optional callback.
@@ -1128,11 +1134,7 @@ def connect_by_ip(enum: RowType, response: str) -> None:
         return proc
 
     thread_new_with_dialog(
-        _prep,
-        parse_shell_output,
-        "Querying IP",
-        enum,
-        [response]
+        _prep, parse_shell_output, "Querying IP", enum, [response]
     )
     return
 
@@ -1144,11 +1146,7 @@ def connect_by_id(enum: RowType, response: str, key: str) -> None:
         return proc
 
     thread_new_with_dialog(
-        _prep,
-        parse_shell_output,
-        "Querying API",
-        enum,
-        [key, response]
+        _prep, parse_shell_output, "Querying API", enum, [key, response]
     )
     return
 
@@ -1161,7 +1159,9 @@ def process_user_input(enum: RowType) -> None:
     if enum == RowType.CONN_BY_ID:
         key = query_config("api_key")[0]
         if len(key) == 0:
-            spawn_dialog("No Battlemetrics API key is set; see Options", Popup.NOTIFY)
+            spawn_dialog(
+                "No Battlemetrics API key is set; see Options", Popup.NOTIFY
+            )
             return
 
     user_entry = EntryDialog(prompt, Popup.ENTRY, link_label)
@@ -2349,7 +2349,10 @@ class TreeView(Gtk.TreeView):
         params = Servers.params
         serv = []
         with ThreadPoolExecutor() as executor:
-            futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
+            futures = [
+                executor.submit(job, key, APPID_DAYZ, param)
+                for param in params
+            ]
             wait(futures)
             for future in futures:
                 res = future.result()
@@ -2855,7 +2858,9 @@ class TreeView(Gtk.TreeView):
     def get_view(self):
         return self.view
 
-    def prepare_connection(self, record: Record) -> subprocess.CompletedProcess | None:
+    def prepare_connection(
+        self, record: Record
+    ) -> subprocess.CompletedProcess | None:
         """
         Always called on a thread with a dialog on the transient parent window
         """
@@ -2870,7 +2875,9 @@ class TreeView(Gtk.TreeView):
         steam_path = query_config("default_steam_path")[0]
 
         if len(steam_path) < 1:
-            logger.critical("Config file has no value set for 'default_steam_path'")
+            logger.critical(
+                "Config file has no value set for 'default_steam_path'"
+            )
             msg = f"Local Steam installation is not set, possibly malformed config file."
             spawn_dialog(msg, Popup.NOTIFY)
             return None
@@ -2878,7 +2885,9 @@ class TreeView(Gtk.TreeView):
         try:
             pefile_path = PeFile.get_pefile_path(steam_path, prereqs.appid)
         except AppNotInstalledError:
-            logger.critical(f"'{prereqs.appid}' not found in user's libraryfolders")
+            logger.critical(
+                f"'{prereqs.appid}' not found in user's libraryfolders"
+            )
             msg = (
                 f"This server is running {build}. "
                 f"You can install {build} by searching for it in "
@@ -2887,7 +2896,9 @@ class TreeView(Gtk.TreeView):
             spawn_dialog(msg, Popup.NOTIFY)
             return None
         except AppMovedError:
-            logger.critical(f"Library folder synch error for '{prereqs.appid}'")
+            logger.critical(
+                f"Library folder synch error for '{prereqs.appid}'"
+            )
             msg = (
                 f"Steam is reporting that {build} is installed at a non-existent location. "
                 f"If you recently installed {build} or moved it to a different drive, "
@@ -2915,8 +2926,7 @@ class TreeView(Gtk.TreeView):
         except Exception:
             remote_vers = None
 
-        if (local_vers is not None and
-            remote_vers is not None):
+        if local_vers is not None and remote_vers is not None:
             match = PeFile.compare_versions(local_vers, remote_vers)
 
             match match:
@@ -2954,10 +2964,7 @@ class TreeView(Gtk.TreeView):
         record.gameport = prereqs.gameport
         addr = record_to_str(record)
         proc = call_out(
-            "try_connect",
-            addr,
-            str(prereqs.appid),
-            str(pefile_path)
+            "try_connect", addr, str(prereqs.appid), str(pefile_path)
         )
         return proc
 
@@ -3034,7 +3041,7 @@ class TreeView(Gtk.TreeView):
                     parse_shell_output,
                     "Querying server",
                     None,
-                    [record]
+                    [record],
                 )
             case _:  # any other non-server option from the main menu
                 process_tree_option(output)
@@ -3388,7 +3395,7 @@ class DetailsDialog(GenericDialog):
             reg = r"\s(www\.*?)"
             text = re.sub(reg, " http://" + r"\1", text)
             reg2 = r"(http.*?)([ ,\r\n]|$)"
-            text = re.sub(reg2, comp(r"\1")+r"\2", text)
+            text = re.sub(reg2, comp(r"\1") + r"\2", text)
 
             self.description.set_markup(text)
         self.success = response.success
@@ -3753,7 +3760,7 @@ class Options(Gtk.Box):
         version_rows = [
             [LeftLabel("DayZ"), self.dayz_version_label],
             [LeftLabel("DayZ Experimental"), self.dayz_exp_version_label],
-            [LeftLabel("DZGUI branch"), self.branch_combo, eb]
+            [LeftLabel("DZGUI branch"), self.branch_combo, eb],
         ]
 
         api_grid = self._make_grid(api_rows)
@@ -4042,14 +4049,18 @@ class Options(Gtk.Box):
                 field[1].get_children()[1].set_sensitive(False)
 
         try:
-            pe_file_path = PeFile.get_pefile_path(default_steam_path, APPID_DAYZ)
+            pe_file_path = PeFile.get_pefile_path(
+                default_steam_path, APPID_DAYZ
+            )
             vers = PeFile.get_dayz_version(pe_file_path)
             dayz_version = PeFile.dayz_version_to_str(vers)
         except Exception:
             dayz_version = "-"
 
         try:
-            exp_file_path = PeFile.get_pefile_path(default_steam_path, APPID_DAYZ_EXP)
+            exp_file_path = PeFile.get_pefile_path(
+                default_steam_path, APPID_DAYZ_EXP
+            )
             vers = PeFile.get_dayz_version(exp_file_path)
             dayz_exp_version = PeFile.dayz_version_to_str(vers)
         except Exception:
@@ -4568,7 +4579,7 @@ class ModSelectionPanel(Gtk.Box):
             {
                 "label": "Highlight stale",
                 "tooltip": "Shows locally-installed mods which are not\n"
-                           "used by any server in your Saved Servers",
+                "used by any server in your Saved Servers",
             },
         ]
 

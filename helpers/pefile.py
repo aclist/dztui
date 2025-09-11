@@ -200,6 +200,7 @@ class RESOURCE_DIRECTORY_ENTRY(PackedData):
     (the name consists of 16 bits length and trailing wide characters,
     in Unicode, not 0-terminated).
     """
+
     name_or_id: u32
     data_or_subdir: u32
 
@@ -246,30 +247,34 @@ class Result:
 
 class PeFileError(Exception):
     """Expected contents missing from headers or resource nodes"""
+
     pass
 
 
 class AppNotInstalledError(Exception):
     """App not present in user's libraryfolders"""
+
     pass
 
 
 class AppMovedError(Exception):
     """VDF points to a nonexistent location on disk"""
+
     pass
 
 
 class VDFLoadError(Exception):
     """Malformed VDF or JSON conversion"""
+
     pass
 
 
 def parse_version_number(data: BinaryIO):
     # https://learn.microsoft.com/en-us/windows/win32/api/verrsrc/ns-verrsrc-vs_fixedfileinfo
-    minor = struct.unpack("<L", data.read(4))[0] >> 16 & 0xffff
-    major = struct.unpack("<L", data.read(4))[0] >> 0 & 0xffff
-    build = struct.unpack("<L", data.read(4))[0] >> 0 & 0xffff
-    revision = struct.unpack("<L", data.read(4))[0] >> 16 & 0xffff
+    minor = struct.unpack("<L", data.read(4))[0] >> 16 & 0xFFFF
+    major = struct.unpack("<L", data.read(4))[0] >> 0 & 0xFFFF
+    build = struct.unpack("<L", data.read(4))[0] >> 0 & 0xFFFF
+    revision = struct.unpack("<L", data.read(4))[0] >> 16 & 0xFFFF
     return FileVersion(major, minor, build, revision)
 
 
@@ -358,9 +363,9 @@ def get_version(file):
                     seek_to_hex(hex(offset + shift), f)
                     table = RESOURCE_DIRECTORY_TABLE.unpack(f)
                     total = (
-                            table.number_of_name_entries +
-                            table.number_of_id_entries
-                             )
+                        table.number_of_name_entries
+                        + table.number_of_id_entries
+                    )
                     for entry in range(total):
                         entry = RESOURCE_DIRECTORY_ENTRY.unpack(f)
                 break
@@ -456,33 +461,33 @@ def compare_versions(local: DayZVersion, remote: DayZVersion):
 
 def vdf_to_json(stream):
     def _istr(indent, string):
-        return (indent * '  ') + string
+        return (indent * "  ") + string
 
-    jbuf = '{\n'
+    jbuf = "{\n"
     lex = shlex(stream)
     indent = 1
 
     while True:
         tok = lex.get_token()
         if not tok:
-            return jbuf + '}\n'
-        if tok == '}':
+            return jbuf + "}\n"
+        if tok == "}":
             indent -= 1
-            jbuf += _istr(indent, '}')
+            jbuf += _istr(indent, "}")
             ntok = lex.get_token()
             lex.push_token(ntok)
-            if ntok and ntok != '}':
-                jbuf += ','
-            jbuf += '\n'
+            if ntok and ntok != "}":
+                jbuf += ","
+            jbuf += "\n"
         else:
             ntok = lex.get_token()
-            if ntok == '{':
-                jbuf += _istr(indent, tok + ': {\n')
+            if ntok == "{":
+                jbuf += _istr(indent, tok + ": {\n")
                 indent += 1
             else:
-                jbuf += _istr(indent, tok + ': ' + ntok)
+                jbuf += _istr(indent, tok + ": " + ntok)
                 ntok = lex.get_token()
                 lex.push_token(ntok)
-                if ntok != '}':
-                    jbuf += ','
-                jbuf += '\n'
+                if ntok != "}":
+                    jbuf += ","
+                jbuf += "\n"
