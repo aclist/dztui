@@ -231,10 +231,10 @@ class Prereqs:
 
 
 @dataclass(slots=True)
-"""
-The gameport field is manipulated by the RowType.CONN_BY_IP method
-"""
 class Record:
+    """
+    The gameport field is manipulated by the RowType.CONN_BY_IP method
+    """
     ip: str
     gameport: int
     qport: int
