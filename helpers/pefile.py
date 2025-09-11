@@ -4,7 +4,6 @@ import typing  # noqa
 
 from dataclasses import dataclass
 from enum import Enum
-from packaging.version import Version
 from pathlib import Path
 from shlex import shlex
 from typing import BinaryIO, Union
