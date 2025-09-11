@@ -24,7 +24,6 @@ class VersionMatch(Enum):
     LOCAL_OLDER = 1
     LOCAL_NEWER = 2
     SAME_VERSION = 3
-    FAIL = 4
 
 
 class u8:
@@ -288,17 +287,24 @@ def seek_to_pe_stub(data: BinaryIO) -> None:
         raise PeFileError("missing PE header data")
 
 
-def get_dayz_version(file: Path) -> DayZVersion:
-    version = get_version(file)
+def get_dayz_version(file: Path) -> DayZVersion | Exception:
+    try:
+        version = get_version(file)
+    except Exception as e:
+        return e
     patch = str(version.build) + str(version.revision)
     dz_vers = DayZVersion(version.major, version.minor, int(patch))
     return dz_vers
 
 
-def get_dayz_version_str(file: Path) -> str:
-    v = get_dayz_version(file)
-    concat = ".".join(str(el) for el in [v.major, v.minor, v.patch])
-    return concat
+def dayz_version_to_str(v: DayZVersion) -> str:
+    return ".".join(str(el) for el in [v.major, v.minor, v.patch])
+
+
+def dayz_version_from_str(v: str) -> DayZVersion:
+    vers = v.split(".")
+    assert len(vers) == 3
+    return DayZVersion(*[int(el) for el in vers])
 
 
 def get_version(file):
@@ -389,14 +395,6 @@ def get_version(file):
         return version
 
 
-def is_older_version(local: str, remote: str) -> bool:
-    return Version(local) < Version(remote)
-
-
-def is_newer_version(local: str, remote: str) -> bool:
-    return Version(local) > Version(remote)
-
-
 def get_pefile_path(path: str, appid: int) -> Path:
     binary = "DayZ_x64.exe"
     identifier = {221100: "DayZ", 1024020: "DayZ Exp"}
@@ -431,38 +429,29 @@ def get_pefile_path(path: str, appid: int) -> Path:
     return pe_path
 
 
-def compare_versions(remote: str, appid: int, path: str):
-    if appid == 221100:
-        build = "DayZ"
-    else:
-        build = "DayZ Experimental"
+def compare_versions(local: DayZVersion, remote: DayZVersion):
+    """
+    packaging.version module is not available OOTB on some distributions
+    """
+    if dayz_version_to_str(local) == dayz_version_to_str(remote):
+        return VersionMatch.SAME_VERSION
 
-    local = None
-    pe_filepath = None
-    error = None
-
-    try:
-        pe_filepath = get_pefile_path(path, appid)
-    except Exception as e:
-        return Result(
-            local, remote, build, pe_filepath, VersionMatch.FAIL, e
-        )
-
-    try:
-        local = get_dayz_version_str(pe_filepath)
-    except PeFileError:
-        return Result(
-            local, remote, build, pe_filepath, VersionMatch.FAIL, error
-        )
-
-    if is_older_version(local, remote):
-        res = VersionMatch.LOCAL_OLDER
-    elif is_newer_version(local, remote):
-        res = VersionMatch.LOCAL_NEWER
-    else:
-        res = VersionMatch.SAME_VERSION
-
-    return Result(local, remote, build, pe_filepath, res, error)
+    if local.major < remote.major:
+        return VersionMatch.LOCAL_OLDER
+    if local.major > remote.major:
+        return VersionMatch.LOCAL_NEWER
+    if local.major == remote.major:
+        if local.minor < remote.minor:
+            return VersionMatch.LOCAL_OLDER
+        if local.minor > remote.minor:
+            return VersionMatch.LOCAL_NEWER
+        if local.minor == remote.minor:
+            if local.patch < remote.patch:
+                return VersionMatch.LOCAL_OLDER
+            if local.patch > remote.patch:
+                return VersionMatch.LOCAL_NEWER
+            if local.patch == remote.patch:
+                return VersionMatch.SAME_VERSION
 
 
 def vdf_to_json(stream):

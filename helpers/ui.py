@@ -24,7 +24,7 @@ import servers as Servers  # noqa E402
 import pefile as PeFile  # noqa E402
 
 from pefile import VDFLoadError, AppNotInstalledError, AppMovedError, PeFileError
-from pefile import VersionMatch
+from pefile import VersionMatch, DayZVersion
 
 locale.setlocale(locale.LC_ALL, "")
 
@@ -2861,56 +2861,83 @@ class TreeView(Gtk.TreeView):
         """
         prereqs = Servers.get_prereqs(record.ip, record.qport)
         if prereqs.appid is None:
+            logger.warning(f"Query to '{record.ip}:{record.qport}' timed out")
             msg = "Timed out when querying server, check IP or try again later"
             spawn_dialog(msg, Popup.NOTIFY)
             return None
 
-        if prereqs.version is not None:
-            path = query_config("default_steam_path")[0]
-            result = PeFile.compare_versions(prereqs.version, prereqs.appid, path)
+        build = "DayZ" if prereqs.appid == APPID_DAYZ else "DayZ Experimental"
+        steam_path = query_config("default_steam_path")[0]
 
-            if result.error is not None:
-                logger.warning(result.error)
+        if len(steam_path) < 1:
+            logger.critical("Config file has no value set for 'default_steam_path'")
+            msg = f"Local Steam installation is not set, possibly malformed config file."
+            spawn_dialog(msg, Popup.NOTIFY)
+            return None
 
-            if result.match == VersionMatch.FAIL:
-                if isinstance(result.error, VDFLoadError) or isinstance(result.error, PeFileError):
-                    # permissive; file exists, but could not determine version
-                    pass
-                if isinstance(result.error, AppNotInstalledError):
-                    if prereqs.appid == 1024020:
-                        msg = (
-                            "This server is running DayZ Experimental, a beta build. "
-                            "You can install DayZ Experimental by searching for it in "
-                            "your Steam library."
-                        )
-                        spawn_dialog(msg, Popup.NOTIFY)
-                    return None
-                if isinstance(result.error, AppMovedError):
+        try:
+            pefile_path = PeFile.get_pefile_path(steam_path, prereqs.appid)
+        except AppNotInstalledError:
+            logger.critical(f"'{prereqs.appid}' not found in user's libraryfolders")
+            msg = (
+                f"This server is running {build}. "
+                f"You can install {build} by searching for it in "
+                "your Steam library."
+            )
+            spawn_dialog(msg, Popup.NOTIFY)
+            return None
+        except AppMovedError:
+            logger.critical(f"Library folder synch error for '{prereqs.appid}'")
+            msg = (
+                f"Steam is reporting that {build} is installed at a non-existent location. "
+                f"If you recently installed {build} or moved it to a different drive, "
+                "restart Steam to allow these changes to synchronize, then try again."
+            )
+            spawn_dialog(msg, Popup.NOTIFY)
+            return None
+        except (VDFLoadError, PeFileError, Exception) as e:
+            logger.critical(e)
+            msg = "Steam settings or DayZ installation may be corrupted. Try restarting Steam."
+            spawn_dialog(msg, Popup.NOTIFY)
+            return None
+
+        try:
+            local_vers = PeFile.get_dayz_version(pefile_path)
+        except (PeFileError, Exception) as e:
+            """
+            Currently permissive; file exists, but was unparseable.
+            """
+            logger.warning(f"Failed to parse PE file: {e}")
+            local_vers = None
+
+        try:
+            remote_vers = PeFile.dayz_version_from_str(prereqs.version)
+        except Exception:
+            remote_vers = None
+
+        if (local_vers is not None and
+            remote_vers is not None):
+            match = PeFile.compare_versions(local_vers, remote_vers)
+
+            match match:
+                case VersionMatch.LOCAL_OLDER:
                     msg = (
-                        f"Steam is reporting that {result.build} is installed at a non-existent location. "
-                        f"If you recently installed {result.build} or moved it to a different drive, "
-                        "restart Steam to allow these changes to synchronize, then try again."
+                        f"This server is running a newer build ({prereqs.version}) of {build} than "
+                        f"your local version. You may be unable to connect. Proceed anyway?"
                     )
-                    spawn_dialog(msg, Popup.NOTIFY)
-                    return None
-
-            if result.match == VersionMatch.LOCAL_OLDER:
-                msg = (
-                    f"This server is running a newer build ({result.remote}) of {result.build} than "
-                    f"your local version ({result.local}). You may be unable to connect. Proceed anyway?"
-                )
-                res = spawn_dialog(msg, Popup.CONFIRM)
-                if res is True:
-                    return None
-
-            if result.match == VersionMatch.LOCAL_NEWER:
-                msg = (
-                    f"This server is running an out-of-date build ({result.remote}) of {result.build}. "
-                    "You may be unable to connect. Proceed anyway?"
-                )
-                res = spawn_dialog(msg, Popup.CONFIRM)
-                if res is True:
-                    return None
+                    res = spawn_dialog(msg, Popup.CONFIRM)
+                    if res is True:
+                        return None
+                case VersionMatch.LOCAL_NEWER:
+                    msg = (
+                        f"This server is running an out-of-date build ({prereqs.version}) of {build}. "
+                        "You may be unable to connect. Proceed anyway?"
+                    )
+                    res = spawn_dialog(msg, Popup.CONFIRM)
+                    if res is True:
+                        return None
+                case VersionMatch.SAME_VERSION:
+                    pass
 
         if prereqs.password is True:
             msg = (
@@ -2924,14 +2951,13 @@ class TreeView(Gtk.TreeView):
         """
         When using RowType.CONN_BY_IP, the gameport needs to be interpolated
         """
-
         record.gameport = prereqs.gameport
         addr = record_to_str(record)
         proc = call_out(
             "try_connect",
             addr,
             str(prereqs.appid),
-            str(result.path)
+            str(pefile_path)
         )
         return proc
 
@@ -4017,13 +4043,15 @@ class Options(Gtk.Box):
 
         try:
             pe_file_path = PeFile.get_pefile_path(default_steam_path, APPID_DAYZ)
-            dayz_version = PeFile.get_dayz_version_str(pe_file_path)
+            vers = PeFile.get_dayz_version(pe_file_path)
+            dayz_version = PeFile.dayz_version_to_str(vers)
         except Exception:
             dayz_version = "-"
 
         try:
             exp_file_path = PeFile.get_pefile_path(default_steam_path, APPID_DAYZ_EXP)
-            dayz_exp_version = PeFile.get_dayz_version_str(exp_file_path)
+            vers = PeFile.get_dayz_version(exp_file_path)
+            dayz_exp_version = PeFile.dayz_version_to_str(vers)
         except Exception:
             dayz_exp_version = "-"
 
