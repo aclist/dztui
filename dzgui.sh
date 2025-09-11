@@ -587,7 +587,7 @@ fetch_helpers_by_sum(){
     sums=(
         ["funcs"]="f1db0e8b1068defdf834e9c9510bf315"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
-        ["servers.py"]="f830383f1da7bc424e4e9f882395e357"
+        ["servers.py"]="7f83d5c1ca54acb12f1bd6657feb2ecf"
         ["ui.py"]="3258d5c85ef22517277c213ee2fc9b1d"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["pefile.py"]="894450c3d3480f3292ce1ff765c56719"
@@ -1030,7 +1030,7 @@ initial_setup(){
     watcher_deps
     check_architecture
     test_connection
-    fetch_helpers > >(pdialog "Checking helper files")
+   fetch_helpers > >(pdialog "Checking helper files")
     varcheck
     source "$config_file"
     lock
