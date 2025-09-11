@@ -1084,7 +1084,7 @@ try_connect(){
     local gameport=$(<<< $record awk -F: '{print $2}')
     local qport=$(<<< $record awk -F: '{print $3}')
 
-    echo "$binary" > $_cache_binary
+    [[ $appid -eq $exp ]] && echo "$binary" > $_cache_binary
 
     local remote_mods
     remote_mods=$(a2s $ip $qport rules)
@@ -1110,7 +1110,7 @@ try_connect(){
             return 1
         fi
         case $auto_install in
-            "") manual_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods" "$appid";;
+            "") manual_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods" "" "$appid";;
             1|2) manual_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods" "auto" "$appid" ;;
         esac
     else
