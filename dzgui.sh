@@ -587,10 +587,10 @@ fetch_helpers_by_sum(){
     sums=(
         ["funcs"]="f1db0e8b1068defdf834e9c9510bf315"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
-        ["servers.py"]="3610debc3f2931d2aa7c002ae912db88"
-        ["ui.py"]="567b39cefb08f66f63f77cae5fa0c94f"
+        ["servers.py"]="f830383f1da7bc424e4e9f882395e357"
+        ["ui.py"]="3258d5c85ef22517277c213ee2fc9b1d"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["pefile.py"]="cc23ff2725fedb1c64908f77477360b6"
+        ["pefile.py"]="894450c3d3480f3292ce1ff765c56719"
     )
     local author="aclist"
     local repo="dztui"
