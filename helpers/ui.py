@@ -2889,9 +2889,10 @@ class TreeView(Gtk.TreeView):
                 f"'{prereqs.appid}' not found in user's libraryfolders"
             )
             msg = (
-                f"This server is running {build}. "
-                f"You can install {build} by searching for it in "
-                "your Steam library."
+                f"This server is running {build}. You can install "
+                f"{build} by searching for it in your Steam library. "
+                f"If you recently installed {build} or moved it to a different drive, "
+                "restart Steam to allow these changes to synchronize, then try again."
             )
             spawn_dialog(msg, Popup.NOTIFY)
             return None
