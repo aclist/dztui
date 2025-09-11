@@ -590,7 +590,7 @@ fetch_helpers_by_sum(){
         ["servers.py"]="7f83d5c1ca54acb12f1bd6657feb2ecf"
         ["ui.py"]="3258d5c85ef22517277c213ee2fc9b1d"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["pefile.py"]="894450c3d3480f3292ce1ff765c56719"
+        ["pefile.py"]="21531f2c0d9dfa5f110cf6779f9d22c0"
     )
     local author="aclist"
     local repo="dztui"
