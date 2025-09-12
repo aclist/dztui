@@ -1,5 +1,21 @@
 # Changelog
 
+## [6.0.0-beta.5] 2025-09-12
+## Added
+- Support DayZ Experimental
+- Show additional client information in Options menu
+- Warn user of client version mismatches
+- Support clickable hyperlinks
+
+## Fixed
+- Mods rarely not appearing in local mod list if download completed too quickly
+- Statusbar not updating when clicking a row after spamming keyboard input
+- Extraneous logs being generated when subscribing to mods
+- Narrow width of columns in modlist dialogs occluding text
+- Newline terminators in history file
+- Floating point number calculation
+- Window resizing too small if no prior resolution was set
+
 ## [6.0.0-beta.5] 2025-08-20
 ## Fixed
 - Servers returning malformed A2S_INFO blocking server browser from loading
