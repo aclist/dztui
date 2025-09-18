@@ -3594,6 +3594,9 @@ class EntryDialog(GenericDialog):
         label = button.get_label()
         call_bash_func("Open link", label)
 
+    def get_entry(self) -> Gtk.Entry:
+        return self.user_entry
+
     def get_input(self) -> str | None:
         self.dialog.show_all()
 
