@@ -658,32 +658,42 @@ def block_signals(state: bool = True) -> None:
         )
 
 
+def read_json(path: str) -> str:
+    try:
+        with open(path, "r") as infile:
+            try:
+                data = json.load(infile)
+            except json.decoder.JSONDecodeError as e:
+                raise e
+    except OSError as e:
+        raise e
+    return data
+
+
+def write_json(data: str, path: str) -> None:
+    try:
+        j = json.dumps(data, indent=2)
+    except Exception as e:
+        raise e
+
+    try:
+        with open(path, "w") as outfile:
+            outfile.write(j)
+    except OSError as e:
+        raise e
+
+
 def save_res_and_quit(*args) -> None:
     if App.window.props.is_maximized:
         Gtk.main_quit()
         return
     rect = App.window.get_size()
 
-    def write_json(rect):
-        data = {"res": {"width": rect.width, "height": rect.height}}
-        j = json.dumps(data, indent=2)
-        with open(res_path, "w") as outfile:
-            outfile.write(j)
-        logger.info(f"Wrote window size to '{res_path}'")
-
-    if os.path.isfile(res_path):
-        with open(res_path, "r") as infile:
-            try:
-                data = json.load(infile)
-                data["res"]["width"] = rect.width
-                data["res"]["height"] = rect.height
-                with open(res_path, "w") as outfile:
-                    outfile.write(json.dumps(data, indent=2))
-            except json.decoder.JSONDecodeError:
-                logger.critical(f"JSON decode error in '{res_path}'")
-                write_json(rect)
-    else:
-        write_json(rect)
+    data = {"res": {"width": rect.width, "height": rect.height}}
+    try:
+        write_json(data, res_path)
+    except Exception as e:
+        logger.critical(e)
 
     Gtk.main_quit()
 
@@ -1249,15 +1259,11 @@ class OuterWindow(Gtk.Window):
             self.fullscreen()
 
         try:
-            with open(res_path, "r") as infile:
-                try:
-                    data = json.load(infile)
-                    valid_json = True
-                except json.decoder.JSONDecodeError:
-                    logger.critical(f"JSON decode error in '{res_path}'")
-                    valid_json = False
-        except OSError:
+            data = read_json(res_path)
+            valid_json = True
+        except Exception as e:
             valid_json = False
+            logger.critical(e)
 
         if valid_json:
             res = data["res"]
@@ -2596,39 +2602,27 @@ class TreeView(Gtk.TreeView):
     def _on_col_width_changed(
         self, col: Gtk.TreeViewColumn, width: GObject.ParamSpecInt
     ) -> None:
-        def write_json(title, size):
-            data = {"cols": {title: size}}
-            j = json.dumps(data, indent=2)
-            with open(geometry_path, "w") as outfile:
-                outfile.write(j)
-            logger.info(f"Wrote initial column widths to '{geometry_path}'")
-
         title = col.get_title()
         size = col.get_width()
 
-        if os.path.isfile(geometry_path):
-            with open(geometry_path, "r") as infile:
-                try:
-                    data = json.load(infile)
-                    data["cols"][title] = size
-                    with open(geometry_path, "w") as outfile:
-                        outfile.write(json.dumps(data, indent=2))
-                except json.decoder.JSONDecodeError:
-                    logger.critical(f"JSON decode error in '{geometry_path}'")
-                    write_json(title, size)
-        else:
-            write_json(title, size)
+        try:
+            data = read_json(geometry_path)
+            data["cols"][title] = size
+        except Exception as e:
+            logger.critical(e)
+            data = {"cols": {title: size}}
+
+        try:
+            write_json(data, geometry_path)
+        except Exception as e:
+            logger.critical(e)
 
     def initialize_columns(self) -> None:
-        if os.path.isfile(geometry_path):
-            with open(geometry_path, "r") as infile:
-                try:
-                    data = json.load(infile)
-                    valid_json = True
-                except json.decoder.JSONDecodeError:
-                    logger.critical(f"JSON decode error in '{geometry_path}'")
-                    valid_json = False
-        else:
+        try:
+            data = read_json(geometry_path)
+            valid_json = True
+        except Exception as e:
+            logger.critical(e)
             valid_json = False
 
         browser_cols = [
