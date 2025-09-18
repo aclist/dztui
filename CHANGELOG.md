@@ -1,6 +1,6 @@
 # Changelog
 
-## [6.0.0-beta.5] 2025-09-12
+## [6.0.0-beta.6] 2025-09-12
 ## Added
 - Support DayZ Experimental
 - Show additional client information in Options menu
