@@ -3549,12 +3549,12 @@ class EntryDialog(GenericDialog):
         self.dialog.set_default_response(Gtk.ResponseType.OK)
         self.dialog.set_size_request(500, 0)
 
-        self.userEntry = Gtk.Entry()
-        set_surrounding_margins(self.userEntry, 20)
-        self.userEntry.set_margin_top(0)
-        self.userEntry.set_size_request(250, 0)
-        self.userEntry.set_activates_default(True)
-        self.dialogBox.pack_start(self.userEntry, False, False, 0)
+        self.user_entry = Gtk.Entry()
+        set_surrounding_margins(self.user_entry, 20)
+        self.user_entry.set_margin_top(0)
+        self.user_entry.set_size_request(250, 0)
+        self.user_entry.set_activates_default(True)
+        self.dialogBox.pack_start(self.user_entry, False, False, 0)
 
         if link:
             button = Gtk.Button(label=link)
@@ -3565,8 +3565,8 @@ class EntryDialog(GenericDialog):
 
         self.ok = self.dialog.action_area.get_children()[1]
         self.ok.set_sensitive(False)
-        self.userEntry.connect("insert-text", self._on_text_typed)
-        self.userEntry.get_property("buffer").connect(
+        self.user_entry.connect("insert-text", self._on_text_typed)
+        self.user_entry.get_property("buffer").connect(
             "deleted-text", self._on_text_deleted
         )
 
@@ -3598,7 +3598,7 @@ class EntryDialog(GenericDialog):
         self.dialog.show_all()
 
         response = self.dialog.run()
-        text = self.userEntry.get_text()
+        text = self.user_entry.get_text()
         self.dialog.destroy()
         if (response == Gtk.ResponseType.OK) and (text != ""):
             return text
