@@ -51,6 +51,7 @@ APPID_DAYZ_EXP = 1024020
 
 cache: dict[str, int] = {}
 config_vals: list[str] = []
+notes_cache: dict[str, str] = {}
 
 _VERSION: str
 IS_GAME_MODE: bool
@@ -77,6 +78,7 @@ servers_path = f"{cache_path}/{app_name_abbr}.servers"
 config_path = f"{user_path}/.config/dztui"
 config_file = f"{config_path}/dztuirc"
 history_file = f"{state_path}/{app_name_abbr}.history"
+notes_file = f"{state_path}/{app_name_abbr}.notes.json"
 
 logger = logging.getLogger(__name__)
 log_file = f"{log_path}/{app_name}_DEBUG.log"
@@ -424,6 +426,7 @@ class ContextMenu(EnumWithAttrs):
         "label": "Copy IP to clipboard",
         "action": "copy_clipboard",
     }
+    ADD_NOTE = {"label": "Add note", "action": "add_note"}
     SHOW_MODS = {"label": "Show server-side mods", "action": "show_mods"}
     SHOW_DETAILS = {"label": "Server details", "action": "show_details"}
     REFRESH_PLAYERS = {
@@ -1229,6 +1232,12 @@ class OuterWindow(Gtk.Window):
         self.grid.right_panel.enable_ping_button(False)
         self.grid.sel_panel.set_visible(False)
 
+        global notes_cache
+        try:
+            notes_cache = read_json(notes_file)
+        except Exception as e:
+            logger.warning(e)
+
         # convenience to avoid deep calls
         App.window = self
         App.grid = self.grid
@@ -1821,6 +1830,8 @@ class TreeView(Gtk.TreeView):
         self.sel_blocked = False
 
         self.set_fixed_height_mode(True)
+        self.set_has_tooltip(True)
+        self.connect("query-tooltip", self._on_tooltip)
 
         self.queue = multiprocessing.Queue()
         self.current_proc = None
@@ -1851,6 +1862,32 @@ class TreeView(Gtk.TreeView):
         self.connect("key-press-event", self._on_keypress)
         self.connect("key-release-event", self._on_key_release)
 
+    def _on_tooltip(
+        self,
+        widget: Gtk.Widget,
+        x: int,
+        y: int,
+        keyboard_mode: bool,
+        tooltip: Gtk.Tooltip,
+    ) -> bool:
+        if self.is_server_context(self.view) is False:
+            return
+        coords = widget.convert_widget_to_bin_window_coords(x, y)
+        path = self.get_path_at_pos(coords.bx, coords.by)
+        if path is None:
+            return False
+
+        model = self.get_model()
+        tree_iter = model.get_iter(path[0])
+        ip = model.get_value(tree_iter, 7)
+        qport = model.get_value(tree_iter, 8)
+        addr = ip + ":" + str(qport)
+        if addr not in notes_cache:
+            return False
+        tooltip.set_text(notes_cache[addr])
+        self.set_tooltip_row(tooltip, path[0])
+        return True
+
     def _update_mod_store(self) -> None:
         (model, pathlist) = self.get_selection().get_selected_rows()
         for p in reversed(pathlist):
@@ -1879,6 +1916,43 @@ class TreeView(Gtk.TreeView):
     def terminate_process(self) -> None:
         if self.current_proc and self.current_proc.is_alive():
             self.current_proc.terminate()
+
+    def _delete_note(
+        self, button: Gtk.Button, user_entry: Gtk.Box, addr: str
+    ) -> None:
+        box = button.get_parent()
+        dialog = box.get_parent()
+        try:
+            write_json(notes_cache, notes_file)
+            del notes_cache[addr]
+        except Exception as e:
+            logger.critical(e)
+        dialog.destroy()
+
+    def add_note(self) -> None:
+        user_entry = EntryDialog(
+            "Add a short note/reminder. Limit: 30 chars", Popup.ENTRY, ""
+        )
+        entry = user_entry.get_entry()
+        entry.set_max_length(30)
+
+        addr = self.get_record_string()
+        if addr in notes_cache:
+            entry.set_text(notes_cache[addr])
+            button = Gtk.Button(label="Delete note")
+            button.connect("clicked", self._delete_note, user_entry, addr)
+            button.set_margin_start(50)
+            button.set_margin_end(50)
+            user_entry.dialogBox.pack_end(button, False, False, 0)
+
+        response = user_entry.get_input()
+        if response is None:
+            return
+        notes_cache[addr] = response
+        try:
+            write_json(notes_cache, notes_file)
+        except Exception as e:
+            logger.critical(e)
 
     def copy_name(self) -> None:
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
@@ -2037,6 +2111,7 @@ class TreeView(Gtk.TreeView):
                 ContextMenu.ADD_SERVER,
                 ContextMenu.COPY_NAME,
                 ContextMenu.COPY_CLIPBOARD,
+                ContextMenu.ADD_NOTE,
                 ContextMenu.SHOW_MODS,
                 ContextMenu.SHOW_DETAILS,
                 ContextMenu.REFRESH_PLAYERS,
@@ -2044,6 +2119,7 @@ class TreeView(Gtk.TreeView):
             RowType.SCAN_LAN: [
                 ContextMenu.COPY_NAME,
                 ContextMenu.COPY_CLIPBOARD,
+                ContextMenu.ADD_NOTE,
                 ContextMenu.SHOW_MODS,
                 ContextMenu.SHOW_DETAILS,
                 ContextMenu.REFRESH_PLAYERS,
@@ -2052,6 +2128,7 @@ class TreeView(Gtk.TreeView):
                 ContextMenu.REMOVE_SERVER,
                 ContextMenu.COPY_NAME,
                 ContextMenu.COPY_CLIPBOARD,
+                ContextMenu.ADD_NOTE,
                 ContextMenu.SHOW_MODS,
                 ContextMenu.SHOW_DETAILS,
                 ContextMenu.REFRESH_PLAYERS,
@@ -2060,6 +2137,7 @@ class TreeView(Gtk.TreeView):
                 ContextMenu.ADD_SERVER,
                 ContextMenu.REMOVE_HISTORY,
                 ContextMenu.COPY_NAME,
+                ContextMenu.ADD_NOTE,
                 ContextMenu.COPY_CLIPBOARD,
                 ContextMenu.SHOW_MODS,
                 ContextMenu.SHOW_DETAILS,
@@ -2086,6 +2164,10 @@ class TreeView(Gtk.TreeView):
             if row == ContextMenu.SHOW_MODS:
                 if not self.has_mods():
                     item.set_sensitive(False)
+            if row == ContextMenu.ADD_NOTE:
+                if self.get_record_string() in notes_cache:
+                    item.set_label("Edit note")
+
         self.menu.show_all()
 
         if event.type is Gdk.EventType.KEY_PRESS and event.keyval is Gdk.KEY_l:
