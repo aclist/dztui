@@ -3541,7 +3541,9 @@ class EntryDialog(GenericDialog):
         super().__init__(text, mode)
 
         """
-        Returns user input as a string or None
+        Wraps Gtk.Entry in a dialog and provides basic response handling.
+        Returns user input as a string or None.
+        The Entry widget itself can be manipulated via the get_entry() method.
         """
 
         self.dialog = GenericDialog(text, mode)
