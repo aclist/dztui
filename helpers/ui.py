@@ -29,7 +29,7 @@ from pefile import (
     AppMovedError,
     PeFileError,
 )
-from pefile import VersionMatch, DayZVersion
+from pefile import VersionMatch
 
 locale.setlocale(locale.LC_ALL, "")
 
