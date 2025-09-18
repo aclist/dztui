@@ -2878,7 +2878,7 @@ class TreeView(Gtk.TreeView):
             logger.critical(
                 "Config file has no value set for 'default_steam_path'"
             )
-            msg = f"Local Steam installation is not set, possibly malformed config file."
+            msg = "Local Steam installation is not set, possibly malformed config file."
             spawn_dialog(msg, Popup.NOTIFY)
             return None
 
