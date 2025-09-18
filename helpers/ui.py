@@ -1942,7 +1942,7 @@ class TreeView(Gtk.TreeView):
         model = self.get_model()
         it = self.get_current_iter()
         name = model.get_value(it, 0)
-        record = self.get_record_dict()
+        record = self.get_record()
         DetailsDialog(name, record.ip, record.qport)
 
     def show_mods(self) -> None:
@@ -2126,7 +2126,7 @@ class TreeView(Gtk.TreeView):
             self.view == WindowContext.TABLE_API
             or self.view == WindowContext.TABLE_SERVER
         ):
-            record = self.get_record_dict()
+            record = self.get_record()
             if not record:
                 grid.statusbar.update_server_meta()
                 return
@@ -2276,7 +2276,7 @@ class TreeView(Gtk.TreeView):
         qport = self.get_value_at_index(8)
         return f"{addr}:{qport}"
 
-    def get_record_dict(self) -> dict | None:
+    def get_record(self) -> dict | None:
         select = self.get_selection()
         sels = select.get_selected_rows()
         (model, pathlist) = sels
@@ -2334,7 +2334,7 @@ class TreeView(Gtk.TreeView):
 
         wait_dialog = GenericDialog("Refreshing player count", Popup.WAIT)
         wait_dialog.show_all()
-        record = self.get_record_dict()
+        record = self.get_record()
         if not record:
             return
         data = call_out("get_player_count", record.ip, str(record.qport))
@@ -3034,7 +3034,7 @@ class TreeView(Gtk.TreeView):
             case WindowContext.TABLE_MODS | WindowContext.TABLE_LOG:
                 self.update_quad_column(cr)
             case WindowContext.TABLE_SERVER | WindowContext.TABLE_API:
-                record = self.get_record_dict()
+                record = self.get_record()
                 if record is None:
                     return
                 thread_new_with_dialog(
@@ -3461,7 +3461,7 @@ class ModDialog(GenericDialog):
             self.run()
             self.destroy()
 
-        record = App.treeview.get_record_dict()
+        record = App.treeview.get_record()
         if not record:
             return
         data = call_out("show_server_modlist", record.ip, str(record.qport))
