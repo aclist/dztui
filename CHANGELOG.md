@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.0.0-beta.7] 2025-09-18
+## Added
+- Users can save text notes to describe servers
+
+## Changed
+- State file serialization methods
+
 ## [6.0.0-beta.6] 2025-09-12
 ## Added
 - Support DayZ Experimental
