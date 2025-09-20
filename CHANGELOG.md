@@ -1,6 +1,6 @@
 # Changelog
 
-## [6.0.0-beta.7] 2025-09-18
+## [6.0.0-beta.7] 2025-09-20
 ## Added
 - Users can save text notes to describe servers
 
