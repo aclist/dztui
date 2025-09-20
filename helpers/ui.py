@@ -29,7 +29,7 @@ from pefile import (
     AppMovedError,
     PeFileError,
 )
-from pefile import VersionMatch, DayZVersion
+from pefile import VersionMatch
 
 locale.setlocale(locale.LC_ALL, "")
 
@@ -51,6 +51,7 @@ APPID_DAYZ_EXP = 1024020
 
 cache: dict[str, int] = {}
 config_vals: list[str] = []
+notes_cache: dict[str, str] = {}
 
 _VERSION: str
 IS_GAME_MODE: bool
@@ -77,6 +78,7 @@ servers_path = f"{cache_path}/{app_name_abbr}.servers"
 config_path = f"{user_path}/.config/dztui"
 config_file = f"{config_path}/dztuirc"
 history_file = f"{state_path}/{app_name_abbr}.history"
+notes_file = f"{state_path}/{app_name_abbr}.notes.json"
 
 logger = logging.getLogger(__name__)
 log_file = f"{log_path}/{app_name}_DEBUG.log"
@@ -424,6 +426,7 @@ class ContextMenu(EnumWithAttrs):
         "label": "Copy IP to clipboard",
         "action": "copy_clipboard",
     }
+    ADD_NOTE = {"label": "Add note", "action": "add_note"}
     SHOW_MODS = {"label": "Show server-side mods", "action": "show_mods"}
     SHOW_DETAILS = {"label": "Server details", "action": "show_details"}
     REFRESH_PLAYERS = {
@@ -658,32 +661,42 @@ def block_signals(state: bool = True) -> None:
         )
 
 
+def read_json(path: str) -> str:
+    try:
+        with open(path, "r") as infile:
+            try:
+                data = json.load(infile)
+            except json.decoder.JSONDecodeError as e:
+                raise e
+    except OSError as e:
+        raise e
+    return data
+
+
+def write_json(data: str, path: str) -> None:
+    try:
+        j = json.dumps(data, indent=2)
+    except Exception as e:
+        raise e
+
+    try:
+        with open(path, "w") as outfile:
+            outfile.write(j)
+    except OSError as e:
+        raise e
+
+
 def save_res_and_quit(*args) -> None:
     if App.window.props.is_maximized:
         Gtk.main_quit()
         return
     rect = App.window.get_size()
 
-    def write_json(rect):
-        data = {"res": {"width": rect.width, "height": rect.height}}
-        j = json.dumps(data, indent=2)
-        with open(res_path, "w") as outfile:
-            outfile.write(j)
-        logger.info(f"Wrote window size to '{res_path}'")
-
-    if os.path.isfile(res_path):
-        with open(res_path, "r") as infile:
-            try:
-                data = json.load(infile)
-                data["res"]["width"] = rect.width
-                data["res"]["height"] = rect.height
-                with open(res_path, "w") as outfile:
-                    outfile.write(json.dumps(data, indent=2))
-            except json.decoder.JSONDecodeError:
-                logger.critical(f"JSON decode error in '{res_path}'")
-                write_json(rect)
-    else:
-        write_json(rect)
+    data = {"res": {"width": rect.width, "height": rect.height}}
+    try:
+        write_json(data, res_path)
+    except Exception as e:
+        logger.critical(e)
 
     Gtk.main_quit()
 
@@ -1219,6 +1232,12 @@ class OuterWindow(Gtk.Window):
         self.grid.right_panel.enable_ping_button(False)
         self.grid.sel_panel.set_visible(False)
 
+        global notes_cache
+        try:
+            notes_cache = read_json(notes_file)
+        except Exception as e:
+            logger.warning(e)
+
         # convenience to avoid deep calls
         App.window = self
         App.grid = self.grid
@@ -1249,15 +1268,11 @@ class OuterWindow(Gtk.Window):
             self.fullscreen()
 
         try:
-            with open(res_path, "r") as infile:
-                try:
-                    data = json.load(infile)
-                    valid_json = True
-                except json.decoder.JSONDecodeError:
-                    logger.critical(f"JSON decode error in '{res_path}'")
-                    valid_json = False
-        except OSError:
+            data = read_json(res_path)
+            valid_json = True
+        except Exception as e:
             valid_json = False
+            logger.critical(e)
 
         if valid_json:
             res = data["res"]
@@ -1265,7 +1280,10 @@ class OuterWindow(Gtk.Window):
             logger.info(f"Restoring window size to {w},{h}")
             self.set_default_size(w, h)
         else:
-            self.set_default_size(1400, 800)
+            w = 1400
+            h = 800
+            logger.info(f"Using default window size {w},{h}")
+            self.set_default_size(w, h)
 
     def _on_delete_event(
         self, window: "OuterWindow", event: Gdk.EventKey
@@ -1812,6 +1830,8 @@ class TreeView(Gtk.TreeView):
         self.sel_blocked = False
 
         self.set_fixed_height_mode(True)
+        self.set_has_tooltip(True)
+        self.connect("query-tooltip", self._on_tooltip)
 
         self.queue = multiprocessing.Queue()
         self.current_proc = None
@@ -1842,6 +1862,32 @@ class TreeView(Gtk.TreeView):
         self.connect("key-press-event", self._on_keypress)
         self.connect("key-release-event", self._on_key_release)
 
+    def _on_tooltip(
+        self,
+        widget: Gtk.Widget,
+        x: int,
+        y: int,
+        keyboard_mode: bool,
+        tooltip: Gtk.Tooltip,
+    ) -> bool:
+        if self.is_server_context(self.view) is False:
+            return
+        coords = widget.convert_widget_to_bin_window_coords(x, y)
+        path = self.get_path_at_pos(coords.bx, coords.by)
+        if path is None:
+            return False
+
+        model = self.get_model()
+        tree_iter = model.get_iter(path[0])
+        ip = model.get_value(tree_iter, 7)
+        qport = model.get_value(tree_iter, 8)
+        addr = ip + ":" + str(qport)
+        if addr not in notes_cache:
+            return False
+        tooltip.set_text(notes_cache[addr])
+        self.set_tooltip_row(tooltip, path[0])
+        return True
+
     def _update_mod_store(self) -> None:
         (model, pathlist) = self.get_selection().get_selected_rows()
         for p in reversed(pathlist):
@@ -1870,6 +1916,43 @@ class TreeView(Gtk.TreeView):
     def terminate_process(self) -> None:
         if self.current_proc and self.current_proc.is_alive():
             self.current_proc.terminate()
+
+    def _delete_note(
+        self, button: Gtk.Button, user_entry: Gtk.Box, addr: str
+    ) -> None:
+        box = button.get_parent()
+        dialog = box.get_parent()
+        try:
+            write_json(notes_cache, notes_file)
+            del notes_cache[addr]
+        except Exception as e:
+            logger.critical(e)
+        dialog.destroy()
+
+    def add_note(self) -> None:
+        user_entry = EntryDialog(
+            "Add a short note/reminder. Limit: 30 chars", Popup.ENTRY, ""
+        )
+        entry = user_entry.get_entry()
+        entry.set_max_length(30)
+
+        addr = self.get_record_string()
+        if addr in notes_cache:
+            entry.set_text(notes_cache[addr])
+            button = Gtk.Button(label="Delete note")
+            button.connect("clicked", self._delete_note, user_entry, addr)
+            button.set_margin_start(50)
+            button.set_margin_end(50)
+            user_entry.dialogBox.pack_end(button, False, False, 0)
+
+        response = user_entry.get_input()
+        if response is None:
+            return
+        notes_cache[addr] = response
+        try:
+            write_json(notes_cache, notes_file)
+        except Exception as e:
+            logger.critical(e)
 
     def copy_name(self) -> None:
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
@@ -1942,7 +2025,7 @@ class TreeView(Gtk.TreeView):
         model = self.get_model()
         it = self.get_current_iter()
         name = model.get_value(it, 0)
-        record = self.get_record_dict()
+        record = self.get_record()
         DetailsDialog(name, record.ip, record.qport)
 
     def show_mods(self) -> None:
@@ -2028,6 +2111,7 @@ class TreeView(Gtk.TreeView):
                 ContextMenu.ADD_SERVER,
                 ContextMenu.COPY_NAME,
                 ContextMenu.COPY_CLIPBOARD,
+                ContextMenu.ADD_NOTE,
                 ContextMenu.SHOW_MODS,
                 ContextMenu.SHOW_DETAILS,
                 ContextMenu.REFRESH_PLAYERS,
@@ -2035,6 +2119,7 @@ class TreeView(Gtk.TreeView):
             RowType.SCAN_LAN: [
                 ContextMenu.COPY_NAME,
                 ContextMenu.COPY_CLIPBOARD,
+                ContextMenu.ADD_NOTE,
                 ContextMenu.SHOW_MODS,
                 ContextMenu.SHOW_DETAILS,
                 ContextMenu.REFRESH_PLAYERS,
@@ -2043,6 +2128,7 @@ class TreeView(Gtk.TreeView):
                 ContextMenu.REMOVE_SERVER,
                 ContextMenu.COPY_NAME,
                 ContextMenu.COPY_CLIPBOARD,
+                ContextMenu.ADD_NOTE,
                 ContextMenu.SHOW_MODS,
                 ContextMenu.SHOW_DETAILS,
                 ContextMenu.REFRESH_PLAYERS,
@@ -2051,6 +2137,7 @@ class TreeView(Gtk.TreeView):
                 ContextMenu.ADD_SERVER,
                 ContextMenu.REMOVE_HISTORY,
                 ContextMenu.COPY_NAME,
+                ContextMenu.ADD_NOTE,
                 ContextMenu.COPY_CLIPBOARD,
                 ContextMenu.SHOW_MODS,
                 ContextMenu.SHOW_DETAILS,
@@ -2077,6 +2164,10 @@ class TreeView(Gtk.TreeView):
             if row == ContextMenu.SHOW_MODS:
                 if not self.has_mods():
                     item.set_sensitive(False)
+            if row == ContextMenu.ADD_NOTE:
+                if self.get_record_string() in notes_cache:
+                    item.set_label("Edit note")
+
         self.menu.show_all()
 
         if event.type is Gdk.EventType.KEY_PRESS and event.keyval is Gdk.KEY_l:
@@ -2126,7 +2217,7 @@ class TreeView(Gtk.TreeView):
             self.view == WindowContext.TABLE_API
             or self.view == WindowContext.TABLE_SERVER
         ):
-            record = self.get_record_dict()
+            record = self.get_record()
             if not record:
                 grid.statusbar.update_server_meta()
                 return
@@ -2276,7 +2367,7 @@ class TreeView(Gtk.TreeView):
         qport = self.get_value_at_index(8)
         return f"{addr}:{qport}"
 
-    def get_record_dict(self) -> dict | None:
+    def get_record(self) -> dict | None:
         select = self.get_selection()
         sels = select.get_selected_rows()
         (model, pathlist) = sels
@@ -2334,7 +2425,7 @@ class TreeView(Gtk.TreeView):
 
         wait_dialog = GenericDialog("Refreshing player count", Popup.WAIT)
         wait_dialog.show_all()
-        record = self.get_record_dict()
+        record = self.get_record()
         if not record:
             return
         data = call_out("get_player_count", record.ip, str(record.qport))
@@ -2593,39 +2684,27 @@ class TreeView(Gtk.TreeView):
     def _on_col_width_changed(
         self, col: Gtk.TreeViewColumn, width: GObject.ParamSpecInt
     ) -> None:
-        def write_json(title, size):
-            data = {"cols": {title: size}}
-            j = json.dumps(data, indent=2)
-            with open(geometry_path, "w") as outfile:
-                outfile.write(j)
-            logger.info(f"Wrote initial column widths to '{geometry_path}'")
-
         title = col.get_title()
         size = col.get_width()
 
-        if os.path.isfile(geometry_path):
-            with open(geometry_path, "r") as infile:
-                try:
-                    data = json.load(infile)
-                    data["cols"][title] = size
-                    with open(geometry_path, "w") as outfile:
-                        outfile.write(json.dumps(data, indent=2))
-                except json.decoder.JSONDecodeError:
-                    logger.critical(f"JSON decode error in '{geometry_path}'")
-                    write_json(title, size)
-        else:
-            write_json(title, size)
+        try:
+            data = read_json(geometry_path)
+            data["cols"][title] = size
+        except Exception as e:
+            logger.critical(e)
+            data = {"cols": {title: size}}
+
+        try:
+            write_json(data, geometry_path)
+        except Exception as e:
+            logger.critical(e)
 
     def initialize_columns(self) -> None:
-        if os.path.isfile(geometry_path):
-            with open(geometry_path, "r") as infile:
-                try:
-                    data = json.load(infile)
-                    valid_json = True
-                except json.decoder.JSONDecodeError:
-                    logger.critical(f"JSON decode error in '{geometry_path}'")
-                    valid_json = False
-        else:
+        try:
+            data = read_json(geometry_path)
+            valid_json = True
+        except Exception as e:
+            logger.critical(e)
             valid_json = False
 
         browser_cols = [
@@ -2878,7 +2957,7 @@ class TreeView(Gtk.TreeView):
             logger.critical(
                 "Config file has no value set for 'default_steam_path'"
             )
-            msg = f"Local Steam installation is not set, possibly malformed config file."
+            msg = "Local Steam installation is not set, possibly malformed config file."
             spawn_dialog(msg, Popup.NOTIFY)
             return None
 
@@ -3034,7 +3113,7 @@ class TreeView(Gtk.TreeView):
             case WindowContext.TABLE_MODS | WindowContext.TABLE_LOG:
                 self.update_quad_column(cr)
             case WindowContext.TABLE_SERVER | WindowContext.TABLE_API:
-                record = self.get_record_dict()
+                record = self.get_record()
                 if record is None:
                     return
                 thread_new_with_dialog(
@@ -3461,7 +3540,7 @@ class ModDialog(GenericDialog):
             self.run()
             self.destroy()
 
-        record = App.treeview.get_record_dict()
+        record = App.treeview.get_record()
         if not record:
             return
         data = call_out("show_server_modlist", record.ip, str(record.qport))
@@ -3541,7 +3620,9 @@ class EntryDialog(GenericDialog):
         super().__init__(text, mode)
 
         """
-        Returns user input as a string or None
+        Wraps Gtk.Entry in a dialog and provides basic response handling.
+        Returns user input as a string or None.
+        The Entry widget itself can be manipulated via the get_entry() method.
         """
 
         self.dialog = GenericDialog(text, mode)
@@ -3549,12 +3630,12 @@ class EntryDialog(GenericDialog):
         self.dialog.set_default_response(Gtk.ResponseType.OK)
         self.dialog.set_size_request(500, 0)
 
-        self.userEntry = Gtk.Entry()
-        set_surrounding_margins(self.userEntry, 20)
-        self.userEntry.set_margin_top(0)
-        self.userEntry.set_size_request(250, 0)
-        self.userEntry.set_activates_default(True)
-        self.dialogBox.pack_start(self.userEntry, False, False, 0)
+        self.user_entry = Gtk.Entry()
+        set_surrounding_margins(self.user_entry, 20)
+        self.user_entry.set_margin_top(0)
+        self.user_entry.set_size_request(250, 0)
+        self.user_entry.set_activates_default(True)
+        self.dialogBox.pack_start(self.user_entry, False, False, 0)
 
         if link:
             button = Gtk.Button(label=link)
@@ -3565,8 +3646,8 @@ class EntryDialog(GenericDialog):
 
         self.ok = self.dialog.action_area.get_children()[1]
         self.ok.set_sensitive(False)
-        self.userEntry.connect("insert-text", self._on_text_typed)
-        self.userEntry.get_property("buffer").connect(
+        self.user_entry.connect("insert-text", self._on_text_typed)
+        self.user_entry.get_property("buffer").connect(
             "deleted-text", self._on_text_deleted
         )
 
@@ -3594,11 +3675,14 @@ class EntryDialog(GenericDialog):
         label = button.get_label()
         call_bash_func("Open link", label)
 
+    def get_entry(self) -> Gtk.Entry:
+        return self.user_entry
+
     def get_input(self) -> str | None:
         self.dialog.show_all()
 
         response = self.dialog.run()
-        text = self.userEntry.get_text()
+        text = self.user_entry.get_text()
         self.dialog.destroy()
         if (response == Gtk.ResponseType.OK) and (text != ""):
             return text
