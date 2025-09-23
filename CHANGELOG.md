@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.0-beta.8] 2025-09-23
+## Added
+- Flag to disable branch toggle for distro-packaged releases
+
 ## [6.0.0-beta.7] 2025-09-20
 ## Added
 - Users can save text notes to describe servers

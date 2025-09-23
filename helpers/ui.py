@@ -3758,7 +3758,7 @@ class LeftLabel(Gtk.Label):
 
 
 class Options(Gtk.Box):
-    def __init__(self):
+    def __init__(self, self_update=True):
         super().__init__(
             orientation=Gtk.Orientation.VERTICAL,
             margin_start=10,
@@ -3835,11 +3835,18 @@ class Options(Gtk.Box):
         self.branch_combo.append_text("Testing")
         self.branch_combo.set_active(0)
         self.branch_combo.connect("changed", self._on_branch_changed)
+        self.branch_combo.set_sensitive(self_update)
 
-        msg = (
-            "Stable: only contains stable features. "
-            "Testing: pre-release beta, contains new features."
-        )
+        if self_update is True:
+            msg = (
+                "Stable: only contains stable features. "
+                "Testing: pre-release beta, contains new features."
+            )
+        else:
+            msg = (
+                "In-app updates are disabled when installing "
+                "DZGUI via the system package manager."
+            )
         eb = InfoEventBox(msg)
 
         version_rows = [
@@ -4355,7 +4362,7 @@ class Notebook(Gtk.Notebook):
         self.keys.show_all()
         self.append_page(self.keys)
 
-        self.settings = Options()
+        self.settings = Options(self_update=True)
         self.settings.type = RowType.OPTIONS
         self.settings.show_all()
         self.append_page(self.settings)
