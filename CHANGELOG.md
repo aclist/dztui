@@ -4,6 +4,10 @@
 ## Added
 - Flag to disable branch toggle for distro-packaged releases
 
+## Fixed
+- ESC key destroying wait dialogs while thread is pending
+- Tooltip signals being processed on main menu
+
 ## [6.0.0-beta.7] 2025-09-20
 ## Added
 - Users can save text notes to describe servers
