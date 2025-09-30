@@ -1872,6 +1872,8 @@ class TreeView(Gtk.TreeView):
     ) -> bool:
         if self.is_server_context(self.view) is False:
             return
+        if self.subpage is None:
+            return
 
         coords = widget.convert_widget_to_bin_window_coords(x, y)
         path = self.get_path_at_pos(coords.bx, coords.by)
