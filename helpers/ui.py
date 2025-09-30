@@ -1872,6 +1872,7 @@ class TreeView(Gtk.TreeView):
     ) -> bool:
         if self.is_server_context(self.view) is False:
             return
+
         coords = widget.convert_widget_to_bin_window_coords(x, y)
         path = self.get_path_at_pos(coords.bx, coords.by)
         if path is None:
@@ -3207,8 +3208,11 @@ class GenericDialog(Gtk.MessageDialog):
         self.outer.set_margin_end(30)
 
     def _on_dialog_delete(
-        self, response_id: Gtk.ResponseType
+            self, response_id: Gtk.ResponseType, event: Gdk.Event
     ) -> Literal[True]:
+        """
+        Prevent manual dialog destruction
+        """
         return True
 
     def _return_to_main_menu(self, widget: Gtk.Widget) -> None:
