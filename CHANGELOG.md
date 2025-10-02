@@ -1,12 +1,13 @@
 # Changelog
 
-## [6.0.0-beta.8] 2025-09-23
+## [6.0.0-beta.8] XXXX-XX-XX
 ## Added
 - Flag to disable branch toggle for distro-packaged releases
 
 ## Fixed
 - ESC key destroying wait dialogs while thread is pending
 - Tooltip signals being processed on main menu
+- Leaky variable name in dialog title
 
 ## [6.0.0-beta.7] 2025-09-20
 ## Added
