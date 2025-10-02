@@ -3238,7 +3238,7 @@ class LanDialog(Gtk.MessageDialog):
             buttons=Gtk.ButtonsType.OK_CANCEL,
             text="Scan LAN servers",
             secondary_text="Select the query port",
-            title="{appname}",
+            title=f"{app_name} - Dialog",
             modal=True,
         )
 
