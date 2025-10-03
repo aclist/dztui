@@ -8,6 +8,7 @@
 - ESC key destroying wait dialogs while thread is pending
 - Tooltip signals being processed on main menu
 - Leaky variable name in dialog title
+- Prevent extraneous signals from propagating when column width is adjusted
 
 ## [6.0.0-beta.7] 2025-09-20
 ## Added

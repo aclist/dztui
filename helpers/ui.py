@@ -2576,7 +2576,7 @@ class TreeView(Gtk.TreeView):
             App.right_panel.filters_vbox.set_active_combo(0)
         App.grid.right_panel.filters_vbox.set_visible(True)
         for column in self.get_columns():
-            column.connect("notify::width", self._on_col_width_changed)
+            column.connect("notify::fixed-width", self._on_col_width_changed)
 
         App.grid.statusbar.update_server_meta()
 
