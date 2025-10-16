@@ -87,6 +87,7 @@ def parse_json(json: list) -> list:
         except KeyError:
             continue
 
+        malformed = False
         for key in [
             "map",
             "gametype",
@@ -98,7 +99,11 @@ def parse_json(json: list) -> list:
             try:
                 row[key]
             except KeyError:
-                continue
+                malformed = True
+                break
+
+        if malformed is True:
+            continue
 
         try:
             r = row["gametype"].split(",")
@@ -167,7 +172,7 @@ def parse_json(json: list) -> list:
     return rows
 
 
-def query_direct(ip: str, qport: int, TIMEOUT=3.0) -> dict | None:
+def query_direct(ip: str, qport: int, TIMEOUT: float=3.0) -> dict | None:
     try:
         info = a2s.info((ip, qport), TIMEOUT)
 
@@ -440,7 +445,7 @@ def query_bm_api(api_key: str, bm_id: str) -> Record:
         raise BmAPIError("Failed to query Battlemetrics")
 
 
-def validate_ip(addr: str):
+def validate_ip(addr: str) -> Record:
     fields = addr.split(":")
     if len(fields) != 2:
         raise InvalidIpError("Address must be formatted as IP:Queryport")
