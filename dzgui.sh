@@ -493,6 +493,22 @@ stale_symlinks(){
         unlink "$l"
     done
 }
+
+check_availability() {
+    if [[ -z $1 ]]; then
+        return 1
+    fi
+    local url=$1
+    local timeout_sec="3"
+    if [[ $2 ]]; then
+        timeout_sec=$2
+    fi
+    if ! ping -w "$timeout_sec" "$url"; then
+        logger WARN "Failed to reach $url, service may be down."
+        return 1
+    fi
+}
+
 local_latlon(){
     if [[ -z $(command -v dig) ]]; then
         local local_ip=$(curl -Ls "https://ipecho.net/plain")
