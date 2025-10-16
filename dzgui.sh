@@ -534,7 +534,7 @@ local_latlon(){
     echo "$res" > "$coords_file"
 }
 
-lock
+lock(){
     [[ ! -f $lock_file ]] && touch $lock_file
     local pid=$(cat $lock_file)
     ps -p $pid -o pid= >/dev/null 2>&1
