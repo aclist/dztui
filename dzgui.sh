@@ -511,19 +511,30 @@ check_availability() {
 
 local_latlon(){
     if [[ -z $(command -v dig) ]]; then
-        local local_ip=$(curl -Ls "https://ipecho.net/plain")
+        local url_ipecho="https://ipecho.net/plain"
+        if ! check_availability "ipecho.net"; then
+            logger WARN "Failed to get external ip address, ipecho.net service may be down."
+            return 1
+        fi
+        local local_ip=$(curl -Ls "$url_ipecho")
     else
+        # todo : implement checking remote
         local local_ip=$(dig -4 +short myip.opendns.com @resolver1.opendns.com)
     fi
-    local url="http://ip-api.com/json/$local_ip"
-    local res=$(curl -Ls "$url" | jq -r '"\(.lat)\n\(.lon)"')
+    local url_ip_api="http://ip-api.com/json/$local_ip"
+    if ! check_availability "ip-api.com"; then
+        logger WARN "Failed to get local coordinates, ip-api.com service may be down."
+        return 1
+    fi
+    local res=$(curl -Ls "$url_ip_api" | jq -r '"\(.lat)\n\(.lon)"')
     if [[ -z "$res" ]]; then
         logger WARN "Failed to get local coordinates"
         return 1
     fi
     echo "$res" > "$coords_file"
 }
-lock(){
+
+lock
     [[ ! -f $lock_file ]] && touch $lock_file
     local pid=$(cat $lock_file)
     ps -p $pid -o pid= >/dev/null 2>&1
