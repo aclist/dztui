@@ -1092,13 +1092,59 @@ uninstall(){
     rm "$self"
     echo "Uninstall routine complete"
 }
+
+read -r -d '' helptext <<- EOM
+DZGUI - Free and Open Source DayZ launcher
+
+Usage:
+
+  dzgui.sh [options]
+
+Description:
+
+  When no option is provided, the script launches DZGUI.
+
+Options:
+
+  -u, --uninstall:
+      Uninstalls the software
+
+  -v, --version:
+      Prints the version
+
+  -h, --help:
+      Prints this message
+EOM
+
 main(){
-    local zenv=$(zenity --version 2>/dev/null)
+    # setup zenity environment
+    local zenv=""
+    zenv=$(zenity --version 2>/dev/null)
     [[ -z $zenv ]] && { echo "Requires zenity >= ${deps[$steamsafe_zenity]}"; exit 1; }
-    if [[ $1 == "--uninstall" ]] || [[ $1 == "-u" ]]; then
-        uninstall &&
-        exit 0
-    fi
+
+    # parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            "--uninstall" | "-u")
+                uninstall
+                exit 0
+                # shift
+                ;;
+            "--version" | "-v")
+                echo $version
+                exit 0
+                # shift
+                ;;
+            "--help" | "-h")
+                echo "$helptext"
+                exit 0
+                # shift
+                ;;
+            *)
+                echo "Unrecognized command!"
+                return 1
+        esac
+    done
 
     set_im_module
 
