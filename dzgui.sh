@@ -108,9 +108,8 @@ setup_state_files(){
         logger INFO "Migrating legacy version file"
     fi
     # wipe cache files
-    local path="$cache_path"
-    if find "$path" -mindepth 1 -maxdepth 1 | read; then
-        for file in $path/*; do
+    if [[ $(ls "$cache_path") ]]; then
+        for file in "$cache_path"/*; do
             rm "$file"
         done
         logger INFO "Wiped cache files"
