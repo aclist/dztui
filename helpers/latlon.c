@@ -1,36 +1,74 @@
-#include <stdio.h>
-#include <stdlib.h>
+// This small program computes the distance between two points on the Earths
+// surface. The algorithm used for computing is called haversine formula.
+// Source for the algorithm can be found here:
+// https://en.wikipedia.org/wiki/Haversine_formula
+
 #include <math.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-#define R 6371
-#define TO_RAD (3.1415926536 / 180)
-double dist(double th1, double ph1, double th2, double ph2)
-{
-	double dx, dy, dz;
-	ph1 -= ph2;
-	ph1 *= TO_RAD, th1 *= TO_RAD, th2 *= TO_RAD;
+// Earths radius in meters
+#define RADIUS ((12756L / 2.0L) * 1000L)
 
-	dz = sin(th1) - sin(th2);
-	dx = cos(ph1) * cos(th1) - cos(th2);
-	dy = sin(ph1) * cos(th1);
-	return asin(sqrt(dx * dx + dy * dy + dz * dz) / 2) * 2 * R;
+// PI natural constant
+#define PI 3.1415926536L
+
+// coordinates struct for storing points
+struct Coordinate {
+    double latitude;
+    double longitude;
+};
+
+/**
+ * @brief Calculates a radian value from an angle
+ */
+double radian_from(const double angle) {
+    return (angle * PI) / 180;
 }
 
-int main(int argc, const char * argv[])
-{
-	if(argc < 5 || argc > 5){
-		return 1;
-	}
-	float coords[4];
-	for(int i=1;i<5;i++){
-		if(atof(argv[i]) == 0){
-			return 1;
-		}
-		coords[i] = atof(argv[i]);
-	}
-	
-	double d = dist(coords[1], coords[2], coords[3], coords[4]);
-	printf("%.1f\n", d);
+/**
+ * @brief Calculate the haversine function from an angle in radian
+ */
+double haversine(const double angle) { return ((1.0L - cos(angle)) / 2); }
 
-	return 0;
+/**
+ * @brief Calculate the distance between two coordinates
+ */
+double great_circle_distance(const struct Coordinate a,
+                             const struct Coordinate b) {
+
+    // calculate longitude and latitude differences
+    struct Coordinate diff_coord = {
+        .longitude = a.longitude - b.longitude,
+        .latitude  = a.latitude - b.latitude,
+    };
+
+    // calculate haversine(theta) value, where theta is the angle between the
+    // two coordinates
+    double hav_theta = haversine(diff_coord.latitude)
+                       + cos(a.latitude) * cos(b.latitude) * haversine(diff_coord.longitude);
+
+    // calculate distance from radius, and haversine(theta) values 
+    double distance = 2 * RADIUS * asin(sqrt(hav_theta));
+
+    return distance;
+}
+
+int main(int argc, const char* argv[]) {
+    if (argc < 5 || argc > 5) {
+        return 1;
+    }
+
+    const struct Coordinate a = {
+        .latitude  = radian_from(atof(argv[1])),
+        .longitude = radian_from(atof(argv[2])),
+    };
+    const struct Coordinate b = {
+        .latitude  = radian_from(atof(argv[3])),
+        .longitude = radian_from(atof(argv[4])),
+    };
+
+    printf("%.1f\n", great_circle_distance(a, b));
+
+    return 0;
 }
