@@ -1107,7 +1107,12 @@ main(){
 
     printf "All OK. Kicking off UI...\n"
     python3 "$ui_helper" "--init-ui" "$version" "$is_steam_deck"
+
 }
-main "$@"
-#TODO: tech debt: cruddy handling for steam forking
-[[ $? -eq 1 ]] && pkill -f dzgui.sh
+
+if [[ $(basename "$0") == "dzgui.sh" ]]; then
+   main "$@"
+
+   #TODO: tech debt: cruddy handling for steam forking
+   [[ $? -eq 1 ]] && pkill -f dzgui.sh
+fi
