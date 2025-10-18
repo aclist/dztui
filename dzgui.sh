@@ -224,8 +224,7 @@ END
 }
 depcheck(){
     for dep in "${!deps[@]}"; do
-        command -v "$dep" 2>&1>/dev/null
-        if [[ $? -eq 1 ]]; then
+        if ! command -v "$dep" &> /dev/null; then
             local msg="Requires $dep >= ${deps[$dep]}"
             raise_error_and_quit "$msg"
         fi
