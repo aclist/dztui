@@ -63,17 +63,14 @@ testing_url="$url_prefix/testing"
 releases_url="https://github.com/$author/$repo/releases/download/browser"
 km_helper_url="$releases_url/latlon"
 
-
 set_im_module(){
     #TODO: drop pending SteamOS changes
-    pgrep -a gamescope | grep -q "generate-drm-mode"
-    if [[ $? -eq 0 ]]; then
-        GTK_IM_MODULE=""
+    if pgrep -a gamescope | grep -q "generate-drm-mode"; then
+        unset GTK_IM_MODULE
         logger INFO "Detected Steam Deck (Game Mode), unsetting GTK_IM_MODULE"
-    else
-        return
     fi
 }
+
 redact(){
     sed 's@\(/home/\)[^/]*@\1REDACTED@g'
 }
