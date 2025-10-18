@@ -84,13 +84,20 @@ logger(){
     printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" \
         | redact >> "$debug_log"
 }
+
 setup_dirs(){
-    for dir in "$state_path" "$cache_path" "$share_path" "$helpers_path" "$freedesktop_path" "$config_path" "$log_path"; do
-        if [[ ! -d $dir ]]; then
-            mkdir -p "$dir"
-        fi
+    directories="$state_path "
+    directories+="$cache_path "
+    directories+="$share_path "
+    directories+="$helpers_path "
+    directories+="$freedesktop_path "
+    directories+="$config_path "
+    directories+="$log_path "
+    for dir in $directories; do
+        mkdir -p "$dir"
     done
 }
+
 setup_state_files(){
     if [[ -f "$debug_log" ]]; then
         rm "$debug_log" && touch $debug_log
