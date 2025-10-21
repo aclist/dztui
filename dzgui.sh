@@ -108,7 +108,7 @@ setup_state_files(){
         logger INFO "Migrating legacy version file"
     fi
     # wipe cache files
-    if [[ $(ls "$cache_path") ]]; then
+    if [[ $(ls -A "$cache_path") ]]; then
         for file in "$cache_path"/*; do
             rm "$file"
         done
