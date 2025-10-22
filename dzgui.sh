@@ -518,7 +518,7 @@ local_latlon(){
         fi
         local local_ip=$(curl -Ls "$url_ipecho")
     else
-        # todo : implement checking remote
+        # TODO : implement checking remote
         local local_ip=$(dig -4 +short myip.opendns.com @resolver1.opendns.com)
     fi
     local url_ip_api="http://ip-api.com/json/$local_ip"
