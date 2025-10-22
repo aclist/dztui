@@ -503,7 +503,7 @@ check_availability() {
     if [[ $2 ]]; then
         timeout_sec=$2
     fi
-    if ! ping -w "$timeout_sec" "$url"; then
+    if ! ping -w "$timeout_sec" "$url" > /dev/null; then
         logger WARN "Failed to reach $url, service may be down."
         return 1
     fi
