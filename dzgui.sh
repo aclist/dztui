@@ -86,14 +86,15 @@ logger(){
 }
 
 setup_dirs(){
-    directories="$state_path "
-    directories+="$cache_path "
-    directories+="$share_path "
-    directories+="$helpers_path "
-    directories+="$freedesktop_path "
-    directories+="$config_path "
-    directories+="$log_path "
-    for dir in $directories; do
+    directories=()
+    directories+=("$state_path")
+    directories+=("$cache_path")
+    directories+=("$share_path")
+    directories+=("$helpers_path")
+    directories+=("$freedesktop_path")
+    directories+=("$config_path")
+    directories+=("$log_path")
+    for dir in "${directories[@]}"; do
         mkdir -p "$dir"
     done
 }
