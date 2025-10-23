@@ -1093,6 +1093,7 @@ uninstall(){
     echo "Uninstall routine complete"
 }
 
+usage(){
 read -r -d '' helptext <<- EOM
 DZGUI - Free and Open Source DayZ launcher
 
@@ -1115,6 +1116,8 @@ Options:
   -h, --help:
       Prints this message
 EOM
+echo "$helptext"
+}
 
 main(){
     # setup zenity environment
@@ -1136,7 +1139,7 @@ main(){
                 # shift
                 ;;
             "--help" | "-h")
-                echo "$helptext"
+                usage
                 exit 0
                 # shift
                 ;;
