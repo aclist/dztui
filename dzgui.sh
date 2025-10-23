@@ -1094,7 +1094,7 @@ uninstall(){
 }
 
 usage(){
-read -r -d '' helptext <<- EOM
+cat <<- EOM
 DZGUI - Free and Open Source DayZ launcher
 
 Usage:
@@ -1116,7 +1116,6 @@ Options:
   -h, --help:
       Prints this message
 EOM
-echo "$helptext"
 }
 
 main(){
