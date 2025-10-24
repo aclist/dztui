@@ -5,6 +5,13 @@ Thank you for considering contributing to DZGUI!
 This is a guide for contributors containing conventions best practices and rules
 of development and aims to ease the beginning of a contribution.
 
+# How can I request help?
+
+There is an issue tracker on github
+(link)[https://github.com/aclist/dzgui-devel/issues] where you can submit
+tickets. If you need help troubleshooting a problem, submit a ticket. There is a
+category called `troubleshooting` which is exactly what you need.
+
 # How can I help the project?
 
 There are several ways to help this project.
