@@ -13,6 +13,9 @@ There are several ways to help this project.
 3. Contribute features and fixes to the codebase
 4. Contribute documentation to the project
 
+Before making any contribution, please read the `CODE_OF_CONDUCT.md` and act
+accordingly.
+
 ## How to report
 
 Reproduce the bug that you found. Navigate to the issue tracker on github:
