@@ -48,9 +48,9 @@ as many cool ideas as possible.
 
 If you have an issue of interest in the issue tracker or any other change that
 you would like to have implemented you can contribute code to this project. For
-this, you may fork this repository and checkout to `testing`. All new features
-and fixes will be merged to this branch, so open your branch from here. Name it
-according to our convention:
+this, you may fork this repository and checkout to
+`prerelease/<latest-version>`. All new features and fixes will be merged to this
+branch, so open your branch from here. Name it according to our convention:
 - fix/<your-fix> - fix branches
 - feat/<your-feature> - feature branches
 - doc/<your-doc-branch> - documentation branches
@@ -58,7 +58,8 @@ according to our convention:
 
 Now you can implement your changes and test it locally. If they work you may
 open a merge request, and then we review your changes. If everything is OK, it
-will be merged to `testing` and after a live testing phase, to `master` as well.
+will be merged to `prerelease/<latest-version>`, then `testing` and after a live
+testing phase, to `stable` as well.
 
 During development, it is recommended to follow (conventional
 commits)[https://www.conventionalcommits.org/en/v1.0.0/], it helps the project
