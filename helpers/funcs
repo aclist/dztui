@@ -369,6 +369,10 @@ local_latlon(){
 get_dist(){
     shift
     local given_ip="$1"
+    if [[ ! -f $_cache_coords ]]; then
+        printf "Unknown"
+        return
+    fi
     readarray -t coords < "$_cache_coords"
     readarray -t n < <(<<< "$given_ip" awk 'BEGIN{RS="."}{$1=$1}1')
 
