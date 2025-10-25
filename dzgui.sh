@@ -63,17 +63,14 @@ testing_url="$url_prefix/testing"
 releases_url="https://github.com/$author/$repo/releases/download/browser"
 km_helper_url="$releases_url/latlon"
 
-
 set_im_module(){
     #TODO: drop pending SteamOS changes
-    pgrep -a gamescope | grep -q "generate-drm-mode"
-    if [[ $? -eq 0 ]]; then
-        GTK_IM_MODULE=""
+    if pgrep -a gamescope | grep -q "generate-drm-mode"; then
+        unset GTK_IM_MODULE
         logger INFO "Detected Steam Deck (Game Mode), unsetting GTK_IM_MODULE"
-    else
-        return
     fi
 }
+
 redact(){
     sed 's@\(/home/\)[^/]*@\1REDACTED@g'
 }
@@ -87,13 +84,21 @@ logger(){
     printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" \
         | redact >> "$debug_log"
 }
+
 setup_dirs(){
-    for dir in "$state_path" "$cache_path" "$share_path" "$helpers_path" "$freedesktop_path" "$config_path" "$log_path"; do
-        if [[ ! -d $dir ]]; then
-            mkdir -p "$dir"
-        fi
+    directories=()
+    directories+=("$state_path")
+    directories+=("$cache_path")
+    directories+=("$share_path")
+    directories+=("$helpers_path")
+    directories+=("$freedesktop_path")
+    directories+=("$config_path")
+    directories+=("$log_path")
+    for dir in "${directories[@]}"; do
+        mkdir -p "$dir"
     done
 }
+
 setup_state_files(){
     if [[ -f "$debug_log" ]]; then
         rm "$debug_log" && touch $debug_log
@@ -104,9 +109,8 @@ setup_state_files(){
         logger INFO "Migrating legacy version file"
     fi
     # wipe cache files
-    local path="$cache_path"
-    if find "$path" -mindepth 1 -maxdepth 1 | read; then
-        for file in $path/*; do
+    if [[ $(ls -A "$cache_path") ]]; then
+        for file in "$cache_path"/*; do
             rm "$file"
         done
         logger INFO "Wiped cache files"
@@ -221,8 +225,7 @@ END
 }
 depcheck(){
     for dep in "${!deps[@]}"; do
-        command -v "$dep" 2>&1>/dev/null
-        if [[ $? -eq 1 ]]; then
+        if ! command -v "$dep" &> /dev/null; then
             local msg="Requires $dep >= ${deps[$dep]}"
             raise_error_and_quit "$msg"
         fi
@@ -1090,13 +1093,61 @@ uninstall(){
     rm "$self"
     echo "Uninstall routine complete"
 }
+
+usage(){
+cat <<- EOM
+DZGUI - Free and Open Source DayZ launcher
+
+Usage:
+
+  dzgui.sh [options]
+
+Description:
+
+  When no option is provided, the script launches DZGUI.
+
+Options:
+
+  -u, --uninstall:
+      Uninstalls the software
+
+  -v, --version:
+      Prints the version
+
+  -h, --help:
+      Prints this message
+EOM
+}
+
 main(){
-    local zenv=$(zenity --version 2>/dev/null)
+    # setup zenity environment
+    local zenv=""
+    zenv=$(zenity --version 2>/dev/null)
     [[ -z $zenv ]] && { echo "Requires zenity >= ${deps[$steamsafe_zenity]}"; exit 1; }
-    if [[ $1 == "--uninstall" ]] || [[ $1 == "-u" ]]; then
-        uninstall &&
-        exit 0
-    fi
+
+    # parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            "--uninstall" | "-u")
+                uninstall
+                exit 0
+                # shift
+                ;;
+            "--version" | "-v")
+                echo $version
+                exit 0
+                # shift
+                ;;
+            "--help" | "-h")
+                usage
+                exit 0
+                # shift
+                ;;
+            *)
+                echo "Unrecognized command!"
+                return 1
+        esac
+    done
 
     set_im_module
 
@@ -1105,7 +1156,12 @@ main(){
 
     printf "All OK. Kicking off UI...\n"
     python3 "$ui_helper" "--init-ui" "$version" "$is_steam_deck"
+
 }
-main "$@"
-#TODO: tech debt: cruddy handling for steam forking
-[[ $? -eq 1 ]] && pkill -f dzgui.sh
+
+if [[ $(basename "$0") == "dzgui.sh" ]]; then
+   main "$@"
+
+   #TODO: tech debt: cruddy handling for steam forking
+   [[ $? -eq 1 ]] && pkill -f dzgui.sh
+fi
