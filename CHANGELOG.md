@@ -3,12 +3,18 @@
 ## [6.0.0-beta.8] XXXX-XX-XX
 ## Added
 - Flag to disable branch toggle for distro-packaged releases
+- Test whether script was sourced inline
+- Commandline usage help text
 
 ## Fixed
 - ESC key destroying wait dialogs while thread is pending
 - Tooltip signals being processed on main menu
 - Leaky variable name in dialog title
 - Prevent extraneous signals from propagating when column width is adjusted
+- Script failing to start when remote endpoints are unavailable
+
+## Changed
+- Optimize time cost of setup checks
 
 ## [6.0.0-beta.7] 2025-09-20
 ## Added
