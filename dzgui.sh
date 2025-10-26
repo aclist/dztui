@@ -618,7 +618,7 @@ fetch_helpers_by_sum(){
         ["funcs"]="6ae3ead7034dc8e7543472bddee75c63"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
-        ["ui.py"]="f03879f088ad074f2ce3c92607c30202"
+        ["ui.py"]="8d05bbd7b8e15a97fae568e9a3dbf4d6"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["pefile.py"]="21531f2c0d9dfa5f110cf6779f9d22c0"
     )

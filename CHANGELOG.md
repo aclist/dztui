@@ -15,6 +15,7 @@
 
 ## Changed
 - Optimize time cost of setup checks
+- Location of notes file
 
 ## [6.0.0-beta.7] 2025-09-20
 ## Added

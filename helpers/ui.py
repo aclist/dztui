@@ -78,7 +78,7 @@ servers_path = f"{cache_path}/{app_name_abbr}.servers"
 config_path = f"{user_path}/.config/dztui"
 config_file = f"{config_path}/dztuirc"
 history_file = f"{state_path}/{app_name_abbr}.history"
-notes_file = f"{state_path}/{app_name_abbr}.notes.json"
+notes_file = f"{config_path}/{app_name_abbr}.notes.json"
 
 logger = logging.getLogger(__name__)
 log_file = f"{log_path}/{app_name}_DEBUG.log"
