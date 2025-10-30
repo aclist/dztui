@@ -50,8 +50,10 @@ If you would like to take ownership or assist with an issue on the issue tracker
 contribute a new change, please follow the guidelines below.
 
 Fork this repository and check out the code up to `prerelease/<latest-version>`.
-All new features and fixes will be merged to this branch, so open your branch
-from here.
+If there is no pending prerelease PR, you can base your changes off of
+the `testing` branch. You may later be asked to retarget your PR to the prerelease
+branch once a new one is made. This is because out-of-band PRs are consolidated into
+the next release before merging.
 
 The following naming conventions apply for PRs:
 - fix/<your-fix> - patch/hotfix branches
@@ -61,7 +63,7 @@ The following naming conventions apply for PRs:
 
 Implement your changes and test them locally. If they work you may
 open a merge request, and then we review your changes. If everything is OK, it
-will be merged to `prerelease/<latest-version>`, then `testing` and after a live
+will be merged to `prerelease/<latest-version>`, then `testing`, and after a live
 testing phase, to `stable` as well.
 
 It is recommended to follow
