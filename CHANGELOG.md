@@ -1,18 +1,51 @@
 # Changelog
 
-## [5.6.6] 2024-02-09
+## [5.8.0] 2025-07-06
+## Added
+- Filter servers by official/unofficial status
+- Automatically fetch geolocation records
+## Changed
+- Updated internal versioning of helper files
+## Fixed
+- Corrected erroneous 2024 date in prior changelog entries
+
+## [5.7.0] 2025-04-17
+## Added
+- Save application dimensions when quitting and restore on subsequent boot
+## Fixed
+- Issues with the window exceeding the bounds of the screen when displaying some table contexts
+## Changed
+- More direct server ping query method that should return marginally more accurate times
+
+## [5.6.7] 2025-04-04
+## Dropped
+- Removed extraneous pre-boot API checks that could cause error messages to be printed if the user had not set up an API key yet
+
+## [5.6.6] 2025-03-16
+## Changed
+- Update IP database records for 2025-03
+
+## [5.6.5] 2025-03-04
+## Fixed
+- Livonia server results being dropped from batch queries
+
+## [5.6.4] 2025-02-10
+### Changed
+- Drop launch flag and check for invocation through Steam automatically
+
+## [5.6.3] 2025-02-09
 ### Changed
 - Update IP database records for 2025-02
 
-## [5.6.2] 2024-01-22
+## [5.6.2] 2025-01-22
 ### Fixed
 - Resolve regression introduced with IP resolution feature in 5.6.0 (restores functionality of right-click action: Add to My Servers)
 
-## [5.6.1] 2024-01-10
+## [5.6.1] 2025-01-10
 ### Fixed
 - Add fallback support for jq 1.6
 
-## [5.6.0] 2024-01-06
+## [5.6.0] 2025-01-06
 ### Added
 - Application header bar and controls
 - Menu context subtitle in header bar

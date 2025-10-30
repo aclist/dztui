@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version=5.6.0
+version="5.8.0"
 
 #CONSTANTS
 aid=221100
@@ -59,7 +59,6 @@ geo_file="$helpers_path/ips.csv"
 km_helper="$helpers_path/latlon"
 sums_path="$helpers_path/sums.md5"
 query_helper="$helpers_path/query_v2.py"
-func_helper="$helpers_path/funcs"
 lan_helper="$helpers_path/lan"
 
 #STEAM PATHS
@@ -453,10 +452,15 @@ get_dist(){
 }
 get_remote_servers(){
     params=(
-        "\\nor\1\map\chernarusplus\\nor\1\map\sakhal"
+        "\\nor\1\map\chernarusplus\\nor\1\map\sakhal\\nor\1\map\enoch\empty\1\\nor\1\map\namalsk"
+        "\map\namalsk\empty\1"
+        "\map\namalsk\noplayers\1"
         "\map\chernarusplus\empty\1"
         "\map\chernarusplus\noplayers\1"
-        "\map\\sakhal"
+        "\map\\sakhal\empty\1"
+        "\map\\sakhal\noplayers\1"
+        "\map\\enoch\empty\1"
+        "\map\\enoch\noplayers\1"
     )
     local limit=10000
     local url="https://api.steampowered.com/IGameServersService/GetServerList/v1/?"
@@ -601,6 +605,20 @@ filter_servers(){
             <<< "$filtered" awk -F$separator '!seen[$1]++'
         fi
     }
+    filter_official(){
+        if [[ ${filters[*]} =~ Official ]]; then
+            echo -n "$filtered"
+        else
+            <<< "$filtered" awk -F$separator '$10 == "Community"'
+        fi
+    }
+    filter_community(){
+        if [[ ${filters[*]} =~ Unoffic ]]; then
+            echo -n "$filtered"
+        else
+            <<< "$filtered" awk -F$separator '$10 == "Official"'
+        fi
+    }
 
     filtered=$(filter_perspective)
     filtered=$(filter_full)
@@ -611,6 +629,8 @@ filter_servers(){
     filtered=$(filter_ascii)
     filtered=$(filter_duplicates)
     filtered=$(filter_keyword)
+    filtered=$(filter_official)
+    filtered=$(filter_community)
 
     if [[ -z "$filtered" ]]; then
         logger WARN "Filter result is empty"
@@ -648,7 +668,8 @@ parse_server_json(){
     "\(.max_players)␞" +
     "\(if .gametype == null then "0" elif .gametype|split("lqs")[1] == null then "0" else .gametype|split("lqs")[1]|split(",")[0] end)␞" +
     "\(.addr|split(":")[0]):\(if .gameport == null then "XXXX" else .gameport end)␞" +
-    "\(.addr|split(":")[1])"
+    "\(.addr|split(":")[1])␞" +
+    "\(if .gametype == null then "null" else (.gametype|split(",")|if any(. == "external") then "Community" else "Official" end) end)"
     ' | sort -k1
 }
 align_versions_file(){
@@ -780,12 +801,17 @@ logger(){
 }
 test_ping(){
     shift
+    local time
+    local res
     local ip="$1"
     local qport="$2"
-    local res
-    res=$(ping -c1 -4 -W0.5 $1 | grep time= | awk -F= '{print $4}')
-    [[ ! $? -eq 0 ]] && res="Timed out"
-    printf "%s" "$res"
+    res=$(a2s $ip $qport info)
+    if [[ -z $res ]]; then
+        time="Timed out"
+    else
+        time=$(<<< "$res" jq -r '.[].ping')
+    fi
+    printf "%s" "$time"
 }
 show_server_modlist(){
     shift
@@ -1271,7 +1297,7 @@ symlinks(){
             link="@$encoded_id"
             mod="${arr[$i]}"
             logger INFO "Creating link '$game_dir/$link' for '$workshop_dir/$mod'"
-            [[ $STEAM_LAUNCH -eq 1 ]] && echo "# Creating mod link $((i+1))/${#arr[@]}"
+            [[ -n $STEAMSCRIPT ]] && echo "# Creating mod link $((i+1))/${#arr[@]}"
             ln -s "$workshop_dir/$mod" "$game_dir/$link"
         done
     }
@@ -1286,7 +1312,7 @@ symlinks(){
 
     if [[ ${#links[@]} -eq 0 ]]; then
         logger INFO "No symlinks present in '$game_dir', creating them"
-        if [[ $STEAM_LAUNCH -eq 1 ]]; then
+        if [[ -n $STEAMSCRIPT ]]; then
             _create_links "${mods[@]}" > >(_pulse)
         else
             _create_links "${mods[@]}"
@@ -1304,7 +1330,7 @@ symlinks(){
 
     # update missing targets
     logger INFO "Found ${#hits[@]} unlinked mods"
-    if [[ $STEAM_LAUNCH -eq 1 ]]; then
+    if [[ -n $STEAMSCRIPT ]]; then
         _create_links "${hits[@]}" > >(_pulse)
     else
         _create_links "${hits[@]}"
