@@ -7,8 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-// Earth's radius in meters. To pretty-print the result for the end-user, it is
-// recommended to divide the result by 1,000 and round it.
+// Earth's radius in meters.
 #define RADIUS ((12756L / 2.0L) * 1000L)
 
 // PI natural constant
@@ -69,6 +68,9 @@ int main(int argc, const char* argv[]) {
         .longitude = radian_from(atof(argv[4])),
     };
 
+    // Returns the distance in meters.
+    // To pretty-print the result in a consumer of this module, it is
+    // recommended to divide the result by 1,000 and round it.
     printf("%.1f\n", great_circle_distance(a, b));
 
     return 0;
