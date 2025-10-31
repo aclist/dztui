@@ -7,7 +7,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-// Earths radius in meters
+// Earth's radius in meters. To pretty-print the result for the end-user, it is
+// recommended to divide the result by 1,000 and round it.
 #define RADIUS ((12756L / 2.0L) * 1000L)
 
 // PI natural constant
