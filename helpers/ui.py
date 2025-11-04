@@ -78,7 +78,7 @@ servers_path = f"{cache_path}/{app_name_abbr}.servers"
 config_path = f"{user_path}/.config/dztui"
 config_file = f"{config_path}/dztuirc"
 history_file = f"{state_path}/{app_name_abbr}.history"
-notes_file = f"{state_path}/{app_name_abbr}.notes.json"
+notes_file = f"{config_path}/{app_name_abbr}.notes.json"
 
 logger = logging.getLogger(__name__)
 log_file = f"{log_path}/{app_name}_DEBUG.log"
@@ -1872,6 +1872,9 @@ class TreeView(Gtk.TreeView):
     ) -> bool:
         if self.is_server_context(self.view) is False:
             return
+        if self.subpage is None:
+            return
+
         coords = widget.convert_widget_to_bin_window_coords(x, y)
         path = self.get_path_at_pos(coords.bx, coords.by)
         if path is None:
@@ -2573,7 +2576,7 @@ class TreeView(Gtk.TreeView):
             App.right_panel.filters_vbox.set_active_combo(0)
         App.grid.right_panel.filters_vbox.set_visible(True)
         for column in self.get_columns():
-            column.connect("notify::width", self._on_col_width_changed)
+            column.connect("notify::fixed-width", self._on_col_width_changed)
 
         App.grid.statusbar.update_server_meta()
 
@@ -3207,8 +3210,11 @@ class GenericDialog(Gtk.MessageDialog):
         self.outer.set_margin_end(30)
 
     def _on_dialog_delete(
-        self, response_id: Gtk.ResponseType
+            self, response_id: Gtk.ResponseType, event: Gdk.Event
     ) -> Literal[True]:
+        """
+        Prevent manual dialog destruction
+        """
         return True
 
     def _return_to_main_menu(self, widget: Gtk.Widget) -> None:
@@ -3232,7 +3238,7 @@ class LanDialog(Gtk.MessageDialog):
             buttons=Gtk.ButtonsType.OK_CANCEL,
             text="Scan LAN servers",
             secondary_text="Select the query port",
-            title="{appname}",
+            title=f"{app_name} - Dialog",
             modal=True,
         )
 
@@ -3758,7 +3764,7 @@ class LeftLabel(Gtk.Label):
 
 
 class Options(Gtk.Box):
-    def __init__(self):
+    def __init__(self, self_update=True):
         super().__init__(
             orientation=Gtk.Orientation.VERTICAL,
             margin_start=10,
@@ -3835,11 +3841,18 @@ class Options(Gtk.Box):
         self.branch_combo.append_text("Testing")
         self.branch_combo.set_active(0)
         self.branch_combo.connect("changed", self._on_branch_changed)
+        self.branch_combo.set_sensitive(self_update)
 
-        msg = (
-            "Stable: only contains stable features. "
-            "Testing: pre-release beta, contains new features."
-        )
+        if self_update is True:
+            msg = (
+                "Stable: only contains stable features. "
+                "Testing: pre-release beta, contains new features."
+            )
+        else:
+            msg = (
+                "In-app updates are disabled when installing "
+                "DZGUI via the system package manager."
+            )
         eb = InfoEventBox(msg)
 
         version_rows = [
@@ -4355,7 +4368,7 @@ class Notebook(Gtk.Notebook):
         self.keys.show_all()
         self.append_page(self.keys)
 
-        self.settings = Options()
+        self.settings = Options(self_update=True)
         self.settings.type = RowType.OPTIONS
         self.settings.show_all()
         self.append_page(self.settings)

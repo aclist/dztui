@@ -1,5 +1,23 @@
 # Changelog
 
+## [6.0.0-beta.8] XXXX-XX-XX
+## Added
+- Internal flag to allow distribution packaged releases to disable in-app updates
+- Pre-boot check to test whether script was invoked directly
+- Commandline usage help text
+
+## Fixed
+- ESC key destroying wait dialogs while a thread is pending
+- Tooltip signals being erroneously drawn on main menu
+- Leaky variable name in dialog titles
+- Prevent extraneous signals from propagating when column width is adjusted
+- Script failing to start when remote endpoints are unavailable (GaryBlackbourne)
+
+## Changed
+- Optimize time complexity of pre-boot checks (GaryBlackbourne)
+- Moved location of notes file
+- Rewrote distance calculation module (GaryBlackbourne)
+
 ## [6.0.0-beta.7] 2025-09-20
 ## Added
 - Users can save text notes to describe servers
