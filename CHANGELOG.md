@@ -1,6 +1,6 @@
 # Changelog
 
-## [6.0.0-beta.8] XXXX-XX-XX
+## [6.0.0-beta.8] 2025-11-04
 ## Added
 - Internal flag to allow distribution packaged releases to disable in-app updates
 - Pre-boot check to test whether script was invoked directly
