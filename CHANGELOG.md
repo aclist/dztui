@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.1-beta.1] 2025-11-05
+## Fixed
+- UI not being constructed correctly if CHANGELOG.md was missing
+
 ## [6.0.0-beta.8] 2025-11-04
 ## Added
 - Internal flag to allow distribution packaged releases to disable in-app updates

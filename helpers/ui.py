@@ -18,6 +18,7 @@ from enum import Enum
 from collections.abc import Callable
 from concurrent.futures import wait
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import Literal, Self, Any
 
 import servers as Servers  # noqa E402
@@ -1016,7 +1017,7 @@ def process_tree_option(choice: RowType) -> None:
         return
 
     if command == RowType.CHANGELOG:
-        App.grid.notebook.set_page_by_enum(NotebookPage.CHANGELOG)
+        App.grid.notebook.open_changelog()
         return
 
     if command == RowType.QUICK_CONNECT:
@@ -4325,22 +4326,20 @@ class KeybindingsDialog(Gtk.Box):
 class Changelog(Gtk.Box):
     def __init__(self):
         super().__init__()
+
+        self.changelog_label = Gtk.Label()
+        self.add(self.changelog_label)
+
+    def open_changelog(self, path: Path) -> None:
         try:
-            with open(changelog_path, "r") as f:
-                changelog = f.read()
-            changelog_label = Gtk.Label()
-            changelog = self.format_pango(changelog)
-            changelog_label.set_markup(changelog)
-            self.add(changelog_label)
-        except FileNotFoundError:
-            msg = f"Failed to find CHANGELOG.md at {changelog_path}"
-            logger.critical(msg)
-            spawn_dialog(msg, Popup.WARN)
-            return
+            changelog = path.read_text()
         except OSError as e:
-            spawn_dialog(f"Something went wrong: {e}", Popup.WARN)
+            spawn_dialog(f"Something went wrong: {e}", Popup.NOTIFY)
             logger.critical(e)
-            return
+            return Exception
+        formatted = self.format_pango(changelog)
+        self.changelog_label.set_markup(formatted)
+        App.grid.notebook.set_page_by_enum(NotebookPage.CHANGELOG)
 
     def format_pango(self, text: str) -> str:
         medium = '<span size="medium"><b>'
@@ -4357,7 +4356,8 @@ class Notebook(Gtk.Notebook):
     def __init__(self):
         super().__init__(show_tabs=False, show_border=False)
 
-        self.clog = ScrollableNote(Changelog())
+        self.changelog = Changelog()
+        self.clog = ScrollableNote(self.changelog)
         self.clog.type = RowType.CHANGELOG
         self.clog.show_all()
         self.append_page(self.clog)
@@ -4375,6 +4375,10 @@ class Notebook(Gtk.Notebook):
 
         self.connect("switch-page", self._on_page_changed)
         self.connect("key-press-event", self._on_keypress)
+
+    def open_changelog(self) -> None:
+        path = Path(changelog_path)
+        self.changelog.open_changelog(path)
 
     def _set_adjustment(self, adjustment: VAdjustment) -> None:
         INCREMENT = 50
