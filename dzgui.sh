@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -o pipefail
 
+src_path=$(realpath "$0")
+
 version=6.0.1.beta-1
 reference_branch="prerelease/6.0.1-beta.1"
 
@@ -219,9 +221,6 @@ default_steam_path="$default_steam_path"
 
 #Preferred Steam launch command (for Flatpak support)
 preferred_client="$preferred_client"
-
-#DZGUI source path
-src_path="$src_path"
 END
 }
 depcheck(){
@@ -984,10 +983,6 @@ varcheck(){
         fi
         create_config
         return 0
-    fi
-    if [[ $src_path != $(realpath "$0") ]]; then
-        src_path=$(realpath "$0")
-        update_config
     fi
 }
 is_dzg_downloading(){
