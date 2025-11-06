@@ -318,6 +318,7 @@ check_unmerged(){
     fi
 }
 check_version(){
+    [[ -n $reference_branch ]] && return
     local version_url=$(format_version_url)
     local upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
     local res=$(get_response_code "$version_url")
