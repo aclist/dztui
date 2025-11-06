@@ -2,6 +2,7 @@
 set -o pipefail
 
 version=6.0.1.beta-1
+reference_branch="prerelease/6.0.1-beta.1"
 
 #CONSTANTS
 aid=221100
@@ -637,6 +638,10 @@ fetch_helpers_by_sum(){
     fi
     if [[ $realbranch == "stable" ]]; then
         realbranch="dzgui"
+    fi
+
+    if [[ -n $reference_branch ]]; then
+        realbranch="$reference_branch"
     fi
 
     for i in "${!sums[@]}"; do
