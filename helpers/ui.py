@@ -824,8 +824,7 @@ def query_history() -> list | None:
             rows = [row.rstrip("\n") for row in f]
     except OSError:
         rows = None
-    finally:
-        return rows
+    return rows
 
 
 def query_favorites() -> None | list:
