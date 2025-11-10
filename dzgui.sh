@@ -239,8 +239,8 @@ depcheck(){
 check_pyver(){
     local pyver=$(python3 --version | awk '{print $2}')
     local minor=$(<<< $pyver awk -F. '{print $2}')
-    if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]] || [[ $minor -lt 10 ]]; then
-        local msg="Requires Python >=3.10"
+    if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]] || [[ $minor -lt 11 ]] || [[ $minor -gt 12 ]]; then
+        local msg="Requires Python 3.11 or 3.12"
         raise_error_and_quit "$msg"
     fi
     logger INFO "Found Python version: $pyver"

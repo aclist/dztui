@@ -3,6 +3,7 @@
 ## [6.0.1-beta.2] 2025-11-10
 ## Fixed
 - Python 3.14 error in finally block
+- Require Python version between 3.11 and 3.12
 
 ## [6.0.1-beta.1] 2025-11-05
 ## Fixed
