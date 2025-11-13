@@ -1,5 +1,15 @@
 # Changelog
 
+## [6.0.1-beta.3] 2025-11-13
+## Added
+- Support sandboxed flatpak
+
+## Changed
+- Preferred client from radio toggle to combobox
+
+## Fixed
+- Config file erroneously getting updated when populating settings menu
+
 ## [6.0.1-beta.2] 2025-11-10
 ## Fixed
 - Python 3.14 error in finally block

@@ -3,7 +3,7 @@ set -o pipefail
 
 src_path=$(realpath "$0")
 
-version=6.0.1.beta-2
+version=6.0.1.beta-3
 reference_branch="prerelease/6.0.1-beta.1"
 
 #CONSTANTS
@@ -468,18 +468,7 @@ steam_deps(){
         local msg="Found neither Steam nor Flatpak Steam"
         raise_error_and_quit "$msg"
         exit 1
-    elif [[ -n "$steam" ]] && [[ -n "$flatpak" ]]; then
-        [[ -n $preferred_client ]] && return 0
-        if [[ -z $preferred_client ]]; then
-            preferred_client="steam"
-        fi
-    elif [[ -n "$steam" ]]; then
-        preferred_client="steam"
-    else
-        preferred_client="flatpak"
     fi
-    update_config
-    logger INFO "Preferred client set to '$preferred_client'"
 }
 migrate_files(){
     if [[ ! -f $config_path/dztuirc.oldapi ]]; then
@@ -616,10 +605,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="5d7d92b7b8a9c788b133ce5271a76553"
+        ["funcs"]="c6e5d68e084be16aa58358fa51ec4586"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
-        ["ui.py"]="2476397883a4272eaf940403ba5a6575"
+        ["ui.py"]="2276386252bd571b3505cbbc74359732"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["pefile.py"]="21531f2c0d9dfa5f110cf6779f9d22c0"
     )
@@ -900,6 +889,7 @@ create_config(){
     unset default_steam_path
     unset steam_path
 
+    preferred_client="steam"
     while true; do
         local player_input="$($steamsafe_zenity \
             --forms \
@@ -1061,13 +1051,13 @@ initial_setup(){
     watcher_deps
     check_architecture
     test_connection
-    fetch_helpers > >(pdialog "Checking helper files")
+#    fetch_helpers > >(pdialog "Checking helper files")
     varcheck
     source "$config_file"
     lock
     legacy_vars
     legacy_cols
-    check_version
+#    check_version
     check_map_count
     steam_deps
     migrate_files

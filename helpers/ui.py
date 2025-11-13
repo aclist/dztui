@@ -3801,12 +3801,22 @@ class Options(Gtk.Box):
             "Always fullscreen",
             Preferences.WINDOW,
         )
-        self.steam_toggle = self.make_binary_radio(
-            "Steam", "Flatpak (experimental)", Preferences.CLIENT
-        )
+
+        # TODO: gray out options if not available on system
+        client_store = Gtk.ListStore(str, str)
+        client_store.append(["steam", "steam"])
+        client_store.append(["flatpak", "flatpak run com.valvesoftware.Steam"])
+        client_store.append(["flatpak (container)", "flatpak-spawn --host flatpak run com.valvesoftware.Steam"])
+
+        renderer_text = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
+        self.client_combo = Gtk.ComboBox.new_with_model(client_store)
+        self.client_combo.set_halign(Gtk.Align.START)
+        self.client_combo.pack_start(renderer_text, True)
+        self.client_combo.connect("changed", self._on_client_changed)
+        self.client_combo.add_attribute(renderer_text, "text", 0)
 
         pref_rows = [
-            [LeftLabel("Steam client"), self.steam_toggle],
+            [LeftLabel("Steam client"), self.client_combo],
             [LeftLabel("Window size at boot"), self.fullscreen_toggle],
             [LeftLabel("Player name"), self.player_box],
         ]
@@ -3991,6 +4001,15 @@ class Options(Gtk.Box):
         show_wait_dialog = True
         call_on_thread(show_wait_dialog, cmd, wait_msg, "")
 
+    def _on_client_changed(self, combo: Gtk.ComboBox) -> None:
+        # prevent triggering on initial init
+        if App.treeview.subpage is not RowType.OPTIONS:
+            return
+        ind = combo.get_active()
+        mod = combo.get_model()
+        client = mod[ind][1]
+        call_bash_func("Change client", client)
+
     def _on_branch_changed(self, combo: Gtk.ComboBoxText) -> None:
         # prevent triggering on initial init
         if App.treeview.subpage is not RowType.OPTIONS:
@@ -4000,11 +4019,9 @@ class Options(Gtk.Box):
     def _on_radio_toggled(
         self, button: Gtk.RadioButton, context: Preferences
     ) -> None:
-        if App.treeview.subpage is None:
+        if App.treeview.subpage is not RowType.OPTIONS:
             return
         match context:
-            case Preferences.CLIENT:
-                toggle = RowType.TGL_STEAM
             case Preferences.INSTALL:
                 toggle = RowType.TGL_INSTALL
                 state = button.get_group()[0].get_active()
@@ -4126,11 +4143,9 @@ class Options(Gtk.Box):
             radio = 0
         self.mod_install_toggle.get_children()[radio].set_active(True)
 
-        if client == "flatpak":
-            radio = 1
-        else:
-            radio = 0
-        self.steam_toggle.get_children()[radio].set_active(True)
+        for ind, row in enumerate(self.client_combo.get_model()):
+            if row[1] == client:
+                self.client_combo.set_active(ind)
 
         if fullscreen == "true":
             radio = 1

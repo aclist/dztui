@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version="6.0.1-beta.2"
+version="6.0.1-beta.3"
 
 #CONSTANTS
 aid=221100
@@ -87,17 +87,14 @@ steam_api_url="https://steamcommunity.com/dev/apikey"
 battlemetrics_api_url="https://www.battlemetrics.com/developers"
 bm_api="https://api.battlemetrics.com/servers"
 
-if [[ $preferred_client == "steam" ]]; then
-    steam_cmd="steam"
-else
-    steam_cmd="flatpak run com.valvesoftware.Steam"
-fi
+steam_cmd="$preferred_client"
 
 declare -A funcs=(
 ["Highlight stale"]="find_stale_mods"
 ["Change player name"]="update_config_val"
 ["Change Steam API key"]="update_config_val"
 ["Change Battlemetrics API key"]="update_config_val"
+["Change client"]="update_config_val"
 ["Change favorite server"]="add_record"
 ["Add server by IP"]="add_record"
 ["Add server by ID"]="add_record"
@@ -701,13 +698,6 @@ toggle(){
                 debug=""
             fi
             ;;
-        Toggle[[:space:]]Steam/Flatpak)
-            if [[ $preferred_client == "steam" ]]; then
-                preferred_client="flatpak"
-            else
-                preferred_client="steam"
-            fi
-            ;;
         Toggle[[:space:]]DZGUI[[:space:]]fullscreen[[:space:]]boot)
             if [[ $fullscreen == "true" ]]; then
                 fullscreen="false"
@@ -806,6 +796,9 @@ update_config_val(){
     local context="$1"
     local value="$2"
     case $1 in
+        "Change client")
+            key="preferred_client"
+            ;;
         "Change player name")
             key="name"
             if [[ -z "${value// }" ]]; then
@@ -831,7 +824,6 @@ update_config_val(){
     declare -n nr=$key
     nr="$value"
     update_config
-    echo "Updated the key '$key' to '$value'"
     return 80
 }
 show_log(){
