@@ -238,7 +238,7 @@ depcheck(){
 }
 check_pyver(){
     if [[ ! $(command -v python3.13) ]]; then
-        local msg="Requires Python 3.12"
+        local msg="Requires Python 3.13"
         raise_error_and_quit "$msg"
     fi
 }
