@@ -3,7 +3,7 @@ set -o pipefail
 
 src_path=$(realpath "$0")
 
-version=6.0.1.beta-3
+version=6.0.1.beta-4
 reference_branch="prerelease/6.0.1-beta.1"
 
 #CONSTANTS
@@ -139,7 +139,7 @@ print_config_vals(){
 
 }
 test_gobject(){
-    python3 -c "import gi"
+    python3.13 -c "import gi"
     if [[ ! $? -eq 0 ]]; then
         logger CRITICAL "Missing PyGObject"
         fdialog "Requires PyGObject (python-gobject)"
@@ -237,13 +237,10 @@ depcheck(){
     logger INFO "Initial dependencies satisfied"
 }
 check_pyver(){
-    local pyver=$(python3 --version | awk '{print $2}')
-    local minor=$(<<< $pyver awk -F. '{print $2}')
-    if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]] || [[ $minor -lt 11 ]] || [[ $minor -gt 12 ]]; then
-        local msg="Requires Python 3.11 or 3.12"
+    if [[ ! $(command -v python3.13) ]]; then
+        local msg="Requires Python 3.12"
         raise_error_and_quit "$msg"
     fi
-    logger INFO "Found Python version: $pyver"
 }
 watcher_deps(){
     if [[ ! $(command -v wmctrl) ]] && [[ ! $(command -v xdotool) ]]; then
@@ -605,7 +602,7 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="c6e5d68e084be16aa58358fa51ec4586"
+        ["funcs"]="39fa4c302a508f63dcfe5ca3cff9bc01"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
         ["ui.py"]="2276386252bd571b3505cbbc74359732"
@@ -875,7 +872,7 @@ file_picker(){
 }
 find_library_folder(){
     local search_path="$1"
-    steam_path="$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" \
+    steam_path="$(python3.13 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" \
         | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')"
     if [[ ! $? -eq 0 ]] || [[ -z $steam_path ]]; then
         logger WARN "Failed to parse Steam path using '$search_path'"
@@ -1046,7 +1043,7 @@ initial_setup(){
     setup_dirs
     setup_state_files
     depcheck
-    check_pyver
+#    check_pyver
     test_gobject
     watcher_deps
     check_architecture
@@ -1173,7 +1170,7 @@ main(){
     initial_setup
 
     printf "All OK. Kicking off UI...\n"
-    python3 "$ui_helper" "--init-ui" "$version" "$is_steam_deck"
+    python3.13 "$ui_helper" "--init-ui" "$version" "$is_steam_deck"
 
 }
 

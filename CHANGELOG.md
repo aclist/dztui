@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.1-beta.4] 2025-11-14
+## Changed
+- Require Python 3.13
+
 ## [6.0.1-beta.3] 2025-11-13
 ## Added
 - Support sandboxed flatpak
