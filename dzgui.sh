@@ -1043,7 +1043,7 @@ initial_setup(){
     setup_dirs
     setup_state_files
     depcheck
-#    check_pyver
+    check_pyver
     test_gobject
     watcher_deps
     check_architecture
