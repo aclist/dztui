@@ -3,6 +3,8 @@
 ## [6.0.0-beta.12] 2025-11-14
 ## Changed
 - Require Python 3.13
+## Fixed
+- Normalize beta version
 
 ## [6.0.0-beta.11] 2025-11-13
 ## Added
