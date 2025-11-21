@@ -4,7 +4,6 @@ set -o pipefail
 src_path=$(realpath "$0")
 
 version=6.0.1.beta-4
-reference_branch="prerelease/6.0.1-beta.1"
 
 #CONSTANTS
 aid=221100
