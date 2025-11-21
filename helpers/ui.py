@@ -18,6 +18,7 @@ from enum import Enum
 from collections.abc import Callable
 from concurrent.futures import wait
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import Literal, Self, Any
 
 import servers as Servers  # noqa E402
@@ -823,8 +824,7 @@ def query_history() -> list | None:
             rows = [row.rstrip("\n") for row in f]
     except OSError:
         rows = None
-    finally:
-        return rows
+    return rows
 
 
 def query_favorites() -> None | list:
@@ -1016,7 +1016,7 @@ def process_tree_option(choice: RowType) -> None:
         return
 
     if command == RowType.CHANGELOG:
-        App.grid.notebook.set_page_by_enum(NotebookPage.CHANGELOG)
+        App.grid.notebook.open_changelog()
         return
 
     if command == RowType.QUICK_CONNECT:
@@ -3801,12 +3801,22 @@ class Options(Gtk.Box):
             "Always fullscreen",
             Preferences.WINDOW,
         )
-        self.steam_toggle = self.make_binary_radio(
-            "Steam", "Flatpak (experimental)", Preferences.CLIENT
-        )
+
+        # TODO: gray out options if not available on system
+        client_store = Gtk.ListStore(str, str)
+        client_store.append(["steam", "steam"])
+        client_store.append(["flatpak", "flatpak run com.valvesoftware.Steam"])
+        client_store.append(["flatpak (container)", "flatpak-spawn --host flatpak run com.valvesoftware.Steam"])
+
+        renderer_text = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
+        self.client_combo = Gtk.ComboBox.new_with_model(client_store)
+        self.client_combo.set_halign(Gtk.Align.START)
+        self.client_combo.pack_start(renderer_text, True)
+        self.client_combo.connect("changed", self._on_client_changed)
+        self.client_combo.add_attribute(renderer_text, "text", 0)
 
         pref_rows = [
-            [LeftLabel("Steam client"), self.steam_toggle],
+            [LeftLabel("Steam client"), self.client_combo],
             [LeftLabel("Window size at boot"), self.fullscreen_toggle],
             [LeftLabel("Player name"), self.player_box],
         ]
@@ -3991,6 +4001,15 @@ class Options(Gtk.Box):
         show_wait_dialog = True
         call_on_thread(show_wait_dialog, cmd, wait_msg, "")
 
+    def _on_client_changed(self, combo: Gtk.ComboBox) -> None:
+        # prevent triggering on initial init
+        if App.treeview.subpage is not RowType.OPTIONS:
+            return
+        ind = combo.get_active()
+        mod = combo.get_model()
+        client = mod[ind][1]
+        call_bash_func("Change client", client)
+
     def _on_branch_changed(self, combo: Gtk.ComboBoxText) -> None:
         # prevent triggering on initial init
         if App.treeview.subpage is not RowType.OPTIONS:
@@ -4000,11 +4019,9 @@ class Options(Gtk.Box):
     def _on_radio_toggled(
         self, button: Gtk.RadioButton, context: Preferences
     ) -> None:
-        if App.treeview.subpage is None:
+        if App.treeview.subpage is not RowType.OPTIONS:
             return
         match context:
-            case Preferences.CLIENT:
-                toggle = RowType.TGL_STEAM
             case Preferences.INSTALL:
                 toggle = RowType.TGL_INSTALL
                 state = button.get_group()[0].get_active()
@@ -4126,11 +4143,9 @@ class Options(Gtk.Box):
             radio = 0
         self.mod_install_toggle.get_children()[radio].set_active(True)
 
-        if client == "flatpak":
-            radio = 1
-        else:
-            radio = 0
-        self.steam_toggle.get_children()[radio].set_active(True)
+        for ind, row in enumerate(self.client_combo.get_model()):
+            if row[1] == client:
+                self.client_combo.set_active(ind)
 
         if fullscreen == "true":
             radio = 1
@@ -4325,22 +4340,20 @@ class KeybindingsDialog(Gtk.Box):
 class Changelog(Gtk.Box):
     def __init__(self):
         super().__init__()
+
+        self.changelog_label = Gtk.Label()
+        self.add(self.changelog_label)
+
+    def open_changelog(self, path: Path) -> None:
         try:
-            with open(changelog_path, "r") as f:
-                changelog = f.read()
-            changelog_label = Gtk.Label()
-            changelog = self.format_pango(changelog)
-            changelog_label.set_markup(changelog)
-            self.add(changelog_label)
-        except FileNotFoundError:
-            msg = f"Failed to find CHANGELOG.md at {changelog_path}"
-            logger.critical(msg)
-            spawn_dialog(msg, Popup.WARN)
-            return
+            changelog = path.read_text()
         except OSError as e:
-            spawn_dialog(f"Something went wrong: {e}", Popup.WARN)
+            spawn_dialog(f"Something went wrong: {e}", Popup.NOTIFY)
             logger.critical(e)
-            return
+            return Exception
+        formatted = self.format_pango(changelog)
+        self.changelog_label.set_markup(formatted)
+        App.grid.notebook.set_page_by_enum(NotebookPage.CHANGELOG)
 
     def format_pango(self, text: str) -> str:
         medium = '<span size="medium"><b>'
@@ -4357,7 +4370,8 @@ class Notebook(Gtk.Notebook):
     def __init__(self):
         super().__init__(show_tabs=False, show_border=False)
 
-        self.clog = ScrollableNote(Changelog())
+        self.changelog = Changelog()
+        self.clog = ScrollableNote(self.changelog)
         self.clog.type = RowType.CHANGELOG
         self.clog.show_all()
         self.append_page(self.clog)
@@ -4375,6 +4389,10 @@ class Notebook(Gtk.Notebook):
 
         self.connect("switch-page", self._on_page_changed)
         self.connect("key-press-event", self._on_keypress)
+
+    def open_changelog(self) -> None:
+        path = Path(changelog_path)
+        self.changelog.open_changelog(path)
 
     def _set_adjustment(self, adjustment: VAdjustment) -> None:
         INCREMENT = 50

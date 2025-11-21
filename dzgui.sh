@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=6.0.0.beta-8
+src_path=$(realpath "$0")
+
+version=6.0.1.beta-4
 
 #CONSTANTS
 aid=221100
@@ -136,7 +138,7 @@ print_config_vals(){
 
 }
 test_gobject(){
-    python3 -c "import gi"
+    python3.13 -c "import gi"
     if [[ ! $? -eq 0 ]]; then
         logger CRITICAL "Missing PyGObject"
         fdialog "Requires PyGObject (python-gobject)"
@@ -218,9 +220,6 @@ default_steam_path="$default_steam_path"
 
 #Preferred Steam launch command (for Flatpak support)
 preferred_client="$preferred_client"
-
-#DZGUI source path
-src_path="$src_path"
 END
 }
 depcheck(){
@@ -237,13 +236,10 @@ depcheck(){
     logger INFO "Initial dependencies satisfied"
 }
 check_pyver(){
-    local pyver=$(python3 --version | awk '{print $2}')
-    local minor=$(<<< $pyver awk -F. '{print $2}')
-    if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]] || [[ $minor -lt 10 ]]; then
-        local msg="Requires Python >=3.10"
+    if [[ ! $(command -v python3.13) ]]; then
+        local msg="Requires Python 3.13"
         raise_error_and_quit "$msg"
     fi
-    logger INFO "Found Python version: $pyver"
 }
 watcher_deps(){
     if [[ ! $(command -v wmctrl) ]] && [[ ! $(command -v xdotool) ]]; then
@@ -317,6 +313,7 @@ check_unmerged(){
     fi
 }
 check_version(){
+    [[ -n $reference_branch ]] && return
     local version_url=$(format_version_url)
     local upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
     local res=$(get_response_code "$version_url")
@@ -467,18 +464,7 @@ steam_deps(){
         local msg="Found neither Steam nor Flatpak Steam"
         raise_error_and_quit "$msg"
         exit 1
-    elif [[ -n "$steam" ]] && [[ -n "$flatpak" ]]; then
-        [[ -n $preferred_client ]] && return 0
-        if [[ -z $preferred_client ]]; then
-            preferred_client="steam"
-        fi
-    elif [[ -n "$steam" ]]; then
-        preferred_client="steam"
-    else
-        preferred_client="flatpak"
     fi
-    update_config
-    logger INFO "Preferred client set to '$preferred_client'"
 }
 migrate_files(){
     if [[ ! -f $config_path/dztuirc.oldapi ]]; then
@@ -615,10 +601,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="6ae3ead7034dc8e7543472bddee75c63"
+        ["funcs"]="39fa4c302a508f63dcfe5ca3cff9bc01"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
-        ["ui.py"]="8d05bbd7b8e15a97fae568e9a3dbf4d6"
+        ["ui.py"]="2276386252bd571b3505cbbc74359732"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["pefile.py"]="21531f2c0d9dfa5f110cf6779f9d22c0"
     )
@@ -637,6 +623,10 @@ fetch_helpers_by_sum(){
     fi
     if [[ $realbranch == "stable" ]]; then
         realbranch="dzgui"
+    fi
+
+    if [[ -n $reference_branch ]]; then
+        realbranch="$reference_branch"
     fi
 
     for i in "${!sums[@]}"; do
@@ -881,7 +871,7 @@ file_picker(){
 }
 find_library_folder(){
     local search_path="$1"
-    steam_path="$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" \
+    steam_path="$(python3.13 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" \
         | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')"
     if [[ ! $? -eq 0 ]] || [[ -z $steam_path ]]; then
         logger WARN "Failed to parse Steam path using '$search_path'"
@@ -895,6 +885,7 @@ create_config(){
     unset default_steam_path
     unset steam_path
 
+    preferred_client="steam"
     while true; do
         local player_input="$($steamsafe_zenity \
             --forms \
@@ -978,10 +969,6 @@ varcheck(){
         fi
         create_config
         return 0
-    fi
-    if [[ $src_path != $(realpath "$0") ]]; then
-        src_path=$(realpath "$0")
-        update_config
     fi
 }
 is_dzg_downloading(){
@@ -1182,7 +1169,7 @@ main(){
     initial_setup
 
     printf "All OK. Kicking off UI...\n"
-    python3 "$ui_helper" "--init-ui" "$version" "$is_steam_deck"
+    python3.13 "$ui_helper" "--init-ui" "$version" "$is_steam_deck"
 
 }
 
