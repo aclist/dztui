@@ -1,10 +1,10 @@
 # Changelog
 
-## [6.0.1-beta.4] 2025-11-14
+## [6.0.0-beta.12] 2025-11-14
 ## Changed
 - Require Python 3.13
 
-## [6.0.1-beta.3] 2025-11-13
+## [6.0.0-beta.11] 2025-11-13
 ## Added
 - Support sandboxed flatpak
 
@@ -14,12 +14,12 @@
 ## Fixed
 - Config file erroneously getting updated when populating settings menu
 
-## [6.0.1-beta.2] 2025-11-10
+## [6.0.0-beta.10] 2025-11-10
 ## Fixed
 - Python 3.14 error in finally block
 - Require Python version between 3.11 and 3.12
 
-## [6.0.1-beta.1] 2025-11-05
+## [6.0.0-beta.9] 2025-11-05
 ## Fixed
 - UI not being constructed correctly if CHANGELOG.md was missing
 
