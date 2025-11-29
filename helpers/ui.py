@@ -1486,6 +1486,8 @@ class ButtonBox(Gtk.Box):
         context = button.type
         logger.info(f"User clicked '{context}'")
 
+        App.grid.right_panel.filters_vbox.set_visible(False)
+
         if context == ButtonType.EXIT:
             logger.info("Normal user exit")
             save_res_and_quit()
