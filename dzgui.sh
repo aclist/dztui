@@ -381,7 +381,7 @@ dl_changelog(){
     [[ $branch == "stable" ]] && mdbranch="dzgui"
     [[ $branch == "testing" ]] && mdbranch="testing"
     local changelog="$url_prefix/${mdbranch}/CHANGELOG.md"
-    curl -Ls "$md" > "$state_path/CHANGELOG.md"
+    curl -Ls "$changelog" > "$state_path/CHANGELOG.md"
 }
 test_display_mode(){
     pgrep -a gamescope | grep -q "generate-drm-mode"
