@@ -1,5 +1,10 @@
 # Changelog
 
+## [6.0.0-beta.13] 2025-11-29
+## Fixed
+- Server filter panel not being hidden when entering other page contexts
+- Path to remote changelog being constructed incorrectly
+
 ## [6.0.0-beta.12] 2025-11-14
 ## Changed
 - Require Python 3.13

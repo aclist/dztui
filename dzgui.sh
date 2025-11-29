@@ -3,7 +3,7 @@ set -o pipefail
 
 src_path=$(realpath "$0")
 
-version=6.0.0.beta-12
+version=6.0.0.beta-13
 
 #CONSTANTS
 aid=221100
@@ -377,10 +377,11 @@ prompt_dl(){
 dl_changelog(){
     local mdbranch
     local md
+    source "$config_file"
     [[ $branch == "stable" ]] && mdbranch="dzgui"
     [[ $branch == "testing" ]] && mdbranch="testing"
-    local md="$url_prefix/${mdbranch}/$file"
-    curl -Ls "$md" > "$state_path/CHANGELOG.md"
+    local changelog="$url_prefix/${mdbranch}/CHANGELOG.md"
+    curl -Ls "$changelog" > "$state_path/CHANGELOG.md"
 }
 test_display_mode(){
     pgrep -a gamescope | grep -q "generate-drm-mode"
@@ -601,10 +602,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="bb059b81826babc53a268d0f5afe1110"
+        ["funcs"]="519a13ecb5c8527ae3cbefb5babe2c62"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
-        ["ui.py"]="2276386252bd571b3505cbbc74359732"
+        ["ui.py"]="8edf48e6780460bd8ea7b01614592296"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["pefile.py"]="21531f2c0d9dfa5f110cf6779f9d22c0"
     )
