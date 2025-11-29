@@ -377,9 +377,10 @@ prompt_dl(){
 dl_changelog(){
     local mdbranch
     local md
+    source "$config_file"
     [[ $branch == "stable" ]] && mdbranch="dzgui"
     [[ $branch == "testing" ]] && mdbranch="testing"
-    local md="$url_prefix/${mdbranch}/$file"
+    local changelog="$url_prefix/${mdbranch}/CHANGELOG.md"
     curl -Ls "$md" > "$state_path/CHANGELOG.md"
 }
 test_display_mode(){
