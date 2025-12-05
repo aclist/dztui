@@ -3,7 +3,7 @@ set -o pipefail
 
 src_path=$(realpath "$0")
 
-version=6.0.0.beta-13
+version=6.0.0.beta-14
 
 #CONSTANTS
 aid=221100
@@ -602,7 +602,7 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="519a13ecb5c8527ae3cbefb5babe2c62"
+        ["funcs"]="3036da0c8f46452af4822bbeaa1a9454"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
         ["ui.py"]="8edf48e6780460bd8ea7b01614592296"

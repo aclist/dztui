@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.0-beta.14] 2025-12-05
+## Fixed
+- Tooltips with newlines breaking log table
+
 ## [6.0.0-beta.13] 2025-11-29
 ## Fixed
 - Server filter panel not being hidden when entering other page contexts
