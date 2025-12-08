@@ -1,0 +1,6 @@
+[submodule "dzgui/lib/dayzquery"]
+	path = dzgui/lib/dayzquery
+	url = https://github.com/Yepoleb/dayzquery.git
+[submodule "dzgui/lib/a2s"]
+	path = dzgui/lib/a2s
+	url = https://github.com/Yepoleb/python-a2s.git
