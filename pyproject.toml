@@ -1,0 +1,100 @@
+[project]
+name = "dzgui"
+description = "DayZ server browser and mod manager for Linux"
+authors = [
+    {name = "aclist"}
+]
+version = "7.0.0"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+readme = "README.md"
+
+classifiers = [
+"Development Status :: 4 - Beta",
+"Environment :: X11 Applications :: GTK",
+"Intended Audience :: End Users/Desktop",
+"Operating System :: POSIX :: Linux",
+"Programming Language :: Python :: 3.13",
+"Topic :: Games/Entertainment",
+"Typing :: Typed",
+]
+
+requires-python = ">=3.13, <3.14"
+dependencies = [
+    "PyGObject==3.52.3",
+    "dayzquery",
+    "packaging==25.0",
+    "psutil==7.1.3",
+    "python-a2s",
+    "requests==2.32.5"
+]
+
+[project.scripts]
+dzgui = "dzgui.main:main"
+
+[project.urls]
+Homepage = "https://aclist.github.io/dzgui"
+Repository = "https://github.com/aclist/dzgui"
+Issues = "https://github.com/aclist/dzgui/issues"
+Changelog = "https://github.com/aclist/dzgui/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+docs = ["sphinx"]
+test = [
+    "black==25.1.0",
+    "pre-commit==4.4.0",
+    "pytest==8.4.2",
+    "pytest-cov==7.0.0",
+    "PyGObject-stubs==2.13.0",
+]
+lint = [
+    "mypy==1.17.0",
+    "mypy_extensions==1.1.0",
+    "ruff==0.11.13",
+]
+dev = [
+    "dzgui[docs,test,lint]"
+]
+
+[build-system]
+requires = ["setuptools", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.black]
+line-length = 88
+
+[tool.mypy]
+python_version = "3.13"
+disallow_untyped_defs = true
+warn_return_any = true
+
+[[tool.mypy.overrides]]
+module = [
+    "a2s",
+    "dayzquery"
+]
+ignore_missing_imports = true
+
+[tool.uv.sources]
+python-a2s = { path = "./dzgui/lib/a2s", editable = true }
+dayzquery = { path = "./dzgui/lib/dayzquery", editable = true }
+
+[tool.uv]
+config-settings-package = { pygobject-stubs = { config = "Gtk3,Gdk3,Soup2" } }
+
+[tool.pytest.ini_options]
+markers = [
+    "config: config file keys/values",
+    "pefile: validate PE files",
+    "post_install: requires a completed installation",
+    "slow: long-running tests",
+    "webtest: checks remote endpoints"
+]

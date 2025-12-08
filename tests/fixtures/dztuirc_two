@@ -1,0 +1,45 @@
+#Path to DayZ installation
+steam_path="/tmp"
+
+#Battlemetrics API key
+api_key=""
+
+#Favorited server IP:PORT array
+ip_list=(
+)
+
+#Favorite server to fast-connect to (limit one)
+fav_server=""
+
+#Favorite server label (human readable)
+fav_label=""
+
+#Custom player name (optional, required by some servers)
+name=""
+
+#Set to 1 to perform dry-run and print launch options
+debug=""
+
+#Toggle stable/testing branch
+branch="testing"
+
+#Start in fullscreen
+fullscreen="false"
+
+#Steam API key
+steam_api=""
+
+#Auto-install mods
+auto_install="0"
+
+#Automod staging directory
+staging_dir="/tmp"
+
+#Path to default Steam client
+default_steam_path="/tmp"
+
+#Preferred Steam launch command (for Flatpak support)
+preferred_client="steam"
+
+#DZGUI source path
+src_path=""

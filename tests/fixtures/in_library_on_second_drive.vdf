@@ -1,0 +1,19 @@
+"libraryfolders"
+{
+	"0"
+	{
+		"path"	  "/not/a/path"
+		"apps"
+		{
+			"0"		"0"
+		}
+	}
+	"1"
+	{
+		"path"	  "/tmp"
+		"apps"
+		{
+			"221100"		"0"
+		}
+	}
+}

@@ -1,0 +1,88 @@
+import threading
+
+import gi  # noqa E402
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk, GLib
+
+from dzgui.const.enum import ModButton, Popup
+from dzgui.const.constants import NO_EXPAND, FILL
+from dzgui.util import strings
+
+from dzgui.views.dialogs.generic import GenericDialog
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from dzgui.controllers.mc import Controller
+
+class EnumeratedModButton(Gtk.Button):
+    def __init__(self, enum: ModButton) -> None:
+        super().__init__(margin_start=10, margin_end=10)
+
+        self.enum = enum
+        self.set_label(enum.dict["label"])
+        self.set_tooltip_text(enum.dict["tooltip"])
+
+
+class ModSelectionPanel(Gtk.Box):
+    def __init__(self, controller: "Controller") -> None:
+        super().__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL, margin_top=15)
+
+        self.controller = controller
+
+        buttons = (
+            ModButton.SELECT_ALL,
+            ModButton.UNSELECT_ALL,
+            ModButton.HIGHLIGHT_STALE,
+            ModButton.DELETE_SELECTED,
+        )
+
+        self.header = Gtk.Label()
+        self.header.set_markup(f"<b>{strings.mod_panel.header}</b>")
+
+        self.main_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        for button in buttons:
+            b = EnumeratedModButton(button)
+            b.connect("clicked", self._on_button_clicked)
+            self.main_panel.pack_start(b, NO_EXPAND, FILL, 0)
+
+        self.extra_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        for button in (ModButton.SELECT_STALE, ModButton.UNHIGHLIGHT_STALE):
+            b = EnumeratedModButton(button)
+            b.connect("clicked", self._on_button_clicked)
+            b.set_sensitive(False)
+            self.extra_panel.pack_start(b, NO_EXPAND, FILL, 0)
+
+        self.pack_start(self.header, NO_EXPAND, FILL, 0)
+        self.pack_start(self.main_panel, NO_EXPAND, FILL, 0)
+        self.pack_start(self.extra_panel, NO_EXPAND, FILL, 0)
+
+    def after_colorize(self) -> None:
+        self.controller.unselect_all_mods()
+        self.swap_sensitive(True)
+
+    def swap_sensitive(self, state: bool) -> None:
+        for child in self.extra_panel.get_children():
+            child.set_sensitive(state)
+        for child in self.main_panel.get_children():
+            if child.enum == ModButton.HIGHLIGHT_STALE:
+                child.set_sensitive(not state)
+
+    def _on_button_clicked(self, button: EnumeratedModButton) -> None:
+        match button.enum:
+            case ModButton.SELECT_ALL:
+                self.controller.toggle_mod_selection(True)
+            case ModButton.UNSELECT_ALL:
+                self.controller.toggle_mod_selection(False)
+            case ModButton.DELETE_SELECTED:
+                self.controller.delete_multiple_mods()
+
+            case ModButton.HIGHLIGHT_STALE:
+                self.controller.set_callback(self.after_colorize)
+                self.controller.highlight_stale()
+            case ModButton.UNHIGHLIGHT_STALE:
+                self.controller.uncolorize_mods()
+                self.swap_sensitive(False)
+            case ModButton.SELECT_STALE:
+                self.controller.select_colorized()
+

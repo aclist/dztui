@@ -1,0 +1,256 @@
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository.Gtk import ListStore
+
+from dzgui.const.enum import FilterMode
+
+class ModelManager:
+    """
+    Manages access to cached ListStore resources and
+    performs filtering on behalf of TreeViews.
+
+    Not thread-safe.
+    """
+
+    def __init__(self):
+        # NOTE: packed ListStores
+        self.filter_cache = {}
+        self.ping_cache = {}
+
+        self.mod_store = ListStore(str, str, str, float, str)
+
+        # NOTE: stringwise (list) representation of the model
+        self.control_model = None
+        self.filtered = None
+        self.success = True
+
+    def __new__(cls):
+        if not hasattr(cls, "instance"):
+            cls.instance = super(ModelManager, cls).__new__(cls)
+        return cls.instance
+
+    def get_mod_store(self) -> ListStore:
+        return self.mod_store
+
+    def filter(self, mode: FilterMode, *args, **kwargs) -> None:
+        """
+        Native Gtk.TreeView.refilter() method was not performant enough
+        when running in the main loop with 40k+ records
+        """
+        filters = AppNav.right_panel.filters_vbox.get_filters()
+
+        if filters in self.filter_cache:
+            cache = self.filter_cache[filters]
+            self.set_store(cache[0])
+            self.set_filtered(cache[1])
+            GLib.idle_add(AppNav.treeview._filter_cleanup)
+            return
+
+        match mode:
+            case FilterMode.INITIAL:
+                rows = self.filter_initial(filters)
+
+            case FilterMode.MAP:
+                panel = AppNav.right_panel.filters_vbox
+                prior_map = panel.get_prior_map()
+
+                if prior_map == "All maps":
+                    rows = self.filter_map(filters)
+                else:
+                    AppNav.right_panel.ping.set_sensitive(True)
+                    rows = self.filter_toggle_on(filters, *args)
+
+            case FilterMode.KEYWORD:
+                AppNav.right_panel.ping.set_sensitive(True)
+                rows = self.filter_toggle_on(filters, *args)
+
+            case FilterMode.TOGGLE_OFF:
+                for f in filters[2:]:
+                    self.set_filtered(self.filter_toggle_off(filters, f))
+                rows = self.filtered
+
+            case FilterMode.TOGGLE_ON:
+                AppNav.right_panel.ping.set_sensitive(True)
+                rows = self.filter_toggle_on(filters, *args)
+
+        if mode is not FilterMode.INITIAL:
+            for row in rows:
+                if row[7] in self.ping_cache:
+                    row[9] = self.ping_cache[row[7]]
+
+        if len(rows) > 0:
+            clone = ModelMan.new_model()
+            rows = self.sort_rows(rows)
+            for row in rows:
+                clone.append(row)
+        else:
+            clone = None
+
+        self.set_cache(filters, clone, rows)
+        self.set_store(clone)
+        GLib.idle_add(AppNav.treeview._filter_cleanup)
+
+    def sort_rows(self, rows: list) -> list:
+        rows.sort(key=lambda x: re.sub(r"[^A-Za-z0-9]+", "", x[0].lower()))
+        return rows
+
+    def filter_initial(self, filters: tuple) -> list:
+        """
+        Simply culls the control model of any disabled filters
+        """
+        self.set_filtered(self.control_model)
+        for f in filters[2:]:
+            self.set_filtered(self.filter_toggle_off(filters, f))
+        return self.filtered
+
+    def filter_map(self, filters: tuple) -> list:
+        """
+        Multi-filtration for any context starts by narrowing by map
+        """
+        rows = self.filtered
+        panel = AppNav.right_panel.filters_vbox
+        sel_map = panel.get_selected_map()
+
+        if sel_map == "All maps":
+            return rows
+
+        rows = [row for row in rows if row[1] == sel_map]
+        return rows
+
+    def filter_keyword(self, filters: tuple) -> list:
+        keyword = AppNav.right_panel.filters_vbox.get_keyword_filter()
+        rows = self.filtered
+
+        if keyword == "":
+            return rows
+
+        filtered = [
+            row
+            for row in rows
+            if keyword in row[0].lower()
+            or keyword in row[1].lower()
+            or keyword in row[7].lower()
+        ]
+        return filtered
+
+    def filter_toggle_off(self, filters: tuple, filter_type: str) -> list:
+        """
+        Sub-filtration of the current model
+        """
+        pairs = {
+            strings.filter_3pp: strings.filter_1pp,
+            strings.filter_day: strings.filter_night,
+            strings.filter_official: strings.filter_unofficial
+        }
+        for k, v in pairs.items():
+            if k in filters and v in filters:
+                self.set_filtered(None)
+                return []
+
+        rows = self.filtered
+        match filter_type:
+            case strings.filter_3pp:
+                rows = [row for row in rows if row[2] != strings.filter_3pp]
+            case strings.filter_1pp:
+                rows = [row for row in rows if row[2] != strings.filter_1pp]
+            case strings.filter_official:
+                rows = [row for row in rows if row[10] != strings.filter_official]
+            case strings.filter_unofficial:
+                rows = [row for row in rows if row[10] != strings.filter_unofficial]
+            case strings.filter_empty:
+                rows = [row for row in rows if row[4] != 0]
+            case strings.filter_full:
+                rows = [row for row in rows if row[4] != row[5]]
+            case strings.filter_duplicate:
+                seen = []
+                final = []
+                for row in rows:
+                    if row[0] in seen:
+                        continue
+                    seen.append(row[0])
+                    final.append(row)
+                rows = final
+            case strings.filter_day:
+                reg = r"([0][0-9]|[1][0-6])"
+                rows = [row for row in rows if not re.match(reg, row[3])]
+            case strings.filter_night:
+                reg = r"([0][0-4]|[1][8]|[2][0-3])"
+                rows = [row for row in rows if not re.match(reg, row[3])]
+            case strings.filter_nonascii:
+                rows = [row for row in rows if row[0].isascii()]
+            case strings.filter_lowpop:
+                rows = [row for row in rows if (row[4] / row[5] * 100) > 30]
+            case strings.filter_modded:
+                rows = [row for row in rows if not row[11]]
+        return rows
+
+    def filter_toggle_on(self, filters: tuple, *args: str) -> list:
+        """Effectively applies all filters"""
+        self.set_filtered(self.control_model)
+        self.set_filtered(self.filter_map(filters))
+        self.set_filtered(self.filter_keyword(filters))
+
+        for f in filters[2:]:
+            self.set_filtered(self.filter_toggle_off(filters, f))
+        return self.filtered
+
+    def set_cache(
+        self, filters: tuple, model: ListStore | None, rows: list
+    ) -> None:
+        self.filter_cache[filters] = (model, rows)
+
+    def new_model(self) -> ListStore:
+        return ListStore(
+            str, str, str, str, int, int, int, str, int, int, str, bool
+        )
+
+    def resync_model(self, addr: str, qport: int) -> None:
+        """
+        Handle in-situ updates to model during
+        row deletion actions. Skipped for ephemeral
+        actions like player count/ping updates
+        """
+        for row in self.control_model:
+            if row[7] == addr and row[8] == qport:
+                self.control_model.remove(row)
+
+        self.wipe_cache()
+        filters = AppNav.right_panel.filters_vbox.get_filters()
+        refiltered = self.filter_toggle_on(filters)
+        self.set_filtered(refiltered)
+        self.set_success(True)
+        GLib.idle_add(AppNav.treeview._filter_cleanup)
+
+    def convert_model_to_list(self, model: ListStore) -> list:
+        return [[el for el in row] for row in model]
+
+    def set_filtered(self, rows: list | None) -> None:
+        if rows is None:
+            rows = []
+        self.filtered = rows
+
+    def get_filtered(self) -> list:
+        return self.filtered
+
+    def set_store(self, model: ListStore | None) -> None:
+        self.store = model
+
+    def get_store(self) -> ListStore | None:
+        return self.store
+
+    def set_control(self, rows: list) -> None:
+        self.control_model = rows
+
+    def set_success(self, result: bool) -> None:
+        self.success = result
+
+    def get_success(self) -> bool:
+        return self.success
+
+    def wipe_cache(self, full=False) -> None:
+        self.success = True
+        self.filtered = None
+        self.filter_cache = {}
+        self.ping_cache = {}
+        if full:
+            self.control_model = None

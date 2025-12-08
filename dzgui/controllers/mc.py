@@ -1,0 +1,545 @@
+import logging
+import os
+import locale
+import shutil
+import threading
+import textwrap
+
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Callable, TYPE_CHECKING
+
+import gi  # noqa E402
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk, GLib, GObject
+
+import dzgui.api.pefile as PeFile
+from dzgui.api.probe import test_steam_api, test_bm_api
+
+from dzgui.api.mods import (
+    get_delimited_mods,
+    get_local_mod_path,
+    find_stale_mods,
+    _hash,
+    remove_stale_signatures
+)
+from dzgui.const.enum import (
+    Preferences,
+    Popup,
+    MAIN_MENU_ROWS,
+    HELP_MENU_ROWS,
+    RowType,
+    NotebookPage,
+    ButtonType,
+    ContextMenu,
+)
+
+from dzgui.const.constants import LIBRARYFOLDERS_PATH, APPID_DAYZ, APPID_DAYZ_EXP, HEX_RED
+from dzgui.controllers.model import ModelManager
+
+from dzgui.config import update
+from dzgui.config.query import lookup
+from dzgui.config.userprefs import UserPrefs
+
+from dzgui.util.diag import write_diagnostic
+from dzgui.util import localize, cooldown, strings
+from dzgui.util._json import read_json, write_json
+from dzgui.util.open_links import open_workshop_page
+from dzgui.util.format import pluralize, format_mods
+
+from dzgui.views.dialogs.filepicker import FilePicker
+from dzgui.views.dialogs.generic import GenericDialog
+
+logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from dzgui.views.components.buttonbox import ContextualButton
+    from dzgui.views.base import AppNavigation
+    from dzgui.const.enum import ContextMenu
+    from dzgui.views.base import OuterWindow
+
+class Controller:
+    def __init__(self) -> None:
+        # TODO: main controller delegates to model manager
+        self.map_store = Gtk.ListStore(str)
+        self.row_store = Gtk.ListStore(str, GObject.TYPE_PYOBJECT)
+        self.help_store = Gtk.ListStore(str, GObject.TYPE_PYOBJECT)
+
+        # NOTE: long timestamp numbers
+        self.modlist_store = Gtk.ListStore(str, GObject.TYPE_INT64, str)
+        self.log_store = Gtk.ListStore(str, str, str, str)
+
+        self.notes_cache: dict[str, str] = {}
+
+        self.mediator: AppNavigation
+        self.prefs: UserPrefs
+        self.cooldown = 0
+
+        for row in MAIN_MENU_ROWS:
+            label = row.dict["label"]
+            self.row_store.append([label, row])
+
+        for row in HELP_MENU_ROWS:
+            label = row.dict["label"]
+            self.help_store.append([label, row])
+
+        self.model_manager = ModelManager()
+
+    def set_crumbs(self, crumbs: str) -> None:
+        self.mediator.grid.set_breadcrumbs(crumbs)
+
+    def get_crumbs(self) -> str:
+        return self.mediator.grid.get_breadcrumbs()
+
+    def get_help_store(self) -> Gtk.ListStore:
+        return self.help_store
+
+    def get_map_store(self) -> Gtk.ListStore:
+        return self.map_store
+
+    def get_row_store(self) -> Gtk.ListStore:
+        return self.row_store
+
+    def get_modlist_store(self) -> Gtk.ListStore:
+        return self.modlist_store
+
+    def get_mod_store(self) -> Gtk.ListStore:
+        return self.model_manager.get_mod_store()
+
+    def get_log_store(self) -> Gtk.ListStore:
+        return self.log_store
+
+    def terminate_process(self) -> None:
+        # TODO: only used by server table multiprocessing queue
+        self.mediator.notebook.servers.terminate_process()
+
+    def get_prefs(self) -> UserPrefs:
+        return self.prefs
+
+    def set_prefs(self, prefs: UserPrefs) -> None:
+        self.prefs = prefs
+
+    def query_config(self, key: Preferences) -> str | bool | list:
+        config = self.prefs.paths.config
+        return lookup(config, key)
+
+    def is_auto_install(self) -> bool:
+        return self.query_config(Preferences.INSTALL)
+
+    def reinit_map_store(self) -> None:
+        self.map_store.clear()
+        self.map_store.append(["All maps"])
+
+    def append_map(self, map_row: list) -> None:
+        self.map_store.append(map_row)
+
+    def set_mediator(self, mediator: "AppNavigation") -> None:
+        self.mediator = mediator
+
+    def get_mediator(self) -> "AppNavigation":
+        return self.mediator
+
+    def unblock_signals(self) -> None:
+        self.block_signals(False)
+
+    def block_signals(self, state: bool = True) -> None:
+        self.suppress_signal(
+            self.mediator.grid.right_panel.filters_vbox,
+            self.mediator.grid.right_panel.filters_vbox.maps_combo,
+            "_on_map_changed",
+            state,
+        )
+        self.suppress_signal(
+            self.mediator.treeview,
+            self.mediator.treeview.selected_row,
+            "_on_tree_selection_changed",
+            state,
+        )
+        self.suppress_signal(self.mediator.treeview, self.mediator.treeview, "_on_keypress", state)
+        for check in self.mediator.grid.right_panel.filters_vbox.checks:
+            self.suppress_signal(
+                self.mediator.grid.right_panel.filters_vbox,
+                check,
+                "_on_check_toggled",
+                state,
+            )
+
+    def suppress_signal(
+        self, owner: Gtk.Widget, widget: Gtk.Widget, func_name: str, state: bool
+    ) -> None:
+
+        func = getattr(owner, func_name)
+        if state:
+            widget.handler_block_by_func(func)
+        else:
+            widget.handler_unblock_by_func(func)
+        self.mediator.treeview.sel_blocked = state
+
+    def toggle_debug_mode(self) -> None:
+        self.toggle_config(Preferences.DEBUG)
+
+    def save_res_and_quit(self, *args: Any) -> None:
+        if self.mediator.window.props.is_maximized:
+            Gtk.main_quit()
+            return
+
+        w, h = self.mediator.window.get_size()
+        data = {"res": {"width": w, "height": h}}
+
+        res_path = self.prefs.paths.resolution
+        try:
+            write_json(data, res_path)
+        except Exception as e:
+            logger.critical(e)
+
+        Gtk.main_quit()
+
+    def set_statusbar(self, text: str) -> None:
+        self.mediator.grid.statusbar.set_text(text)
+
+    def delete_multiple_mods(self) -> None:
+        sel = self.mediator.modtreeview.get_selection()
+        model, pathlist = sel.get_selected_rows()
+        # NOTE: reverse when multiple
+        for path in reversed(pathlist):
+            self.delete_single_mod(path)
+
+        total_mods, total_size = self.calc_mod_size()
+        self.update_mod_statusbar()
+
+    def load_mods(self) -> None:
+        model = self.model_manager.get_mod_store()
+        model.clear()
+        path = self.query_config(Preferences.DEFAULT)
+        mods = get_delimited_mods(Path(path))
+
+        for mod in mods:
+            # NOTE: holds color column
+            mod.append(None)
+            model.append(mod)
+
+        self.update_mod_statusbar()
+
+    def toggle_config(self, context: Preferences) -> None:
+        config = self.prefs.paths.config
+        try:
+            update.toggle_config(config, context)
+        except Exception as e:
+            logger.critical(e)
+            self.spawn_dialog(strings.something_wrong, Popup.NOTIFY)
+
+    def update_config(self, key: Preferences, value: str) -> None:
+        try:
+            update.write_config(self.prefs.paths.config, key, value)
+        except Exception as e:
+            logger.critical(e)
+            self.spawn_dialog(strings.something_wrong, Popup.NOTIFY)
+            # TODO: suppress signals
+            # then reenable (or it spawns twice)
+            self.mediator.grid.notebook.settings.populate_settings()
+            return
+
+    # NOTE: disabled for now
+    def present_toast(self, text: str) -> None:
+        self.mediator.window.toast.set_text_and_fade(text)
+
+    def start_cooldown(self) -> None:
+        self.cooldown = cooldown.get_time()
+
+    def manage_cooldown(self) -> bool:
+        if cooldown.is_elapsed(self.cooldown):
+            self.cooldown = cooldown.get_time()
+            return True
+        else:
+            return False
+
+    def open_keybindings(self) -> None:
+        notebook = self.mediator.grid.notebook
+        notebook.toggle_keybindings()
+
+    def focus_notebook(self) -> None:
+        notebook = self.mediator.grid.notebook
+        notebook.focus_current()
+
+    def spawn_dialog(self, msg: str, mode: Popup) -> bool:
+        """
+        Spawns a GenericDialog transient to the OuterWindow
+        """
+        msg = textwrap.dedent(msg)
+        dialog = GenericDialog(self, msg, mode)
+        response = dialog.run()
+        dialog.destroy()
+
+        match response:
+            case Gtk.ResponseType.OK:
+                return False
+            case Gtk.ResponseType.CANCEL | Gtk.ResponseType.DELETE_EVENT:
+                return True
+        return False
+
+    def set_statusbar_by_row(self, row: RowType) -> None:
+        self.mediator.grid.statusbar.refresh(row)
+
+    def toggle_mod_panel(self, state: bool) -> None:
+        self.mediator.grid.sel_panel.set_visible(state)
+
+    def open_page(self, page: NotebookPage) -> None:
+        self.mediator.grid.notebook.set_page_by_enum(page)
+
+    def open_page_by_button(self, button: "ContextualButton") -> None:
+        match button.context:
+            case ButtonType.EXIT:
+                logger.info("Normal user exit")
+                self.save_res_and_quit()
+                return
+            case ButtonType.OPTIONS:
+                self.mediator.grid.notebook.settings.populate_settings()
+            case ButtonType.MODS:
+                self.load_mods()
+            case ButtonType.HELP:
+                self.mediator.treeview.set_model(self.help_store)
+            case ButtonType.MAIN_MENU:
+                self.mediator.treeview.set_model(self.row_store)
+
+        self.mediator.grid.notebook.set_page_by_enum(button.opens)
+        self.set_crumbs(button.get_label())
+
+    # TODO: deprecated?
+    def open_self_workshop(self, uid: str) -> None:
+        # NOTE: uid may contain leading zeroes, not a real integer
+        client = self.query_config(Preferences.CLIENT)
+        open_workshop_page(uid, client)
+
+    def copy_log(self, paths: list[Gtk.TreePath]) -> str:
+        if len(paths) < 1:
+            return ""
+        final = []
+        for path in paths:
+            record = self.log_store[path]
+            r = [el for el in record]
+            concat = strings.delimiter.join(r)
+            final.append(concat)
+        text = "\n".join(final)
+        return text
+
+    def copy_clipboard(self, text: str) -> None:
+        self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+        self.clipboard.set_text(text, -1)
+
+    def open_mod_page(self, path: Gtk.TreePath) -> None:
+        mod, it = self.get_mod_from_tree_path(path)
+        cmd = self.query_config(Preferences.CLIENT)
+        open_workshop_page(mod, cmd)
+
+    # TODO: put in model manager (dedicated manager for mod store)
+    def get_mod_from_tree_path(self, tree_path: Gtk.TreePath) -> tuple[str, Gtk.TreeIter]:
+        model = self.model_manager.get_mod_store()
+        tree_iter = model.get_iter(tree_path)
+        mod = model.get(tree_iter, 2)[0]
+        return mod, tree_iter
+
+    def delete_single_mod(self, tree_path: Gtk.TreePath) -> None:
+        config = self.prefs.paths.config
+
+        mod, it = self.get_mod_from_tree_path(tree_path)
+
+        path = lookup(config, Preferences.DEFAULT)
+        steam_path = Path(path)
+        mods_path = get_local_mod_path(steam_path)
+        app_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
+
+        md5 = _hash(mod)
+        symlink =  app_path / md5
+        symlink.unlink()
+        shutil.rmtree(mods_path / mod)
+
+        # NOTE: second pass to unlink DAYZ_EXP mods
+        try:
+            app_path_exp = PeFile.get_nested_app_path(steam_path, APPID_DAYZ_EXP)
+            symlink = app_path_exp / md5
+            symlink.unlink()
+        except PeFile.AppNotInstalledError:
+            pass
+
+        # TODO: belongs in model manager
+        model = self.model_manager.get_mod_store()
+        model.remove(it)
+
+
+    def update_mod_statusbar(self) -> None:
+        total_mods, total_size = self.calc_mod_size()
+        msg = format_mods(total_size, total_mods)
+        self.mediator.grid.statusbar.set_text(msg)
+
+
+    def calc_mod_size(self) -> tuple[int, int]:
+        model = self.model_manager.get_mod_store()
+        total_mods = len(model)
+        total_size = 0
+        for mod in model:
+            total_size += mod[3]
+        return total_mods, total_size
+
+
+    def menu_action(self, action: ContextMenu, path: Gtk.TreePath) -> None:
+        match action:
+            # NOTE: manipulates server store
+            # TODO: unimplemented
+            case ContextMenu.ADD_SERVER:
+                pass
+            case ContextMenu.ADD_NOTE:
+                pass
+            case ContextMenu.COPY_CLIPBOARD:
+                pass
+            case ContextMenu.COPY_NAME:
+                pass
+            case ContextMenu.REFRESH_PLAYERS:
+                pass
+            case ContextMenu.REMOVE_HISTORY:
+                pass
+            case ContextMenu.REMOVE_SERVER:
+                pass
+            case ContextMenu.SHOW_DETAILS:
+                pass
+            case ContextMenu.SHOW_MODS:
+                pass
+
+            # NOTE: manipulates mod store
+            case ContextMenu.DELETE_MOD:
+                self.delete_single_mod(path)
+                self.update_mod_statusbar()
+                remove_stale_signatures(
+                    self.prefs.paths.config,
+                    self.prefs.paths.version
+                )
+
+            case ContextMenu.OPEN_WORKSHOP:
+                self.open_mod_page(path)
+
+
+    def toggle_mod_selection(self, state: bool) -> None:
+        sel = self.mediator.modtreeview.get_selection()
+        if state:
+            sel.select_all()
+        else:
+            sel.unselect_all()
+        self.mediator.modtreeview.grab_focus()
+
+    def populate_log(self) -> None:
+        log = self.prefs.paths.debug
+        store = self.log_store
+        store.clear()
+        # TODO: pop dialog if log is missing
+        with open(log, "r") as f:
+            lines = [line.split(strings.delimiter) for line in f.read().splitlines()]
+            for record in lines:
+                store.append(record)
+        self.open_page(NotebookPage.LOG)
+
+    def select_colorized(self) -> None:
+        model = self.model_manager.get_mod_store()
+        sel = self.mediator.modtreeview.get_selection()
+        for mod in model:
+            it = mod.iter
+            path = model.get_path(it)
+            if mod[4] == HEX_RED:
+                sel.select_path(path)
+
+    def uncolorize_mods(self) -> None:
+        model = self.model_manager.get_mod_store()
+        for mod in model:
+            it = mod.iter
+            path = model.get_path(it)
+            model[path][4] = None
+
+    def colorize_mods(self) -> None:
+        model = self.model_manager.get_mod_store()
+        stale = find_stale_mods(self.prefs.paths.config)
+        for mod in model:
+            it = mod.iter
+            path = model.get_path(it)
+            # TODO: consider storing in ListStore as int
+            if int(mod[2]) in stale:
+                model[path][4] = HEX_RED
+
+        self.destroy_on_idle()
+
+    def unselect_all_mods(self) -> None:
+        self.mediator.modtreeview.get_selection().unselect_all()
+
+    def highlight_stale(self) -> None:
+        self.call_on_thread(self.colorize_mods)
+
+    def call_on_thread(self, func: Callable, *args) -> None:
+        self.wait_dialog = GenericDialog(self, strings.dialog.fetching, Popup.WAIT)
+        self.wait_dialog.show_all()
+        thread = threading.Thread(target=func, args=args)
+        thread.start()
+
+    def destroy_on_idle(self) -> None:
+        self.wait_dialog.destroy()
+        # TODO: improve upon this
+        func = self.callback["func"]
+        if func is not None:
+            args = self.callback["args"]
+            GLib.idle_add(func, *args)
+            self.set_callback(None, None)
+
+    def set_callback(self, callback: Callable | None, *args) -> None:
+        """
+        Lets calling widgets register a callback function
+        when spawning a threaded process
+        """
+        self.callback = { "func": callback, "args": args }
+
+    def dump_diagnostics(self) -> None:
+        picker = FilePicker(self.mediator.window)
+        file = picker.pick_file()
+        if file is not None:
+            try:
+                write_diagnostic(self.prefs.paths.config, file)
+            except Exception as e:
+                self.spawn_dialog(str(e), Popup.NOTIFY)
+
+    def test_api_response(self, text: str, key: Preferences) -> None:
+        if key is Preferences.STEAM:
+            res = test_steam_api(text)
+        else:
+            res = test_bm_api(text)
+
+        if res is True:
+            self.update_config(key, text)
+            self.set_callback(None, None)
+            self.destroy_on_idle()
+        else:
+            self.destroy_on_idle()
+            self.spawn_dialog(strings.api_error, Popup.NOTIFY)
+
+
+    def update_api_key(self, text: str, key: Preferences) -> None:
+        self.call_on_thread(self.test_api_response, text, key)
+
+    def set_resolution(self, window: "OuterWindow") -> None:
+        if self.prefs.is_game_mode:
+            window.fullscreen()
+            return
+        elif self.query_config(Preferences.WINDOW) is True:
+            window.fullscreen()
+
+        try:
+            data = read_json(self.prefs.paths.resolution)
+            valid_json = True
+        except Exception as e:
+            valid_json = False
+            logger.critical(e)
+
+        if valid_json:
+            res = data["res"]
+            w, h = res["width"], res["height"]
+            logger.info(f"Restoring window size to {w},{h}")
+            window.set_default_size(w, h)
+        else:
+            w = WINDOW_DEFAULT_X
+            h = WINDOW_DEFAULT_Y
+            logger.info(f"Using default window size {w},{h}")
+            window.set_default_size(w, h)

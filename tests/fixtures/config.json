@@ -1,0 +1,16 @@
+{
+  "bm_api": "000",
+  "fav_server": "127.0.0.0:80:80",
+  "fav_label": "My server",
+  "name": "John Doe",
+  "debug": false,
+  "branch": "testing",
+  "fullscreen": false,
+  "steam_api": "000",
+  "auto_install": true,
+  "default_steam_path": "/tmp",
+  "preferred_client": "steam",
+  "ip_list": [
+    "127.0.0.0:80:80"
+  ]
+}
