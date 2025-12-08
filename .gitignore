@@ -1,0 +1,8 @@
+*.egg*
+__pycache__
+prio.otl
+bugs
+build/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/

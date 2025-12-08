@@ -1,0 +1,16 @@
+repos:
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.14.6
+  hooks:
+  - id: ruff-check
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v1.18.2
+  hooks:
+  - id: mypy
+    args: [--strict, --ignore-missing-imports]
+- repo: local
+  hooks:
+  - id: copy-clog
+    name: Copy CHANGELOG.md to package data dir
+    entry: python scripts/copy_changelog.py
+    language: system
