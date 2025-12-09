@@ -259,12 +259,8 @@ class ModelManager:
         self.filter_cache[filters] = (model, rows)
 
     def new_model(self) -> ListStore:
-        store = ListStore(*[ftype for field, ftype in ServerColumns.__annotations__.items()])
+        store = self.new_model_from_class(ServerColumns)
         return store
-        #return = ListStore(*f)
-        #return ListStore(
-        #    str, str, str, str, int, int, int, str, int, int, str, bool
-        #)
 
     def resync_model(self, addr: str, qport: int) -> None:
         """
