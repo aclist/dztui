@@ -166,6 +166,13 @@ class Options(Gtk.Box):
             hexpand=True,
         )
 
+        developers=Gtk.Button(label="Developers", halign=Gtk.Align.START)
+        developers.connect("clicked", self._on_developers_clicked)
+        if self.controller.get_developer_mode():
+            grid.attach(
+                developers, 1, 0, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT
+            )
+
         for frame in [
             self.make_frame(api_box, strings.options.api_keys),
             self.make_frame(prefs_grid, strings.options.prefs),
@@ -180,6 +187,9 @@ class Options(Gtk.Box):
         self.scrollable = Gtk.ScrolledWindow(vexpand=True)
         self.scrollable.add(grid)
         self.add(self.scrollable)
+
+    def _on_developers_clicked(self, button: Gtk.Button) -> None:
+        self.controller.show_developers_page()
 
     def _on_link_button_clicked(self, button: Gtk.Button, url: str) -> None:
         open_links.open_link_by_url(url)

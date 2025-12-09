@@ -37,6 +37,7 @@ parser = argparse.ArgumentParser(description=flags.description)
 
 parser.add_argument("-v", "--version", action="store_true", help=flags.version)
 parser.add_argument("-u", "--uninstall", action="store_true", help=flags.uninstall)
+parser.add_argument("-d", "--developers", action="store_true", help=flags.developers)
 args = parser.parse_args()
 
 # TODO: profile load time
@@ -112,4 +113,4 @@ def main() -> None:
         XDG
     )
     print("All OK. Loading UI...")
-    App(prefs)
+    App(prefs, args.developers)

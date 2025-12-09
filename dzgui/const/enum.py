@@ -88,6 +88,7 @@ class NotebookPage(EnumWithAttrs):
     OPTIONS = {"crumbs": strings.crumbs.options,}
     SERVERS = {"crumbs": strings.crumbs.servers,}
     THANKS = {"crumbs": strings.crumbs.thanks,}
+    DEVELOPERS = {"crumbs": strings.crumbs.developers,}
 
 
 class RowType(EnumWithAttrs):
