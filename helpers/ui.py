@@ -866,13 +866,14 @@ def spawn_dialog(msg: str, mode: Popup) -> bool:
     dialog = GenericDialog(msg, mode)
     response = dialog.run()
     dialog.destroy()
+    clean_msg = msg.replace("\n", " ")
 
     match response:
         case Gtk.ResponseType.OK:
-            logger.info(f"User confirmed dialog with message '{msg}'")
+            logger.info(f"User confirmed dialog with message '{clean_msg}'")
             return False
         case Gtk.ResponseType.CANCEL | Gtk.ResponseType.DELETE_EVENT:
-            logger.info(f"User aborted dialog with message '{msg}'")
+            logger.info(f"User aborted dialog with message '{clean_msg}'")
             return True
     return False
 
