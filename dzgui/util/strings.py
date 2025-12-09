@@ -450,7 +450,7 @@ crumbs = Crumbs(
     options="Options",
     servers="Main menu > Server browser",
     thanks="Help > Special thanks",
-    developers="Help > Developers",
+    developers="Options > Developers",
 )
 
 checkmark = "✓"
