@@ -1,25 +1,80 @@
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository.Gtk import ListStore
+from gi.repository import GObject
 
 from dzgui.const.enum import FilterMode
+
+from dataclasses import dataclass, fields
+
+@dataclass
+@dataclass(slots=True, frozen=True)
+class ServerColumns:
+    name: str
+    _map: str
+    perspective: str
+    gametime: str
+    players: int
+    _max: int
+    queue: int
+    ip: str
+    qport: int
+    ping: int
+    provider: str
+    modded: bool
+
+
+@dataclass(slots=True, frozen=True)
+class ModCols:
+    name: str
+    symlink: str
+    directory: str
+    size: float
+    color: str
+
+
+@dataclass(slots=True, frozen=True)
+class LogCols:
+    timestamp: str
+    flag: str
+    traceback: str
+    msg: str
+
+
+@dataclass(slots=True, frozen=True)
+class ServerModCols:
+    name: str
+    uid: GObject.TYPE_INT64
+    installed: str
+
+
+@dataclass(slots=True, frozen=True)
+class MenuCols:
+    name: str
+    hidden: GObject.TYPE_PYOBJECT
+
 
 class ModelManager:
     """
     Manages access to cached ListStore resources and
     performs filtering on behalf of TreeViews.
 
-    Not thread-safe.
+    Methods are not thread-safe in themselves.
     """
 
     def __init__(self):
-        # NOTE: packed ListStores
         self.filter_cache = {}
         self.ping_cache = {}
 
-        self.mod_store = ListStore(str, str, str, float, str)
+        self.map_store = ListStore(str)
+        self.row_store = self.new_model_from_class(MenuCols)
+        self.help_store = self.new_model_from_class(MenuCols)
 
-        # NOTE: stringwise (list) representation of the model
+        self.mod_store = self.new_model_from_class(ModCols)
+        self.log_store = self.new_model_from_class(LogCols)
+        self.modlist_store = self.new_model_from_class(ServerModCols)
+
+        #self.mod_store = ListStore(str, str, str, float, str)
         self.control_model = None
         self.filtered = None
         self.success = True
@@ -28,6 +83,10 @@ class ModelManager:
         if not hasattr(cls, "instance"):
             cls.instance = super(ModelManager, cls).__new__(cls)
         return cls.instance
+
+    def new_model_from_class(self, cls: type) -> ListStore:
+        store = ListStore(*[ftype for field, ftype in cls.__annotations__.items()])
+        return store
 
     def get_mod_store(self) -> ListStore:
         return self.mod_store
@@ -200,9 +259,12 @@ class ModelManager:
         self.filter_cache[filters] = (model, rows)
 
     def new_model(self) -> ListStore:
-        return ListStore(
-            str, str, str, str, int, int, int, str, int, int, str, bool
-        )
+        store = ListStore(*[ftype for field, ftype in ServerColumns.__annotations__.items()])
+        return store
+        #return = ListStore(*f)
+        #return ListStore(
+        #    str, str, str, str, int, int, int, str, int, int, str, bool
+        #)
 
     def resync_model(self, addr: str, qport: int) -> None:
         """
