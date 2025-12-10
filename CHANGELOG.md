@@ -2,7 +2,7 @@
 
 ## [6.0.0-beta.14] 2025-12-09
 ## Fixed
-- Tooltips with newlines breaking log table
+- Dialogs with newlines breaking output in log table
 
 ## [6.0.0-beta.13] 2025-11-29
 ## Fixed
