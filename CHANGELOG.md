@@ -1,6 +1,6 @@
 # Changelog
 
-## [6.0.0-beta.14] 2025-12-05
+## [6.0.0-beta.14] 2025-12-09
 ## Fixed
 - Tooltips with newlines breaking log table
 
