@@ -485,11 +485,13 @@ api_error = "API key validation error or timeout. See 'Help > Show debug log' fo
 
 @dataclass(slots=True, frozen=True)
 class DevelopersPage:
+    header: str
     paths_label: str
     prefs_label: str
     columns: list[str]
 
 developers = DevelopersPage(
+    header="Developers",
     paths_label="Resolved XDG paths",
     prefs_label="Boot preferences",
     columns=["Key", "Value"]
