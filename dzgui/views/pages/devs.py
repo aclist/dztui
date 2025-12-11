@@ -6,6 +6,7 @@ from gi.repository import Gtk
 
 from dataclasses import fields
 from typing import Union, TYPE_CHECKING
+
 from dzgui.const.enum import NotebookPage
 from dzgui.util.strings import developers
 from dzgui.util.css import add_class
@@ -15,13 +16,11 @@ if TYPE_CHECKING:
     from dzgui.config.userprefs import UserPrefs
     from dzgui.config.xdg import Xdg
 
-"""
-Shows TreeViews displaying contents of parsed XDG paths and user preferences
-"""
-
-# TODO: make scrollable, test long values/wrapping
-
 class Developers(Gtk.Box):
+    """
+    Shows TreeViews displaying contents of parsed XDG paths
+    and user preferences
+    """
     def __init__(self, controller: "Controller") -> None:
         super().__init__(
             orientation=Gtk.Orientation.VERTICAL,
@@ -47,8 +46,9 @@ class Developers(Gtk.Box):
         prefs_tree = self._make_tree(self.controller.prefs)
         trees_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
 
-        paths_tree.set_cursor(0)
-        prefs_tree.set_cursor(0)
+        path = Gtk.TreePath.new_from_indices([0])
+        paths_tree.set_cursor(path)
+        prefs_tree.set_cursor(path)
 
         for el in [
             paths_label,
