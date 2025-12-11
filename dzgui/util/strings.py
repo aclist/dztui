@@ -265,6 +265,7 @@ class Crumbs:
     options: str
     servers: str
     thanks: str
+    developers: str
 
 @dataclass(slots=True, frozen=True)
 class Thanks:
@@ -448,7 +449,8 @@ crumbs = Crumbs(
     my_servers="Main menu > Saved servers",
     options="Options",
     servers="Main menu > Server browser",
-    thanks="Help > Special thanks"
+    thanks="Help > Special thanks",
+    developers="Options > Developers",
 )
 
 checkmark = "✓"
@@ -459,11 +461,13 @@ class Flags:
     description: str
     version: str
     uninstall: str
+    developers: str
 
 flags = Flags(
     description="DayZ server browser and mod manager",
     version="Print version information",
-    uninstall="Uninstall data files (use prior to 'pip uninstall')"
+    uninstall="Uninstall data files (use prior to 'pip uninstall')",
+    developers="Enables developer debugging features",
 )
 
 @dataclass(slots=True, frozen=True)
@@ -477,3 +481,18 @@ picker = FilePicker(
 )
 
 api_error = "API key validation error or timeout. See 'Help > Show debug log' for details."
+
+
+@dataclass(slots=True, frozen=True)
+class DevelopersPage:
+    header: str
+    paths_label: str
+    prefs_label: str
+    columns: list[str]
+
+developers = DevelopersPage(
+    header="Developers",
+    paths_label="Resolved XDG paths",
+    prefs_label="Boot preferences",
+    columns=["Key", "Value"]
+)

@@ -70,6 +70,7 @@ class Controller:
         self.log_store = Gtk.ListStore(str, str, str, str)
 
         self.notes_cache: dict[str, str] = {}
+        self.is_developer: bool
 
         self.mediator: AppNavigation
         self.prefs: UserPrefs
@@ -282,6 +283,9 @@ class Controller:
 
     def toggle_mod_panel(self, state: bool) -> None:
         self.mediator.grid.sel_panel.set_visible(state)
+
+    def show_developers_page(self) -> None:
+        self.open_page(NotebookPage.DEVELOPERS)
 
     def open_page(self, page: NotebookPage) -> None:
         self.mediator.grid.notebook.set_page_by_enum(page)
@@ -543,3 +547,9 @@ class Controller:
             h = WINDOW_DEFAULT_Y
             logger.info(f"Using default window size {w},{h}")
             window.set_default_size(w, h)
+
+    def set_developer_mode(self, mode: bool) -> None:
+        self.is_developer = mode
+
+    def get_developer_mode(self) -> bool:
+        return self.is_developer

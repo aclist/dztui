@@ -364,6 +364,10 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
 
         self.thanks = ScrollableNote(Thanks(), back_button=False)
 
+        from dzgui.views.pages.devs import Developers
+        developers = Developers(MainController)
+        self.developers = ScrollableNote(developers)
+
         self.pages = {
             self.scrollable_treelist: NotebookPage.MAIN,
             self.clog: NotebookPage.CHANGELOG,
@@ -372,7 +376,8 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
             self.ssu: NotebookPage.SERVERS,
             self.scroll_mod: NotebookPage.MODS,
             self.scroll_log: NotebookPage.LOG,
-            self.thanks: NotebookPage.THANKS
+            self.thanks: NotebookPage.THANKS,
+            self.developers: NotebookPage.DEVELOPERS,
         }
         self.indexes = {}
 
@@ -621,9 +626,10 @@ class Grid(Gtk.Grid):
 
 
 class App(Gtk.Application):
-    def __init__(self, prefs) -> None:
+    def __init__(self, prefs, is_developer) -> None:
         GLib.set_prgname(APP_NAME)
         MainController.set_prefs(prefs)
+        MainController.set_developer_mode(is_developer)
 
         self.win = OuterWindow()
 
