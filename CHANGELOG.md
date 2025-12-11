@@ -12,6 +12,7 @@
 - Rearrange menus/breadcrumbs
 - Documentation ships with source
 - Open filepicker when generating system log
+- Developers page (and -d flag)
 
 ## Changed
 - Reduce padding on keys button
