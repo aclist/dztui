@@ -34,7 +34,7 @@ from dzgui.const.enum import (
     ContextMenu,
 )
 
-from dzgui.const.constants import LIBRARYFOLDERS_PATH, APPID_DAYZ, APPID_DAYZ_EXP, HEX_RED
+from dzgui.const.constants import LIBRARYFOLDERS_PATH, APPID_DAYZ, APPID_DAYZ_EXP, HEX_RED, WINDOW_DEFAULT_X, WINDOW_DEFAULT_Y
 from dzgui.controllers.model import ModelManager
 
 from dzgui.config import update

@@ -1,13 +1,13 @@
+import shutil
 import sys
 
 from pathlib import Path
-from dzgui.const.constants import LEGACY_CONFIG_PATH
+from dzgui.const.constants import LEGACY_CONFIG_PATH, LEGACY_COLS_PATH, LEGACY_IPS_PATH
 from dzgui.config.convert import rc2json
+from dzgui.util._json import read_json, write_json
 
 
-def test_legacy_conf(config: Path) -> None:
-    if config.exists() is True:
-        return
+def migrate_legacy_conf(config: Path) -> None:
     old_conf = Path.home() / LEGACY_CONFIG_PATH
     if old_conf.is_file():
         j = rc2json(old_conf)
@@ -18,20 +18,36 @@ def test_legacy_conf(config: Path) -> None:
         sys.exit(1)
 
 
-def move_state_files(state_path: Path) -> None:
+def has_new_config(config: Path) -> bool:
+    return config.exists()
+
+
+def migrate_cols_file(res: Path) -> None:
+    old_res = Path.home() / LEGACY_COLS_PATH
+    if old_res.is_file():
+        j = read_json(old_res)
+        cols = j["cols"]
+        if "View" in cols:
+            return
+        cols["View"] = cols.pop("Perspective")
+        cols["Max"] = cols.pop("Maximum")
+    write_json(j, res)
+
+
+def copy_state_files(state_path: Path) -> None:
     home = Path.home()
     legacy = home / ".local/state/dzgui"
     if state_path == legacy:
         # TODO: log this
         return
     for file in legacy.iterdir():
-        file.rename(state_path / file.name)
+        shutil.copy(file, state_path / file.name)
 
 
-def move_ipdb(ips_path: Path) -> None:
+def copy_ipdb(ips_path: Path) -> None:
     home = Path.home()
     name = "ips.csv"
-    legacy = home / ".local/share/helpers/dzgui" / name
+    legacy = home / LEGACY_IPS_PATH
     if ips_path == legacy:
         return
-    legacy.rename(ips_path)
+    shutil.copy(legacy, ips_path)
