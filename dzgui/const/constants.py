@@ -48,6 +48,8 @@ WINDOW_DEFAULT_X = 1400
 WINDOW_DEFAULT_Y = 800
 
 LEGACY_CONFIG_PATH = ".config/dztui/dztuirc"
+LEGACY_COLS_PATH = ".local/state/dzgui/dzg.cols.json"
+LEGACY_IPS_PATH = ".local/share/dzgui/helpers/ips.csv"
 
 DEBUG_LOG = f"{APP_NAME}_DEBUG.LOG"
 SYSTEM_LOG = f"{APP_NAME}_SYSTEM.LOG"

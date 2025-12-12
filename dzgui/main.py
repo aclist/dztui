@@ -17,7 +17,13 @@ from dzgui.const.update import ALLOW_UPDATES
 from dzgui.init.coords import get_local_coords
 from dzgui.init.dayz import is_dayz_installed
 from dzgui.init.flock import lock_acquire, lock_release
-from dzgui.init.migrate import test_legacy_conf, move_state_files, move_ipdb
+from dzgui.init.migrate import (
+    has_new_config,
+    migrate_cols_file,
+    migrate_legacy_conf,
+    copy_state_files,
+    copy_ipdb,
+)
 from dzgui.init.prefix import get_version
 from dzgui.init.prereqs import has_steam_client
 from dzgui.init.proc import is_dayz_running, is_steam_running
@@ -61,11 +67,11 @@ def main() -> None:
     xdg_paths = get_xdg_paths()
     XDG = parse_filepaths(xdg_paths)
 
-    # NOTE: one-time operation when upgrading
-    if Version(version) < Version("7.0.0"):
-        test_legacy_conf(XDG.config)
-        move_state_files(xdg_paths["XDG_STATE_HOME"])
-        move_ipdb(XDG.ips)
+    if has_new_config(XDG.config) is False:
+        migrate_legacy_conf(XDG.config)
+        migrate_cols_file(XDG.columns)
+        copy_state_files(xdg_paths["XDG_STATE_HOME"])
+        copy_ipdb(XDG.ips)
 
     _format = "%(asctime)s␞%(levelname)s␞%(filename)s::%(funcName)s::%(lineno)s␞%(message)s"
     logging.basicConfig(filename=XDG.debug, format=_format, level=logging.DEBUG)
