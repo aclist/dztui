@@ -47,6 +47,7 @@ from dzgui.util import localize, cooldown, strings
 from dzgui.util._json import read_json, write_json
 from dzgui.util.open_links import open_workshop_page
 from dzgui.util.format import pluralize, format_mods
+from dzgui.util.redact import redact_log
 
 from dzgui.views.dialogs.filepicker import FilePicker
 from dzgui.views.dialogs.generic import GenericDialog
@@ -438,24 +439,9 @@ class Controller:
         with open(log, "r") as f:
             lines = [line.split(strings.delimiter) for line in f.read().splitlines()]
             for record in lines:
-                clean = self.redact_log(record)
+                clean = redact_log(record)
                 store.append(clean)
         self.open_page(NotebookPage.LOG)
-
-    def redact_log(self, record: list) -> list[str]:
-        """
-        requests library includes Steam API key in URL params
-        """
-        clean = []
-        for item in record:
-            if "&key=" in item:
-                pat = r"(.*&key=)(\S+)(.*)"
-                scrubbed = re.sub(pat, r"\1REDACTED\3", item)
-                clean.append(scrubbed)
-            else:
-                clean.append(item)
-        return clean
-
 
     def select_colorized(self) -> None:
         model = self.model_manager.get_mod_store()
