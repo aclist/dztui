@@ -1,6 +1,7 @@
 import logging
-import os
 import locale
+import os
+import re
 import shutil
 import threading
 import textwrap
@@ -437,8 +438,24 @@ class Controller:
         with open(log, "r") as f:
             lines = [line.split(strings.delimiter) for line in f.read().splitlines()]
             for record in lines:
-                store.append(record)
+                clean = self.redact_log(record)
+                store.append(clean)
         self.open_page(NotebookPage.LOG)
+
+    def redact_log(self, record: list) -> list[str]:
+        """
+        requests library includes Steam API key in URL params
+        """
+        clean = []
+        for item in record:
+            if "&key=" in item:
+                pat = r"(.*&key=)(\S+)(.*)"
+                scrubbed = re.sub(pat, r"\1REDACTED\3", item)
+                clean.append(scrubbed)
+            else:
+                clean.append(item)
+        return clean
+
 
     def select_colorized(self) -> None:
         model = self.model_manager.get_mod_store()
