@@ -24,7 +24,7 @@ class Thanks(Gtk.Box):
         header.set_markup(label)
         self.add(header)
 
-        description = Gtk.Label(label=thanks.description)
+        description = Gtk.Label(label=thanks.description, justify=Gtk.Justification.CENTER)
         self.add(description)
 
         users = [f"- {user}" for user in sorted(thanks.users, key=str.lower)]
