@@ -1,6 +1,7 @@
 import logging
-import os
 import locale
+import os
+import re
 import shutil
 import threading
 import textwrap
@@ -46,6 +47,7 @@ from dzgui.util import localize, cooldown, strings
 from dzgui.util._json import read_json, write_json
 from dzgui.util.open_links import open_workshop_page
 from dzgui.util.format import pluralize, format_mods
+from dzgui.util.redact import redact_log
 
 from dzgui.views.dialogs.filepicker import FilePicker
 from dzgui.views.dialogs.generic import GenericDialog
@@ -437,7 +439,8 @@ class Controller:
         with open(log, "r") as f:
             lines = [line.split(strings.delimiter) for line in f.read().splitlines()]
             for record in lines:
-                store.append(record)
+                clean = redact_log(record)
+                store.append(clean)
         self.open_page(NotebookPage.LOG)
 
     def select_colorized(self) -> None:

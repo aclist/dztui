@@ -487,8 +487,11 @@ class Options(Gtk.Box):
 
 
         active_combo = 1 if config["branch"] == BETA_REPO else 0
+
+        self.controller.suppress_signal(self, self.branch_combo, "_on_branch_changed", True)
         self.branch_combo.set_active(active_combo)
         self.branch_combo.set_sensitive(prefs.allow_updates)
+        self.controller.suppress_signal(self, self.branch_combo, "_on_branch_changed", False)
 
         if prefs.allow_updates is True:
             msg = strings.options.self_update
