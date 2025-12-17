@@ -1,21 +1,13 @@
 import logging
-import os
-import locale
 import shutil
 import threading
 import textwrap
 
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, TYPE_CHECKING
 
-import gi  # noqa E402
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GLib, GObject
-
 import dzgui.api.pefile as PeFile
 from dzgui.api.probe import test_steam_api, test_bm_api
-
 from dzgui.api.mods import (
     get_delimited_mods,
     get_local_mod_path,
@@ -34,21 +26,29 @@ from dzgui.const.enum import (
     ContextMenu,
 )
 
-from dzgui.const.constants import LIBRARYFOLDERS_PATH, APPID_DAYZ, APPID_DAYZ_EXP, HEX_RED, WINDOW_DEFAULT_X, WINDOW_DEFAULT_Y
-from dzgui.controllers.model import ModelManager
+from dzgui.const.constants import (
+    APPID_DAYZ,
+    APPID_DAYZ_EXP,
+    HEX_RED,
+    WINDOW_DEFAULT_X,
+    WINDOW_DEFAULT_Y
+)
 
 from dzgui.config import update
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
-
+from dzgui.controllers.model import ModelManager
 from dzgui.util.diag import write_diagnostic
-from dzgui.util import localize, cooldown, strings
+from dzgui.util import cooldown, strings
 from dzgui.util._json import read_json, write_json
 from dzgui.util.open_links import open_workshop_page
-from dzgui.util.format import pluralize, format_mods
-
+from dzgui.util.format import format_mods
 from dzgui.views.dialogs.filepicker import FilePicker
 from dzgui.views.dialogs.generic import GenericDialog
+
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk, GLib, GObject # noqa E402
 
 logger = logging.getLogger(__name__)
 
