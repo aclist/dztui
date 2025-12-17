@@ -13,6 +13,7 @@
 - Documentation ships with source
 - Open filepicker when generating system log
 - Developers page (and -d flag)
+- Redact API key in log table
 
 ## Changed
 - Reduce padding on keys button
