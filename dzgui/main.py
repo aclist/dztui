@@ -107,6 +107,7 @@ def main() -> None:
     rebuild_symlinks(XDG.config)
     remove_stale_signatures(XDG.config, XDG.version)
 
+    # TODO: handle IP DB failure
     get_ipdb(XDG.ips)
     local_coords = get_local_coords(XDG.ips)
 

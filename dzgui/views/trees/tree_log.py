@@ -1,22 +1,15 @@
 import logging
-import multiprocessing
-import subprocess
+
+from typing import TYPE_CHECKING
+
+from dzgui.const.enum import ContextMenuGroup
+from dzgui.util import strings
+from dzgui.views.trees.tree_base import TreeView
+from dzgui.views.mixins.context_mixin import ContextMixin
 
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
-
-from dzgui.util.keys import is_navkey
-from dzgui.util import strings
-from typing import Any, TYPE_CHECKING
-
-from dzgui.views.trees.tree_base import TreeView
-from dzgui.views.mixins.context_mixin import ContextMixin
-from dzgui.const.enum import ContextMenuGroup
-
-from typing import Any
-import dzgui.util._json as JSON  # noqa
-
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
@@ -34,8 +27,8 @@ class LogTreeView(ContextMixin, TreeView):
         self.set_headers_visible(True)
         self.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
 
-        s = self.controller.get_log_store()
-        self.set_model(s)
+        model = self.controller.get_log_store()
+        self.set_model(model)
 
         for i, column_title in enumerate(strings.log_cols):
             renderer = Gtk.CellRendererText()

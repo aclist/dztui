@@ -1,18 +1,18 @@
 import logging
-from typing import Any, Literal, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
+
+from dzgui.util import strings, localize
+from dzgui.views.trees.tree_base import TreeView
+from dzgui.views.mixins.context_mixin import ContextMixin
+from dzgui.views.mixins.mods_mixin import ModsMixin
+from dzgui.const.enum import (
+    ContextMenuGroup,
+    )
 
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
-from dzgui.const.enum import (
-    ContextMenuGroup,
-    RowType,
-    )
-from dzgui.util import strings, localize
-from dzgui.views.trees.tree_base import TreeView
-from dzgui.views.mixins.context_mixin import ContextMixin
-from dzgui.views.mixins.mods_mixin import ModsMixin
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
