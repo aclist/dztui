@@ -1,15 +1,13 @@
-import typing
-
-import gi  # noqa E402
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
-
 from dataclasses import fields
 from typing import Union, TYPE_CHECKING
 
 from dzgui.const.enum import NotebookPage
 from dzgui.util.strings import developers
 from dzgui.util.css import add_class
+
+import gi  # noqa E402
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller

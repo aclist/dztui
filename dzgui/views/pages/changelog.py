@@ -19,11 +19,10 @@ class Changelog(Gtk.Box):
         try:
             changelog = resources.read_text(APP_NAME_LOWER, "data/CHANGELOG.md")
         except OSError as e:
-            changelog = "Error: Failed to read changelog"
             # TODO: log error
+            changelog = "Error: Failed to read changelog"
 
         # TODO: should long text be wrapped?
-
         formatted = format_pango(changelog)
         self.changelog_label = Gtk.Label(valign=Gtk.Align.START, margin=15)
         self.changelog_label.set_markup(formatted)

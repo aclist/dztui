@@ -1,9 +1,9 @@
 from dzgui.util.format import format_pango
 from dzgui.util.strings import thanks
 
-import gi  # noqa E402
+import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
+from gi.repository import Gtk  # noqa E402
 
 """
 Special thanks page recognizing contributors to the project in alpha-order
