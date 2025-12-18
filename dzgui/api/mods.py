@@ -17,7 +17,7 @@ from dzgui.const.constants import (
 )
 
 from dzgui.util.strings import checkmark
-from dzgui.config.query import enum_to_key, lookup
+from dzgui.config.query import lookup
 from dzgui.const.enum import Preferences
 
 from typing import Any
@@ -91,7 +91,7 @@ def get_delimited_mods(steam_path: Path) -> list[Any]:
     for mod in mods:
         mod_dir = mod.name
         symlink = _hash(mod_dir)
-        # NOTE: malformed .cpp files could break this
+        # FIXME: malformed .cpp files could break this
         # mention that mods may be downloading
         meta = parse_meta(mod)
         if meta is None:

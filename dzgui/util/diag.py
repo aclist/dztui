@@ -1,7 +1,5 @@
 import os
 import platform
-import re
-import textwrap
 
 from datetime import datetime
 from pathlib import Path

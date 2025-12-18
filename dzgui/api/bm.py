@@ -7,8 +7,6 @@ from dzgui.config.query import lookup
 from dzgui.const.endpoints import BM_SERVERS
 from dzgui.const.enum import Preferences
 
-from typing import Union
-
 logger = logging.getLogger(__name__)
 
 def get_attributes(config: Path, uid: int) -> str:

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List, Dict
 
 from dzgui.const.constants import SYSTEM_LOG
 

@@ -1,6 +1,5 @@
 import re
 import subprocess
-from pathlib import Path
 
 CPU_FILE = "/proc/cpuinfo"
 

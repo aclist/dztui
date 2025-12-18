@@ -1,11 +1,9 @@
 import requests
-import os
 import subprocess
 import sys
 
 from importlib import resources
 from packaging.version import Version, InvalidVersion
-from pathlib import Path
 
 from dzgui.const.constants import APP_NAME_LOWER, REQUEST_TIMEOUT
 from dzgui.const.endpoints import GITHUB_RELEASES, CODEBERG_RELEASES

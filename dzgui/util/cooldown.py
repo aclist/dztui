@@ -1,5 +1,4 @@
 from datetime import datetime
-from pathlib import Path
 
 def get_time() -> int:
     return int(datetime.now().timestamp())

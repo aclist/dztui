@@ -1,5 +1,4 @@
 import logging
-import re
 import shutil
 import threading
 import textwrap

@@ -47,7 +47,6 @@ def copy_state_files(state_path: Path) -> None:
 
 def copy_ipdb(ips_path: Path) -> None:
     home = Path.home()
-    name = "ips.csv"
     legacy = home / LEGACY_IPS_PATH
     if ips_path == legacy:
         return

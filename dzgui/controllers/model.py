@@ -62,7 +62,9 @@ class ModelManager:
     Methods are not thread-safe in themselves.
     """
 
-    def __init__(self):
+    # FIXME: do not manipulate keyword/map widgets in here
+
+    def __init__(self) -> None:
         self.filter_cache = {}
         self.ping_cache = {}
 

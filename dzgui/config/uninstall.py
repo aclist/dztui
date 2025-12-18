@@ -1,7 +1,8 @@
 import shutil
 from pathlib import Path
 
-def uninstall(path: Path) -> None
+def uninstall(path: Path) -> None:
+    pass
     # TODO: use xdg object?
     # partial/full (keep config?)
     # -u removes state, log
