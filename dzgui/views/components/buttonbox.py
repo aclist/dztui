@@ -1,16 +1,11 @@
 import logging
-import functools
-
-import gi  # noqa E402
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk
 
 from dzgui.const.enum import ButtonType
-from dzgui.const.enum import NotebookPage
-from dzgui.const.enum import RowType
-from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL
+from dzgui.const.constants import NO_EXPAND, NO_FILL
 
-from typing import Callable
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk  # noqa E402
 
 logger = logging.getLogger(__name__)
 

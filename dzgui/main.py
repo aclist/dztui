@@ -3,8 +3,6 @@ import logging
 import os
 import sys
 
-from packaging.version import Version
-
 from dzgui.api.mods import remove_stale_signatures
 
 from dzgui.config.ipdb import get_ipdb
@@ -16,7 +14,7 @@ from dzgui.const.update import ALLOW_UPDATES
 
 from dzgui.init.coords import get_local_coords
 from dzgui.init.dayz import is_dayz_installed
-from dzgui.init.flock import lock_acquire, lock_release
+from dzgui.init.flock import lock_acquire
 from dzgui.init.migrate import (
     has_new_config,
     migrate_cols_file,

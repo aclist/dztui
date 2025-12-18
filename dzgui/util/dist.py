@@ -1,14 +1,15 @@
 import multiprocessing
 from math import radians, cos, sin, asin, sqrt
-from typing import Self, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
-import gi
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 
 import dzgui.util.ip as ip
 from dzgui.util.ip import GeolocationError
 from dzgui.util.localize import number
+
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.util.ip import Coords

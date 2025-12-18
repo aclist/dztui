@@ -1,7 +1,6 @@
 import dayzquery
 import hashlib
 import logging
-import re
 import shlex
 
 from dataclasses import dataclass

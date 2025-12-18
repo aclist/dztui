@@ -19,10 +19,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Literal, Any
 
-import gi
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
-
 # TODO: most likely very little of this will be retained
 from dzgui.const.enum import (
     Preferences,
@@ -35,7 +31,6 @@ from dzgui.const.enum import (
 from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL
 from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, WINDOW_DEFAULT_X, WINDOW_DEFAULT_Y
 from dzgui.controllers.mc import Controller
-
 from dzgui.util import css, dist, localize, strings, ip, deck, open_links
 from dzgui.util.format import pluralize
 
@@ -61,6 +56,11 @@ from dzgui.views.dialogs.generic import GenericDialog
 
 # TODO: not going to be in base anymore
 import dzgui.util._json as JSON  # noqa
+
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
+
 
 logger = logging.getLogger(__name__)
 # https://bugzilla.gnome.org/show_bug.cgi?id=708676

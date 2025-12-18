@@ -32,7 +32,7 @@ def migrate_cols_file(res: Path) -> None:
             return
         cols["View"] = cols.pop("Perspective")
         cols["Max"] = cols.pop("Maximum")
-    write_json(j, res)
+        write_json(j, res)
 
 
 def copy_state_files(state_path: Path) -> None:

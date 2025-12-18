@@ -2,7 +2,6 @@ import shutil
 import textwrap
 from pathlib import Path
 
-
 def write_desktop_file(share_path: Path) -> None:
     template = f"""\
     [Desktop Entry]

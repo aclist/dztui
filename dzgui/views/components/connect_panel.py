@@ -1,9 +1,9 @@
-import gi  # noqa E402
+import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk # noqa E402
 
 class ConnectPanel(Gtk.Grid):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.label = Gtk.Label(label="Connect by IP/ID")
