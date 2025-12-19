@@ -10,7 +10,6 @@ import dzgui.api.pefile as PeFile
 from dzgui.api.servers import Record, get_rules
 from dzgui.const.constants import (
     APPID_DAYZ,
-    APPID_DAYZ_EXP,
     LIBRARYFOLDERS_PATH,
     WORKSHOP_PATH,
 )

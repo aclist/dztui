@@ -9,7 +9,6 @@ from dzgui.config.ipdb import get_ipdb
 from dzgui.config.userprefs import UserPrefs
 from dzgui.config.xdg import get_xdg_paths, parse_filepaths
 
-from dzgui.const.constants import APP_NAME_LOWER
 from dzgui.const.update import ALLOW_UPDATES
 
 from dzgui.init.coords import get_local_coords

@@ -1,3 +1,5 @@
+import logging
+
 from typing import TYPE_CHECKING
 from importlib import resources
 
@@ -7,6 +9,8 @@ from dzgui.util.format import format_pango
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
+
+logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
@@ -19,7 +23,7 @@ class Changelog(Gtk.Box):
         try:
             changelog = resources.read_text(APP_NAME_LOWER, "data/CHANGELOG.md")
         except OSError as e:
-            # TODO: log error
+            logger.critical(e)
             changelog = "Error: Failed to read changelog"
 
         # TODO: should long text be wrapped?
