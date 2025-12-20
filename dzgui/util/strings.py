@@ -258,7 +258,7 @@ class Crumbs:
     keys: str
     lan: str
     log: str
-    main: str
+    _help: str
     mods: str
     my_servers: str
     options: str
@@ -444,7 +444,7 @@ crumbs = Crumbs(
     keys="Keybindings",
     lan="Main menu > Local servers",
     log="Help > Debug log",
-    main="Main menu",
+    _help="Help",
     mods="Mods",
     my_servers="Main menu > Saved servers",
     options="Options",

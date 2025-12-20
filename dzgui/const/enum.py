@@ -82,7 +82,7 @@ class NotebookPage(EnumWithAttrs):
     KEYS = {"crumbs": strings.crumbs.keys,}
     LAN = {"crumbs": strings.crumbs.lan,}
     LOG = {"crumbs": strings.crumbs.log,}
-    MAIN = {"crumbs": strings.crumbs.main,}
+    HELP = {"crumbs": strings.crumbs._help,}
     MODS = {"crumbs": strings.crumbs.mods,}
     MY_SERVERS = {"crumbs": strings.crumbs.my_servers,}
     OPTIONS = {"crumbs": strings.crumbs.options,}
