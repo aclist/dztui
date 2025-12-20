@@ -508,20 +508,11 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         crumbs = enum.dict["crumbs"]
         MainController.set_crumbs(crumbs)
 
-        if enum is NotebookPage.MODS:
-            return
-
-        # NOTE: Main Menu and Help page are of the same type
+        # TODO: going to be deprecated after server notebook is added
         if enum is not NotebookPage.MAIN:
             return
 
-        # FIXME: brittle
-        if crumbs == "Main menu":
-            if AppNav.treeview.get_model()[0][0] == MainController.help_store[0][0]:
-                MainController.set_crumbs("Help")
-
-        row = MAIN_MENU_ROWS[0]
-        AppNav.grid.statusbar.refresh(row)
+        MainController.set_help_menu_crumbs()
 
 
 class Statusbar(Gtk.Statusbar):
