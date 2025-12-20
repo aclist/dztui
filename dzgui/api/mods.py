@@ -155,7 +155,6 @@ def find_stale_mods(config: Path) -> list[int]:
     for server in servers:
         split = server.split(":")
         ip = split[0]
-        gport = split[1]
         qport = split[2]
 
         mods = get_rules(ip, qport)
