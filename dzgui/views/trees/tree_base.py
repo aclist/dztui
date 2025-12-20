@@ -1,17 +1,14 @@
 import logging
-import multiprocessing
-import subprocess
+
+from typing import Callable, TYPE_CHECKING
+
+from dzgui.const.constants import SEPARATOR
+from dzgui.util.keys import is_navkey
+from dzgui.views.mixins.cursor_mixin import CursorMixin
 
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
-
-from dzgui.const.constants import SEPARATOR
-from dzgui.util.keys import is_navkey
-from dzgui.util import strings
-from typing import Any, Callable, TYPE_CHECKING
-
-from dzgui.views.mixins.cursor_mixin import CursorMixin
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +82,6 @@ class TreeView(CursorMixin, Gtk.TreeView):
         self, treeview: Gtk.TreeView, event: Gdk.EventKey
     ) -> None:
 
-        keyname = Gdk.keyval_name(event.keyval)
         if is_navkey(event.keyval):
             # TODO: investigate this
             if self.sel_blocked is False:

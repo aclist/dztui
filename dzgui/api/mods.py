@@ -1,7 +1,6 @@
 import dayzquery
 import hashlib
 import logging
-import re
 import shlex
 
 from dataclasses import dataclass
@@ -11,13 +10,12 @@ import dzgui.api.pefile as PeFile
 from dzgui.api.servers import Record, get_rules
 from dzgui.const.constants import (
     APPID_DAYZ,
-    APPID_DAYZ_EXP,
     LIBRARYFOLDERS_PATH,
     WORKSHOP_PATH,
 )
 
 from dzgui.util.strings import checkmark
-from dzgui.config.query import enum_to_key, lookup
+from dzgui.config.query import lookup
 from dzgui.const.enum import Preferences
 
 from typing import Any
@@ -91,7 +89,7 @@ def get_delimited_mods(steam_path: Path) -> list[Any]:
     for mod in mods:
         mod_dir = mod.name
         symlink = _hash(mod_dir)
-        # NOTE: malformed .cpp files could break this
+        # FIXME: malformed .cpp files could break this
         # mention that mods may be downloading
         meta = parse_meta(mod)
         if meta is None:
@@ -157,7 +155,6 @@ def find_stale_mods(config: Path) -> list[int]:
     for server in servers:
         split = server.split(":")
         ip = split[0]
-        gport = split[1]
         qport = split[2]
 
         mods = get_rules(ip, qport)

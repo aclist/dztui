@@ -1,6 +1,6 @@
-import gi  # noqa E402
+import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk  # noqa E402
 
 
 def add_class(widget: Gtk.Widget, label: str) -> None:

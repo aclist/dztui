@@ -32,7 +32,7 @@ def migrate_cols_file(res: Path) -> None:
             return
         cols["View"] = cols.pop("Perspective")
         cols["Max"] = cols.pop("Maximum")
-    write_json(j, res)
+        write_json(j, res)
 
 
 def copy_state_files(state_path: Path) -> None:
@@ -47,7 +47,6 @@ def copy_state_files(state_path: Path) -> None:
 
 def copy_ipdb(ips_path: Path) -> None:
     home = Path.home()
-    name = "ips.csv"
     legacy = home / LEGACY_IPS_PATH
     if ips_path == legacy:
         return

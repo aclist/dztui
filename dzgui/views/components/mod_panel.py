@@ -1,16 +1,12 @@
-import threading
+from typing import TYPE_CHECKING
 
-import gi  # noqa E402
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GLib
-
-from dzgui.const.enum import ModButton, Popup
+from dzgui.const.enum import ModButton
 from dzgui.const.constants import NO_EXPAND, FILL
 from dzgui.util import strings
 
-from dzgui.views.dialogs.generic import GenericDialog
-
-from typing import TYPE_CHECKING
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller

@@ -3,20 +3,17 @@ import logging
 import os
 import sys
 
-from packaging.version import Version
-
 from dzgui.api.mods import remove_stale_signatures
 
 from dzgui.config.ipdb import get_ipdb
 from dzgui.config.userprefs import UserPrefs
 from dzgui.config.xdg import get_xdg_paths, parse_filepaths
 
-from dzgui.const.constants import APP_NAME_LOWER
 from dzgui.const.update import ALLOW_UPDATES
 
 from dzgui.init.coords import get_local_coords
 from dzgui.init.dayz import is_dayz_installed
-from dzgui.init.flock import lock_acquire, lock_release
+from dzgui.init.flock import lock_acquire
 from dzgui.init.migrate import (
     has_new_config,
     migrate_cols_file,
@@ -107,6 +104,7 @@ def main() -> None:
     rebuild_symlinks(XDG.config)
     remove_stale_signatures(XDG.config, XDG.version)
 
+    # TODO: handle IP DB failure
     get_ipdb(XDG.ips)
     local_coords = get_local_coords(XDG.ips)
 

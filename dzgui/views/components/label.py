@@ -1,6 +1,6 @@
-import gi  # noqa E402
+import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
+from gi.repository import Gtk  # noqa E402
 
 class LeftLabel(Gtk.Label):
     def __init__(self, text: str, tooltip: str = ""):

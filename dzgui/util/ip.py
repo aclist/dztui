@@ -1,5 +1,4 @@
 import a2s
-import gzip
 import requests
 import shutil
 import subprocess

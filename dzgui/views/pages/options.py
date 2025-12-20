@@ -1,18 +1,17 @@
-import gi
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk  # noqa
-
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from dzgui.api import pefile as PeFile
+from dzgui.api.steam import find_user_id
+from dzgui.config import query
+from dzgui.util import strings, css, open_links
+
 from dzgui.views.components.label import LeftLabel
 from dzgui.views.components.eventbox import InfoEventBox
-from dzgui.views.components.icon import Icon
 from dzgui.views.components.web_button import WebButton
 from dzgui.views.dialogs.link_dialog import WorkshopLinkDialog
 
-from dzgui.util import strings, css, open_links
-from dzgui.const.enum import Preferences, RowType, Popup
+from dzgui.const.enum import Preferences, Popup
 from dzgui.const.endpoints import STEAM_API_SETUP, BM_API_SETUP
 from dzgui.const.constants import (
     APPID_DAYZ,
@@ -29,9 +28,9 @@ from dzgui.const.constants import (
     VIEW_REVEAL,
     )
 
-from dzgui.config import query
-from dzgui.api import pefile as PeFile
-from dzgui.api.steam import find_user_id
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk  # noqa
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
@@ -264,7 +263,6 @@ class Options(Gtk.Box):
     ) -> None:
         old_text = self.controller.query_config(enum)
         button.set_sensitive(False)
-        wait_msg = strings.dialog.working
         match enum:
             case Preferences.NAME:
                 value = entry.get_text().strip()
@@ -315,10 +313,6 @@ class Options(Gtk.Box):
     def _on_radio_toggled(
         self, button: Gtk.RadioButton, context: Preferences
     ) -> None:
-        AppNav = self.controller.get_mediator()
-
-        state = button.get_group()[0].get_active()
-
         try:
             self.controller.toggle_config(context)
         except Exception:

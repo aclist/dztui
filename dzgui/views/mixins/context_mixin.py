@@ -1,6 +1,6 @@
 import logging
 from dzgui.views.trees.tree_base import TreeView
-from dzgui.const.enum import Popup, ContextMenu
+from dzgui.const.enum import ContextMenu
 
 import gi
 gi.require_version("Gtk", "3.0")

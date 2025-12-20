@@ -2,7 +2,6 @@ import shutil
 import textwrap
 from pathlib import Path
 
-
 def write_desktop_file(share_path: Path) -> None:
     template = f"""\
     [Desktop Entry]
@@ -28,8 +27,8 @@ def write_shim_file(share_path: Path) -> None:
     """
     try:
         file.write_text(textwrap.dedent(template))
-        f.chmod(f.stat().st_mode | stat.S_IEXEC)
-    except OSError:
+        file.chmod(file.stat().st_mode | stat.S_IEXEC)
+    except OSError as e:
         logger.critical(e)
         return
     clear_old_path()

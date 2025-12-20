@@ -1,15 +1,13 @@
 import logging
-import multiprocessing
-import subprocess
 from typing import TYPE_CHECKING
-
-import gi
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
 from dzgui.const.enum import RowType, NotebookPage
 from dzgui.util.open_links import open_link_by_rowtype
 from dzgui.views.trees.tree_base import TreeView
+
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
 logger = logging.getLogger(__name__)
 
