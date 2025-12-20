@@ -1,10 +1,11 @@
+from typing import Self
+
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository.Gtk import ListStore
 from gi.repository import GObject
 
-from dzgui.const.enum import FilterMode
-
+from dzgui.const.enum import FilterMode, MAIN_MENU_ROWS, HELP_MENU_ROWS
 from dataclasses import dataclass, fields
 
 @dataclass
@@ -61,10 +62,9 @@ class ModelManager:
 
     Methods are not thread-safe in themselves.
     """
-
-    def __init__(self):
-        self.filter_cache = {}
-        self.ping_cache = {}
+    def __init__(self) -> None:
+        self.filter_cache: tuple
+        self.ping_cache: dict[str, int] = {}
 
         self.map_store = ListStore(str)
         self.row_store = self.new_model_from_class(MenuCols)
@@ -74,12 +74,19 @@ class ModelManager:
         self.log_store = self.new_model_from_class(LogCols)
         self.modlist_store = self.new_model_from_class(ServerModCols)
 
-        #self.mod_store = ListStore(str, str, str, float, str)
+        for row in MAIN_MENU_ROWS:
+            label = row.dict["label"]
+            self.row_store.append([label, row])
+
+        for row in HELP_MENU_ROWS:
+            label = row.dict["label"]
+            self.help_store.append([label, row])
+
         self.control_model = None
         self.filtered = None
         self.success = True
 
-    def __new__(cls):
+    def __new__(cls) -> Self:
         if not hasattr(cls, "instance"):
             cls.instance = super(ModelManager, cls).__new__(cls)
         return cls.instance
@@ -88,8 +95,23 @@ class ModelManager:
         store = ListStore(*[ftype for field, ftype in cls.__annotations__.items()])
         return store
 
+    def get_map_store(self) -> ListStore:
+        return self.map_store
+
+    def get_row_store(self) -> ListStore:
+        return self.row_store
+
+    def get_help_store(self) -> ListStore:
+        return self.help_store
+
     def get_mod_store(self) -> ListStore:
         return self.mod_store
+
+    def get_modlist_store(self) -> ListStore:
+        return self.modlist_store
+
+    def get_log_store(self) -> ListStore:
+        return self.log_store
 
     def filter(self, mode: FilterMode, *args, **kwargs) -> None:
         """
@@ -312,3 +334,10 @@ class ModelManager:
         self.ping_cache = {}
         if full:
             self.control_model = None
+
+    def set_all_maps(self) -> None:
+        self.map_store.clear()
+        self.map_store.append(["All maps"])
+
+    def append_map(self, row: list) -> None:
+        self.map_store.append(row)
