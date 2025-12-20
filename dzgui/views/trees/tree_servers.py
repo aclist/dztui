@@ -80,14 +80,6 @@ class ServerTreeView(TreeView):
 
             self.append_column(column)
 
-        # TODO: do not load model on initial init
-        # TODO: test values: see below
-        #r = Gtk.ListStore(
-        #    str, str, str, str, int, int, int, str, int, int, str, bool
-        #)
-        #r.append(["TEST", "a", "a", "a", 0, 0, 0, "a", 0, 0, "a", False])
-        #self.set_model(r)
-
         self.connect("on_distcalc_started", self._on_calclat_started)
 
 
@@ -117,7 +109,7 @@ class ServerTreeView(TreeView):
             addr = latest_result[0]
             km = latest_result[1]
             cache[addr] = km
-            # TODO: fixme
+            # FIXME
             self.statusbar.append_distance(km)
         return True
 
@@ -137,9 +129,6 @@ class ServerTreeView(TreeView):
                         return True
                     AppNav.right_panel.filters_vbox.keyword_entry.grab_focus()
                 case Gdk.KEY_m:
-                    # FIXME: should no longer be relevant
-                    if AppNav.treeview.view == WindowContext.TABLE_MODS:
-                        return True
                     AppNav.right_panel.filters_vbox.maps_entry.grab_focus()
         else:
             keyname = Gdk.keyval_name(event.keyval)
@@ -164,6 +153,7 @@ class ServerTreeView(TreeView):
     def _on_server_button_release(
         self, widget: Gtk.Widget, event: Gdk.EventButton
     ) -> None:
+        # TODO: use ContextMixin
         if event.type is Gdk.EventType.BUTTON_RELEASE and event.button != 3:
             return
 
@@ -181,6 +171,7 @@ class ServerTreeView(TreeView):
         self.menu = Gtk.Menu()
         mod_context_items = [ContextMenu.OPEN_WORKSHOP, ContextMenu.DELETE_MOD]
         # TODO: reimplement server context enums
+        # TODO: inherit from tree_servers.py
         server_context_items = {
             RowType.SERVER_BROWSER: [
                 ContextMenu.ADD_SERVER,
@@ -221,12 +212,7 @@ class ServerTreeView(TreeView):
         }
 
         # TODO: how to get current server context
-        if self.view == WindowContext.TABLE_MODS:
-            items = mod_context_items
-        elif self.subpage in server_context_items:
-            items = server_context_items[self.subpage]
-        else:
-            return
+        items = server_context_items[self.subpage]
 
         for row in items:
             if row == ContextMenu.ADD_SERVER:
@@ -265,22 +251,21 @@ class ServerTreeView(TreeView):
         print(self.get_value_at_index(0))
 
     def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
-        print(self.get_value_at_index(0))
 
         self.terminate_process()
         record = self.get_record()
-        print(record)
 
-        # TODO: ?
-        if not record:
-            grid.statusbar.update_server_meta()
+        if record is None:
+            # TODO: move to controller
+            #grid.statusbar.update_server_meta()
             return
 
         ip = record.ip
 
-        self.emit("on_distcalc_started")
-        self.current_proc = CalcDist(self, record.ip, self.queue, cache)
-        self.current_proc.start()
+        # TODO
+        #self.emit("on_distcalc_started")
+        #self.current_proc = CalcDist(self, record.ip, self.queue, cache)
+        #self.current_proc.start()
 
     def get_record_string(self) -> str:
         addr = self.get_value_at_index(7)

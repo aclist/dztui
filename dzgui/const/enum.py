@@ -361,20 +361,6 @@ class ContextMenuGroup(Enum):
     )
 
 
-MAIN_MENU_ROWS = (
-    RowType.SERVER_BROWSER,
-    RowType.SAVED_SERVERS,
-    RowType.RECENT_SERVERS,
-    RowType.SCAN_LAN,
-    RowType.SEPARATOR,
-    RowType.QUICK_CONNECT,
-    RowType.CONN_BY_IP,
-    RowType.CONN_BY_ID,
-    RowType.SEPARATOR,
-    RowType.ADD_BY_IP,
-    RowType.ADD_BY_ID,
-    RowType.CHNG_FAV,
-)
 HELP_MENU_ROWS = (
     RowType.CHANGELOG,
     RowType.SHOW_LOG,
@@ -388,87 +374,6 @@ HELP_MENU_ROWS = (
     RowType.SEPARATOR,
     RowType.THANKS,
 )
-
-#class WindowContext(EnumWithAttrs):
-#    # TODO: deprecated
-#    @classmethod
-#    def row2con(cls, row: RowType) -> "WindowContext":
-#        m = WindowContext.MAIN_MENU
-#        for member in cls:
-#            if row in member.dict["rows"]:
-#                m = member
-#            elif row in member.dict["called_by"]:
-#                m = member
-#            else:
-#                continue
-#        return m
-#
-#    # outer menu pages
-#    # TODO: some deprecated keys in here
-#    #MAIN_MENU = {
-#    #    RowType.SERVER_BROWSER,
-#    #    RowType.SAVED_SERVERS,
-#    #    RowType.RECENT_SERVERS,
-#    #    RowType.SCAN_LAN,
-#    #    RowType.SEPARATOR,
-#    #    RowType.QUICK_CONNECT,
-#    #    RowType.CONN_BY_IP,
-#    #    RowType.CONN_BY_ID,
-#    #    RowType.SEPARATOR,
-#    #    RowType.ADD_BY_IP,
-#    #    RowType.ADD_BY_ID,
-#    #    RowType.CHNG_FAV,
-#    #    }
-#    #MODS = {
-#    #    "label": "Mods",
-#    #    "rows": [],
-#    #    "called_by": [],
-#    #}
-#    HELP = {
-#        "label": "Help",
-#        "rows": [
-#            RowType.CHANGELOG,
-#            RowType.SHOW_LOG,
-#            RowType.DUMP_LOG,
-#            RowType.SEPARATOR,
-#            RowType.DOCS,
-#            RowType.DOCS_FALLBACK,
-#            RowType.BUGS,
-#            RowType.FORUM,
-#            RowType.SPONSOR,
-#            RowType.SEPARATOR,
-#            RowType.THANKS,
-#        ],
-#        "called_by": [],
-#    }
-#
-#    ## inner server contexts
-#    #TABLE_API = {
-#    #    "label": "",
-#    #    "rows": [],
-#    #    "called_by": [RowType.SERVER_BROWSER],
-#    #}
-#    #TABLE_SERVER = {
-#    #    "label": "",
-#    #    "rows": [],
-#    #    "called_by": [
-#    #        RowType.SAVED_SERVERS,
-#    #        RowType.RECENT_SERVERS,
-#    #        RowType.SCAN_LAN,
-#    #    ],
-#    #}
-#    #TABLE_MODS = {
-#    #    "label": "",
-#    #    "rows": [],
-#    #    "called_by": [
-#    #        RowType.LIST_MODS,
-#    #    ],
-#    #}
-#    #TABLE_LOG = {
-#    #    "label": "",
-#    #    "rows": [],
-#    #    "called_by": [RowType.SHOW_LOG],
-#    #}
 
 
 class ModButton(EnumWithAttrs):
@@ -499,10 +404,10 @@ class ModButton(EnumWithAttrs):
 
 
 class ButtonType(EnumWithAttrs):
-    MAIN_MENU = {
-        "label": strings.buttons.main_label,
-        "tooltip": strings.buttons.main_tooltip,
-        "opens": NotebookPage.MAIN,
+    SERVERS = {
+        "label": strings.buttons.servers_label,
+        "tooltip": strings.buttons.servers_tooltip,
+        "opens": NotebookPage.SERVERS,
     }
     MODS = {
         "label": strings.buttons.mods_label,
@@ -517,7 +422,7 @@ class ButtonType(EnumWithAttrs):
     HELP = {
         "label": strings.buttons.help_label,
         "tooltip": strings.buttons.help_tooltip,
-        "opens": NotebookPage.MAIN,
+        "opens": NotebookPage.HELP,
     }
     EXIT = {
         "label": strings.buttons.exit_label,

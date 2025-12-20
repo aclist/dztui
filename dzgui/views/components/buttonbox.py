@@ -29,7 +29,6 @@ class ButtonBox(Gtk.Box):
             orientation=Gtk.Orientation.VERTICAL,
         )
 
-        self.prior_button = ButtonType.MAIN_MENU
         self.controller = controller
         self.buttons = list()
         self.connect("key-press-event", self._on_keypress)
@@ -56,6 +55,10 @@ class ButtonBox(Gtk.Box):
 
     def _on_selection_button_clicked(self, button: Gtk.Button) -> None:
         self.controller.open_page_by_button(button)
+        button.set_sensitive(False)
+        for b in self.buttons:
+            if b != button:
+                b.set_sensitive(True)
 
     def _walk_buttons(self, increment: int) -> None:
         for i, button in enumerate(self.buttons):

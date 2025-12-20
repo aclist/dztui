@@ -79,8 +79,8 @@ class Controller:
     def get_crumbs(self) -> str:
         return self.mediator.grid.get_breadcrumbs()
 
-    def get_row_store(self) -> Gtk.ListStore:
-        return self.model_manager.get_row_store()
+    #def get_row_store(self) -> Gtk.ListStore:
+    #    return self.model_manager.get_row_store()
 
     def get_help_store(self) -> Gtk.ListStore:
         return self.model_manager.get_help_store()
@@ -160,7 +160,8 @@ class Controller:
             widget.handler_block_by_func(func)
         else:
             widget.handler_unblock_by_func(func)
-        self.mediator.treeview.sel_blocked = state
+        # TODO
+        #self.mediator.treeview.sel_blocked = state
 
     def toggle_debug_mode(self) -> None:
         self.toggle_config(Preferences.DEBUG)
@@ -277,6 +278,7 @@ class Controller:
         self.mediator.grid.notebook.set_page_by_enum(page)
 
     def open_page_by_button(self, button: "ContextualButton") -> None:
+        print(button.context)
         match button.context:
             case ButtonType.EXIT:
                 logger.info("Normal user exit")
@@ -288,13 +290,16 @@ class Controller:
                 self.load_mods()
             case ButtonType.HELP:
                 help_store = self.model_manager.get_help_store()
+                # TODO: simply set this model once and open the page
                 self.mediator.treeview.set_model(help_store)
-            case ButtonType.MAIN_MENU:
-                # TODO: going to be deprecated after server notebook is added
-                row_store = self.model_manager.get_row_store()
-                self.mediator.treeview.set_model(row_store)
+            case ButtonType.SERVERS:
+                self.mediator.notebook.set_page_by_enum(button.opens)
+                # TODO: shorten this
+                treeview = self.mediator.notebook.servers.get_active_treeview()
+                treeview.grab_focus()
+                return
 
-        self.mediator.grid.notebook.set_page_by_enum(button.opens)
+        self.mediator.notebook.set_page_by_enum(button.opens)
         self.set_crumbs(button.get_label())
 
     # TODO: deprecated?
@@ -544,3 +549,29 @@ class Controller:
 
     def get_developer_mode(self) -> bool:
         return self.is_developer
+
+    def set_server_statusbar(self) -> None:
+        # TODO: different models
+        model = self.model_manager.get_server_store()
+        model = AppNav.treeview.get_model()
+        if model is None:
+            players = 0
+            hits = 0
+        else:
+            hits = len(model)
+            players = 0
+            for row in model:
+                players += row[4]
+
+        # TODO: move to util.format
+        players_pretty = pluralize("players", players)
+        hits_pretty = pluralize("matches", hits)
+        formatted = (
+            f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
+        )
+        suffix = "| Distance: calculating..."
+
+        if players == 0:
+            suffix = ""
+        self.set_text(formatted + suffix)
+        self.players = formatted

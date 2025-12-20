@@ -84,10 +84,15 @@ class TreeView(CursorMixin, Gtk.TreeView):
 
         if is_navkey(event.keyval):
             # TODO: investigate this
+            # TODO: get active tree if server view is open
+            servers = self.controller.mediator.notebook.servers
+            tv = servers.get_active_treeview()
             if self.sel_blocked is False:
                 self.controller.suppress_signal(
-                    self.controller.mediator.treeview,
-                    self.controller.mediator.treeview.selected_row,
+                    tv,
+                    tv.selected_row,
+                    #self.controller.mediator.treeview,
+                    #self.controller.mediator.treeview.selected_row,
                     "_on_tree_selection_changed",
                     True,
                 )

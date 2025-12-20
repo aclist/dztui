@@ -11,13 +11,12 @@ import threading
 import typing  # noqa
 import warnings
 
-from collections.abc import Callable
-from concurrent.futures import wait
-from concurrent.futures import ThreadPoolExecutor
+#from concurrent.futures import wait
+#from concurrent.futures import ThreadPoolExecutor
+
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Literal, Any
 
 # TODO: most likely very little of this will be retained
 from dzgui.const.enum import (
@@ -26,7 +25,6 @@ from dzgui.const.enum import (
     RowType,
     NotebookPage,
     VAdjustment,
-    MAIN_MENU_ROWS,
 )
 from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL
 from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, WINDOW_DEFAULT_X, WINDOW_DEFAULT_Y
@@ -34,25 +32,24 @@ from dzgui.controllers.mc import Controller
 from dzgui.util import css, dist, localize, strings, ip, deck, open_links
 from dzgui.util.format import pluralize
 
-# GRID ITEMS
+# NOTEBOOK ITEMS
 # TODO: import notebook only and add components there?
 from dzgui.views.pages.changelog import Changelog
 from dzgui.views.pages.keys import Keybindings
-from dzgui.views.pages.thanks import Thanks
 from dzgui.views.pages.options import Options
+from dzgui.views.pages.servers import ServerNotebook
+from dzgui.views.pages.thanks import Thanks
 
 from dzgui.views.components.mod_panel import ModSelectionPanel
 from dzgui.views.components.right_panel import RightPanel
 from dzgui.views.components.toast import Toast
+from dzgui.views.dialogs.generic import GenericDialog
 from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
 
 # TREES
 from dzgui.views.trees.tree_log import LogTreeView
-from dzgui.views.trees.tree_menu import MenuTreeView
 from dzgui.views.trees.tree_mods import ModTreeView
 from dzgui.views.trees.tree_servers import ServerTreeView
-
-from dzgui.views.dialogs.generic import GenericDialog
 
 # TODO: not going to be in base anymore
 import dzgui.util._json as JSON  # noqa
@@ -233,6 +230,7 @@ class OuterWindow(Gtk.Window):
         self.toast = Toast()
         self.overlay = Gtk.Overlay()
         self.overlay.add_overlay(self.grid)
+        # TODO: toast is deprecated
         self.overlay.add_overlay(self.toast)
         self.add(self.overlay)
 
@@ -244,7 +242,7 @@ class OuterWindow(Gtk.Window):
         self.grid.sel_panel.set_visible(False)
 
         # TODO: register from treeview or notebook
-        AppNav.treeview = self.grid.notebook.scrollable_treelist.treeview
+        #AppNav.treeview = self.grid.notebook.scrollable_treelist.treeview
 
         css.load_css()
         AppNav.grid.notebook.set_page_by_enum(NotebookPage.SERVERS)
@@ -268,27 +266,15 @@ class OuterWindow(Gtk.Window):
         MainController.save_res_and_quit()
 
 
-# TODO: consolidate
-# wrap base tree class in this
-class ScrollableTree(Gtk.ScrolledWindow):
-    def __init__(self):
-        super().__init__()
-
-        self.treeview = MenuTreeView(MainController)
-        self.add(self.treeview)
-
-    def _set_adjustment(self, adjustment: VAdjustment) -> None:
-        pass
-
-
 class AppHeaderBar(Gtk.HeaderBar):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.props.title = APP_NAME
         self.set_decoration_layout(":minimize,maximize,close")
         self.set_show_close_button(True)
 
 
+# TODO: deprecated
 class ScrollableNote(ScrollableMixin, Gtk.Box):
     def __init__(self, content_box: Gtk.Box, back_button=False):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
@@ -322,11 +308,11 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         AppNav.notebook = self
         self.prior_page: int
 
-        # TODO: set internally
-        self.scrollable_treelist = ScrollableTree()
-        self.scrollable_treelist.set_hexpand(False)
-        self.scrollable_treelist.set_vexpand(True)
-        self.scrollable_treelist.type = None
+        # TODO: set static help page
+        #self.scrollable_treelist = ScrollableTree()
+        #self.scrollable_treelist.set_hexpand(False)
+        #self.scrollable_treelist.set_vexpand(True)
+        #self.scrollable_treelist.type = None
 
         self.change = Changelog(MainController)
         self.clog = ScrollableNote(self.change, back_button=False)
@@ -344,11 +330,8 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         # add all treeviews as page and register them to AppNav and self.indexes
         # when switching to a treeview, update relevant view and just pop that page
         # instead of loading/unloading the model each time
-        from dzgui.views.pages.servers import ServerNotebook
         self.servers = ServerNotebook(MainController)
-        #self.ssu = Gtk.ScrolledWindow()
-        #self.servers = ServerTreeView(MainController)
-        #self.ssu.add(self.servers)
+        AppNav.servers = self.servers
 
         self.quad = Gtk.ScrolledWindow()
 
@@ -369,9 +352,9 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         from dzgui.views.pages.devs import Developers
         developers = Developers(MainController)
         self.developers = ScrollableNote(developers)
-
+        
         self.pages = {
-            self.scrollable_treelist: NotebookPage.MAIN,
+            #self.scrollable_treelist: NotebookPage.MAIN,
             self.clog: NotebookPage.CHANGELOG,
             self.keys: NotebookPage.KEYS,
             self.settings: NotebookPage.OPTIONS,
@@ -491,6 +474,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         self.focus_current()
         # TODO: should be an internal property of those pages
         blank = [
+            NotebookPage.SERVERS,
             NotebookPage.OPTIONS,
             NotebookPage.THANKS,
             NotebookPage.CHANGELOG,
@@ -510,13 +494,11 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         crumbs = enum.dict["crumbs"]
         MainController.set_crumbs(crumbs)
 
-        # TODO: going to be deprecated after server notebook is added
-        if enum is not NotebookPage.MAIN:
-            return
-
-        MainController.set_help_menu_crumbs()
+        # TODO:
+        # MainController.set_help_menu_crumbs()
 
 
+# TODO: move to components
 class Statusbar(Gtk.Statusbar):
     def __init__(self) -> None:
         super().__init__()
@@ -603,6 +585,14 @@ class Grid(Gtk.Grid):
         self.attach_next_to(
             self.breadcrumbs, self.notebook, Gtk.PositionType.TOP, 3, 1
         )
+        
+        #from dzgui.views.components.connect_panel import ConnectPanel
+        #self.conpan = ConnectPanel()
+        #self.attach_next_to(
+        #    self.conpan, self.notebook, Gtk.PositionType.BOTTOM, 3, 1
+        #)
+
+
         self.attach_next_to(
             self.statusbar, self.notebook, Gtk.PositionType.BOTTOM, 3, 1
         )
@@ -615,6 +605,7 @@ class Grid(Gtk.Grid):
         return self.breadcrumbs.get_text()
 
     def set_breadcrumbs(self, text: str) -> None:
+        # TODO: embolden func
         self.breadcrumbs.set_markup(f"<b>{text}</b>")
 
 
@@ -658,7 +649,12 @@ class AppNavigation:
     window: OuterWindow
     notebook: Notebook
     right_panel: RightPanel
-    treeview: MenuTreeView
+    #treeview: MenuTreeView
+    servers: Gtk.ScrolledWindow
+    browser: ServerTreeView
+    saved: ServerTreeView
+    recent: ServerTreeView
+    lan: ServerTreeView
     modtreeview: ModTreeView
     logtreeview: LogTreeView
     # TODO: add tree_log and tree_server views here

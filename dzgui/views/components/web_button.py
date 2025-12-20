@@ -5,7 +5,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
-
+# TODO: abstract to support other icons
 class WebButton(Gtk.Button):
     def __init__(self, label: str):
         super().__init__(label=label)

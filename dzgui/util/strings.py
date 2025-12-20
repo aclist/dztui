@@ -240,8 +240,8 @@ class Init:
 
 @dataclass(slots=True, frozen=True)
 class Button:
-    main_label: str
-    main_tooltip: str
+    servers_label: str
+    servers_tooltip: str
     mods_label: str
     mods_tooltip: str
     options_label: str
@@ -426,8 +426,8 @@ dialog = Dialog(
 )
 
 buttons = Button(
-    main_label="Main menu",
-    main_tooltip="Search for and connect to servers",
+    servers_label="Servers",
+    servers_tooltip="Search for and connect to servers",
     mods_label="Mods",
     mods_tooltip="Manage local mods",
     options_label="Options",
@@ -448,7 +448,7 @@ crumbs = Crumbs(
     mods="Mods",
     my_servers="Main menu > Saved servers",
     options="Options",
-    servers="Main menu > Server browser",
+    servers="Servers",
     thanks="Help > Special thanks",
     developers="Options > Developers",
 )

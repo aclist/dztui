@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from typing import Self
 
-from dzgui.const.enum import FilterMode, MAIN_MENU_ROWS, HELP_MENU_ROWS
+from dzgui.const.enum import FilterMode, HELP_MENU_ROWS
 from dzgui.util import strings
 
 import gi
@@ -69,16 +69,16 @@ class ModelManager:
         self.ping_cache: dict[str, int] = {}
 
         self.map_store = ListStore(str)
-        self.row_store = self.new_model_from_class(MenuCols)
+        #self.row_store = self.new_model_from_class(MenuCols)
         self.help_store = self.new_model_from_class(MenuCols)
 
         self.mod_store = self.new_model_from_class(ModCols)
         self.log_store = self.new_model_from_class(LogCols)
         self.modlist_store = self.new_model_from_class(ServerModCols)
 
-        for row in MAIN_MENU_ROWS:
-            label = row.dict["label"]
-            self.row_store.append([label, row])
+        #for row in MAIN_MENU_ROWS:
+        #    label = row.dict["label"]
+        #    self.row_store.append([label, row])
 
         for row in HELP_MENU_ROWS:
             label = row.dict["label"]
@@ -100,8 +100,8 @@ class ModelManager:
     def get_map_store(self) -> ListStore:
         return self.map_store
 
-    def get_row_store(self) -> ListStore:
-        return self.row_store
+    #def get_row_store(self) -> ListStore:
+    #    return self.row_store
 
     def get_help_store(self) -> ListStore:
         return self.help_store
