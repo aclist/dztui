@@ -81,13 +81,12 @@ class ServerTreeView(TreeView):
             self.append_column(column)
 
         # TODO: do not load model on initial init
-        # TODO: row_store = self.controller.get_row_store()
         # TODO: test values: see below
-        r = Gtk.ListStore(
-            str, str, str, str, int, int, int, str, int, int, str, bool
-        )
-        r.append(["TEST", "a", "a", "a", 0, 0, 0, "a", 0, 0, "a", False])
-        self.set_model(r)
+        #r = Gtk.ListStore(
+        #    str, str, str, str, int, int, int, str, int, int, str, bool
+        #)
+        #r.append(["TEST", "a", "a", "a", 0, 0, 0, "a", 0, 0, "a", False])
+        #self.set_model(r)
 
         self.connect("on_distcalc_started", self._on_calclat_started)
 

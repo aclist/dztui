@@ -247,7 +247,7 @@ class OuterWindow(Gtk.Window):
         AppNav.treeview = self.grid.notebook.scrollable_treelist.treeview
 
         css.load_css()
-        AppNav.grid.notebook.set_page_by_enum(NotebookPage.MAIN)
+        AppNav.grid.notebook.set_page_by_enum(NotebookPage.SERVERS)
 
     def _on_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
         if event.state is Gdk.ModifierType.CONTROL_MASK \
@@ -344,9 +344,11 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         # add all treeviews as page and register them to AppNav and self.indexes
         # when switching to a treeview, update relevant view and just pop that page
         # instead of loading/unloading the model each time
-        self.ssu = Gtk.ScrolledWindow()
-        self.servers = ServerTreeView(MainController)
-        self.ssu.add(self.servers)
+        from dzgui.views.pages.servers import ServerNotebook
+        self.servers = ServerNotebook(MainController)
+        #self.ssu = Gtk.ScrolledWindow()
+        #self.servers = ServerTreeView(MainController)
+        #self.ssu.add(self.servers)
 
         self.quad = Gtk.ScrolledWindow()
 
@@ -373,7 +375,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
             self.clog: NotebookPage.CHANGELOG,
             self.keys: NotebookPage.KEYS,
             self.settings: NotebookPage.OPTIONS,
-            self.ssu: NotebookPage.SERVERS,
+            self.servers: NotebookPage.SERVERS,
             self.scroll_mod: NotebookPage.MODS,
             self.scroll_log: NotebookPage.LOG,
             self.thanks: NotebookPage.THANKS,

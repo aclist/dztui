@@ -99,7 +99,7 @@ class Controller:
 
     def terminate_process(self) -> None:
         # TODO: only used by server table multiprocessing queue
-        self.mediator.notebook.servers.terminate_process()
+        self.mediator.notebook.servers.browser.terminate_process()
 
     def get_prefs(self) -> UserPrefs:
         return self.prefs

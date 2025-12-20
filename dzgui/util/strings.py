@@ -63,10 +63,10 @@ log_cols = ["Timestamp", "Flag", "Traceback", "Message"]
 browser_cols = [
     "Name",
     "Map",
-    "Perspective",
+    "View",
     "Gametime",
     "Players",
-    "Maximum",
+    "Max",
     "Queue",
     "IP",
     "Qport",
