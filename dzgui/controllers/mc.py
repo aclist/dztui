@@ -18,9 +18,6 @@ from dzgui.api.mods import (
 from dzgui.const.enum import (
     Preferences,
     Popup,
-    MAIN_MENU_ROWS,
-    HELP_MENU_ROWS,
-    RowType,
     NotebookPage,
     ButtonType,
     ContextMenu,
@@ -57,36 +54,24 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from dzgui.views.components.buttonbox import ContextualButton
     from dzgui.views.base import AppNavigation
-    from dzgui.const.enum import ContextMenu
+    from dzgui.const.enum import ContextMenu, RowType
     from dzgui.views.base import OuterWindow
 
 class Controller:
     def __init__(self) -> None:
-        # TODO: main controller delegates to model manager
-        self.map_store = Gtk.ListStore(str)
-        self.row_store = Gtk.ListStore(str, GObject.TYPE_PYOBJECT)
-        self.help_store = Gtk.ListStore(str, GObject.TYPE_PYOBJECT)
-
-        # NOTE: long timestamp numbers
-        self.modlist_store = Gtk.ListStore(str, GObject.TYPE_INT64, str)
-        self.log_store = Gtk.ListStore(str, str, str, str)
-
-        self.notes_cache: dict[str, str] = {}
         self.is_developer: bool
-
         self.mediator: AppNavigation
         self.prefs: UserPrefs
         self.cooldown = 0
 
-        for row in MAIN_MENU_ROWS:
-            label = row.dict["label"]
-            self.row_store.append([label, row])
-
-        for row in HELP_MENU_ROWS:
-            label = row.dict["label"]
-            self.help_store.append([label, row])
-
         self.model_manager = ModelManager()
+
+    def set_help_menu_crumbs(self) -> None:
+        # TODO: going to be deprecated after server notebook is added
+        tip = self.mediator.treeview.get_model()[0][0]
+        store = self.model_manager.get_help_store()[0][0]
+        if tip == store:
+            self.set_crumbs("Help")
 
     def set_crumbs(self, crumbs: str) -> None:
         self.mediator.grid.set_breadcrumbs(crumbs)
@@ -94,23 +79,23 @@ class Controller:
     def get_crumbs(self) -> str:
         return self.mediator.grid.get_breadcrumbs()
 
+    def get_row_store(self) -> Gtk.ListStore:
+        return self.model_manager.get_row_store()
+
     def get_help_store(self) -> Gtk.ListStore:
-        return self.help_store
+        return self.model_manager.get_help_store()
 
     def get_map_store(self) -> Gtk.ListStore:
-        return self.map_store
-
-    def get_row_store(self) -> Gtk.ListStore:
-        return self.row_store
+        return self.model_manager.get_map_store()
 
     def get_modlist_store(self) -> Gtk.ListStore:
-        return self.modlist_store
+        return self.model_manager.get_modlist_store()
 
     def get_mod_store(self) -> Gtk.ListStore:
         return self.model_manager.get_mod_store()
 
     def get_log_store(self) -> Gtk.ListStore:
-        return self.log_store
+        return self.model_manager.get_log_store()
 
     def terminate_process(self) -> None:
         # TODO: only used by server table multiprocessing queue
@@ -130,11 +115,10 @@ class Controller:
         return self.query_config(Preferences.INSTALL)
 
     def reinit_map_store(self) -> None:
-        self.map_store.clear()
-        self.map_store.append(["All maps"])
+        self.model_manager.set_all_maps()
 
     def append_map(self, map_row: list) -> None:
-        self.map_store.append(map_row)
+        self.model_manager.append_map(map_row)
 
     def set_mediator(self, mediator: "AppNavigation") -> None:
         self.mediator = mediator
@@ -280,7 +264,7 @@ class Controller:
                 return True
         return False
 
-    def set_statusbar_by_row(self, row: RowType) -> None:
+    def set_statusbar_by_row(self, row: "RowType") -> None:
         self.mediator.grid.statusbar.refresh(row)
 
     def toggle_mod_panel(self, state: bool) -> None:
@@ -303,9 +287,12 @@ class Controller:
             case ButtonType.MODS:
                 self.load_mods()
             case ButtonType.HELP:
-                self.mediator.treeview.set_model(self.help_store)
+                help_store = self.model_manager.get_help_store()
+                self.mediator.treeview.set_model(help_store)
             case ButtonType.MAIN_MENU:
-                self.mediator.treeview.set_model(self.row_store)
+                # TODO: going to be deprecated after server notebook is added
+                row_store = self.model_manager.get_row_store()
+                self.mediator.treeview.set_model(row_store)
 
         self.mediator.grid.notebook.set_page_by_enum(button.opens)
         self.set_crumbs(button.get_label())
@@ -360,6 +347,7 @@ class Controller:
         shutil.rmtree(mods_path / mod)
 
         # NOTE: second pass to unlink DAYZ_EXP mods
+        # TODO: test this with working APPID_DAYZ_EXP installation
         try:
             app_path_exp = PeFile.get_nested_app_path(steam_path, APPID_DAYZ_EXP)
             symlink = app_path_exp / md5
@@ -367,7 +355,6 @@ class Controller:
         except PeFile.AppNotInstalledError:
             pass
 
-        # TODO: belongs in model manager
         model = self.model_manager.get_mod_store()
         model.remove(it)
 
@@ -433,8 +420,9 @@ class Controller:
 
     def populate_log(self) -> None:
         log = self.prefs.paths.debug
-        store = self.log_store
+        store = self.model_manager.get_log_store()
         store.clear()
+
         # TODO: pop dialog if log is missing
         with open(log, "r") as f:
             lines = [line.split(strings.delimiter) for line in f.read().splitlines()]
