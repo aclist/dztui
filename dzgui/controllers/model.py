@@ -1,11 +1,14 @@
-import gi
-gi.require_version("Gtk", "3.0")
-from gi.repository.Gtk import ListStore
-from gi.repository import GObject
+import re
+from dataclasses import dataclass
 
 from dzgui.const.enum import FilterMode
+from dzgui.util import strings
 
-from dataclasses import dataclass, fields
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository.Gtk import ListStore  # noqa E402
+from gi.repository import GObject, GLib  # noqa E402
+
 
 @dataclass
 @dataclass(slots=True, frozen=True)
@@ -140,7 +143,7 @@ class ModelManager:
                     row[9] = self.ping_cache[row[7]]
 
         if len(rows) > 0:
-            clone = ModelMan.new_model()
+            clone = self.new_model()
             rows = self.sort_rows(rows)
             for row in rows:
                 clone.append(row)
