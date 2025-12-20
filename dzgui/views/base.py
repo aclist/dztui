@@ -514,9 +514,6 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
 
         MainController.set_help_menu_crumbs()
 
-        row = MAIN_MENU_ROWS[0]
-        AppNav.grid.statusbar.refresh(row)
-
 
 class Statusbar(Gtk.Statusbar):
     def __init__(self) -> None:
