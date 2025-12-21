@@ -8,6 +8,7 @@ from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
 from dzgui.const.enum import (
     ContextMenu,
+    ContextMenuGroup,
     RowType,
     )
 from dzgui.const.constants import UDP_PORT
@@ -29,6 +30,12 @@ if TYPE_CHECKING:
 # TODO: add multiprocessing queue
 # TODO: fix cache
 
+class EnumeratedMenuItem(Gtk.MenuItem):
+    def __init__(self, enum: ContextMenu):
+        super().__init__(label=enum.dict["label"])
+        self.enum = enum
+
+
 class ServerTreeView(TreeView):
     __gsignals__ = {
         "on_distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())
@@ -36,6 +43,7 @@ class ServerTreeView(TreeView):
     def __init__(self, controller: "Controller") -> None:
         super().__init__(controller)
 
+        self.menu = Gtk.Menu()
         self.controller = controller
 
         self.set_fixed_height_mode(True)
@@ -62,9 +70,6 @@ class ServerTreeView(TreeView):
             column.set_resizable(True)
             column.set_sort_column_id(i)
 
-            # TODO: use index of column instead of name
-            # so literal name won't matter
-            # needs conversion logic for old configs
             if valid_json:
                 try:
                     saved_size = data["cols"][column_title]
@@ -81,11 +86,8 @@ class ServerTreeView(TreeView):
             self.append_column(column)
 
         self.connect("on_distcalc_started", self._on_calclat_started)
-
-
         self.connect("button-release-event", self._on_server_button_release)
         self.connect("key-press-event", self._on_server_keypress)
-
         self.connect("generic_row_activated", self._parent_row_activated)
         self.connect("generic_treesel_changed", self._parent_selection_changed)
 
@@ -150,6 +152,18 @@ class ServerTreeView(TreeView):
                 case _:
                     return False
 
+    def set_context_menu(self, items: ContextMenuGroup) -> None:
+        # TODO: if debug is on, add raw command
+        for item in items.value:
+            menu_item = EnumeratedMenuItem(item)
+            menu_item.connect("activate", self._on_menu_click)
+            self.menu.append(menu_item)
+        self.menu.show_all()
+
+    def _on_menu_click(self, item) -> None:
+        print(item.enum)
+        pass
+
     def _on_server_button_release(
         self, widget: Gtk.Widget, event: Gdk.EventButton
     ) -> None:
@@ -168,69 +182,23 @@ class ServerTreeView(TreeView):
         except AttributeError:
             pass
 
-        self.menu = Gtk.Menu()
         mod_context_items = [ContextMenu.OPEN_WORKSHOP, ContextMenu.DELETE_MOD]
-        # TODO: reimplement server context enums
-        # TODO: inherit from tree_servers.py
-        server_context_items = {
-            RowType.SERVER_BROWSER: [
-                ContextMenu.ADD_SERVER,
-                ContextMenu.COPY_NAME,
-                ContextMenu.COPY_CLIPBOARD,
-                ContextMenu.ADD_NOTE,
-                ContextMenu.SHOW_MODS,
-                ContextMenu.SHOW_DETAILS,
-                ContextMenu.REFRESH_PLAYERS,
-            ],
-            RowType.SCAN_LAN: [
-                ContextMenu.COPY_NAME,
-                ContextMenu.COPY_CLIPBOARD,
-                ContextMenu.ADD_NOTE,
-                ContextMenu.SHOW_MODS,
-                ContextMenu.SHOW_DETAILS,
-                ContextMenu.REFRESH_PLAYERS,
-            ],
-            RowType.SAVED_SERVERS: [
-                ContextMenu.REMOVE_SERVER,
-                ContextMenu.COPY_NAME,
-                ContextMenu.COPY_CLIPBOARD,
-                ContextMenu.ADD_NOTE,
-                ContextMenu.SHOW_MODS,
-                ContextMenu.SHOW_DETAILS,
-                ContextMenu.REFRESH_PLAYERS,
-            ],
-            RowType.RECENT_SERVERS: [
-                ContextMenu.ADD_SERVER,
-                ContextMenu.REMOVE_HISTORY,
-                ContextMenu.COPY_NAME,
-                ContextMenu.ADD_NOTE,
-                ContextMenu.COPY_CLIPBOARD,
-                ContextMenu.SHOW_MODS,
-                ContextMenu.SHOW_DETAILS,
-                ContextMenu.REFRESH_PLAYERS,
-            ],
-        }
 
-        # TODO: how to get current server context
-        items = server_context_items[self.subpage]
-
-        for row in items:
-            if row == ContextMenu.ADD_SERVER:
-                if self.is_in_favs():
-                    row = ContextMenu.REMOVE_SERVER
-            item = Gtk.MenuItem(label=row.dict["label"])
-            item.type = row
-            item.action = row.dict["action"]
-            item.connect("activate", self._on_menu_click)
-            self.menu.append(item)
-            if row == ContextMenu.SHOW_MODS:
-                if not self.has_mods():
-                    item.set_sensitive(False)
-            if row == ContextMenu.ADD_NOTE:
-                if self.get_record_string() in notes_cache:
-                    item.set_label(strings.edit_note)
-
-        self.menu.show_all()
+        # TODO: dynamic menu entries
+        #for row in items:
+        #    if row == ContextMenu.ADD_SERVER:
+        #        if self.is_in_favs():
+        #            row = ContextMenu.REMOVE_SERVER
+        #    item = Gtk.MenuItem(label=row.dict["label"])
+        #    item.type = row
+        #    item.action = row.dict["action"]
+        #    self.menu.append(item)
+        #    if row == ContextMenu.SHOW_MODS:
+        #        if not self.has_mods():
+        #            item.set_sensitive(False)
+        #    if row == ContextMenu.ADD_NOTE:
+        #        if self.get_record_string() in notes_cache:
+        #            item.set_label(strings.edit_note)
 
         if event.type is Gdk.EventType.KEY_PRESS and event.keyval is Gdk.KEY_l:
             if self.is_selection_empty():

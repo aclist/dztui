@@ -68,7 +68,7 @@ class Controller:
 
     def set_help_menu_crumbs(self) -> None:
         # TODO: going to be deprecated after server notebook is added
-        tip = self.mediator.treeview.get_model()[0][0]
+        tip = self.mediator.menu.get_model()[0][0]
         store = self.model_manager.get_help_store()[0][0]
         if tip == store:
             self.set_crumbs("Help")
@@ -79,8 +79,17 @@ class Controller:
     def get_crumbs(self) -> str:
         return self.mediator.grid.get_breadcrumbs()
 
-    #def get_row_store(self) -> Gtk.ListStore:
-    #    return self.model_manager.get_row_store()
+    def get_server_store(self) -> Gtk.ListStore:
+        return self.model_manager.get_server_store()
+
+    def get_saved_store(self) -> Gtk.ListStore:
+        return self.model_manager.get_saved_store()
+
+    def get_recent_store(self) -> Gtk.ListStore:
+        return self.model_manager.get_recent_store()
+
+    def get_lan_store(self) -> Gtk.ListStore:
+        return self.model_manager.get_lan_store()
 
     def get_help_store(self) -> Gtk.ListStore:
         return self.model_manager.get_help_store()
@@ -137,12 +146,12 @@ class Controller:
             state,
         )
         self.suppress_signal(
-            self.mediator.treeview,
-            self.mediator.treeview.selected_row,
+            self.mediator.menu,
+            self.mediator.menu.selected_row,
             "_on_tree_selection_changed",
             state,
         )
-        self.suppress_signal(self.mediator.treeview, self.mediator.treeview, "_on_keypress", state)
+        self.suppress_signal(self.mediator.menu, self.mediator.menu, "_on_keypress", state)
         for check in self.mediator.grid.right_panel.filters_vbox.checks:
             self.suppress_signal(
                 self.mediator.grid.right_panel.filters_vbox,
@@ -161,7 +170,7 @@ class Controller:
         else:
             widget.handler_unblock_by_func(func)
         # TODO
-        #self.mediator.treeview.sel_blocked = state
+        #self.mediator.menu.sel_blocked = state
 
     def toggle_debug_mode(self) -> None:
         self.toggle_config(Preferences.DEBUG)
@@ -278,7 +287,6 @@ class Controller:
         self.mediator.grid.notebook.set_page_by_enum(page)
 
     def open_page_by_button(self, button: "ContextualButton") -> None:
-        print(button.context)
         match button.context:
             case ButtonType.EXIT:
                 logger.info("Normal user exit")
@@ -289,9 +297,7 @@ class Controller:
             case ButtonType.MODS:
                 self.load_mods()
             case ButtonType.HELP:
-                help_store = self.model_manager.get_help_store()
-                # TODO: simply set this model once and open the page
-                self.mediator.treeview.set_model(help_store)
+                pass
             case ButtonType.SERVERS:
                 self.mediator.notebook.set_page_by_enum(button.opens)
                 # TODO: shorten this

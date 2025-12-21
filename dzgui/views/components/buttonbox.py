@@ -54,11 +54,13 @@ class ButtonBox(Gtk.Box):
 
 
     def _on_selection_button_clicked(self, button: Gtk.Button) -> None:
+    #    # TODO: maybe drop this and just ensure buttons respond correctly
         self.controller.open_page_by_button(button)
-        button.set_sensitive(False)
-        for b in self.buttons:
-            if b != button:
-                b.set_sensitive(True)
+    #    if button.context != ButtonType.HELP:
+    #        button.set_sensitive(False)
+    #    for b in self.buttons:
+    #        if b != button:
+    #            b.set_sensitive(True)
 
     def _walk_buttons(self, increment: int) -> None:
         for i, button in enumerate(self.buttons):

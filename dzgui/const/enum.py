@@ -311,6 +311,7 @@ class ContextMenu(EnumWithAttrs):
     OPEN_WORKSHOP = {"label": strings.open_workshop}
     DELETE_MOD = {"label": strings.delete_mod}
     COPY_LOG_CLIPBOARD = {"label": strings.copy_log}
+    CONNECT = {"label": strings.connect}
 
 
 class ContextMenuGroup(Enum):
@@ -324,6 +325,7 @@ class ContextMenuGroup(Enum):
         ContextMenu.COPY_LOG_CLIPBOARD,
     )
     SERVER_BROWSER = (
+        ContextMenu.CONNECT,
         ContextMenu.ADD_SERVER,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
@@ -333,6 +335,7 @@ class ContextMenuGroup(Enum):
         ContextMenu.REFRESH_PLAYERS,
     )
     SCAN_LAN = (
+        ContextMenu.CONNECT,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
         ContextMenu.ADD_NOTE,
@@ -341,6 +344,7 @@ class ContextMenuGroup(Enum):
         ContextMenu.REFRESH_PLAYERS,
     )
     SAVED = (
+        ContextMenu.CONNECT,
         ContextMenu.REMOVE_SERVER,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
@@ -350,6 +354,7 @@ class ContextMenuGroup(Enum):
         ContextMenu.REFRESH_PLAYERS,
     )
     RECENT = (
+        ContextMenu.CONNECT,
         ContextMenu.ADD_SERVER,
         ContextMenu.REMOVE_HISTORY,
         ContextMenu.COPY_NAME,
@@ -359,22 +364,6 @@ class ContextMenuGroup(Enum):
         ContextMenu.SHOW_DETAILS,
         ContextMenu.REFRESH_PLAYERS,
     )
-
-
-HELP_MENU_ROWS = (
-    RowType.CHANGELOG,
-    RowType.SHOW_LOG,
-    RowType.DUMP_LOG,
-    RowType.SEPARATOR,
-    RowType.DOCS,
-    RowType.DOCS_FALLBACK,
-    RowType.BUGS,
-    RowType.FORUM,
-    RowType.SPONSOR,
-    RowType.SEPARATOR,
-    RowType.THANKS,
-)
-
 
 class ModButton(EnumWithAttrs):
     SELECT_ALL = {
@@ -429,3 +418,18 @@ class ButtonType(EnumWithAttrs):
         "tooltip": strings.buttons.exit_tooltip,
         "opens": None,
     }
+
+
+HELP_MENU_ROWS = (
+    RowType.CHANGELOG,
+    RowType.SHOW_LOG,
+    RowType.DUMP_LOG,
+    RowType.SEPARATOR,
+    RowType.DOCS,
+    RowType.DOCS_FALLBACK,
+    RowType.BUGS,
+    RowType.FORUM,
+    RowType.SPONSOR,
+    RowType.SEPARATOR,
+    RowType.THANKS,
+)

@@ -47,6 +47,7 @@ from dzgui.views.dialogs.generic import GenericDialog
 from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
 
 # TREES
+from dzgui.views.trees.tree_menu import MenuTreeView
 from dzgui.views.trees.tree_log import LogTreeView
 from dzgui.views.trees.tree_mods import ModTreeView
 from dzgui.views.trees.tree_servers import ServerTreeView
@@ -308,21 +309,17 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         AppNav.notebook = self
         self.prior_page: int
 
-        # TODO: set static help page
-        #self.scrollable_treelist = ScrollableTree()
-        #self.scrollable_treelist.set_hexpand(False)
-        #self.scrollable_treelist.set_vexpand(True)
-        #self.scrollable_treelist.type = None
+        from dzgui.views.pages.help import Help
+        self.help = Help(MainController)
+        view = self.help.get_treeview()
+        AppNav.menu = view
 
         self.change = Changelog(MainController)
         self.clog = ScrollableNote(self.change, back_button=False)
         self.clog.scrollable.set_propagate_natural_width(False)
-        self.clog.type = RowType.CHANGELOG
 
         # TODO: scrollable internally
         self.keys = ScrollableNote(Keybindings())
-        self.keys.type = RowType.KEYBINDINGS
-
         self.settings = Options(MainController)
 
         # TODO: make all treeviews internally scrollable in base class
@@ -354,6 +351,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         self.developers = ScrollableNote(developers)
         
         self.pages = {
+            self.help: NotebookPage.HELP,
             #self.scrollable_treelist: NotebookPage.MAIN,
             self.clog: NotebookPage.CHANGELOG,
             self.keys: NotebookPage.KEYS,
@@ -452,14 +450,21 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
 
     def focus_current(self) -> None:
         widget = self.get_page()
-        if widget:
-            w = widget.get_children()[0]
-            # NOTE: if item contains treeview, focus first cell
-            try:
-                w.focus_first_row()
-                w.grab_focus()
-            except Exception as e:
-                w.grab_focus()
+        if widget is None:
+            return
+
+        if widget is self.servers:
+            view = self.servers.get_active_treeview()
+            view.grab_focus()
+            return
+
+        w = widget.get_children()[0]
+        # NOTE: if item contains treeview, focus first cell
+        try:
+            w.focus_first_row()
+            w.grab_focus()
+        except Exception as e:
+            w.grab_focus()
 
     def get_page(self) -> Gtk.Widget | None:
         ind = self.get_current_page()
@@ -491,12 +496,9 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         is_mods = True if enum is NotebookPage.MODS else False
         MainController.toggle_mod_panel(is_mods)
 
+        # TODO: 
         crumbs = enum.dict["crumbs"]
         MainController.set_crumbs(crumbs)
-
-        # TODO:
-        # MainController.set_help_menu_crumbs()
-
 
 # TODO: move to components
 class Statusbar(Gtk.Statusbar):
@@ -570,6 +572,9 @@ class Grid(Gtk.Grid):
 
         AppNav.grid = self
 
+        self.breadcrumbs = Gtk.Label(halign=Gtk.Align.START)
+        self.set_breadcrumbs(strings.label_main_menu)
+
         # FIXME: do not pass AppNav to right panel
         self.right_panel = RightPanel(AppNav, MainController)
         self.sel_panel = ModSelectionPanel(MainController)
@@ -578,8 +583,6 @@ class Grid(Gtk.Grid):
         self.notebook = Notebook()
         self.statusbar = Statusbar()
 
-        self.breadcrumbs = Gtk.Label(halign=Gtk.Align.START)
-        self.set_breadcrumbs(strings.label_main_menu)
 
         self.attach(self.notebook, 0, 0, 3, 1)
         self.attach_next_to(
@@ -649,7 +652,7 @@ class AppNavigation:
     window: OuterWindow
     notebook: Notebook
     right_panel: RightPanel
-    #treeview: MenuTreeView
+    menu: MenuTreeView
     servers: Gtk.ScrolledWindow
     browser: ServerTreeView
     saved: ServerTreeView

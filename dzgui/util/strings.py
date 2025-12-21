@@ -53,8 +53,9 @@ copy_name = "Copy name to clipboard"
 copy_ip = "Copy IP to clipboard"
 copy_log = "Copy record(s) to clipboard"
 add = "Add to my servers"
-remove = "Remove from my servers"
+remove = "Remove from Saved Servers"
 remove_history = "Remove from history"
+connect = "Connect"
 
 # Columns
 server_mod_cols = ["Mod", "ID", "Installed"]
@@ -495,4 +496,18 @@ developers = DevelopersPage(
     paths_label="Resolved XDG paths",
     prefs_label="Boot preferences",
     columns=["Key", "Value"]
+)
+
+@dataclass(slots=True, frozen=True)
+class ServerLabels:
+    browser: str
+    saved: str
+    recent: str
+    lan: str
+
+server_labels = ServerLabels(
+    browser="Server Browser",
+    saved="Saved Servers",
+    recent="Recent",
+    lan="LAN",
 )
