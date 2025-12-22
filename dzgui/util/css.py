@@ -11,6 +11,8 @@ def add_class(widget: Gtk.Widget, label: str) -> None:
     context = widget.get_style_context()
     context.add_class(label)
 
+# TODO: def remove_class()
+
 def load_css() -> None:
     # TODO: consider storing this in a data file
     css = """

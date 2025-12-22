@@ -216,17 +216,20 @@ class ServerTreeView(TreeView):
             column: Gtk.TreeViewColumn
         ) -> None:
         # TODO: process server connection
+        # TODO: get record
         print(self.get_value_at_index(0))
 
     def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
 
         self.terminate_process()
         record = self.get_record()
+        #TODO
+        return
 
-        if record is None:
-            # TODO: move to controller
-            #grid.statusbar.update_server_meta()
-            return
+        #model = self.get_model()
+        #if record is None:
+        #    self.controller.update_server_status(model)
+        #    return
 
         ip = record.ip
 

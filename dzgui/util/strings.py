@@ -255,13 +255,10 @@ class Button:
 @dataclass(slots=True, frozen=True)
 class Crumbs:
     changelog: str
-    history: str
     keys: str
-    lan: str
     log: str
     _help: str
     mods: str
-    my_servers: str
     options: str
     servers: str
     thanks: str
@@ -441,15 +438,12 @@ buttons = Button(
 
 crumbs = Crumbs(
     changelog="Help > Changelog",
-    history="Main menu > Recent servers",
     keys="Keybindings",
-    lan="Main menu > Local servers",
     log="Help > Debug log",
     _help="Help",
     mods="Mods",
-    my_servers="Main menu > Saved servers",
     options="Options",
-    servers="Servers",
+    servers="Servers > Server browser",
     thanks="Help > Special thanks",
     developers="Options > Developers",
 )

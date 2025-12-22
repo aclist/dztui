@@ -40,6 +40,7 @@ from dzgui.views.pages.options import Options
 from dzgui.views.pages.servers import ServerNotebook
 from dzgui.views.pages.thanks import Thanks
 
+from dzgui.views.components.statusbar import Statusbar
 from dzgui.views.components.mod_panel import ModSelectionPanel
 from dzgui.views.components.right_panel import RightPanel
 from dzgui.views.components.toast import Toast
@@ -65,19 +66,7 @@ logger = logging.getLogger(__name__)
 warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 
 # TODO: move to controller
-cache: dict[str, int] = {}
-
-# TODO: move to strings.py
-def format_metadata(row: RowType) -> str:
-    prefix = row.dict["tooltip"]
-
-    if row == RowType.QUICK_CONNECT or row == RowType.CHNG_FAV:
-        label = MainController.query_config(Preferences.FAV_LBL)
-        if len(label) < 1:
-            label = "unset"
-        return f"{prefix} ({label})"
-    else:
-        return prefix
+#cache: dict[str, int] = {}
 
 ## TODO: move to configs/servers
 #def query_history() -> list | None:
@@ -228,22 +217,13 @@ class OuterWindow(Gtk.Window):
         MainController.set_resolution(self)
 
         self.grid = Grid()
-        self.toast = Toast()
-        self.overlay = Gtk.Overlay()
-        self.overlay.add_overlay(self.grid)
-        # TODO: toast is deprecated
-        self.overlay.add_overlay(self.toast)
-        self.add(self.overlay)
+        self.add(self.grid)
 
         self.show_all()
 
-        self.toast.set_visible(False)
         self.grid.right_panel.filters_vbox.set_visible(False)
         self.grid.right_panel.enable_ping_button(False)
         self.grid.sel_panel.set_visible(False)
-
-        # TODO: register from treeview or notebook
-        #AppNav.treeview = self.grid.notebook.scrollable_treelist.treeview
 
         css.load_css()
         AppNav.grid.notebook.set_page_by_enum(NotebookPage.SERVERS)
@@ -416,6 +396,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
     def return_prior(self) -> None:
         page = self.get_nth_page(self.prior_page)
         # FIXME: check enum for NotebookPage.OPTIONS
+        # TODO: can be dropped?
         if hasattr(page, "steam_entry"):
             """
             Gtk.Notebook focuses the first input field when changing pages;
@@ -479,7 +460,6 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         self.focus_current()
         # TODO: should be an internal property of those pages
         blank = [
-            NotebookPage.SERVERS,
             NotebookPage.OPTIONS,
             NotebookPage.THANKS,
             NotebookPage.CHANGELOG,
@@ -496,73 +476,9 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         is_mods = True if enum is NotebookPage.MODS else False
         MainController.toggle_mod_panel(is_mods)
 
-        # TODO: 
+        # TODO:
         crumbs = enum.dict["crumbs"]
         MainController.set_crumbs(crumbs)
-
-# TODO: move to components
-class Statusbar(Gtk.Statusbar):
-    def __init__(self) -> None:
-        super().__init__()
-
-        help_text = strings.statusbar_helptext
-        self.set_text(help_text)
-
-        version = MainController.get_prefs().version
-        self.status_right_label = Gtk.Label(label=version)
-        self.add(self.status_right_label)
-
-        self.players = ""
-
-    def get_text(self) -> str:
-        area = self.get_message_area()
-        label = area.get_children()[0]
-        return label.get_text()
-
-    def set_text(self, string: str) -> None:
-        if string is None:
-            return
-        meta = self.get_context_id("Statusbar")
-        self.push(meta, string)
-
-    def refresh(self, row: RowType) -> None:
-        if row is None:
-            formatted = ""
-        else:
-            formatted = format_metadata(row)
-        self.set_text(formatted)
-
-    def append_distance(self, dist: str) -> None:
-        # TODO: process strings in controller
-        if dist == strings.unknown:
-            dist = f"| Distance: {dist}"
-        else:
-            dist = f"| Distance: {dist}"
-        self.set_text(self.players + dist)
-
-    def update_server_meta(self) -> None:
-        model = AppNav.treeview.get_model()
-        if model is None:
-            players = 0
-            hits = 0
-        else:
-            hits = len(model)
-            players = 0
-            for row in model:
-                players += row[4]
-
-        # TODO: move to util.format
-        players_pretty = pluralize("players", players)
-        hits_pretty = pluralize("matches", hits)
-        formatted = (
-            f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
-        )
-        suffix = "| Distance: calculating..."
-
-        if players == 0:
-            suffix = ""
-        self.set_text(formatted + suffix)
-        self.players = formatted
 
 
 class Grid(Gtk.Grid):
@@ -570,10 +486,12 @@ class Grid(Gtk.Grid):
         super().__init__()
         self.set_column_homogeneous(True)
 
-        AppNav.grid = self
-
+        self.statusbar = Statusbar(MainController)
         self.breadcrumbs = Gtk.Label(halign=Gtk.Align.START)
         self.set_breadcrumbs(strings.label_main_menu)
+
+        AppNav.statusbar = self.statusbar
+        AppNav.grid = self
 
         # FIXME: do not pass AppNav to right panel
         self.right_panel = RightPanel(AppNav, MainController)
@@ -581,14 +499,12 @@ class Grid(Gtk.Grid):
         self.right_panel.pack_start(self.sel_panel, NO_EXPAND, NO_FILL, 0)
 
         self.notebook = Notebook()
-        self.statusbar = Statusbar()
-
 
         self.attach(self.notebook, 0, 0, 3, 1)
         self.attach_next_to(
             self.breadcrumbs, self.notebook, Gtk.PositionType.TOP, 3, 1
         )
-        
+
         #from dzgui.views.components.connect_panel import ConnectPanel
         #self.conpan = ConnectPanel()
         #self.attach_next_to(
@@ -629,6 +545,11 @@ class App(Gtk.Application):
         )
         self.win.add_accel_group(accel)
 
+        # FIXME: hacky
+        AppNav.notebook.servers.notebook.next_page()
+        AppNav.notebook.servers.notebook.prev_page()
+        MainController.focus_notebook()
+
         GLib.unix_signal_add(
             GLib.PRIORITY_DEFAULT, signal.SIGINT, self._catch_sigint
         )
@@ -652,6 +573,7 @@ class AppNavigation:
     window: OuterWindow
     notebook: Notebook
     right_panel: RightPanel
+    statusbar: Statusbar
     menu: MenuTreeView
     servers: Gtk.ScrolledWindow
     browser: ServerTreeView
@@ -661,6 +583,7 @@ class AppNavigation:
     modtreeview: ModTreeView
     logtreeview: LogTreeView
     # TODO: add tree_log and tree_server views here
+    # or obtain via get_treeview()
 
 AppNav = AppNavigation()
 MainController = Controller()

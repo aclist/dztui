@@ -5,11 +5,25 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
-# TODO: abstract to support other icons
-class WebButton(Gtk.Button):
-    def __init__(self, label: str):
-        super().__init__(label=label)
 
-        icon = Icon(WEB_BROWSER, l_margin=5)
-        self.set_image(icon)
+class IconButton(Gtk.Button):
+    def __init__(self, icon: str, margin: int = 0):
+        super().__init__()
+
+        i = Icon(icon, l_margin=margin)
+        self.set_image(i)
         self.set_image_position(Gtk.PositionType.RIGHT)
+
+
+class IconTextButton(IconButton):
+    def __init__(self, icon: str, label: str):
+        super().__init__(icon, margin=5)
+
+        self.set_label(label)
+
+
+class WebButton(IconTextButton):
+    def __init__(self, label: str):
+        super().__init__(icon=WEB_BROWSER, label=label)
+
+        pass

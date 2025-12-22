@@ -556,10 +556,10 @@ class Controller:
     def get_developer_mode(self) -> bool:
         return self.is_developer
 
-    def set_server_statusbar(self) -> None:
-        # TODO: different models
-        model = self.model_manager.get_server_store()
-        model = AppNav.treeview.get_model()
+    def update_server_status(self) -> None:
+        from dzgui.util.format import pluralize
+        treeview = self.mediator.notebook.servers.get_active_treeview()
+        model = treeview.get_model()
         if model is None:
             players = 0
             hits = 0
@@ -568,7 +568,6 @@ class Controller:
             players = 0
             for row in model:
                 players += row[4]
-
         # TODO: move to util.format
         players_pretty = pluralize("players", players)
         hits_pretty = pluralize("matches", hits)
@@ -579,5 +578,5 @@ class Controller:
 
         if players == 0:
             suffix = ""
-        self.set_text(formatted + suffix)
-        self.players = formatted
+        self.mediator.statusbar.set_text(formatted + suffix)
+        #self.players = formatted

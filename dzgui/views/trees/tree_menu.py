@@ -44,7 +44,6 @@ class MenuTreeView(TreeView):
             column: Gtk.TreeViewColumn
         ) -> None:
         row_type = self.get_value_at_index(1)
-        print(row_type)
 
         match row_type:
             case RowType.THANKS:
