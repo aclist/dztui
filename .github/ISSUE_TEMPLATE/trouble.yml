@@ -8,7 +8,7 @@ body:
   - type: markdown
     attributes:
       value: |
-          ## WARNING: When posting log/config data, redact any sensitive information like API keys.
+          ### WARNING: When posting log/config data, redact any sensitive information like API keys.
   - type: dropdown
     id: device
     attributes:
