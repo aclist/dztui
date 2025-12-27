@@ -1,5 +1,10 @@
 # Changelog
 
+## [5.8.1] 2025-12-27
+## Fixed
+- Path discovery during first-time setup when parsing filepaths with whitespaces
+- First-time setup dialog continuously triggering when DayZ install path had whitespaces in it
+
 ## [5.8.0] 2025-07-06
 ## Added
 - Filter servers by official/unofficial status
