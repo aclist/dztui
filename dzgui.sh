@@ -488,7 +488,7 @@ migrate_files(){
 }
 stale_symlinks(){
     local game_dir="$steam_path/steamapps/common/DayZ"
-    for l in $(find "$game_dir" -xtype l); do
+    for l in "$(find "$game_dir" -xtype l)"; do
         logger DEBUG "Updating stale symlink '$l'"
         unlink "$l"
     done
