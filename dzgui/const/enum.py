@@ -297,6 +297,7 @@ class RowType(EnumWithAttrs):
 # TODO: rename to ContextItem
 class ContextMenu(EnumWithAttrs):
     ADD_SERVER = {"label": strings.add}
+    ADD_FAV = {"label": strings.add_fav}
     REMOVE_SERVER = {"label": strings.remove}
     COPY_NAME = {"label": strings.copy_name}
     COPY_CLIPBOARD = {"label": strings.copy_ip}
@@ -324,6 +325,7 @@ class ContextMenuGroup(Enum):
     SERVER_BROWSER = (
         ContextMenu.CONNECT,
         ContextMenu.ADD_SERVER,
+        ContextMenu.ADD_FAV,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
         ContextMenu.ADD_NOTE,
@@ -333,6 +335,7 @@ class ContextMenuGroup(Enum):
     )
     SCAN_LAN = (
         ContextMenu.CONNECT,
+        ContextMenu.ADD_FAV,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
         ContextMenu.ADD_NOTE,
@@ -342,6 +345,7 @@ class ContextMenuGroup(Enum):
     )
     SAVED = (
         ContextMenu.CONNECT,
+        ContextMenu.ADD_FAV,
         ContextMenu.REMOVE_SERVER,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
@@ -353,6 +357,7 @@ class ContextMenuGroup(Enum):
     RECENT = (
         ContextMenu.CONNECT,
         ContextMenu.ADD_SERVER,
+        ContextMenu.ADD_FAV,
         ContextMenu.REMOVE_HISTORY,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,

@@ -39,7 +39,7 @@ from dzgui.util.diag import write_diagnostic
 from dzgui.util import cooldown, strings
 from dzgui.util._json import read_json, write_json
 from dzgui.util.open_links import open_workshop_page
-from dzgui.util.format import format_mods
+from dzgui.util.format import format_mods, pluralize
 from dzgui.util.redact import redact_log
 
 from dzgui.views.dialogs.filepicker import FilePicker
@@ -56,7 +56,6 @@ if TYPE_CHECKING:
     from dzgui.views.base import AppNavigation
     from dzgui.const.enum import ContextMenu, RowType
     from dzgui.views.base import OuterWindow
-    from dzgui.views.trees.tree_servers import ServerTreeView
 
 class Controller:
     def __init__(self) -> None:
@@ -558,7 +557,6 @@ class Controller:
         return self.is_developer
 
     def update_server_status(self) -> None:
-        from dzgui.util.format import pluralize
         treeview = self.mediator.notebook.servers.get_active_treeview()
         model = treeview.get_model()
         if model is None:
@@ -575,12 +573,24 @@ class Controller:
         formatted = (
             f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
         )
-        suffix = "| Distance: calculating..."
+        suffix = " | Distance: calculating..."
 
         if players == 0:
             suffix = ""
         self.mediator.statusbar.set_text(formatted + suffix)
         #self.players = formatted
 
-    def update_column_width(self, title: str, width: int) -> None:
-        self.mediator.servers.update_tab_widths(title, width)
+    def propagate_column_width(self, col: Gtk.TreeViewColumn) -> None:
+        GLib.idle_add(self.mediator.servers.update_tab_widths, col)
+#        tabs = self.mediator.servers.get_tabs()
+#        tree = self.mediator.servers.get_active_treeview()
+#        width = col.get_width()
+#        title = col.get_title()
+#        for tab in tabs:
+#            if tab == tree:
+#                continue
+#            for col in tab.get_columns():
+#                if col.get_title() == title:
+#                    self.suppress_signal(tab, col, "_on_col_width_changed", True)
+#                    col.set_fixed_width(width)
+#                    self.suppress_signal(tab, col, "_on_col_width_changed", False)

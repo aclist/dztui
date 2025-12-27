@@ -44,6 +44,7 @@ class ServerTreeView(TreeView):
         super().__init__(controller)
 
         self.menu = Gtk.Menu()
+        self.menu.connect("key-press-event", self._on_key)
         self.controller = controller
 
         self.resizable_cols: list[Gtk.TreeViewColumn] = []
@@ -85,6 +86,7 @@ class ServerTreeView(TreeView):
                 if column_title == "Map":
                     column.set_fixed_width(300)
 
+
             self.resizable_cols.append(column)
             column.connect("notify::fixed-width", self._on_col_width_changed)
             self.append_column(column)
@@ -97,9 +99,41 @@ class ServerTreeView(TreeView):
 
         GLib.timeout_add(200, self._check_result_queue)
 
+    def _on_key(self, menu: Gtk.Menu, event: Gdk.EventKey) -> bool | None:
+        if not is_navkey(event.keyval):
+            return False
+        sel = menu.get_selected_item()
+        children = menu.get_children()
+        for i, child in enumerate(children):
+            if sel is child:
+                ind = i
+                break
+
+        match event.keyval:
+            case Gdk.KEY_j:
+                if ind == len(children) - 1:
+                    return True
+                menu.select_item(children[ind+1])
+            case Gdk.KEY_k:
+                if ind - 1 < 0:
+                    return True
+                menu.select_item(children[ind-1])
+            case Gdk.KEY_g:
+                menu.select_item(children[0])
+            case Gdk.KEY_G:
+                ind = len(children) - 1
+                menu.select_item(children[ind])
+            case _:
+                return False
+        return True
+
     def _on_col_width_changed(
         self, col: Gtk.TreeViewColumn, width: GObject.ParamSpecInt
     ) -> None:
+        """
+        Propagate width change to other tabs
+        """
+        # TODO: only update res file on quit
         title = col.get_title()
         size = col.get_width()
 
@@ -117,7 +151,8 @@ class ServerTreeView(TreeView):
         except Exception as e:
             logger.critical(e)
 
-        #self.controller.update_column_width(title, size)
+        # NOTE: get final width after drag action completes
+        GLib.idle_add(self.controller.propagate_column_width, col)
 
     def terminate_process(self) -> None:
       if self.current_proc and self.current_proc.is_alive():

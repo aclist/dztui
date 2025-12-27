@@ -505,15 +505,15 @@ class Grid(Gtk.Grid):
             self.breadcrumbs, self.notebook, Gtk.PositionType.TOP, 3, 1
         )
 
-        #from dzgui.views.components.connect_panel import ConnectPanel
-        #self.conpan = ConnectPanel()
-        #self.attach_next_to(
-        #    self.conpan, self.notebook, Gtk.PositionType.BOTTOM, 3, 1
-        #)
+        from dzgui.views.components.connect_panel import ConnectPanel
+        self.conpan = ConnectPanel()
+        self.attach_next_to(
+            self.conpan, self.notebook, Gtk.PositionType.BOTTOM, 3, 1
+        )
 
 
         self.attach_next_to(
-            self.statusbar, self.notebook, Gtk.PositionType.BOTTOM, 3, 1
+            self.statusbar, self.conpan, Gtk.PositionType.BOTTOM, 3, 1
         )
         self.attach_next_to(
             self.right_panel, self.notebook, Gtk.PositionType.RIGHT, 1, 1
