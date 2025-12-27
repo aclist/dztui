@@ -11,7 +11,7 @@ fetch(){
     local file="dzgui.sh"
     local author="aclist"
     local repo="dztui"
-    local branch="fix/malformed-vdf"
+    local branch="dzgui"
     local url
     local res
     gh_url="https://raw.githubusercontent.com/$author/$repo/$branch/$file"
