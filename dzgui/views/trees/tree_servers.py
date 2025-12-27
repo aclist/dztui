@@ -46,6 +46,8 @@ class ServerTreeView(TreeView):
         self.menu = Gtk.Menu()
         self.controller = controller
 
+        self.resizable_cols: list[Gtk.TreeViewColumn] = []
+
         self.set_fixed_height_mode(True)
         self.set_headers_visible(True)
 
@@ -83,6 +85,8 @@ class ServerTreeView(TreeView):
                 if column_title == "Map":
                     column.set_fixed_width(300)
 
+            self.resizable_cols.append(column)
+            column.connect("notify::fixed-width", self._on_col_width_changed)
             self.append_column(column)
 
         self.connect("on_distcalc_started", self._on_calclat_started)
@@ -92,6 +96,28 @@ class ServerTreeView(TreeView):
         self.connect("generic_treesel_changed", self._parent_selection_changed)
 
         GLib.timeout_add(200, self._check_result_queue)
+
+    def _on_col_width_changed(
+        self, col: Gtk.TreeViewColumn, width: GObject.ParamSpecInt
+    ) -> None:
+        title = col.get_title()
+        size = col.get_width()
+
+        prefs = self.controller.get_prefs()
+        columns = prefs.paths.columns
+        try:
+            data = JSON.read_json(columns)
+            data["cols"][title] = size
+        except Exception as e:
+            logger.critical(e)
+            data = {"cols": {title: size}}
+
+        try:
+            JSON.write_json(data, columns)
+        except Exception as e:
+            logger.critical(e)
+
+        #self.controller.update_column_width(title, size)
 
     def terminate_process(self) -> None:
       if self.current_proc and self.current_proc.is_alive():
