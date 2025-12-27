@@ -1,5 +1,10 @@
 # Changelog
 
+## [6.0.0-beta.15] 2025-12-27
+## Fixed
+- Path discovery during first-time setup when parsing filepaths with whitespaces
+- First-time setup dialog continuously triggering when DayZ install path had whitespaces in it
+
 ## [6.0.0-beta.14] 2025-12-09
 ## Fixed
 - Dialogs with newlines breaking output in log table
