@@ -56,6 +56,7 @@ if TYPE_CHECKING:
     from dzgui.views.base import AppNavigation
     from dzgui.const.enum import ContextMenu, RowType
     from dzgui.views.base import OuterWindow
+    from dzgui.views.trees.tree_servers import ServerTreeView
 
 class Controller:
     def __init__(self) -> None:
@@ -580,3 +581,6 @@ class Controller:
             suffix = ""
         self.mediator.statusbar.set_text(formatted + suffix)
         #self.players = formatted
+
+    def update_column_width(self, title: str, width: int) -> None:
+        self.mediator.servers.update_tab_widths(title, width)
