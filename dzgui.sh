@@ -3,7 +3,7 @@ set -o pipefail
 
 src_path=$(realpath "$0")
 
-version=6.0.0.beta-14
+version=6.0.0.beta-15
 
 #CONSTANTS
 aid=221100
@@ -478,7 +478,7 @@ migrate_files(){
 }
 stale_symlinks(){
     local game_dir="$steam_path/steamapps/common/DayZ"
-    for l in $(find "$game_dir" -xtype l); do
+    for l in "$(find "$game_dir" -xtype l)"; do
         logger DEBUG "Updating stale symlink '$l'"
         unlink "$l"
     done
@@ -872,11 +872,25 @@ file_picker(){
 }
 find_library_folder(){
     local search_path="$1"
-    steam_path="$(python3.13 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" \
-        | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')"
-    if [[ ! $? -eq 0 ]] || [[ -z $steam_path ]]; then
+    readarray -t paths < <(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" \
+        | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
+    if [[ ! $? -eq 0 ]]; then
         logger WARN "Failed to parse Steam path using '$search_path'"
         return 1
+    fi
+    if [[ ${#paths[@]} -eq 0 ]]; then
+        logger WARN "No valid VDF paths in '$search_path'"
+        return 1
+    fi
+    if [[ ${#paths[@]} -gt 1 ]]; then
+        for path in "${paths[@]}"; do
+            if [[ -d "$path" ]]; then
+                steam_path="$path"
+                break
+            fi
+        done
+    else
+        steam_path="${paths[0]}"
     fi
     logger INFO "Steam path resolved to: $steam_path"
 }
@@ -960,7 +974,7 @@ varcheck(){
     source "$config_file"
     local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
     local game_dir="$steam_path/steamapps/common/DayZ"
-    if [[ ! -d $steam_path ]] || [[ ! -d $game_dir ]] || [[ ! $(find $game_dir -type f) ]]; then
+    if [[ ! -d $steam_path ]] || [[ ! -d $game_dir ]] || [[ ! $(find "$game_dir" -type f) ]]; then
         logger WARN "DayZ path resolved to '$game_dir'"
         logger WARN "Workshop path resolved to '$workshop_dir'"
         qdialog "$msg2" "Yes" "Exit"
