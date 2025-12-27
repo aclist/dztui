@@ -952,7 +952,7 @@ varcheck(){
     source "$config_file"
     local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
     local game_dir="$steam_path/steamapps/common/DayZ"
-    if [[ ! -d $steam_path ]] || [[ ! -d $game_dir ]] || [[ ! $(find $game_dir -type f) ]]; then
+    if [[ ! -d $steam_path ]] || [[ ! -d $game_dir ]] || [[ ! $(find "$game_dir" -type f) ]]; then
         logger WARN "DayZ path resolved to '$game_dir'"
         logger WARN "Workshop path resolved to '$workshop_dir'"
         qdialog "$msg2" "Yes" "Exit"
