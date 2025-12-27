@@ -851,11 +851,25 @@ file_picker(){
 }
 find_library_folder(){
     local search_path="$1"
-    steam_path="$(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" \
-        | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')"
-    if [[ ! $? -eq 0 ]] || [[ -z $steam_path ]]; then
+    readarray -t paths < <(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" \
+        | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
+    if [[ ! $? -eq 0 ]]; then
         logger WARN "Failed to parse Steam path using '$search_path'"
         return 1
+    fi
+    if [[ ${#paths[@]} -eq 0 ]]; then
+        logger WARN "No valid VDF paths in '$search_path'"
+        return 1
+    fi
+    if [[ ${#paths[@]} -gt 1 ]]; then
+        for path in "${paths[@]}"; do
+            if [[ -d "$path" ]]; then
+                steam_path="$path"
+                break
+            fi
+        done
+    else
+        steam_path="${paths[0]}"
     fi
     logger INFO "Steam path resolved to: $steam_path"
 }
