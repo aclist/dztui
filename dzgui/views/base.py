@@ -35,6 +35,7 @@ from dzgui.util.format import pluralize
 # NOTEBOOK ITEMS
 # TODO: import notebook only and add components there?
 from dzgui.views.pages.changelog import Changelog
+from dzgui.views.pages.devs import Developers
 from dzgui.views.pages.keys import Keybindings
 from dzgui.views.pages.options import Options
 from dzgui.views.pages.servers import ServerNotebook
@@ -326,7 +327,6 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
 
         self.thanks = ScrollableNote(Thanks(), back_button=False)
 
-        from dzgui.views.pages.devs import Developers
         developers = Developers(MainController)
         self.developers = ScrollableNote(developers)
         
