@@ -59,7 +59,6 @@ if TYPE_CHECKING:
 
 class Controller:
     def __init__(self) -> None:
-        self.is_developer: bool
         self.mediator: AppNavigation
         self.prefs: UserPrefs
         self.cooldown = 0
@@ -375,7 +374,6 @@ class Controller:
         msg = format_mods(total_size, total_mods)
         self.mediator.grid.statusbar.set_text(msg)
 
-
     def calc_mod_size(self) -> tuple[int, int]:
         model = self.model_manager.get_mod_store()
         total_mods = len(model)
@@ -387,9 +385,11 @@ class Controller:
 
     def menu_action(self, action: ContextMenu, path: Gtk.TreePath) -> None:
         match action:
-            # NOTE: manipulates server store
+            # NOTE: manipulates server stores
             # TODO: unimplemented
             case ContextMenu.ADD_SERVER:
+                pass
+            case ContextMenu.ADD_FAV:
                 pass
             case ContextMenu.ADD_NOTE:
                 pass
@@ -549,12 +549,6 @@ class Controller:
             h = WINDOW_DEFAULT_Y
             logger.info(f"Using default window size {w},{h}")
             window.set_default_size(w, h)
-
-    def set_developer_mode(self, mode: bool) -> None:
-        self.is_developer = mode
-
-    def get_developer_mode(self) -> bool:
-        return self.is_developer
 
     def update_server_status(self) -> None:
         treeview = self.mediator.notebook.servers.get_active_treeview()

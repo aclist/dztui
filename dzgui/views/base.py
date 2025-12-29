@@ -540,10 +540,9 @@ class Grid(Gtk.Grid):
 
 
 class App(Gtk.Application):
-    def __init__(self, prefs, is_developer) -> None:
+    def __init__(self, prefs) -> None:
         GLib.set_prgname(APP_NAME)
         MainController.set_prefs(prefs)
-        MainController.set_developer_mode(is_developer)
 
         self.win = OuterWindow()
 

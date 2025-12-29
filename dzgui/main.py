@@ -111,10 +111,11 @@ def main() -> None:
     prefs = UserPrefs(
         _is_steam_deck,
         _is_game_mode,
+        args.developers,
         local_coords,
         version,
         allow,
         XDG
     )
     print("All OK. Loading UI...")
-    App(prefs, args.developers)
+    App(prefs)

@@ -167,7 +167,10 @@ class Options(Gtk.Box):
 
         developers=Gtk.Button(label="Developers", halign=Gtk.Align.START)
         developers.connect("clicked", self._on_developers_clicked)
-        if self.controller.get_developer_mode():
+
+        prefs = self.controller.get_prefs()
+        is_developer = prefs.is_developer
+        if is_developer:
             grid.attach(
                 developers, 1, 0, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT
             )
