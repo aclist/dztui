@@ -259,7 +259,7 @@ class AppHeaderBar(Gtk.HeaderBar):
 
 # TODO: deprecated
 class ScrollableNote(ScrollableMixin, Gtk.Box):
-    def __init__(self, content_box: Gtk.Box, back_button=False):
+    def __init__(self, content_box: Gtk.Box, back_button: bool = False):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
         self.scrollable = Gtk.ScrolledWindow()
@@ -330,10 +330,9 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
 
         developers = Developers(MainController)
         self.developers = ScrollableNote(developers)
-        
+
         self.pages = {
             self.help: NotebookPage.HELP,
-            #self.scrollable_treelist: NotebookPage.MAIN,
             self.clog: NotebookPage.CHANGELOG,
             self.keys: NotebookPage.KEYS,
             self.settings: NotebookPage.OPTIONS,
