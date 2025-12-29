@@ -35,6 +35,7 @@ from dzgui.util.format import pluralize
 # NOTEBOOK ITEMS
 # TODO: import notebook only and add components there?
 from dzgui.views.pages.changelog import Changelog
+from dzgui.views.components.connect_panel import ConnectPanel
 from dzgui.views.pages.devs import Developers
 from dzgui.views.pages.keys import Keybindings
 from dzgui.views.pages.options import Options
@@ -458,7 +459,13 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         self.prior_page = self.get_current_page()
         self.set_current_page(self.indexes[enum])
         self.focus_current()
+
         # TODO: should be an internal property of those pages
+        if enum is NotebookPage.SERVERS:
+            AppNav.grid.show_connect_panel()
+        else:
+            AppNav.grid.hide_connect_panel()
+
         blank = [
             NotebookPage.OPTIONS,
             NotebookPage.THANKS,
@@ -505,12 +512,10 @@ class Grid(Gtk.Grid):
             self.breadcrumbs, self.notebook, Gtk.PositionType.TOP, 3, 1
         )
 
-        from dzgui.views.components.connect_panel import ConnectPanel
         self.conpan = ConnectPanel()
         self.attach_next_to(
             self.conpan, self.notebook, Gtk.PositionType.BOTTOM, 3, 1
         )
-
 
         self.attach_next_to(
             self.statusbar, self.conpan, Gtk.PositionType.BOTTOM, 3, 1
@@ -519,6 +524,12 @@ class Grid(Gtk.Grid):
             self.right_panel, self.notebook, Gtk.PositionType.RIGHT, 1, 1
         )
         self.show_all()
+
+    def hide_connect_panel(self) -> None:
+        self.conpan.set_visible(False)
+
+    def show_connect_panel(self) -> None:
+        self.conpan.set_visible(True)
 
     def get_breadcrumbs(self) -> str:
         return self.breadcrumbs.get_text()
