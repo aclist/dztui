@@ -13,10 +13,14 @@ from dzgui.init.prefix import is_prefix_writeable
 def get_latest_release() -> str | None:
     tag = None
     for url in [GITHUB_RELEASES, CODEBERG_RELEASES]:
-        res = requests.get(url, timeout=REQUEST_TIMEOUT)
-        if res.status_code == 200:
-            tag = res.json()["tag_name"]
-            break
+        try:
+            res = requests.get(url, timeout=REQUEST_TIMEOUT)
+            if res.status_code == 200:
+                tag = res.json()["tag_name"]
+                break
+        except Exception as e:
+            # TODO: log exception
+            continue
     return tag
 
 def allow_updates(allow: bool) -> bool:
