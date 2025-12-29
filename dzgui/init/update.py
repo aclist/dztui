@@ -1,3 +1,4 @@
+import logging
 import requests
 import subprocess
 import sys
@@ -9,6 +10,7 @@ from dzgui.const.constants import APP_NAME_LOWER, REQUEST_TIMEOUT
 from dzgui.const.endpoints import GITHUB_RELEASES, CODEBERG_RELEASES
 from dzgui.init.prefix import is_prefix_writeable
 
+logger = logging.getLogger(__name__)
 
 def get_latest_release() -> str | None:
     tag = None
@@ -19,7 +21,7 @@ def get_latest_release() -> str | None:
                 tag = res.json()["tag_name"]
                 break
         except Exception as e:
-            # TODO: log exception
+            logger.critical(e)
             continue
     return tag
 
