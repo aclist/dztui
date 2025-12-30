@@ -190,6 +190,15 @@ class Options(Gtk.Box):
         self.scrollable.add(grid)
         self.add(self.scrollable)
 
+    def block_text_entry(self) -> None:
+        for entry in self.steam_entry, self.bm_entry:
+            entry.set_position(-1)
+            entry.set_can_focus(False)
+
+    def unblock_text_entry(self) -> None:
+        for entry in self.steam_entry, self.bm_entry:
+            entry.set_can_focus(True)
+
     def _on_developers_clicked(self, button: Gtk.Button) -> None:
         self.controller.show_developers_page()
 

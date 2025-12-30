@@ -21,6 +21,7 @@ from dzgui.const.enum import (
     NotebookPage,
     ButtonType,
     ContextMenu,
+    RowType
 )
 
 from dzgui.const.constants import (
@@ -54,11 +55,11 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from dzgui.views.components.buttonbox import ContextualButton
     from dzgui.views.base import AppNavigation
-    from dzgui.const.enum import ContextMenu, RowType
     from dzgui.views.base import OuterWindow
 
 class Controller:
     def __init__(self) -> None:
+        self.crumbs_cache = ""
         self.mediator: AppNavigation
         self.prefs: UserPrefs
         self.cooldown = 0
@@ -72,8 +73,8 @@ class Controller:
         if tip == store:
             self.set_crumbs("Help")
 
-    def set_crumbs(self, crumbs: str) -> None:
-        self.mediator.grid.set_breadcrumbs(crumbs)
+    def set_crumbs(self, text: str) -> None:
+        self.mediator.grid.set_breadcrumbs(text)
 
     def get_crumbs(self) -> str:
         return self.mediator.grid.get_breadcrumbs()
@@ -293,15 +294,16 @@ class Controller:
                 return
             case ButtonType.OPTIONS:
                 self.mediator.grid.notebook.settings.populate_settings()
+                self.mediator.grid.statusbar.refresh(None)
             case ButtonType.MODS:
                 self.load_mods()
             case ButtonType.HELP:
+                self.mediator.grid.statusbar.refresh(RowType.CHANGELOG)
                 pass
             case ButtonType.SERVERS:
                 self.mediator.notebook.set_page_by_enum(button.opens)
-                # TODO: shorten this
-                treeview = self.mediator.notebook.servers.get_active_treeview()
-                treeview.grab_focus()
+                # TODO: use cache
+                self.update_server_status()
                 return
 
         self.mediator.notebook.set_page_by_enum(button.opens)
@@ -588,3 +590,10 @@ class Controller:
 #                    self.suppress_signal(tab, col, "_on_col_width_changed", True)
 #                    col.set_fixed_width(width)
 #                    self.suppress_signal(tab, col, "_on_col_width_changed", False)
+    
+    def set_crumbs_cache(self,text: str) -> None:
+        self.crumbs_cache = text
+
+    def get_crumbs_cache(self) -> None:
+        return self.crumbs_cache
+        self.crumbs_cache = text

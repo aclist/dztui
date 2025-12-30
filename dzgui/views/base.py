@@ -289,7 +289,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         super().__init__(show_tabs=False, show_border=False)
 
         AppNav.notebook = self
-        self.prior_page: int
+        self.prior_page: NotebookPage
 
         from dzgui.views.pages.help import Help
         self.help = Help(MainController)
@@ -394,26 +394,20 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
                 page._set_adjustment(VAdjustment.BOTTOM)
 
     def return_prior(self) -> None:
-        page = self.get_nth_page(self.prior_page)
-        # FIXME: check enum for NotebookPage.OPTIONS
-        # TODO: can be dropped?
-        if hasattr(page, "steam_entry"):
-            """
-            Gtk.Notebook focuses the first input field when changing pages;
-            this workaround unhighlights the selected region and makes entry
-            fields unfocusable prior to the page 'switch-page' signal,
-            then makes them focusable again
+        """
+        Gtk.Notebook focuses the first input field when changing pages;
+        this workaround unhighlights the selected region and makes entry
+        fields unfocusable prior to the page 'switch-page' signal,
+        then makes them focusable again
 
-            Used when switching to keybindings dialog
-            """
-            entries = page.steam_entry, page.bm_entry
-            for entry in entries:
-                entry.set_position(-1)
-                entry.set_can_focus(False)
-            self.set_current_page(self.prior_page)
-            for entry in entries:
-                entry.set_can_focus(True)
-        self.set_current_page(self.prior_page)
+        Used when switching back from NotebookPage.KEYS
+        """
+        if self.prior_page is NotebookPage.OPTIONS:
+            self.settings.block_text_entry()
+            self.set_page_by_enum(self.prior_page)
+            self.settings.unblock_text_entry()
+            return
+        self.set_page_by_enum(self.prior_page)
 
     def get_page_by_enum(self) -> NotebookPage | None:
         for k, v in self.indexes.items():
@@ -426,7 +420,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         if cur_page == NotebookPage.KEYS:
             self.return_prior()
         else:
-            self.prior_page = self.get_current_page()
+            #self.prior_page = cur_page #self.get_current_page()
             self.set_page_by_enum(NotebookPage.KEYS)
 
     def focus_current(self) -> None:
@@ -440,7 +434,6 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
             return
 
         w = widget.get_children()[0]
-        # NOTE: if item contains treeview, focus first cell
         try:
             w.focus_first_row()
             w.grab_focus()
@@ -455,25 +448,24 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         return widget
 
     def set_page_by_enum(self, enum: NotebookPage) -> None:
-        self.prior_page = self.get_current_page()
+        self.prior_page = self.get_page_by_enum()
         self.set_current_page(self.indexes[enum])
         self.focus_current()
 
         # TODO: should be an internal property of those pages
-        if enum is NotebookPage.SERVERS:
-            AppNav.grid.show_connect_panel()
-        else:
-            AppNav.grid.hide_connect_panel()
-
-        blank = [
-            NotebookPage.OPTIONS,
-            NotebookPage.THANKS,
-            NotebookPage.CHANGELOG,
-            NotebookPage.LOG
-        ]
-        if enum in blank:
-            # TODO: delegate to controller
-            AppNav.grid.statusbar.refresh(None)
+        match enum:
+            case NotebookPage.KEYS:
+                MainController.set_statusbar("")
+                AppNav.grid.hide_connect_panel()
+            case NotebookPage.SERVERS:
+                # TODO: consolidate in mc.py
+                AppNav.grid.show_connect_panel()
+                self.servers.get_active_treeview().grab_focus()
+                MainController.update_server_status()
+                crumbs = self.servers.get_cached_label()
+                MainController.set_crumbs(crumbs)
+            case _:
+                AppNav.grid.hide_connect_panel()
 
     def _on_page_changed(
         self, notebook: "Notebook", page: Gtk.Widget, page_num: int
