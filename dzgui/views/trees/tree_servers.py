@@ -133,23 +133,8 @@ class ServerTreeView(TreeView):
         """
         Propagate width change to other tabs
         """
-        # TODO: only update res file on quit
         title = col.get_title()
         size = col.get_width()
-
-        prefs = self.controller.get_prefs()
-        columns = prefs.paths.columns
-        try:
-            data = JSON.read_json(columns)
-            data["cols"][title] = size
-        except Exception as e:
-            logger.critical(e)
-            data = {"cols": {title: size}}
-
-        try:
-            JSON.write_json(data, columns)
-        except Exception as e:
-            logger.critical(e)
 
         # NOTE: get final width after drag action completes
         GLib.idle_add(self.controller.propagate_column_width, col)

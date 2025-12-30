@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any, Callable, TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
+import dzgui.util._json as JSON  # noqa
+
 from dzgui.api.probe import test_steam_api, test_bm_api
 from dzgui.api.mods import (
     get_delimited_mods,
@@ -176,6 +178,26 @@ class Controller:
         self.toggle_config(Preferences.DEBUG)
 
     def save_res_and_quit(self, *args: Any) -> None:
+        treeview = self.mediator.notebook.servers.get_active_treeview()
+        columns = treeview.get_columns()
+
+        columns_file = self.prefs.paths.columns
+        try:
+            data = JSON.read_json(columns_file)
+        except Exception as e:
+            logger.critical(e)
+            data = {"cols": {}}
+
+        for column in columns:
+            title = column.get_title()
+            size = column.get_width()
+            data["cols"][title] = size
+
+        try:
+            JSON.write_json(data, columns_file)
+        except Exception as e:
+            logger.critical(e)
+
         if self.mediator.window.props.is_maximized:
             Gtk.main_quit()
             return
