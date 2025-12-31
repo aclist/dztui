@@ -18,25 +18,18 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-# TODO: most likely very little of this will be retained
-from dzgui.const.enum import (
-    Preferences,
-    Popup,
-    RowType,
-    NotebookPage,
-    VAdjustment,
-)
-from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL
-from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, WINDOW_DEFAULT_X, WINDOW_DEFAULT_Y
+from dzgui.const.enum import NotebookPage, VAdjustment
+from dzgui.const.constants import NO_EXPAND, NO_FILL
+from dzgui.const.constants import APP_NAME, APP_NAME_LOWER
 from dzgui.controllers.mc import Controller
-from dzgui.util import css, dist, localize, strings, ip, deck, open_links
-from dzgui.util.format import pluralize
+from dzgui.util import css, strings
 
 # NOTEBOOK ITEMS
 # TODO: import notebook only and add components there?
 from dzgui.views.pages.changelog import Changelog
 from dzgui.views.components.connect_panel import ConnectPanel
 from dzgui.views.pages.devs import Developers
+from dzgui.views.pages.help import Help
 from dzgui.views.pages.keys import Keybindings
 from dzgui.views.pages.options import Options
 from dzgui.views.pages.servers import ServerNotebook
@@ -61,7 +54,6 @@ import dzgui.util._json as JSON  # noqa
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
-
 
 logger = logging.getLogger(__name__)
 # https://bugzilla.gnome.org/show_bug.cgi?id=708676
@@ -290,8 +282,8 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
 
         AppNav.notebook = self
         self.prior_page: NotebookPage
+        self.prior_status: str
 
-        from dzgui.views.pages.help import Help
         self.help = Help(MainController)
         view = self.help.get_treeview()
         AppNav.menu = view
@@ -408,6 +400,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
             self.settings.unblock_text_entry()
             return
         self.set_page_by_enum(self.prior_page)
+        MainController.set_statusbar(self.prior_status)
 
     def get_page_by_enum(self) -> NotebookPage | None:
         for k, v in self.indexes.items():
@@ -420,7 +413,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         if cur_page == NotebookPage.KEYS:
             self.return_prior()
         else:
-            #self.prior_page = cur_page #self.get_current_page()
+            self.prior_status = MainController.get_statusbar()
             self.set_page_by_enum(NotebookPage.KEYS)
 
     def focus_current(self) -> None:
