@@ -89,10 +89,10 @@ class ModelManager:
         self.filtered = None
         self.success = True
 
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(ModelManager, cls).__new__(cls)
-        return cls.instance
+    #def __new__(cls) -> Self:
+    #    if not hasattr(cls, "instance"):
+    #        cls.instance = super(ModelManager, cls).__new__(cls)
+    #    return cls.instance
 
     def get_recent_store(self) -> ListStore:
         return self.recent_store

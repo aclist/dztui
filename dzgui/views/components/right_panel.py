@@ -6,6 +6,8 @@ from dzgui.const.enum import Preferences
 from dzgui.views.components.buttonbox import ButtonBox
 from dzgui.views.components.filter_panel import FilterPanel
 from dzgui.views.components.icon import Icon
+from dzgui.views.components.web_button import RefreshButton
+# TODO: rename web_button
 from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL, INPUT_KEYBOARD
 from dzgui.util import strings
 
@@ -25,6 +27,7 @@ class RightPanel(Gtk.Box):
             padding = 0
             self.pack_start(el, NO_EXPAND, NO_FILL, padding)
 
+        # TODO: more custom button classes
         self.ping = Gtk.Button(
             label=strings.ping_servers,
             margin_top=10,
@@ -43,10 +46,18 @@ class RightPanel(Gtk.Box):
             tooltip_text=strings.debug_tooltip,
         )
 
+        # TODO: icon
+        self.refresh_button = RefreshButton("Refresh")
+        self.refresh_button.set_margin_top(10)
+        self.refresh_button.set_margin_start(80)
+        self.refresh_button.set_margin_end(80)
+        self.refresh_button.connect("clicked", self._on_refresh_clicked)
+
         if controller.query_config(Preferences.DEBUG) == True:
             self.debug_toggle.set_active(True)
         self.debug_toggle.connect("toggled", self._on_debug_toggled)
 
+        # TODO: make button class
         i = Icon(INPUT_KEYBOARD)
         i.set_margin_start(5)
         self.question = Gtk.Button(
@@ -59,7 +70,7 @@ class RightPanel(Gtk.Box):
         self.question.set_image_position(Gtk.PositionType.RIGHT)
         self.question.connect("clicked", self._on_question_clicked)
 
-        for el in self.ping, self.debug_toggle, self.question:
+        for el in self.ping, self.debug_toggle, self.question, self.refresh_button:
             padding = 0
             self.pack_start(el, NO_EXPAND, FILL, padding)
 
@@ -84,6 +95,10 @@ class RightPanel(Gtk.Box):
         state = button.get_active()
         grid = self.AppNav.grid
         self.controller.toggle_debug_mode()
+
+    def _on_refresh_clicked(self, button: RefreshButton) -> None:
+        print("button clicked")
+        self.controller.refresh_tree()
 
     def _on_ping_clicked(self, button: Gtk.Button) -> None:
         # TODO

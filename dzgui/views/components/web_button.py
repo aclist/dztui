@@ -1,5 +1,5 @@
 from dzgui.views.components.icon import Icon
-from dzgui.const.constants import WEB_BROWSER
+from dzgui.const.constants import REFRESH_ICON, WEB_BROWSER
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -25,5 +25,10 @@ class IconTextButton(IconButton):
 class WebButton(IconTextButton):
     def __init__(self, label: str):
         super().__init__(icon=WEB_BROWSER, label=label)
+        pass
 
+
+class RefreshButton(IconTextButton):
+    def __init__(self, label: str):
+        super().__init__(icon=REFRESH_ICON, label=label)
         pass

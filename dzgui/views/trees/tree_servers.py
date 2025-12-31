@@ -43,6 +43,9 @@ class ServerTreeView(TreeView):
     def __init__(self, controller: "Controller") -> None:
         super().__init__(controller)
 
+        self.loaded = False
+        self.query_func: Callable = None
+
         self.menu = Gtk.Menu()
         self.menu.connect("key-press-event", self._on_key)
         self.controller = controller
@@ -126,6 +129,12 @@ class ServerTreeView(TreeView):
             case _:
                 return False
         return True
+
+    def set_query_func(self, func: Callable) -> None:
+        self.query_func = func
+
+    def get_query_func(self) -> Callable | None:
+        return self.query_func
 
     def _on_col_width_changed(
         self, col: Gtk.TreeViewColumn, width: GObject.ParamSpecInt
@@ -304,3 +313,10 @@ class ServerTreeView(TreeView):
         ip = addr.split(":")[0]
         gameport = int(addr.split(":")[1])
         return Record(ip, gameport, qport)
+
+    def get_loaded(self) -> bool:
+        return self.loaded
+
+    def set_loaded(self, status: bool) -> None:
+        self.loaded = status
+
