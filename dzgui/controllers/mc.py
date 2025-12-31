@@ -68,13 +68,6 @@ class Controller:
 
         self.model_manager = ModelManager()
 
-    def set_help_menu_crumbs(self) -> None:
-        # TODO: going to be deprecated after server notebook is added
-        tip = self.mediator.menu.get_model()[0][0]
-        store = self.model_manager.get_help_store()[0][0]
-        if tip == store:
-            self.set_crumbs("Help")
-
     def set_crumbs(self, text: str) -> None:
         self.mediator.grid.set_breadcrumbs(text)
 
