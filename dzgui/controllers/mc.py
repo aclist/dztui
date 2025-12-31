@@ -255,8 +255,8 @@ class Controller:
             return
 
     # NOTE: disabled for now
-    def present_toast(self, text: str) -> None:
-        self.mediator.window.toast.set_text_and_fade(text)
+    #def present_toast(self, text: str) -> None:
+    #    self.mediator.window.toast.set_text_and_fade(text)
 
     def start_cooldown(self) -> None:
         self.cooldown = cooldown.get_time()
@@ -581,12 +581,11 @@ class Controller:
     def propagate_column_width(self, col: Gtk.TreeViewColumn) -> None:
         GLib.idle_add(self.mediator.servers.update_tab_widths, col)
 
-    def set_crumbs_cache(self,text: str) -> None:
+    def set_crumbs_cache(self, text: str) -> None:
         self.crumbs_cache = text
 
-    def get_crumbs_cache(self) -> None:
+    def get_crumbs_cache(self) -> str:
         return self.crumbs_cache
-        self.crumbs_cache = text
 
     def refresh_tree(self) -> None:
         treeview = self.mediator.notebook.servers.get_active_treeview()

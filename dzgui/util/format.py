@@ -48,7 +48,7 @@ def format_mods(size: int, mods: int) -> str:
     return f"Found {mods:n} {plural} taking up {l_size} MiB"
 
 
-def format_player_count(model: Gtk.ListStore | None) -> str:
+def format_player_count(model: Gtk.TreeModel | None) -> str:
     players = 0
     hits: int
     status: str

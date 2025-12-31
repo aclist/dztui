@@ -17,6 +17,7 @@ import warnings
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING, Literal
 
 from dzgui.const.enum import NotebookPage, VAdjustment
 from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
@@ -51,6 +52,9 @@ from dzgui.views.trees.tree_servers import ServerTreeView
 
 # TODO: not going to be in base anymore
 import dzgui.util._json as JSON  # noqa
+
+if TYPE_CHECKING:
+    from dzgui.config.userprefs import UserPrefs
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -202,13 +206,12 @@ class OuterWindow(Gtk.Window):
         MainController.set_mediator(AppNav)
         AppNav.window = self
 
-        # steam deck taskbar may occlude elements
+        # NOTE: steam deck taskbar may occlude elements
         if MainController.get_prefs().is_steam_deck is False:
             self.set_titlebar(self.hb)
 
         self.connect("delete-event", self._on_delete_event)
         self.connect("key-press-event", self._on_keypress)
-
 
         self.grid = Grid()
         self.add(self.grid)
@@ -217,12 +220,15 @@ class OuterWindow(Gtk.Window):
         self.show_all()
 
         self.grid.sel_panel.set_visible(False)
+
         # TODO:
         #self.grid.right_panel.enable_ping_button(False)
 
         css.load_css()
+        # TODO: call controller directly
         AppNav.grid.notebook.set_page_by_enum(NotebookPage.SERVERS)
 
+    # TODO: deprecated
     def _on_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
         if event.state is Gdk.ModifierType.CONTROL_MASK \
                 and event.keyval is Gdk.KEY_d:
@@ -391,7 +397,8 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         fields unfocusable prior to the page 'switch-page' signal,
         then makes them focusable again
 
-        Used when switching back from NotebookPage.KEYS
+        Used when switching back from NotebookPage.KEYS to avoid cursor
+        getting stuck inside text entry fields
         """
         if self.prior_page is NotebookPage.OPTIONS:
             self.settings.block_text_entry()
@@ -532,7 +539,7 @@ class Grid(Gtk.Grid):
 
 
 class App(Gtk.Application):
-    def __init__(self, prefs) -> None:
+    def __init__(self, prefs: "UserPrefs") -> None:
         GLib.set_prgname(APP_NAME)
         MainController.set_prefs(prefs)
 
@@ -552,8 +559,9 @@ class App(Gtk.Application):
         )
         Gtk.main()
 
-    def _catch_sigint(self) -> None:
+    def _catch_sigint(self) -> Literal[True]:
         self.win.halt_proc_and_quit()
+        return True
 
     def _halt_window_subprocess(
         self,
