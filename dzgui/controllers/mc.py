@@ -606,3 +606,4 @@ class Controller:
                 model.append(data)
             treeview.set_loaded(True)
             self.update_server_status()
+        treeview.grab_focus()

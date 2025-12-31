@@ -97,7 +97,6 @@ class RightPanel(Gtk.Box):
         self.controller.toggle_debug_mode()
 
     def _on_refresh_clicked(self, button: RefreshButton) -> None:
-        print("button clicked")
         self.controller.refresh_tree()
 
     def _on_ping_clicked(self, button: Gtk.Button) -> None:
