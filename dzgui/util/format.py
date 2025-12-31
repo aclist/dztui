@@ -63,3 +63,7 @@ def format_player_count(model: Gtk.ListStore | None) -> str:
     suffix = distance_suffix
     status = f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
     return f"{status} | {suffix}"
+
+
+def embolden(text: str) -> str:
+    return f"<b>{text}</b>"

@@ -2,8 +2,9 @@ from dataclasses import fields
 from typing import Union, TYPE_CHECKING
 
 from dzgui.const.enum import NotebookPage
-from dzgui.util.strings import developers
 from dzgui.util.css import add_class
+from dzgui.util.format import embolden
+from dzgui.util.strings import developers
 
 import gi  # noqa E402
 gi.require_version("Gtk", "3.0")
@@ -35,10 +36,12 @@ class Developers(Gtk.Box):
         back_button = Gtk.Button(label="Back", halign=Gtk.Align.START)
         back_button.connect("clicked", self._on_back_clicked)
         paths_label = Gtk.Label()
-        paths_label.set_markup(f"<b>{developers.paths_label}</b>")
+        text = embolden(developers.paths_label)
+        paths_label.set_markup(text)
 
         prefs_label = Gtk.Label()
-        prefs_label.set_markup(f"<b>{developers.prefs_label}</b>")
+        text = embolden(developers.prefs_label)
+        prefs_label.set_markup(text)
 
         paths_tree = self._make_tree(self.controller.prefs.paths)
         prefs_tree = self._make_tree(self.controller.prefs)
@@ -64,7 +67,8 @@ class Developers(Gtk.Box):
         self.controller.open_page(NotebookPage.OPTIONS)
 
     def _make_tree(self, prefs: Union["Xdg", "UserPrefs"]) -> Gtk.TreeView:
-        view = Gtk.TreeView()
+        from dzgui.views.trees.tree_base import TreeView
+        view = TreeView(self.controller)
         renderer = Gtk.CellRendererText()
         for i, col in enumerate(developers.columns):
             column = Gtk.TreeViewColumn(col, renderer, text=i)

@@ -23,6 +23,7 @@ from dzgui.const.constants import NO_EXPAND, NO_FILL
 from dzgui.const.constants import APP_NAME, APP_NAME_LOWER
 from dzgui.controllers.mc import Controller
 from dzgui.util import css, strings
+from dzgui.util.format import embolden
 
 # NOTEBOOK ITEMS
 # TODO: import notebook only and add components there?
@@ -519,8 +520,8 @@ class Grid(Gtk.Grid):
         return self.breadcrumbs.get_text()
 
     def set_breadcrumbs(self, text: str) -> None:
-        # TODO: embolden func
-        self.breadcrumbs.set_markup(f"<b>{text}</b>")
+        crumbs = embolden(text)
+        self.breadcrumbs.set_markup(crumbs)
 
 
 class App(Gtk.Application):

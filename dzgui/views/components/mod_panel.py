@@ -2,7 +2,8 @@ from typing import TYPE_CHECKING
 
 from dzgui.const.enum import ModButton
 from dzgui.const.constants import NO_EXPAND, FILL
-from dzgui.util import strings
+from dzgui.util.strings import mod_panel
+from dzgui.util.format import embolden
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -34,7 +35,8 @@ class ModSelectionPanel(Gtk.Box):
         )
 
         self.header = Gtk.Label()
-        self.header.set_markup(f"<b>{strings.mod_panel.header}</b>")
+        text = embolden(mod_panel.header)
+        self.header.set_markup(text)
 
         self.main_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         for button in buttons:

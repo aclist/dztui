@@ -1,3 +1,4 @@
+from dzgui.util.format import embolden
 from dzgui.views.components.web_button import WebButton
 
 import gi
@@ -12,10 +13,9 @@ class ConnectPanel(Gtk.Frame):
         self.label = Gtk.Label(label="Add/connect")
         self.label2 = Gtk.Label(label="Favorite server")
 
-        # TODO: embold function
-        #self.label2.set_markup("<b>Favorite server</b>")
-
-        self.label2.set_markup("<b>Favorite server</b>")
+        # TODO: strings
+        text = embolden("Favorite server")
+        self.label2.set_markup(text)
         self.entry1 = Gtk.Entry(placeholder_text="Enter IP or Battlemetrics ID", hexpand=False)
         self.entry2 = Gtk.Entry()
         self.fav = Gtk.Label(label="MY favorite server very long title")
