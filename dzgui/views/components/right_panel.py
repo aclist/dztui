@@ -8,7 +8,7 @@ from dzgui.views.components.filter_panel import FilterPanel
 from dzgui.views.components.icon import Icon
 from dzgui.views.components.web_button import RefreshButton
 # TODO: rename web_button
-from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL, INPUT_KEYBOARD
+from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL, INPUT_KEYBOARD, NO_PADDING
 from dzgui.util import strings
 
 # TODO: refactor depends on ServerTreeView
@@ -22,10 +22,6 @@ class RightPanel(Gtk.Box):
 
         self.button_vbox = ButtonBox(controller)
         self.filters_vbox = FilterPanel(appnav, controller)
-
-        for el in self.button_vbox, self.filters_vbox:
-            padding = 0
-            self.pack_start(el, NO_EXPAND, NO_FILL, padding)
 
         # TODO: more custom button classes
         self.ping = Gtk.Button(
@@ -70,9 +66,8 @@ class RightPanel(Gtk.Box):
         self.question.set_image_position(Gtk.PositionType.RIGHT)
         self.question.connect("clicked", self._on_question_clicked)
 
-        for el in self.ping, self.debug_toggle, self.question, self.refresh_button:
-            padding = 0
-            self.pack_start(el, NO_EXPAND, FILL, padding)
+        for el in self.button_vbox, self.question, self.filters_vbox, self.refresh_button:
+            self.pack_start(el, NO_EXPAND, FILL, NO_PADDING)
 
     def enable_ping_button(self, state: bool) -> None:
         self.ping.set_visible(state)

@@ -2,6 +2,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
+from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
 from dzgui.const.enum import Popup
 
 class EntryDialog(GenericDialog):
@@ -24,14 +25,14 @@ class EntryDialog(GenericDialog):
         self.user_entry.set_margin_top(0)
         self.user_entry.set_size_request(250, 0)
         self.user_entry.set_activates_default(True)
-        self.dialogBox.pack_start(self.user_entry, NO_EXPAND, NO_FILL, 0)
+        self.dialogBox.pack_start(self.user_entry, NO_EXPAND, NO_FILL, NO_PADDING)
 
         if link:
             button = Gtk.Button(label=link)
             button.set_margin_start(60)
             button.set_margin_end(60)
             button.connect("clicked", self._on_button_clicked, button_type)
-            self.dialogBox.pack_end(button, NO_EXPAND, NO_FILL, 0)
+            self.dialogBox.pack_end(button, NO_EXPAND, NO_FILL, NO_PADDING)
 
         self.ok = self.dialog.action_area.get_children()[1]
         self.ok.set_sensitive(False)

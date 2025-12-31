@@ -23,6 +23,7 @@ from dzgui.const.constants import (
     FLATPAK_SANDBOX,
     NO_EXPAND,
     NO_FILL,
+    NO_PADDING,
     STEAM_CMD,
     VIEW_CONCEAL,
     VIEW_REVEAL,
@@ -91,7 +92,7 @@ class Options(Gtk.Box):
         self.client_combo.set_active(0)
         self.client_combo.connect("changed", self._on_client_changed)
         hbox = Gtk.Box(spacing=5, halign=Gtk.Align.START)
-        hbox.pack_start(self.client_combo, NO_EXPAND, NO_FILL, 0)
+        hbox.pack_start(self.client_combo, NO_EXPAND, NO_FILL, NO_PADDING)
 
         self.distance_toggle = self.make_binary_radio(
             strings.options.km, strings.options.mi, Preferences.DIST
@@ -402,8 +403,8 @@ class Options(Gtk.Box):
         radio2 = Gtk.RadioButton.new_from_widget(radio1)
         radio2.set_label(second_option)
         radio1.connect("toggled", self._on_radio_toggled, context)
-        hbox.pack_start(radio1, NO_EXPAND, NO_FILL, 0)
-        hbox.pack_start(radio2, NO_EXPAND, NO_FILL, 0)
+        hbox.pack_start(radio1, NO_EXPAND, NO_FILL, NO_PADDING)
+        hbox.pack_start(radio2, NO_EXPAND, NO_FILL, NO_PADDING)
 
         return hbox
 

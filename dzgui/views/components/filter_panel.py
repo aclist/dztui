@@ -8,13 +8,13 @@ from typing import Literal
 from dzgui.util import strings
 from dzgui.util.margins import set_surrounding_margins
 from dzgui.const.enum import FilterMode
-from dzgui.const.constants import NO_EXPAND, NO_FILL
+from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
 
 logger = logging.getLogger(__name__)
 
 class FilterPanel(Gtk.Box):
     def __init__(self, appnav, controller):
-        super().__init__(spacing=6)
+        super().__init__(spacing=6, vexpand=False)
 
         # TODO: set strings in constants
         self.default_filters = {
@@ -71,6 +71,8 @@ class FilterPanel(Gtk.Box):
         set_surrounding_margins(self, 10)
         self.set_margin_top(1)
 
+        # TODO: strings
+        # TODO: embolden
         self.filters_label = Gtk.Label(label="Filters")
 
         self.keyword_entry = Gtk.Entry()
@@ -96,15 +98,16 @@ class FilterPanel(Gtk.Box):
         self.maps_entry.connect("key-press-event", self._on_map_entry_keypress)
 
         # FIXME: only giving two params to pack_start
+        # cf. EXPAND
         self.maps_combo.pack_start(renderer_text, True)
         self.maps_combo.connect("changed", self._on_map_changed)
         self.maps_combo.connect("key-press-event", self._on_combo_keypress)
 
-        self.pack_start(self.filters_label, NO_EXPAND, NO_FILL, 0)
-        self.pack_start(self.keyword_entry, NO_EXPAND, NO_FILL, 0)
-        self.pack_start(self.maps_combo, NO_EXPAND, NO_FILL, 0)
-
-        self.pack_start(button_grid, NO_EXPAND, NO_FILL, 0)
+        # TODO: consolidate
+        self.pack_start(self.filters_label, NO_EXPAND, NO_FILL, NO_PADDING)
+        self.pack_start(self.keyword_entry, NO_EXPAND, NO_FILL, NO_PADDING)
+        self.pack_start(self.maps_combo, NO_EXPAND, NO_FILL, NO_PADDING)
+        self.pack_start(button_grid, NO_EXPAND, NO_FILL, NO_PADDING)
 
     def set_unique_maps(self, maps: list) -> None:
         if len(maps) < 1:

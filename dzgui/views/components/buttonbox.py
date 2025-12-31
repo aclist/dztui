@@ -1,7 +1,7 @@
 import logging
 
 from dzgui.const.enum import ButtonType
-from dzgui.const.constants import NO_EXPAND, NO_FILL
+from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -20,7 +20,7 @@ class ContextualButton(Gtk.Button):
         self.opens = opens
 
 class ButtonBox(Gtk.Box):
-    def __init__(self, controller):
+    def __init__(self, controller) -> None:
         super().__init__(
             spacing=6,
             margin_top=0,
@@ -43,24 +43,17 @@ class ButtonBox(Gtk.Box):
                 )
 
             # FIXME: if debug log fails to load, still opens table
-
             size = (10, 10) if prefs.is_steam_deck else (50, 50)
             x, y = size
             button.set_size_request(x, y)
 
             self.buttons.append(button)
             button.connect("clicked", self._on_selection_button_clicked)
-            self.pack_start(button, NO_EXPAND, NO_FILL, 0)
+            self.pack_start(button, NO_EXPAND, NO_FILL, NO_PADDING)
 
 
     def _on_selection_button_clicked(self, button: Gtk.Button) -> None:
-    #    # TODO: maybe drop this and just ensure buttons respond correctly
         self.controller.open_page_by_button(button)
-    #    if button.context != ButtonType.HELP:
-    #        button.set_sensitive(False)
-    #    for b in self.buttons:
-    #        if b != button:
-    #            b.set_sensitive(True)
 
     def _walk_buttons(self, increment: int) -> None:
         for i, button in enumerate(self.buttons):

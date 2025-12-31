@@ -19,7 +19,7 @@ from enum import Enum
 from pathlib import Path
 
 from dzgui.const.enum import NotebookPage, VAdjustment
-from dzgui.const.constants import NO_EXPAND, NO_FILL
+from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
 from dzgui.const.constants import APP_NAME, APP_NAME_LOWER
 from dzgui.controllers.mc import Controller
 from dzgui.util import css, strings
@@ -209,16 +209,16 @@ class OuterWindow(Gtk.Window):
         self.connect("delete-event", self._on_delete_event)
         self.connect("key-press-event", self._on_keypress)
 
-        MainController.set_resolution(self)
 
         self.grid = Grid()
         self.add(self.grid)
 
+        MainController.set_resolution(self)
         self.show_all()
 
-        self.grid.right_panel.filters_vbox.set_visible(False)
-        self.grid.right_panel.enable_ping_button(False)
         self.grid.sel_panel.set_visible(False)
+        # TODO:
+        #self.grid.right_panel.enable_ping_button(False)
 
         css.load_css()
         AppNav.grid.notebook.set_page_by_enum(NotebookPage.SERVERS)
@@ -279,7 +279,7 @@ class ScrollableNote(ScrollableMixin, Gtk.Box):
 
 class Notebook(ScrollableMixin, Gtk.Notebook):
     def __init__(self) -> None:
-        super().__init__(show_tabs=False, show_border=False)
+        super().__init__(show_tabs=False)
 
         AppNav.notebook = self
         self.prior_page: NotebookPage
@@ -298,14 +298,12 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         self.settings = Options(MainController)
 
         # TODO: make all treeviews internally scrollable in base class
-        # server and quad tables should have hexpand property set to True
+        # NOTE: server and quad tables should have hexpand property set to True
         # add all treeviews as page and register them to AppNav and self.indexes
         # when switching to a treeview, update relevant view and just pop that page
         # instead of loading/unloading the model each time
         self.servers = ServerNotebook(MainController)
         AppNav.servers = self.servers
-
-        self.quad = Gtk.ScrolledWindow()
 
         self.scroll_mod = Gtk.ScrolledWindow()
         # TODO: register this table
@@ -454,12 +452,14 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
             case NotebookPage.SERVERS:
                 # TODO: consolidate in mc.py
                 AppNav.grid.show_connect_panel()
+                AppNav.grid.show_filter_panel()
                 self.servers.get_active_treeview().grab_focus()
                 MainController.update_server_status()
                 crumbs = self.servers.get_cached_label()
                 MainController.set_crumbs(crumbs)
             case _:
                 AppNav.grid.hide_connect_panel()
+                AppNav.grid.hide_filter_panel()
 
     def _on_page_changed(
         self, notebook: "Notebook", page: Gtk.Widget, page_num: int
@@ -475,8 +475,12 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
 
 class Grid(Gtk.Grid):
     def __init__(self) -> None:
-        super().__init__()
-        self.set_column_homogeneous(True)
+        super().__init__(column_homogeneous=True)
+
+        MAX_ROWS = 3
+        MAX_COLS = 3
+        SINGLE_ROW = 1
+        SINGLE_COL = 1
 
         self.statusbar = Statusbar(MainController)
         self.breadcrumbs = Gtk.Label(halign=Gtk.Align.START)
@@ -487,28 +491,31 @@ class Grid(Gtk.Grid):
 
         # FIXME: do not pass AppNav to right panel
         self.right_panel = RightPanel(AppNav, MainController)
+        # TODO: move into right panel
         self.sel_panel = ModSelectionPanel(MainController)
-        self.right_panel.pack_start(self.sel_panel, NO_EXPAND, NO_FILL, 0)
+        self.right_panel.pack_start(self.sel_panel, NO_EXPAND, NO_FILL, NO_PADDING)
 
         self.notebook = Notebook()
-
-        self.attach(self.notebook, 0, 0, 3, 1)
-        self.attach_next_to(
-            self.breadcrumbs, self.notebook, Gtk.PositionType.TOP, 3, 1
-        )
-
         self.conpan = ConnectPanel()
-        self.attach_next_to(
-            self.conpan, self.notebook, Gtk.PositionType.BOTTOM, 3, 1
-        )
 
-        self.attach_next_to(
-            self.statusbar, self.conpan, Gtk.PositionType.BOTTOM, 3, 1
+        self.attach(self.notebook, 0, 0, MAX_COLS, 1)
+
+        els = (
+            (self.breadcrumbs, self.notebook, Gtk.PositionType.TOP, MAX_COLS, SINGLE_ROW),
+            (self.conpan, self.notebook, Gtk.PositionType.BOTTOM, MAX_COLS, SINGLE_ROW),
+            (self.statusbar, self.conpan, Gtk.PositionType.BOTTOM, MAX_COLS, SINGLE_ROW),
+            (self.right_panel, self.notebook, Gtk.PositionType.RIGHT, SINGLE_COL, MAX_ROWS),
         )
-        self.attach_next_to(
-            self.right_panel, self.notebook, Gtk.PositionType.RIGHT, 1, 1
-        )
+        for el, sibling, pos, h_span, v_span in els:
+            self.attach_next_to(el, sibling, pos, h_span, v_span)
+
         self.show_all()
+
+    def hide_filter_panel(self) -> None:
+        self.right_panel.filters_vbox.set_visible(False)
+
+    def show_filter_panel(self) -> None:
+        self.right_panel.filters_vbox.set_visible(True)
 
     def hide_connect_panel(self) -> None:
         self.conpan.set_visible(False)
@@ -539,11 +546,6 @@ class App(Gtk.Application):
             self._halt_window_subprocess,
         )
         self.win.add_accel_group(accel)
-
-        # FIXME: hacky
-        AppNav.notebook.servers.notebook.next_page()
-        AppNav.notebook.servers.notebook.prev_page()
-        MainController.focus_notebook()
 
         GLib.unix_signal_add(
             GLib.PRIORITY_DEFAULT, signal.SIGINT, self._catch_sigint

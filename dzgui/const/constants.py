@@ -39,6 +39,7 @@ WEB_BROWSER = "web-browser-symbolic"
 
 SEPARATOR = "SEPARATOR"
 
+NO_PADDING = 0
 NO_EXPAND = False
 NO_FILL = False
 EXPAND = True

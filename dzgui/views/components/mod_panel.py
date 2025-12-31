@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from dzgui.const.enum import ModButton
-from dzgui.const.constants import NO_EXPAND, FILL
+from dzgui.const.constants import NO_EXPAND, FILL, NO_PADDING
 from dzgui.util.strings import mod_panel
 from dzgui.util.format import embolden
 
@@ -42,18 +42,18 @@ class ModSelectionPanel(Gtk.Box):
         for button in buttons:
             b = EnumeratedModButton(button)
             b.connect("clicked", self._on_button_clicked)
-            self.main_panel.pack_start(b, NO_EXPAND, FILL, 0)
+            self.main_panel.pack_start(b, NO_EXPAND, FILL, NO_PADDING)
 
         self.extra_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         for button in (ModButton.SELECT_STALE, ModButton.UNHIGHLIGHT_STALE):
             b = EnumeratedModButton(button)
             b.connect("clicked", self._on_button_clicked)
             b.set_sensitive(False)
-            self.extra_panel.pack_start(b, NO_EXPAND, FILL, 0)
+            self.extra_panel.pack_start(b, NO_EXPAND, FILL, NO_PADDING)
 
-        self.pack_start(self.header, NO_EXPAND, FILL, 0)
-        self.pack_start(self.main_panel, NO_EXPAND, FILL, 0)
-        self.pack_start(self.extra_panel, NO_EXPAND, FILL, 0)
+        self.pack_start(self.header, NO_EXPAND, FILL, NO_PADDING)
+        self.pack_start(self.main_panel, NO_EXPAND, FILL, NO_PADDING)
+        self.pack_start(self.extra_panel, NO_EXPAND, FILL, NO_PADDING)
 
     def after_colorize(self) -> None:
         self.controller.unselect_all_mods()

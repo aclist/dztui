@@ -4,6 +4,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
+from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
 from dzgui.util.import strings
 
 class LanDialog(Gtk.MessageDialog):
@@ -55,7 +56,7 @@ class LanDialog(Gtk.MessageDialog):
         self.button_box.add(self.warn_label)
 
         content = self.get_content_area()
-        content.pack_start(self.button_box, NO_EXPAND, NO_FILL, 0)
+        content.pack_start(self.button_box, NO_EXPAND, NO_FILL, NO_PADDING)
         content.set_margin_start(30)
         content.set_margin_end(30)
         content.show_all()
