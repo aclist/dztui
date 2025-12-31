@@ -451,6 +451,7 @@ crumbs = Crumbs(
 
 checkmark = "✓"
 no_mods = "No local mods found."
+no_servers = "No server metadata to list."
 
 @dataclass(slots=True, frozen=True)
 class Flags:
@@ -506,3 +507,5 @@ server_labels = ServerLabels(
     recent="Recent",
     lan="LAN",
 )
+
+distance_suffix = "Distance: calculating..."
