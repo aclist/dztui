@@ -42,7 +42,7 @@ from dzgui.util.diag import write_diagnostic
 from dzgui.util import cooldown, strings
 from dzgui.util._json import read_json, write_json
 from dzgui.util.open_links import open_workshop_page
-from dzgui.util.format import format_mods, pluralize
+from dzgui.util.format import format_mods, format_player_count, pluralize
 from dzgui.util.redact import redact_log
 
 from dzgui.views.dialogs.filepicker import FilePicker
@@ -171,7 +171,7 @@ class Controller:
             widget.handler_block_by_func(func)
         else:
             widget.handler_unblock_by_func(func)
-        # TODO
+        # TODO: deprecated?
         #self.mediator.menu.sel_blocked = state
 
     def toggle_debug_mode(self) -> None:
@@ -213,13 +213,16 @@ class Controller:
 
         Gtk.main_quit()
 
+    def get_statusbar(self) -> str:
+        return self.mediator.grid.statusbar.get_text()
+
     def set_statusbar(self, text: str) -> None:
         self.mediator.grid.statusbar.set_text(text)
 
     def delete_multiple_mods(self) -> None:
         sel = self.mediator.modtreeview.get_selection()
         model, pathlist = sel.get_selected_rows()
-        # NOTE: reverse when multiple
+        # NOTE: reverse when multiple selection
         for path in reversed(pathlist):
             self.delete_single_mod(path)
 
@@ -254,7 +257,7 @@ class Controller:
             logger.critical(e)
             self.spawn_dialog(strings.something_wrong, Popup.NOTIFY)
             # TODO: suppress signals
-            # then reenable (or it spawns twice)
+            # then reenable (or it spawns dialog twice)
             self.mediator.grid.notebook.settings.populate_settings()
             return
 
@@ -309,6 +312,7 @@ class Controller:
         self.mediator.grid.notebook.set_page_by_enum(page)
 
     def open_page_by_button(self, button: "ContextualButton") -> None:
+        # TODO: consolidate methods with set_page_by_enum
         match button.context:
             case ButtonType.EXIT:
                 logger.info("Normal user exit")
@@ -316,7 +320,7 @@ class Controller:
                 return
             case ButtonType.OPTIONS:
                 self.mediator.grid.notebook.settings.populate_settings()
-                self.mediator.grid.statusbar.refresh(None)
+                self.set_statusbar("")
             case ButtonType.MODS:
                 self.load_mods()
             case ButtonType.HELP:
@@ -577,42 +581,12 @@ class Controller:
     def update_server_status(self) -> None:
         treeview = self.mediator.notebook.servers.get_active_treeview()
         model = treeview.get_model()
-        if model is None:
-            players = 0
-            hits = 0
-        else:
-            hits = len(model)
-            players = 0
-            for row in model:
-                players += row[4]
-        # TODO: move to util.format
-        players_pretty = pluralize("players", players)
-        hits_pretty = pluralize("matches", hits)
-        formatted = (
-            f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
-        )
-        suffix = " | Distance: calculating..."
-
-        if players == 0:
-            suffix = ""
-        self.mediator.statusbar.set_text(formatted + suffix)
-        #self.players = formatted
+        status = format_player_count(model)
+        self.mediator.statusbar.set_text(status)
 
     def propagate_column_width(self, col: Gtk.TreeViewColumn) -> None:
         GLib.idle_add(self.mediator.servers.update_tab_widths, col)
-#        tabs = self.mediator.servers.get_tabs()
-#        tree = self.mediator.servers.get_active_treeview()
-#        width = col.get_width()
-#        title = col.get_title()
-#        for tab in tabs:
-#            if tab == tree:
-#                continue
-#            for col in tab.get_columns():
-#                if col.get_title() == title:
-#                    self.suppress_signal(tab, col, "_on_col_width_changed", True)
-#                    col.set_fixed_width(width)
-#                    self.suppress_signal(tab, col, "_on_col_width_changed", False)
-    
+
     def set_crumbs_cache(self,text: str) -> None:
         self.crumbs_cache = text
 
