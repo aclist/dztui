@@ -34,6 +34,7 @@ class RightPanel(Gtk.Box):
         )
         self.ping.connect("clicked", self._on_ping_clicked)
 
+        # TODO: drop after adding context menu row
         self.debug_toggle = Gtk.ToggleButton(
             label=strings.debug_mode,
             margin_top=10,
