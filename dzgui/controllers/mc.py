@@ -41,7 +41,7 @@ from dzgui.controllers.model import ModelManager
 from dzgui.util.diag import write_diagnostic
 from dzgui.util import cooldown, strings
 from dzgui.util._json import read_json, write_json
-from dzgui.util.open_links import open_workshop_page
+from dzgui.util.open_links import open_workshop_page, open_user_workshop
 from dzgui.util.format import format_mods, format_player_count, pluralize
 from dzgui.util.redact import redact_log
 
@@ -368,7 +368,7 @@ class Controller:
     def open_user_workshop(self, uid: str) -> None:
         # NOTE: uid may contain leading zeroes, not a real integer
         client = self.query_config(Preferences.CLIENT)
-        open_workshop_page(uid, client)
+        open_user_workshop(uid, client)
 
     def copy_log(self, paths: list[Gtk.TreePath]) -> str:
         if len(paths) < 1:
