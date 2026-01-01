@@ -69,9 +69,7 @@ class ModelManager:
         self.ping_cache: dict[str, int] = {}
 
         self.map_store = ListStore(str)
-        #self.row_store = self.new_model_from_class(MenuCols)
         self.help_store = self.new_model_from_class(MenuCols)
-
         self.mod_store = self.new_model_from_class(ModCols)
         self.log_store = self.new_model_from_class(LogCols)
         self.modlist_store = self.new_model_from_class(ServerModCols)

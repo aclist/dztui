@@ -180,6 +180,7 @@ class ServerTreeView(TreeView):
                 case Gdk.KEY_r:
                     self.refresh_player_count()
                 case Gdk.KEY_f:
+                    # TODO: register filter panel instead of mediating thru right panel
                     self.controller.mediator.grid.right_panel.filters_vbox.keyword_entry.grab_focus()
                 case Gdk.KEY_m:
                     self.controller.mediator.grid.right_panel.filters_vbox.maps_entry.grab_focus()
@@ -191,7 +192,7 @@ class ServerTreeView(TreeView):
                     self.controller.toggle_check(event)
 
     def set_context_menu(self, items: ContextMenuGroup) -> None:
-        # TODO: if debug is on, add raw command
+        # TODO: if debug is on, add raw command copy to context menu
         for item in items.value:
             menu_item = EnumeratedMenuItem(item)
             menu_item.connect("activate", self._on_menu_click)
@@ -199,6 +200,7 @@ class ServerTreeView(TreeView):
         self.menu.show_all()
 
     def _on_menu_click(self, item) -> None:
+        print(f"UNIMPLEMENTED: {item.enum}")
         pass
 
     def _on_server_button_release(

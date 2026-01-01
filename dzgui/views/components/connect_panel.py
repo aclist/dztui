@@ -1,47 +1,72 @@
-from dzgui.util.format import embolden
-from dzgui.views.components.web_button import WebButton
+from typing import TYPE_CHECKING
+
+from dzgui.util.strings import connect_panel
+from dzgui.views.components.buttons import WebButton
+from dzgui.views.components.labels import BoldLabel
 
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk # noqa E402
 
+if TYPE_CHECKING:
+    from dzgui.controllers.mc import Controller
 
 class ConnectPanel(Gtk.Frame):
-    def __init__(self) -> None:
+    def __init__(self, controller: "Controller") -> None:
         super().__init__(margin_top=10, margin_bottom=5)
 
-        self.label = Gtk.Label(label="Add/connect")
-        self.label2 = Gtk.Label(label="Favorite server")
+        COLS = 1
+        ROWS = 1
+        self.controller = controller
 
-        # TODO: strings
-        text = embolden("Favorite server")
-        self.label2.set_markup(text)
-        self.entry1 = Gtk.Entry(placeholder_text="Enter IP or Battlemetrics ID", hexpand=False)
-        self.entry2 = Gtk.Entry()
-        self.fav = Gtk.Label(label="MY favorite server very long title")
-        self.favedit = Gtk.Button("Edit")
-        self.edit = WebButton(label="EDIT")
-        self.favbutton = Gtk.Button(label="Connect")
+        self.entry = Gtk.Entry(
+            placeholder_text=connect_panel.placeholder,
+            hexpand=True,
+            tooltip_text=connect_panel.entry_tooltip
+        )
 
-        # TODO: dedent
-        long = """IP: Format as IP:Query port, e.g.\n192.168.1.1:27016\n
-        Battlemetrics: numeric server ID
-        """
+        # TODO: get ip as well?
+        user_fav = self.controller.get_favorite_label()
 
-        # TODO: add tooltips to all buttons
-        self.entry1.set_tooltip_text(long)
+        server_name = user_fav if user_fav is not None else connect_panel.no_fav
+        scrollable_label = Gtk.ScrolledWindow()
+        label = Gtk.Label(label=server_name, halign=Gtk.Align.START)
+        scrollable_label.add(label)
 
-        self.con = Gtk.Button(label="Connect")
-        self.addb = Gtk.Button(label="Add")
+        self.fav_button = Gtk.Button(label=connect_panel.connect,
+            tooltip_text=connect_panel.connect_tooltip
+        )
+        self.fav_edit = Gtk.Button(label=connect_panel.edit)
+        self.edit_server = WebButton(label="EDIT")
+
+        self.conn_server= Gtk.Button(label=connect_panel.connect,
+            tooltip_text=connect_panel.connect_tooltip
+        )
+        self.add_server = Gtk.Button(label=connect_panel.add,
+            tooltip_text=connect_panel.add_tooltip
+        )
+
+        self.conn_server.set_sensitive(False)
+        self.add_server.set_sensitive(False)
+        if server_name is None:
+            self.fav_button.set_sensitive(False)
+
+        add_label = BoldLabel(connect_panel.add_con)
+        conn_label = BoldLabel(connect_panel.favorite)
 
         self.grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
-        self.grid.attach(self.label2, 0, 0, 3, 1)
-        button = Gtk.Button(label="Connect")
-        self.grid.attach_next_to(self.fav, self.label2, Gtk.PositionType.RIGHT, 3, 1)
-        self.grid.attach_next_to(self.favbutton, self.fav, Gtk.PositionType.RIGHT, 3, 1)
-        self.grid.attach_next_to(self.label, self.label2, Gtk.PositionType.BOTTOM, 3, 1)
-        self.grid.attach_next_to(self.entry1, self.label, Gtk.PositionType.RIGHT, 3, 1)
-        self.grid.attach_next_to(self.addb, self.entry1, Gtk.PositionType.RIGHT, 3, 1)
-        self.grid.attach_next_to(self.con, self.addb, Gtk.PositionType.RIGHT, 3, 1)
+        self.grid.attach(conn_label, 0, 0, COLS, ROWS)
+
+        els = (
+            (scrollable_label, conn_label, Gtk.PositionType.RIGHT, 3, ROWS),
+            (self.fav_button, scrollable_label, Gtk.PositionType.RIGHT, COLS, ROWS),
+            (add_label, conn_label, Gtk.PositionType.BOTTOM, COLS, ROWS),
+            (self.entry, scrollable_label, Gtk.PositionType.BOTTOM, COLS, ROWS),
+            (self.add_server, self.fav_button, Gtk.PositionType.BOTTOM, COLS, ROWS),
+            (self.conn_server, self.add_server, Gtk.PositionType.RIGHT, COLS, ROWS),
+        )
+
+        for el, sibling, pos, h_span, v_span in els:
+            self.grid.attach_next_to(el, sibling, pos, h_span, v_span)
 
         self.add(self.grid)

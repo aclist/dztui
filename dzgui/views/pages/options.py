@@ -8,7 +8,7 @@ from dzgui.util import strings, css, open_links
 
 from dzgui.views.components.label import LeftLabel
 from dzgui.views.components.eventbox import InfoEventBox
-from dzgui.views.components.web_button import WebButton
+from dzgui.views.components.buttons import WebButton
 from dzgui.views.dialogs.link_dialog import WorkshopLinkDialog
 
 from dzgui.const.enum import Preferences, Popup
@@ -303,6 +303,7 @@ class Options(Gtk.Box):
         #call_on_thread(show_wait_dialog, cmd, wait_msg, "")
 
     def _on_client_changed(self, combo: Gtk.ComboBoxText) -> None:
+        # TODO: use two columns or constants here, not strings
         client = combo.get_active_text()
         match client:
             case "Steam":
@@ -423,9 +424,10 @@ class Options(Gtk.Box):
         return box
 
     def populate_settings(self) -> None:
+        # TODO: controller.get_config()
         prefs = self.controller.get_prefs()
         if prefs.paths.config.is_file() is False:
-            # in case file got deleted locally
+            # NOTE: in case file got deleted locally
             self.controller.spawn_dialog(strings.config_not_found, Popup.QUIT)
             return
 

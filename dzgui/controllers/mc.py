@@ -329,13 +329,15 @@ class Controller:
     def toggle_server_panels(self, state: bool) -> None:
         self.mediator.grid.toggle_filter_panel(state)
         self.mediator.grid.toggle_connect_panel(state)
+        self.mediator.grid.toggle_refresh_button(state)
 
     def toggle_mod_panel(self, state: bool) -> None:
         self.mediator.grid.right_panel.sel_panel.set_visible(state)
 
     def show_developers_page(self) -> None:
         self.open_page(NotebookPage.DEVELOPERS)
-        # TODO: focus first row
+        # TODO: put cursor on first row
+        #self.mediator.developers.focus_first_row()
 
     def open_page(self, page: NotebookPage) -> None:
         self.mediator.grid.notebook.set_page_by_enum(page)
@@ -363,8 +365,7 @@ class Controller:
         self.mediator.notebook.set_page_by_enum(button.opens)
         self.set_crumbs(button.get_label())
 
-    # TODO: deprecated?
-    def open_self_workshop(self, uid: str) -> None:
+    def open_user_workshop(self, uid: str) -> None:
         # NOTE: uid may contain leading zeroes, not a real integer
         client = self.query_config(Preferences.CLIENT)
         open_workshop_page(uid, client)
@@ -666,3 +667,9 @@ class Controller:
                     self.mediator.grid.right_panel.filters_vbox.toggle_check(11)
                 case _:
                     return False
+
+    def get_favorite_label(self) -> str | None:
+        fav = str(self.query_config(Preferences.FAV_LBL))
+        if len(fav) < 1:
+            return None
+        return fav

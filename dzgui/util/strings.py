@@ -508,4 +508,33 @@ server_labels = ServerLabels(
     lan="LAN",
 )
 
+@dataclass(slots=True, frozen=True)
+class ConnectPanel:
+    connect: str
+    add: str
+    edit: str
+    favorite: str
+    add_con: str
+    placeholder: str
+    entry_tooltip: str
+    add_tooltip: str
+    connect_tooltip: str
+    no_fav: str
+
+connect_panel = ConnectPanel(
+    connect="Connect",
+    add="Add",
+    edit="Edit",
+    favorite="Favorite server",
+    add_con="Add/connect",
+    placeholder="Enter IP or Battlemetrics ID",
+    entry_tooltip=(
+        "- IP: Format as IP:Query port\ne.g. 192.168.1.1:27016\n"
+        "- Battlemetrics: numeric server ID\ne.g. 123456"
+    ),
+    add_tooltip="Add to my servers",
+    connect_tooltip="Connect to this server",
+    no_fav="None set. Right click a server and select 'Set favorite' to set.",
+)
+
 distance_suffix = "Distance: calculating..."

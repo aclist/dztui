@@ -66,6 +66,7 @@ logger = logging.getLogger(__name__)
 warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 
 # TODO: move to controller
+# kilometer cache; note, user may change measurement it partway through, flush cache
 #cache: dict[str, int] = {}
 
 ## TODO: move to configs/servers
@@ -283,7 +284,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         self.keys = Keybindings()
         self.settings = Options(MainController)
 
-        # NOTE: server and quad tables should have hexpand property set to True
+        # NOTE: server, mod, and log tables should have hexpand property set to True
         self.servers = ServerNotebook(MainController)
         self.mods = Mods(MainController)
 
@@ -295,9 +296,8 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
 
         # TODO: change this class to scrolledwindow
         self.thanks = ScrollableNote(Thanks(), back_button=False)
-
-        developers = Developers(MainController)
         # TODO: change this class to scrolledwindow
+        developers = Developers(MainController)
         self.developers = ScrollableNote(developers)
 
         self.pages = {
@@ -314,7 +314,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         self.indexes = {}
 
         """
-        Note that due to historical reasons, GtkNotebook refuses to switch to a page
+        Note that due to historical reasons, Gtk.Notebook refuses to switch to a page
         unless the child widget is visible. Therefore, it is recommended to show child
         widgets before adding them to a notebook.
         """
@@ -436,9 +436,9 @@ class Grid(Gtk.Grid):
         self.set_breadcrumbs(strings.label_main_menu)
 
         self.notebook = Notebook()
-        self.conpan = ConnectPanel()
+        self.conpan = ConnectPanel(MainController)
 
-        self.attach(self.notebook, 0, 0, MAX_COLS, 1)
+        self.attach(self.notebook, 0, 0, MAX_COLS, SINGLE_ROW)
 
         els = (
             (self.breadcrumbs, self.notebook, Gtk.PositionType.TOP, MAX_COLS, SINGLE_ROW),
@@ -457,6 +457,10 @@ class Grid(Gtk.Grid):
     def toggle_connect_panel(self, state: bool) -> None:
         self.conpan.set_visible(state)
 
+    def toggle_refresh_button(self, state: bool) -> None:
+        self.right_panel.refresh_button.set_visible(state)
+
+    # TODO make this method internal to Statusbar
     def get_breadcrumbs(self) -> str:
         return self.breadcrumbs.get_text()
 

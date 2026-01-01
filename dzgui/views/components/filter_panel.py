@@ -1,15 +1,15 @@
 import logging
+from typing import Literal
 
 import gi  # noqa E402
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, Pango, GLib
 
-from typing import Literal
-from dzgui.util import strings
-from dzgui.util.format import embolden
-from dzgui.util.margins import set_surrounding_margins
 from dzgui.const.enum import FilterMode
 from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
+from dzgui.util import strings
+from dzgui.util.margins import set_surrounding_margins
+from dzgui.views.components.labels import BoldLabel
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,6 @@ class FilterPanel(Gtk.Box):
     def __init__(self, controller):
         super().__init__(spacing=6, vexpand=False)
 
-        # TODO: set strings in constants
         self.default_filters = {
             strings.filter_1pp: True,
             strings.filter_day: True,
@@ -39,10 +38,11 @@ class FilterPanel(Gtk.Box):
 
         self.checks = []
         self.maps_hr = []
+
         self.enabled_filters = dict(self.default_filters)
-        self.keyword_filter = ""
-        self.selected_map = strings.all_maps
-        self.prior_map = strings.all_maps
+        self.keyword_filter: str
+        self.selected_map: str = strings.all_maps
+        self.prior_map: str = strings.all_maps
 
         button_grid = Gtk.Grid(
             halign=Gtk.Align.CENTER, column_spacing=5, column_homogeneous=True
@@ -72,9 +72,7 @@ class FilterPanel(Gtk.Box):
         self.set_margin_top(1)
 
         # TODO: strings
-        text = embolden("Filters")
-        self.filters_label = Gtk.Label()
-        self.filters_label.set_markup(text)
+        self.filters_label = BoldLabel("Filters")
 
         self.keyword_entry = Gtk.Entry()
         self.keyword_entry.set_placeholder_text("Filter by keyword")
@@ -99,16 +97,13 @@ class FilterPanel(Gtk.Box):
         self.maps_entry.connect("key-press-event", self._on_map_entry_keypress)
 
         # FIXME: only giving two params to pack_start
-        # cf. EXPAND
+        # cf. EXPAND, NO_EXPAND
         self.maps_combo.pack_start(renderer_text, True)
         self.maps_combo.connect("changed", self._on_map_changed)
         self.maps_combo.connect("key-press-event", self._on_combo_keypress)
 
-        # TODO: consolidate
-        self.pack_start(self.filters_label, NO_EXPAND, NO_FILL, NO_PADDING)
-        self.pack_start(self.keyword_entry, NO_EXPAND, NO_FILL, NO_PADDING)
-        self.pack_start(self.maps_combo, NO_EXPAND, NO_FILL, NO_PADDING)
-        self.pack_start(button_grid, NO_EXPAND, NO_FILL, NO_PADDING)
+        for el in self.filters_label, self.keyword_entry, self.maps_combo, button_grid:
+            self.pack_start(el, NO_EXPAND, NO_FILL, NO_PADDING)
 
     def set_unique_maps(self, maps: list) -> None:
         if len(maps) < 1:

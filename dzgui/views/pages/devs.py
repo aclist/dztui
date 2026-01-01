@@ -3,8 +3,8 @@ from typing import Union, TYPE_CHECKING
 
 from dzgui.const.enum import NotebookPage
 from dzgui.util.css import add_class
-from dzgui.util.format import embolden
 from dzgui.util.strings import developers
+from dzgui.views.components.labels import BoldLabel
 
 import gi  # noqa E402
 gi.require_version("Gtk", "3.0")
@@ -35,13 +35,9 @@ class Developers(Gtk.Box):
 
         back_button = Gtk.Button(label="Back", halign=Gtk.Align.START)
         back_button.connect("clicked", self._on_back_clicked)
-        paths_label = Gtk.Label()
-        text = embolden(developers.paths_label)
-        paths_label.set_markup(text)
 
-        prefs_label = Gtk.Label()
-        text = embolden(developers.prefs_label)
-        prefs_label.set_markup(text)
+        paths_label = BoldLabel(developers.paths_label)
+        prefs_label = BoldLabel(developers.prefs_label)
 
         paths_tree = self._make_tree(self.controller.prefs.paths)
         prefs_tree = self._make_tree(self.controller.prefs)
