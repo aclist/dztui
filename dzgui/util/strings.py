@@ -154,7 +154,7 @@ label_main_menu = "Main menu"
 ping_servers = "Ping servers"
 debug_mode = "Debug mode"
 keys_button = "Keys"
-keys_tooltip = "Opens the keybindings dialog"
+keys_tooltip = "Toggles the keybindings dialog"
 debug_tooltip = (
     "Used to perform a dry run without\n"
     "actually connecting to a server"
