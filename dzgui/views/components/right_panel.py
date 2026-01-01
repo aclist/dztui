@@ -5,6 +5,7 @@ from gi.repository import Gtk, Gdk
 from dzgui.const.enum import Preferences
 from dzgui.views.components.buttonbox import ButtonBox
 from dzgui.views.components.filter_panel import FilterPanel
+from dzgui.views.components.mod_panel import ModSelectionPanel
 from dzgui.views.components.icon import Icon
 from dzgui.views.components.web_button import RefreshButton
 # TODO: rename web_button
@@ -13,15 +14,20 @@ from dzgui.util import strings
 
 # TODO: refactor depends on ServerTreeView
 class RightPanel(Gtk.Box):
-    def __init__(self, appnav, controller):
+    def __init__(self, controller):
         super().__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL)
 
-        self.AppNav = appnav
-        self.AppNav.right_panel = self
         self.controller = controller
-
         self.button_vbox = ButtonBox(controller)
-        self.filters_vbox = FilterPanel(appnav, controller)
+
+
+        self.filters_vbox = FilterPanel(controller)
+        self.sel_panel = ModSelectionPanel(controller)
+
+        self.controller.register_widget("right_panel", self)
+
+        self.sel_panel.set_visible(False)
+        self.filters_vbox.set_visible(False)
 
         # TODO: more custom button classes
         self.ping = Gtk.Button(
@@ -49,25 +55,29 @@ class RightPanel(Gtk.Box):
         self.refresh_button.set_margin_end(80)
         self.refresh_button.connect("clicked", self._on_refresh_clicked)
 
-        if controller.query_config(Preferences.DEBUG) == True:
-            self.debug_toggle.set_active(True)
-        self.debug_toggle.connect("toggled", self._on_debug_toggled)
+        #if controller.query_config(Preferences.DEBUG) == True:
+        #    self.debug_toggle.set_active(True)
+        #self.debug_toggle.connect("toggled", self._on_debug_toggled)
 
         # TODO: make button class
         i = Icon(INPUT_KEYBOARD)
         i.set_margin_start(5)
-        self.question = Gtk.Button(
+        self.keys = Gtk.Button(
             label=strings.keys_button,
             margin_start=80,
             margin_end=80,
             tooltip_text=strings.keys_tooltip,
             image = i,
         )
-        self.question.set_image_position(Gtk.PositionType.RIGHT)
-        self.question.connect("clicked", self._on_question_clicked)
+        self.keys.set_image_position(Gtk.PositionType.RIGHT)
+        self.keys.connect("clicked", self._on_question_clicked)
 
-        for el in self.button_vbox, self.question, self.filters_vbox, self.refresh_button:
+        for el in self.button_vbox, self.filters_vbox, self.refresh_button:
             self.pack_start(el, NO_EXPAND, FILL, NO_PADDING)
+
+        self.pack_start(self.sel_panel, NO_EXPAND, NO_FILL, NO_PADDING)
+        self.pack_start(self.keys, NO_EXPAND, FILL, NO_PADDING)
+
 
     def enable_ping_button(self, state: bool) -> None:
         self.ping.set_visible(state)
@@ -79,17 +89,6 @@ class RightPanel(Gtk.Box):
         #map_store.append(["All maps"])
         self.selected = "All maps"
         self.filters_vbox.set_unique_maps(rows)
-
-    def toggle_debug(self) -> None:
-        if type(self.AppNav.window.get_focus()) is Gtk.Entry:
-            return
-        state = self.debug_toggle.get_active()
-        self.debug_toggle.set_active(not state)
-
-    def _on_debug_toggled(self, button: Gtk.Button) -> None:
-        state = button.get_active()
-        grid = self.AppNav.grid
-        self.controller.toggle_debug_mode()
 
     def _on_refresh_clicked(self, button: RefreshButton) -> None:
         self.controller.refresh_tree()
@@ -112,11 +111,10 @@ class RightPanel(Gtk.Box):
                     path = Gtk.TreePath.new_from_indices([res.iteration])
                     temp_model[path][9] = res.ping
                     ModelManager.ping_cache[res.addr] = res.ping
+            # TODO: drop/rewrite
             self.AppNav.treeview.set_model(temp_model)
             self.AppNav.treeview.wait_dialog.destroy()
-            self.AppNav.treeview.enable_ping_column(True)
             self.AppNav.treeview.grab_focus()
-            self.AppNav.right_panel.ping.set_sensitive(False)
 
             # TODO:
             unblock_signals()
@@ -129,7 +127,7 @@ class RightPanel(Gtk.Box):
         thread.start()
 
     def _on_question_clicked(self, button: Gtk.Button) -> None:
-        self.AppNav.grid.notebook.toggle_keybindings()
+        self.controller.open_keybindings()
 
     def focus_button_box(self) -> None:
         self.button_vbox.buttons[0].grab_focus()

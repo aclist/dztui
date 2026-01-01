@@ -21,6 +21,7 @@ class LogTreeView(ContextMixin, TreeView):
         super().__init__(controller, menu=ContextMenuGroup.LOG)
 
         self.controller = controller
+        self.controller.register_widget("logtreeview", self)
 
         # TODO: maybe put this in init
         self.set_fixed_height_mode(True)

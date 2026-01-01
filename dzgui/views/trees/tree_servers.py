@@ -43,14 +43,14 @@ class ServerTreeView(TreeView):
     def __init__(self, controller: "Controller") -> None:
         super().__init__(controller)
 
+        QUEUE_CHECK_DELAY = 200
+
         self.loaded = False
         self.query_func: Callable = None
 
         self.menu = Gtk.Menu()
         self.menu.connect("key-press-event", self._on_key)
         self.controller = controller
-
-        self.resizable_cols: list[Gtk.TreeViewColumn] = []
 
         self.set_fixed_height_mode(True)
         self.set_headers_visible(True)
@@ -89,8 +89,6 @@ class ServerTreeView(TreeView):
                 if column_title == "Map":
                     column.set_fixed_width(300)
 
-
-            self.resizable_cols.append(column)
             column.connect("notify::fixed-width", self._on_col_width_changed)
             self.append_column(column)
 
@@ -100,7 +98,7 @@ class ServerTreeView(TreeView):
         self.connect("generic_row_activated", self._parent_row_activated)
         self.connect("generic_treesel_changed", self._parent_selection_changed)
 
-        GLib.timeout_add(200, self._check_result_queue)
+        GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
 
     def _on_key(self, menu: Gtk.Menu, event: Gdk.EventKey) -> bool | None:
         if not is_navkey(event.keyval):
@@ -173,6 +171,7 @@ class ServerTreeView(TreeView):
     def _on_server_keypress(
         self, treeview: Gtk.TreeView, event: Gdk.EventKey
     ) -> bool | None:
+        # TODO: rewrite AppNav
         # TODO: use mixins
         # CONTROL_MASK + KEY_l
         if event.state is Gdk.ModifierType.CONTROL_MASK:
@@ -182,8 +181,6 @@ class ServerTreeView(TreeView):
                 case Gdk.KEY_r:
                     self.refresh_player_count()
                 case Gdk.KEY_f:
-                    if not AppNav.treeview.is_server_context(AppNav.treeview.view):
-                        return True
                     AppNav.right_panel.filters_vbox.keyword_entry.grab_focus()
                 case Gdk.KEY_m:
                     AppNav.right_panel.filters_vbox.maps_entry.grab_focus()
@@ -216,7 +213,6 @@ class ServerTreeView(TreeView):
         self.menu.show_all()
 
     def _on_menu_click(self, item) -> None:
-        print(item.enum)
         pass
 
     def _on_server_button_release(
@@ -278,8 +274,9 @@ class ServerTreeView(TreeView):
 
         self.terminate_process()
         record = self.get_record()
-        #TODO
-        return
+
+        if record is None:
+            return
 
         #model = self.get_model()
         #if record is None:
@@ -287,7 +284,6 @@ class ServerTreeView(TreeView):
         #    return
 
         ip = record.ip
-
         # TODO
         #self.emit("on_distcalc_started")
         #self.current_proc = CalcDist(self, record.ip, self.queue, cache)
@@ -299,6 +295,7 @@ class ServerTreeView(TreeView):
         return f"{addr}:{qport}"
 
     def get_record(self) -> dict | None:
+        # TODO: delegate to controller
         select = self.get_selection()
         sels = select.get_selected_rows()
         (model, pathlist) = sels
@@ -319,4 +316,3 @@ class ServerTreeView(TreeView):
 
     def set_loaded(self, status: bool) -> None:
         self.loaded = status
-

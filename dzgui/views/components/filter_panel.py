@@ -13,7 +13,7 @@ from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
 logger = logging.getLogger(__name__)
 
 class FilterPanel(Gtk.Box):
-    def __init__(self, appnav, controller):
+    def __init__(self, controller):
         super().__init__(spacing=6, vexpand=False)
 
         # TODO: set strings in constants
@@ -32,7 +32,6 @@ class FilterPanel(Gtk.Box):
             strings.filter_modded: True,
         }
 
-        self.AppNav = appnav
         self.controller = controller
 
         map_store = self.controller.get_map_store()
@@ -140,7 +139,8 @@ class FilterPanel(Gtk.Box):
         self.keyword_filter = ""
         self.reinit_filters()
         self.set_visible(False)
-        sel_panel = self.AppNav.grid.sel_panel
+        # TODO:
+        sel_panel = self.controller.mediator.grid.sel_panel
         if sel_panel.is_visible():
             sel_panel.set_visible(False)
 
@@ -194,7 +194,8 @@ class FilterPanel(Gtk.Box):
             completion.set_model(map_store)
 
     def restore_focus_to_treeview(self) -> Literal[False]:
-        self.AppNav.treeview.grab_focus()
+        view = self.controller.get_active_treeview()
+        view.grab_focus()
         return False
 
     def _on_keyword_keypress(
@@ -233,7 +234,8 @@ class FilterPanel(Gtk.Box):
         return self.keyword_filter
 
     def _on_keyword_enter(self, entry: Gtk.Entry) -> None:
-        self.AppNav.window.set_keep_below(False)
+        # TODO:
+        self.controller.mediator.window.set_keep_below(False)
         keyword = entry.get_text().lower()
         if keyword == self.keyword_filter:
             return
@@ -241,7 +243,8 @@ class FilterPanel(Gtk.Box):
             return
         logger.info(f"User filtered by keyword '{keyword}'")
         self.keyword_filter = keyword
-        self.AppNav.treeview.filter(FilterMode.KEYWORD, keyword)
+        treeview = self.controller.get_active_treeview()
+        treeview.filter(FilterMode.KEYWORD, keyword)
 
     def _on_button_release(self, window, button) -> Literal[True]:
         return True
@@ -258,7 +261,9 @@ class FilterPanel(Gtk.Box):
         check.set_active(not state)
 
     def _on_check_toggled(self, button: Gtk.CheckButton) -> None:
-        if not self.AppNav.treeview.is_server_context(self.AppNav.treeview.view):
+        treeview = self.controller.get_active_treeview()
+        # TODO: drop
+        if not treeview.is_server_context(self.AppNav.treeview.view):
             return
         label = button.get_label()
         state = button.get_active()
@@ -269,9 +274,10 @@ class FilterPanel(Gtk.Box):
             mode = FilterMode.TOGGLE_OFF
 
         self.enabled_filters[label] = state
-        self.AppNav.treeview.filter(mode, label)
+        treeview.filter(mode, label)
 
     def _on_map_changed(self, combo: Gtk.ComboBox) -> None:
+        treeview = self.controller.get_active_treeview()
         old_sel = self.selected_map
         model = combo.get_model()
         tree_iter = combo.get_active_iter()
@@ -286,4 +292,4 @@ class FilterPanel(Gtk.Box):
         self.prior_map = self.selected_map
         self.selected_map = selection
         self.maps_entry.set_text(selection)
-        self.AppNav.treeview.filter(FilterMode.MAP)
+        treeview.filter(FilterMode.MAP)

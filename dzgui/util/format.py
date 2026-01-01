@@ -45,7 +45,9 @@ def format_mods(size: int, mods: int) -> str:
         return no_mods
     l_size = number(size)
     plural = pluralize("mods", mods)
-    return f"Found {mods:n} {plural} taking up {l_size} MiB"
+    # TODO: strings
+    suffix = "Ctrl-click to select multiple."
+    return f"Found {mods:n} {plural} taking up {l_size} MiB. {suffix}"
 
 
 def format_player_count(model: Gtk.TreeModel | None) -> str:

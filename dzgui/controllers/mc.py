@@ -56,17 +56,48 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from dzgui.views.components.buttonbox import ContextualButton
-    from dzgui.views.base import AppNavigation
     from dzgui.views.base import OuterWindow
+    from dzgui.views.trees.tree_base import TreeView
+    from dzgui.views.trees.tree_mods import ModTreeView
+    from dzgui.views.trees.tree_servers import ServerTreeView
+    from dzgui.views.trees.tree_log import LogTreeView
+    from dzgui.views.base import Notebook, Grid, OuterWindow
+    from dzgui.views.components.statusbar import Statusbar
+    from dzgui.views.components.right_panel import RightPanel
+    from dzgui.views.pages.servers import ServerNotebook
+
+class AppNavigation:
+    window: "OuterWindow"
+    grid: "Grid"
+    right_panel: "RightPanel"
+    statusbar: "Statusbar"
+    notebook: "Notebook"
+    modtreeview: "ModTreeView"
+    menu: "MenuTreeView"
+    servers: "ServerNotebook"
+    browser: "ServerTreeView"
+    saved: "ServerTreeView"
+    recent: "ServerTreeView"
+    lan: "ServerTreeView"
+    modtreeview: "ModTreeView"
+    logtreeview: "LogTreeView"
+
+# TODO: most server contexts can be dropped from this struct
 
 class Controller:
     def __init__(self) -> None:
         self.crumbs_cache = ""
-        self.mediator: AppNavigation
+        self.mediator = AppNavigation()
         self.prefs: UserPrefs
         self.cooldown = 0
 
         self.model_manager = ModelManager()
+
+    def register_widget(self, attr: str, widget: Gtk.Widget) -> None:
+        try:
+            setattr(self.mediator, attr, widget)
+        except AttributeError:
+            logger.critical(f"{attr} is not a valid AppNavigation attribute.")
 
     def set_crumbs(self, text: str) -> None:
         self.mediator.grid.set_breadcrumbs(text)
@@ -124,11 +155,12 @@ class Controller:
     def append_map(self, map_row: list) -> None:
         self.model_manager.append_map(map_row)
 
-    def set_mediator(self, mediator: "AppNavigation") -> None:
-        self.mediator = mediator
+   # TODO: drop
+   # def set_mediator(self, mediator: "AppNavigation") -> None:
+   #     self.mediator = mediator
 
-    def get_mediator(self) -> "AppNavigation":
-        return self.mediator
+   # def get_mediator(self) -> "AppNavigation":
+   #     return self.mediator
 
     def unblock_signals(self) -> None:
         self.block_signals(False)
@@ -170,8 +202,14 @@ class Controller:
     def toggle_debug_mode(self) -> None:
         self.toggle_config(Preferences.DEBUG)
 
+    def get_active_treeview(self) -> "TreeView":
+        return self.mediator.notebook.servers.get_active_treeview()
+
+    def grab_active_treeview(self) -> None:
+        self.get_active_treeview().grab_focus()
+
     def save_res_and_quit(self, *args: Any) -> None:
-        treeview = self.mediator.notebook.servers.get_active_treeview()
+        treeview = self.get_active_treeview()
         columns = treeview.get_columns()
 
         columns_file = self.prefs.paths.columns
@@ -295,8 +333,12 @@ class Controller:
     def set_statusbar_by_row(self, row: "RowType") -> None:
         self.mediator.grid.statusbar.refresh(row)
 
+    def toggle_server_panels(self, state: bool) -> None:
+        self.mediator.grid.toggle_filter_panel(state)
+        self.mediator.grid.toggle_connect_panel(state)
+
     def toggle_mod_panel(self, state: bool) -> None:
-        self.mediator.grid.sel_panel.set_visible(state)
+        self.mediator.grid.right_panel.sel_panel.set_visible(state)
 
     def show_developers_page(self) -> None:
         self.open_page(NotebookPage.DEVELOPERS)
@@ -314,7 +356,6 @@ class Controller:
                 return
             case ButtonType.OPTIONS:
                 self.mediator.grid.notebook.settings.populate_settings()
-                self.set_statusbar("")
             case ButtonType.MODS:
                 self.load_mods()
             case ButtonType.HELP:
@@ -606,3 +647,12 @@ class Controller:
             treeview.set_loaded(True)
             self.update_server_status()
         treeview.grab_focus()
+
+    def focus_button_box(self) -> None:
+        self.mediator.right_panel.focus_button_box()
+
+    def present_servers(self) -> None:
+        self.grab_active_treeview()
+        self.update_server_status()
+        crumbs = self.mediator.servers.get_cached_label()
+        self.set_crumbs(crumbs)

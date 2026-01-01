@@ -33,6 +33,7 @@ from dzgui.views.components.connect_panel import ConnectPanel
 from dzgui.views.pages.devs import Developers
 from dzgui.views.pages.help import Help
 from dzgui.views.pages.keys import Keybindings
+from dzgui.views.pages.mods import Mods
 from dzgui.views.pages.options import Options
 from dzgui.views.pages.servers import ServerNotebook
 from dzgui.views.pages.thanks import Thanks
@@ -203,15 +204,14 @@ class OuterWindow(Gtk.Window):
         super().__init__(title=APP_NAME, border_width=10, icon_name=APP_NAME_LOWER)
 
         self.hb = AppHeaderBar()
-        MainController.set_mediator(AppNav)
-        AppNav.window = self
+        MainController.register_widget("window", self)
 
         # NOTE: steam deck taskbar may occlude elements
         if MainController.get_prefs().is_steam_deck is False:
             self.set_titlebar(self.hb)
 
         self.connect("delete-event", self._on_delete_event)
-        self.connect("key-press-event", self._on_keypress)
+        #self.connect("key-press-event", self._on_keypress)
 
         self.grid = Grid()
         self.add(self.grid)
@@ -219,24 +219,8 @@ class OuterWindow(Gtk.Window):
         MainController.set_resolution(self)
         self.show_all()
 
-        self.grid.sel_panel.set_visible(False)
-
-        # TODO:
-        #self.grid.right_panel.enable_ping_button(False)
-
         css.load_css()
-        # TODO: call controller directly
-        AppNav.grid.notebook.set_page_by_enum(NotebookPage.SERVERS)
-
-    # TODO: deprecated
-    def _on_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
-        if event.state is Gdk.ModifierType.CONTROL_MASK \
-                and event.keyval is Gdk.KEY_d:
-            if AppNav.right_panel.filters_vbox.keyword_entry.is_focus():
-                return
-            if AppNav.right_panel.filters_vbox.maps_entry.is_focus():
-                return
-            AppNav.right_panel.toggle_debug()
+        MainController.open_page(NotebookPage.SERVERS)
 
     def _on_delete_event(
         self, window: "OuterWindow", event: Gdk.EventKey
@@ -280,47 +264,35 @@ class ScrollableNote(ScrollableMixin, Gtk.Box):
         self.add(self.gutter)
 
     def _on_back_clicked(self, button: Gtk.Button) -> None:
-        AppNav.notebook.return_prior()
+        pass
 
 
 class Notebook(ScrollableMixin, Gtk.Notebook):
     def __init__(self) -> None:
         super().__init__(show_tabs=False)
 
-        AppNav.notebook = self
         self.prior_page: NotebookPage
         self.prior_status: str
 
-        self.help = Help(MainController)
-        view = self.help.get_treeview()
-        AppNav.menu = view
+        MainController.register_widget("notebook", self)
 
+        self.help = Help(MainController)
         self.change = Changelog(MainController)
         self.clog = ScrollableNote(self.change, back_button=False)
         self.clog.scrollable.set_propagate_natural_width(False)
 
         # TODO: scrollable internally
+        # TODO: make all treeviews internally scrollable in base class
         self.keys = ScrollableNote(Keybindings())
         self.settings = Options(MainController)
 
-        # TODO: make all treeviews internally scrollable in base class
         # NOTE: server and quad tables should have hexpand property set to True
-        # add all treeviews as page and register them to AppNav and self.indexes
-        # when switching to a treeview, update relevant view and just pop that page
-        # instead of loading/unloading the model each time
         self.servers = ServerNotebook(MainController)
-        AppNav.servers = self.servers
-
-        self.scroll_mod = Gtk.ScrolledWindow()
-        # TODO: register this table
-        self.quad_table = ModTreeView(MainController)
-        AppNav.modtreeview = self.quad_table
-        self.scroll_mod.add(self.quad_table)
+        self.mods = Mods(MainController)
 
         self.scroll_log = Gtk.ScrolledWindow()
         self.scroll_log.set_hexpand(True)
         self.log_table = LogTreeView(MainController)
-        AppNav.logtreeview = self.log_table
         self.scroll_log.add(self.log_table)
 
         self.thanks = ScrollableNote(Thanks(), back_button=False)
@@ -334,7 +306,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
             self.keys: NotebookPage.KEYS,
             self.settings: NotebookPage.OPTIONS,
             self.servers: NotebookPage.SERVERS,
-            self.scroll_mod: NotebookPage.MODS,
+            self.mods: NotebookPage.MODS,
             self.scroll_log: NotebookPage.LOG,
             self.thanks: NotebookPage.THANKS,
             self.developers: NotebookPage.DEVELOPERS,
@@ -350,45 +322,38 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
             page.show_all()
             index = self.append_page(page)
             enum = self.pages[page]
-            crumbs = enum.dict["crumbs"]
             self.indexes[enum] = index
 
         self.connect_after("switch-page", self._on_page_changed)
         self.connect("key-press-event", self._on_keypress)
 
-    def _on_mods_focus_change(self, widget: ModTreeView, event: Gdk.EventFocus) -> None:
-        MainController.toggle_mod_panel(event.in_)
-
     def _on_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
         page = self.get_page()
 
         match event.keyval:
-            case Gdk.KEY_Return:
-                page = self.get_page()
-                if page:
-                    page.back_button.clicked()
             case Gdk.KEY_Right | Gdk.KEY_l:
                 if event.state is Gdk.ModifierType.CONTROL_MASK:
                     return
-                AppNav.right_panel.focus_button_box()
+                MainController.focus_button_box()
             case Gdk.KEY_question:
                 self.toggle_keybindings()
 
         # NOTE: abort on non scrollable pages
-        # TODO: this should be an internal property of those pages
-        allowed = (NotebookPage.KEYS, NotebookPage.CHANGELOG, NotebookPage.THANKS)
-        if self.pages[page] not in allowed:
-            return
+        # TODO: deprecated
+        #allowed = (NotebookPage.KEYS, NotebookPage.CHANGELOG, NotebookPage.THANKS)
+        #if self.pages[page] not in allowed:
+        #    return
 
-        match event.keyval:
-            case Gdk.KEY_k | Gdk.KEY_Up:
-                page._set_adjustment(VAdjustment.UP)
-            case Gdk.KEY_Down | Gdk.KEY_j:
-                page._set_adjustment(VAdjustment.DOWN)
-            case Gdk.KEY_g:
-                page._set_adjustment(VAdjustment.TOP)
-            case Gdk.KEY_G:
-                page._set_adjustment(VAdjustment.BOTTOM)
+        # FIXME: may already be delegated to some pages (e.g. keys)
+        #match event.keyval:
+        #    case Gdk.KEY_k | Gdk.KEY_Up:
+        #        page._set_adjustment(VAdjustment.UP)
+        #    case Gdk.KEY_Down | Gdk.KEY_j:
+        #        page._set_adjustment(VAdjustment.DOWN)
+        #    case Gdk.KEY_g:
+        #        page._set_adjustment(VAdjustment.TOP)
+        #    case Gdk.KEY_G:
+        #        page._set_adjustment(VAdjustment.BOTTOM)
 
     def return_prior(self) -> None:
         """
@@ -428,8 +393,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
             return
 
         if widget is self.servers:
-            view = self.servers.get_active_treeview()
-            view.grab_focus()
+            MainController.grab_active_treeview()
             return
 
         w = widget.get_children()[0]
@@ -447,37 +411,33 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         return widget
 
     def set_page_by_enum(self, enum: NotebookPage) -> None:
-        self.prior_page = self.get_page_by_enum()
+        prior = self.get_page_by_enum()
+        if prior is not None:
+            self.prior_page = prior
         self.set_current_page(self.indexes[enum])
         self.focus_current()
-
-        # TODO: should be an internal property of those pages
-        match enum:
-            case NotebookPage.KEYS:
-                MainController.set_statusbar("")
-                AppNav.grid.hide_connect_panel()
-            case NotebookPage.SERVERS:
-                # TODO: consolidate in mc.py
-                AppNav.grid.show_connect_panel()
-                AppNav.grid.show_filter_panel()
-                self.servers.get_active_treeview().grab_focus()
-                MainController.update_server_status()
-                crumbs = self.servers.get_cached_label()
-                MainController.set_crumbs(crumbs)
-            case _:
-                AppNav.grid.hide_connect_panel()
-                AppNav.grid.hide_filter_panel()
 
     def _on_page_changed(
         self, notebook: "Notebook", page: Gtk.Widget, page_num: int
     ) -> None:
         enum = self.get_page_by_enum()
-        is_mods = True if enum is NotebookPage.MODS else False
-        MainController.toggle_mod_panel(is_mods)
+        if enum is not None:
+            crumbs = enum.dict["crumbs"]
+            MainController.set_crumbs(crumbs)
 
-        # TODO:
-        crumbs = enum.dict["crumbs"]
-        MainController.set_crumbs(crumbs)
+        is_mods = True if enum is NotebookPage.MODS else False
+        is_servers = True if enum is NotebookPage.SERVERS else False
+
+        MainController.toggle_mod_panel(is_mods)
+        MainController.toggle_server_panels(is_servers)
+
+        match enum:
+            case NotebookPage.KEYS | NotebookPage.OPTIONS:
+                MainController.set_statusbar("")
+            case NotebookPage.SERVERS:
+                MainController.present_servers()
+            case _:
+                pass
 
 
 class Grid(Gtk.Grid):
@@ -489,21 +449,16 @@ class Grid(Gtk.Grid):
         SINGLE_ROW = 1
         SINGLE_COL = 1
 
+        MainController.register_widget("grid", self)
+
         self.statusbar = Statusbar(MainController)
+        self.right_panel = RightPanel(MainController)
         self.breadcrumbs = Gtk.Label(halign=Gtk.Align.START)
         self.set_breadcrumbs(strings.label_main_menu)
 
-        AppNav.statusbar = self.statusbar
-        AppNav.grid = self
-
-        # FIXME: do not pass AppNav to right panel
-        self.right_panel = RightPanel(AppNav, MainController)
-        # TODO: move into right panel
-        self.sel_panel = ModSelectionPanel(MainController)
-        self.right_panel.pack_start(self.sel_panel, NO_EXPAND, NO_FILL, NO_PADDING)
-
         self.notebook = Notebook()
         self.conpan = ConnectPanel()
+
 
         self.attach(self.notebook, 0, 0, MAX_COLS, 1)
 
@@ -518,17 +473,11 @@ class Grid(Gtk.Grid):
 
         self.show_all()
 
-    def hide_filter_panel(self) -> None:
-        self.right_panel.filters_vbox.set_visible(False)
+    def toggle_filter_panel(self, state: bool) -> None:
+        self.right_panel.filters_vbox.set_visible(state)
 
-    def show_filter_panel(self) -> None:
-        self.right_panel.filters_vbox.set_visible(True)
-
-    def hide_connect_panel(self) -> None:
-        self.conpan.set_visible(False)
-
-    def show_connect_panel(self) -> None:
-        self.conpan.set_visible(True)
+    def toggle_connect_panel(self, state: bool) -> None:
+        self.conpan.set_visible(state)
 
     def get_breadcrumbs(self) -> str:
         return self.breadcrumbs.get_text()
@@ -572,23 +521,4 @@ class App(Gtk.Application):
     ) -> None:
         self.win.halt_proc_and_quit()
 
-
-class AppNavigation:
-    grid: Grid
-    window: OuterWindow
-    notebook: Notebook
-    right_panel: RightPanel
-    statusbar: Statusbar
-    menu: MenuTreeView
-    servers: Gtk.ScrolledWindow
-    browser: ServerTreeView
-    saved: ServerTreeView
-    recent: ServerTreeView
-    lan: ServerTreeView
-    modtreeview: ModTreeView
-    logtreeview: LogTreeView
-    # TODO: add tree_log and tree_server views here
-    # or obtain via get_treeview()
-
-AppNav = AppNavigation()
 MainController = Controller()
