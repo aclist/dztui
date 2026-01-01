@@ -77,15 +77,15 @@ class Preferences(EnumWithAttrs):
 
 
 class NotebookPage(EnumWithAttrs):
-    CHANGELOG = {"crumbs": strings.crumbs.changelog,}
-    KEYS = {"crumbs": strings.crumbs.keys,}
-    LOG = {"crumbs": strings.crumbs.log,}
-    HELP = {"crumbs": strings.crumbs._help,}
-    MODS = {"crumbs": strings.crumbs.mods,}
-    OPTIONS = {"crumbs": strings.crumbs.options,}
-    SERVERS = {"crumbs": strings.crumbs.servers,}
-    THANKS = {"crumbs": strings.crumbs.thanks,}
-    DEVELOPERS = {"crumbs": strings.crumbs.developers,}
+    CHANGELOG = {"crumbs": strings.crumbs.changelog, "statusbar": False}
+    KEYS = {"crumbs": strings.crumbs.keys, "statusbar": False}
+    LOG = {"crumbs": strings.crumbs.log, "statusbar": False}
+    HELP = {"crumbs": strings.crumbs._help, "statusbar": True}
+    MODS = {"crumbs": strings.crumbs.mods, "statusbar": True}
+    OPTIONS = {"crumbs": strings.crumbs.options, "statusbar": False}
+    SERVERS = {"crumbs": strings.crumbs.servers, "statusbar": True}
+    THANKS = {"crumbs": strings.crumbs.thanks, "statusbar": False}
+    DEVELOPERS = {"crumbs": strings.crumbs.developers, "statusbar": False}
 
 
 class RowType(EnumWithAttrs):

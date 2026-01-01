@@ -23,3 +23,22 @@ def is_ctrl_mask(event: Gdk.EventKey) -> bool:
         return True
     else:
         return False
+
+def is_filterkey(key: int) -> bool:
+    keys = (
+        Gdk.KEY_0,
+        Gdk.KEY_1,
+        Gdk.KEY_2,
+        Gdk.KEY_3,
+        Gdk.KEY_4,
+        Gdk.KEY_5,
+        Gdk.KEY_6,
+        Gdk.KEY_7,
+        Gdk.KEY_8,
+        Gdk.KEY_9,
+        Gdk.KEY_backslash,
+        Gdk.KEY_minus,
+    )
+    if key in keys:
+        return True
+    return False

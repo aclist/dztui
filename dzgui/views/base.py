@@ -277,27 +277,27 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         MainController.register_widget("notebook", self)
 
         self.help = Help(MainController)
-        self.change = Changelog(MainController)
-        self.clog = ScrollableNote(self.change, back_button=False)
-        self.clog.scrollable.set_propagate_natural_width(False)
+        self.clog = Changelog(MainController)
 
-        # TODO: scrollable internally
         # TODO: make all treeviews internally scrollable in base class
-        self.keys = ScrollableNote(Keybindings())
+        self.keys = Keybindings()
         self.settings = Options(MainController)
 
         # NOTE: server and quad tables should have hexpand property set to True
         self.servers = ServerNotebook(MainController)
         self.mods = Mods(MainController)
 
+        # TODO: change this class to scrolledwindow
         self.scroll_log = Gtk.ScrolledWindow()
         self.scroll_log.set_hexpand(True)
         self.log_table = LogTreeView(MainController)
         self.scroll_log.add(self.log_table)
 
+        # TODO: change this class to scrolledwindow
         self.thanks = ScrollableNote(Thanks(), back_button=False)
 
         developers = Developers(MainController)
+        # TODO: change this class to scrolledwindow
         self.developers = ScrollableNote(developers)
 
         self.pages = {
@@ -328,8 +328,6 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         self.connect("key-press-event", self._on_keypress)
 
     def _on_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
-        page = self.get_page()
-
         match event.keyval:
             case Gdk.KEY_Right | Gdk.KEY_l:
                 if event.state is Gdk.ModifierType.CONTROL_MASK:
@@ -337,23 +335,6 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
                 MainController.focus_button_box()
             case Gdk.KEY_question:
                 self.toggle_keybindings()
-
-        # NOTE: abort on non scrollable pages
-        # TODO: deprecated
-        #allowed = (NotebookPage.KEYS, NotebookPage.CHANGELOG, NotebookPage.THANKS)
-        #if self.pages[page] not in allowed:
-        #    return
-
-        # FIXME: may already be delegated to some pages (e.g. keys)
-        #match event.keyval:
-        #    case Gdk.KEY_k | Gdk.KEY_Up:
-        #        page._set_adjustment(VAdjustment.UP)
-        #    case Gdk.KEY_Down | Gdk.KEY_j:
-        #        page._set_adjustment(VAdjustment.DOWN)
-        #    case Gdk.KEY_g:
-        #        page._set_adjustment(VAdjustment.TOP)
-        #    case Gdk.KEY_G:
-        #        page._set_adjustment(VAdjustment.BOTTOM)
 
     def return_prior(self) -> None:
         """
@@ -423,6 +404,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         enum = self.get_page_by_enum()
         if enum is not None:
             crumbs = enum.dict["crumbs"]
+            status = enum.dict["statusbar"]
             MainController.set_crumbs(crumbs)
 
         is_mods = True if enum is NotebookPage.MODS else False
@@ -431,13 +413,10 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         MainController.toggle_mod_panel(is_mods)
         MainController.toggle_server_panels(is_servers)
 
-        match enum:
-            case NotebookPage.KEYS | NotebookPage.OPTIONS:
-                MainController.set_statusbar("")
-            case NotebookPage.SERVERS:
-                MainController.present_servers()
-            case _:
-                pass
+        if status is False:
+            MainController.set_statusbar("")
+        if enum is NotebookPage.SERVERS:
+            MainController.present_servers()
 
 
 class Grid(Gtk.Grid):
@@ -458,7 +437,6 @@ class Grid(Gtk.Grid):
 
         self.notebook = Notebook()
         self.conpan = ConnectPanel()
-
 
         self.attach(self.notebook, 0, 0, MAX_COLS, 1)
 

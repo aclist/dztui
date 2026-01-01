@@ -155,13 +155,6 @@ class Controller:
     def append_map(self, map_row: list) -> None:
         self.model_manager.append_map(map_row)
 
-   # TODO: drop
-   # def set_mediator(self, mediator: "AppNavigation") -> None:
-   #     self.mediator = mediator
-
-   # def get_mediator(self) -> "AppNavigation":
-   #     return self.mediator
-
     def unblock_signals(self) -> None:
         self.block_signals(False)
 
@@ -643,6 +636,7 @@ class Controller:
                 model = treeview.get_model()
                 model.clear()
                 data = func()
+                # TODO: threading
                 model.append(data)
             treeview.set_loaded(True)
             self.update_server_status()
@@ -656,3 +650,19 @@ class Controller:
         self.update_server_status()
         crumbs = self.mediator.servers.get_cached_label()
         self.set_crumbs(crumbs)
+
+    def toggle_check(self, event: Gdk.EventKey) -> None:
+        keyname = Gdk.keyval_name(event.keyval)
+        if keyname.isnumeric() and int(keyname) > 0:
+            digit = int(keyname) - 1
+            self.mediator.grid.right_panel.filters_vbox.toggle_check(digit)
+        else:
+            match event.keyval:
+                case Gdk.KEY_0:
+                    self.mediator.grid.right_panel.filters_vbox.toggle_check(9)
+                case Gdk.KEY_minus:
+                    self.mediator.grid.right_panel.filters_vbox.toggle_check(10)
+                case Gdk.KEY_backslash:
+                    self.mediator.grid.right_panel.filters_vbox.toggle_check(11)
+                case _:
+                    return False

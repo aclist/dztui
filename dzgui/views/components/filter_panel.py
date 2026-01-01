@@ -2,10 +2,11 @@ import logging
 
 import gi  # noqa E402
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, Pango
+from gi.repository import Gtk, Gdk, Pango, GLib
 
 from typing import Literal
 from dzgui.util import strings
+from dzgui.util.format import embolden
 from dzgui.util.margins import set_surrounding_margins
 from dzgui.const.enum import FilterMode
 from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
@@ -71,8 +72,9 @@ class FilterPanel(Gtk.Box):
         self.set_margin_top(1)
 
         # TODO: strings
-        # TODO: embolden
-        self.filters_label = Gtk.Label(label="Filters")
+        text = embolden("Filters")
+        self.filters_label = Gtk.Label()
+        self.filters_label.set_markup(text)
 
         self.keyword_entry = Gtk.Entry()
         self.keyword_entry.set_placeholder_text("Filter by keyword")
@@ -262,9 +264,6 @@ class FilterPanel(Gtk.Box):
 
     def _on_check_toggled(self, button: Gtk.CheckButton) -> None:
         treeview = self.controller.get_active_treeview()
-        # TODO: drop
-        if not treeview.is_server_context(self.AppNav.treeview.view):
-            return
         label = button.get_label()
         state = button.get_active()
         logger.info(f"User toggled button '{label}' to {state}")

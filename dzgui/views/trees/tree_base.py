@@ -67,6 +67,11 @@ class TreeView(CursorMixin, Gtk.TreeView):
         it = self.get_selection().get_selected()[1]
         return it
 
+    def get_focused_row_iter(self) -> Gtk.TreeIter:
+        path = self.get_focused_row_path()
+        model = self.get_model()
+        return model.get_iter(path)
+
     def get_focused_row_path(self) -> Gtk.TreePath:
         return self.get_cursor().path
 
@@ -84,15 +89,11 @@ class TreeView(CursorMixin, Gtk.TreeView):
 
         if is_navkey(event.keyval):
             # TODO: investigate this
-            # TODO: get active tree if server view is open
-            servers = self.controller.mediator.notebook.servers
-            tv = servers.get_active_treeview()
+            tv = self.controller.get_active_treeview()
             if self.sel_blocked is False:
                 self.controller.suppress_signal(
                     tv,
                     tv.selected_row,
-                    #self.controller.mediator.treeview,
-                    #self.controller.mediator.treeview.selected_row,
                     "_on_tree_selection_changed",
                     True,
                 )
@@ -106,6 +107,11 @@ class TreeView(CursorMixin, Gtk.TreeView):
         """
         Suppresses spamming on keydown
         """
+        #if event.keyval is Gdk.KEY_space:
+        #    it = self.get_focused_row_iter()
+        #    self.get_selection().select_iter(it)
+        #    return True
+
         if is_navkey(event.keyval):
             if self.sel_blocked is True:
                 self.controller.suppress_signal(

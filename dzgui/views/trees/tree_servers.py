@@ -171,7 +171,6 @@ class ServerTreeView(TreeView):
     def _on_server_keypress(
         self, treeview: Gtk.TreeView, event: Gdk.EventKey
     ) -> bool | None:
-        # TODO: rewrite AppNav
         # TODO: use mixins
         # CONTROL_MASK + KEY_l
         if event.state is Gdk.ModifierType.CONTROL_MASK:
@@ -181,28 +180,15 @@ class ServerTreeView(TreeView):
                 case Gdk.KEY_r:
                     self.refresh_player_count()
                 case Gdk.KEY_f:
-                    AppNav.right_panel.filters_vbox.keyword_entry.grab_focus()
+                    self.controller.mediator.grid.right_panel.filters_vbox.keyword_entry.grab_focus()
                 case Gdk.KEY_m:
-                    AppNav.right_panel.filters_vbox.maps_entry.grab_focus()
+                    self.controller.mediator.grid.right_panel.filters_vbox.maps_entry.grab_focus()
         else:
-            keyname = Gdk.keyval_name(event.keyval)
-            if keyname.isnumeric() and int(keyname) > 0:
-                digit = int(keyname) - 1
-                AppNav.grid.right_panel.filters_vbox.toggle_check(digit)
-                return False
             match event.keyval:
                 case Gdk.KEY_l | Gdk.KEY_Right:
-                    #if event.state is Gdk.ModifierType.CONTROL_MASK:
-                    #    return
                     self.controller.mediator.right_panel.focus_button_box()
-                case Gdk.KEY_0:
-                    grid.right_panel.filters_vbox.toggle_check(9)
-                case Gdk.KEY_minus:
-                    grid.right_panel.filters_vbox.toggle_check(10)
-                case Gdk.KEY_backslash:
-                    grid.right_panel.filters_vbox.toggle_check(11)
                 case _:
-                    return False
+                    self.controller.toggle_check(event)
 
     def set_context_menu(self, items: ContextMenuGroup) -> None:
         # TODO: if debug is on, add raw command
