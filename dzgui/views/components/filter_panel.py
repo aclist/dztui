@@ -108,9 +108,8 @@ class FilterPanel(Gtk.Box):
     def set_unique_maps(self, maps: list) -> None:
         if len(maps) < 1:
             return
-        # FIXME: clear typehints
-        u_maps = set([row[1] for row in maps])  # type: ignore
-        u_maps = sorted(u_maps)  # type: ignore
+        u_maps = set([row[1] for row in maps])
+        u_maps = sorted(u_maps)
         for m in u_maps:
             self.controller.append_map([m])
             self.maps_hr.append(m)
@@ -123,13 +122,6 @@ class FilterPanel(Gtk.Box):
             if not self.enabled_filters[k]:
                 filters.append(k)
         return tuple(filters)
-
-    # used on personal/local server lists
-    def enable_all_filters(self) -> None:
-        for check in self.checks:
-            check.set_active(True)
-        for k in self.enabled_filters:
-            self.enabled_filters[k] = True
 
     def reinit_panel(self) -> None:
         self.keyword_entry.set_text("")

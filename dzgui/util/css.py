@@ -11,11 +11,18 @@ def add_class(widget: Gtk.Widget, label: str) -> None:
     context = widget.get_style_context()
     context.add_class(label)
 
-# TODO: def remove_class()
+
+def remove_class(widget: Gtk.Widget, label: str) -> None:
+    context = widget.get_style_context()
+    context.remove_class(label)
+
 
 def load_css() -> None:
     # TODO: consider storing this in a data file
     css = """
+    .invalid-entry {
+        border-color: red;
+    }
     .frame {
         border: 0px;
     }

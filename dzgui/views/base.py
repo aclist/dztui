@@ -80,14 +80,9 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 #    return rows
 #
 #def process_tree_option(choice: RowType) -> None:
-#    context = AppNav.treeview.view
-#    command = choice
-#    cmd_string = command.dict["label"]
-#    logger.info(f"Parsing tree option '{command}' for the context '{context}'")
-#
 #    # server tables
 #    if command == RowType.RESOLVE_IP:
-#        record = AppNav.treeview.get_record()
+#        record = treeview.get_record()
 #        wait_msg = command.dict["wait_msg"]
 #        show_wait_dialog = True
 #
@@ -103,12 +98,12 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 #    if command == RowType.QUICK_CONNECT:
 #        record = MainController.query_config(Preferences.FAV_SRV)
 #        if record == "":
-#            AppNav.window.spawn_dialog("No favorite server currently set", Popup.NOTIFY)
+#            spawn_dialog("No favorite server currently set", Popup.NOTIFY)
 #            return
 #
 #        record = str_to_record(record)
 #        thread_new_with_dialog(
-#            AppNav.treeview.prepare_connection,
+#            treeview.prepare_connection,
 #            parse_shell_output,
 #            "Querying server",
 #            command,
@@ -131,7 +126,7 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 #def connect_by_ip(enum: RowType, response: str) -> None:
 #    def _prep(response: str) -> None:
 #        record = Servers.validate_ip(response)
-#        proc = AppNav.treeview.prepare_connection(record)
+#        proc = treeview.prepare_connection(record)
 #        return proc
 #
 #    thread_new_with_dialog(
@@ -155,7 +150,7 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 #            logger.critical(e)
 #            # raise dialog
 #            return
-#    #    proc = AppNav.treeview.prepare_connection(record)
+#    #    proc = treeview.prepare_connection(record)
 #    #    return proc
 #
 #    #thread_new_with_dialog(
@@ -172,7 +167,7 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 #    if enum == RowType.CONN_BY_ID:
 #        key = MainController.query_config(Preferences.BM)
 #        if len(key) == 0:
-#            AppNav.window.spawn_dialog(
+#            spawn_dialog(
 #                "No Battlemetrics API key is set; see Options", Popup.NOTIFY
 #            )
 #            return

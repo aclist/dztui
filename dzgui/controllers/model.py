@@ -151,11 +151,9 @@ class ModelManager:
                 if prior_map == "All maps":
                     rows = self.filter_map(filters)
                 else:
-                    AppNav.right_panel.ping.set_sensitive(True)
                     rows = self.filter_toggle_on(filters, *args)
 
             case FilterMode.KEYWORD:
-                AppNav.right_panel.ping.set_sensitive(True)
                 rows = self.filter_toggle_on(filters, *args)
 
             case FilterMode.TOGGLE_OFF:
@@ -164,7 +162,6 @@ class ModelManager:
                 rows = self.filtered
 
             case FilterMode.TOGGLE_ON:
-                AppNav.right_panel.ping.set_sensitive(True)
                 rows = self.filter_toggle_on(filters, *args)
 
         if mode is not FilterMode.INITIAL:

@@ -52,10 +52,9 @@ class RightPanel(Gtk.Box):
     def _on_refresh_clicked(self, button: RefreshButton) -> None:
         self.controller.refresh_tree()
 
+    # TODO: reference
     #def _on_ping_clicked(self, button: Gtk.Button) -> None:
-    #    # TODO
     #    block_signals()
-
     #    def _update_pings():
     #        # TODO
     #        rows = ModelManager.get_filtered()
@@ -71,17 +70,17 @@ class RightPanel(Gtk.Box):
     #                temp_model[path][9] = res.ping
     #                ModelManager.ping_cache[res.addr] = res.ping
     #        # TODO: drop/rewrite
-    #        self.AppNav.treeview.set_model(temp_model)
-    #        self.AppNav.treeview.wait_dialog.destroy()
-    #        self.AppNav.treeview.grab_focus()
+    #        treeview.set_model(temp_model)
+    #        treeview.wait_dialog.destroy()
+    #        treeview.grab_focus()
 
     #        # TODO:
     #        unblock_signals()
 
     #    temp_model = self.AppNav.treeview.get_model()
-    #    self.AppNav.treeview.set_model(None)
-    #    self.AppNav.treeview.wait_dialog = GenericDialog("Pinging servers", Popup.WAIT)
-    #    self.AppNav.treeview.wait_dialog.show_all()
+    #    treeview.set_model(None)
+    #    treeview.wait_dialog = GenericDialog("Pinging servers", Popup.WAIT)
+    #    treeview.wait_dialog.show_all()
     #    thread = threading.Thread(target=_update_pings, args=())
     #    thread.start()
 

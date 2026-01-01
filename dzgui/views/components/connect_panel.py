@@ -1,12 +1,14 @@
 from typing import TYPE_CHECKING
 
+from dzgui.api.servers import validate_ip
+from dzgui.util.css import add_class, remove_class
 from dzgui.util.strings import connect_panel
 from dzgui.views.components.buttons import WebButton
 from dzgui.views.components.labels import BoldLabel
 
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk # noqa E402
+from gi.repository import Gtk, Gdk # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
@@ -17,6 +19,7 @@ class ConnectPanel(Gtk.Frame):
 
         COLS = 1
         ROWS = 1
+        self.classname = "invalid-entry"
         self.controller = controller
 
         self.entry = Gtk.Entry(
@@ -24,14 +27,16 @@ class ConnectPanel(Gtk.Frame):
             hexpand=True,
             tooltip_text=connect_panel.entry_tooltip
         )
+        self.entry.connect("key-press-event", self._on_entry_keypress)
+        self.entry.connect("changed", self._on_text_changed)
 
         # TODO: get ip as well?
         user_fav = self.controller.get_favorite_label()
 
         server_name = user_fav if user_fav is not None else connect_panel.no_fav
+        self.fav_label = Gtk.Label(label=server_name, halign=Gtk.Align.START)
         scrollable_label = Gtk.ScrolledWindow()
-        label = Gtk.Label(label=server_name, halign=Gtk.Align.START)
-        scrollable_label.add(label)
+        scrollable_label.add(self.fav_label)
 
         self.fav_button = Gtk.Button(label=connect_panel.connect,
             tooltip_text=connect_panel.connect_tooltip
@@ -70,3 +75,39 @@ class ConnectPanel(Gtk.Frame):
             self.grid.attach_next_to(el, sibling, pos, h_span, v_span)
 
         self.add(self.grid)
+
+    def mark_valid(self) -> None:
+        self.conn_server.set_sensitive(True)
+        self.add_server.set_sensitive(True)
+        remove_class(self.entry, self.classname)
+
+    def mark_invalid(self) -> None:
+        self.conn_server.set_sensitive(False)
+        self.add_server.set_sensitive(False)
+        add_class(self.entry, self.classname)
+
+    def _on_text_changed(self, entry: Gtk.Entry) -> None:
+        text = entry.get_text()
+        if len(text) < 1:
+            self.conn_server.set_sensitive(False)
+            self.add_server.set_sensitive(False)
+            remove_class(entry, self.classname)
+            return
+        try:
+            validate_ip(text)
+            self.mark_valid()
+        except Exception as e:
+            if text.isdigit():
+                self.mark_valid()
+            else:
+                self.mark_invalid()
+
+    def set_fav_label(self, text: str) -> None:
+        # TODO: called by controller when changing fav
+        self.fav_label.set_text(text)
+
+    def _on_entry_keypress(self, entry: Gtk.Entry, event: Gdk.EventKey) -> None:
+        if event.keyval == Gdk.KEY_Escape:
+            # NOTE: unselect text
+            entry.select_region(0, 0)
+            self.controller.grab_active_treeview()
