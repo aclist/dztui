@@ -1,6 +1,10 @@
 # Changelog
 
-## [5.8.2] 2026-01-01
+## [5.8.3] 2026-01-04
+## Fixed
+- Normalize checksum numbers and dates
+
+## [5.8.2] 2026-01-04
 ## Fixed
 - Fix regression in symlink routine introduced by previous hotfix
 
