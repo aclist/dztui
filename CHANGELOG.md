@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.0-beta.16] 2026-01-04
+## Fixed
+- Regression introduced in previous hotfix
+
 ## [6.0.0-beta.15] 2025-12-27
 ## Fixed
 - Path discovery during first-time setup when parsing filepaths with whitespaces

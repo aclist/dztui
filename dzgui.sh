@@ -3,7 +3,7 @@ set -o pipefail
 
 src_path=$(realpath "$0")
 
-version=6.0.0.beta-15
+version=6.0.0.beta-16
 
 #CONSTANTS
 aid=221100
@@ -478,9 +478,10 @@ migrate_files(){
 }
 stale_symlinks(){
     local game_dir="$steam_path/steamapps/common/DayZ"
-    for l in "$(find "$game_dir" -xtype l)"; do
-        logger DEBUG "Updating stale symlink '$l'"
-        unlink "$l"
+    readarray -t links < <(find "$game_dir" -xtype l)
+    for link in "${links[@]}"; do
+        logger DEBUG "Updating stale symlink '$link'"
+        unlink "$link"
     done
 }
 
@@ -602,7 +603,7 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="3036da0c8f46452af4822bbeaa1a9454"
+        ["funcs"]="56c1701c005413e5d8329ecaecd457de"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
         ["ui.py"]="8edf48e6780460bd8ea7b01614592296"
