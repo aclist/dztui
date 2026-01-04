@@ -1,5 +1,9 @@
 # Changelog
 
+## [5.8.2] 2026-01-01
+## Fixed
+- Fix regression in symlink routine introduced by previous hotfix
+
 ## [5.8.1] 2025-12-27
 ## Fixed
 - Path discovery during first-time setup when parsing filepaths with whitespaces

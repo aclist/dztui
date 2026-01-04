@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.8.1
+version=5.8.2
 
 #CONSTANTS
 aid=221100
@@ -488,9 +488,10 @@ migrate_files(){
 }
 stale_symlinks(){
     local game_dir="$steam_path/steamapps/common/DayZ"
-    for l in "$(find "$game_dir" -xtype l)"; do
-        logger DEBUG "Updating stale symlink '$l'"
-        unlink "$l"
+    readarray -t links < <(find "$game_dir" -xtype l)
+    for link in "${links[@]}"; do
+        logger DEBUG "Updating stale symlink '$link'"
+        unlink "$link"
     done
 }
 local_latlon(){
