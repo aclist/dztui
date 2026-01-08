@@ -64,6 +64,10 @@ def main() -> None:
     xdg_paths = get_xdg_paths()
     XDG = parse_filepaths(xdg_paths)
 
+    # NOTE: required for logs to be written
+    if XDG.debug.is_file() is False:
+        XDG.debug.parent.mkdir(parents=True, exist_ok=True)
+
     if has_new_config(XDG.config) is False:
         migrate_legacy_conf(XDG.config)
         migrate_cols_file(XDG.columns)
