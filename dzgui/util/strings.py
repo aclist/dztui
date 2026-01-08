@@ -128,6 +128,7 @@ servers = {
     "Ctrl-f": "jump to keyword search field",
     "Ctrl-m": "jump to maps field",
     "Ctrl-d": "toggle dry run (debug) mode",
+    "Ctrl-i": "jump to IP insert field",
     "ESC": "return to table",
     "1-9": "toggle filter 1-9 on/off",
     "0": "toggle filter 10",
