@@ -237,7 +237,7 @@ class AppHeaderBar(Gtk.HeaderBar):
 
 
 # TODO: deprecated
-class ScrollableNote(ScrollableMixin, Gtk.Box):
+class ScrollableNote(ScrollableMixin, Gtk.Box):  # type: ignore
     def __init__(self, content_box: Gtk.Box, back_button: bool = False):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
@@ -263,7 +263,7 @@ class ScrollableNote(ScrollableMixin, Gtk.Box):
         pass
 
 
-class Notebook(ScrollableMixin, Gtk.Notebook):
+class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
     def __init__(self) -> None:
         super().__init__(show_tabs=False)
 
@@ -275,7 +275,6 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         self.help = Help(MainController)
         self.clog = Changelog(MainController)
 
-        # TODO: make all treeviews internally scrollable in base class
         self.keys = Keybindings()
         self.settings = Options(MainController)
 
@@ -283,13 +282,13 @@ class Notebook(ScrollableMixin, Gtk.Notebook):
         self.servers = ServerNotebook(MainController)
         self.mods = Mods(MainController)
 
-        # TODO: change this class to scrolledwindow
+        # TODO: make all treeviews internally scrollable in base class
         self.scroll_log = Gtk.ScrolledWindow()
         self.scroll_log.set_hexpand(True)
         self.log_table = LogTreeView(MainController)
         self.scroll_log.add(self.log_table)
 
-        # TODO: change this class to scrolledwindow
+        # TODO: make all treeviews internally scrollable in base class
         self.thanks = ScrollableNote(Thanks(), back_button=False)
         # TODO: change this class to scrolledwindow
         developers = Developers(MainController)

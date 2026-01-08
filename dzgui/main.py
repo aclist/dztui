@@ -63,6 +63,7 @@ def main() -> None:
     # NOTE: consider aborting this check if steam deck
     xdg_paths = get_xdg_paths()
     XDG = parse_filepaths(xdg_paths)
+    # TODO: ensure state path is created
 
     if has_new_config(XDG.config) is False:
         migrate_legacy_conf(XDG.config)
@@ -93,6 +94,7 @@ def main() -> None:
     if _is_steam_deck is False:
         # TODO: sudo escalation dialog
         count = get_map_count()
+        # TODO: move into module
         if has_steam_client() is False:
             EarlyAlertDialog(init.requires_steam)
             sys.exit(1)
