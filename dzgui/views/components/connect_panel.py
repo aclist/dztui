@@ -87,6 +87,7 @@ class ConnectPanel(Gtk.Frame):
         add_class(self.entry, self.classname)
 
     def _on_text_changed(self, entry: Gtk.Entry) -> None:
+        # TODO: on submission, strip whitespace and newlines
         text = entry.get_text()
         if len(text) < 1:
             self.conn_server.set_sensitive(False)
@@ -96,7 +97,7 @@ class ConnectPanel(Gtk.Frame):
         try:
             validate_ip(text)
             self.mark_valid()
-        except Exception as e:
+        except Exception:
             if text.isdigit():
                 self.mark_valid()
             else:
