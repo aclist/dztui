@@ -3,7 +3,7 @@ set -o pipefail
 
 src_path=$(realpath "$0")
 
-version=6.0.0.beta-16
+version=6.0.0.beta-17
 
 #CONSTANTS
 aid=221100
@@ -141,7 +141,7 @@ test_gobject(){
     python3.13 -c "import gi"
     if [[ ! $? -eq 0 ]]; then
         logger CRITICAL "Missing PyGObject"
-        fdialog "Requires PyGObject (python-gobject)"
+        quit_with_pdialog "Requires PyGObject (python-gobject)"
         exit 1
     fi
     logger INFO "Found PyGObject in Python env"
@@ -226,7 +226,8 @@ depcheck(){
     for dep in "${!deps[@]}"; do
         if ! command -v "$dep" &> /dev/null; then
             local msg="Requires $dep >= ${deps[$dep]}"
-            raise_error_and_quit "$msg"
+            echo "$msg"
+            exit 1
         fi
     done
     local jqmsg="jq must be compiled with support for oniguruma"
@@ -235,10 +236,30 @@ depcheck(){
     [[ $? -ne 0 ]] && raise_error_and_quit "$jqmsg"
     logger INFO "Initial dependencies satisfied"
 }
+open_url(){
+    url="$1"
+    if [[ -n "$BROWSER" ]]; then
+        logger INFO "Opening '$url' in '$BROWSER'"
+        "$BROWSER" "$url"
+    else
+        logger INFO "Opening '$url' with xdg-open"
+        xdg-open "$url"
+    fi
+}
+quit_with_pdialog(){
+    local sel
+    msg="$1"
+    help_button="Open help page"
+    url="https://aclist.github.io/dzgui/installation.html"
+    logger CRITICAL "$msg"
+    sel=$(zenity --info --extra-button="$help_button" --text="$msg")
+    [[ $sel == "$help_button" ]] && open_url "$url" &
+    exit 1
+}
 check_pyver(){
-    if [[ ! $(command -v python3.13) ]]; then
+    if [[ ! $(python3.13 --version) ]]; then
         local msg="Requires Python 3.13"
-        raise_error_and_quit "$msg"
+        quit_with_pdialog "$msg"
     fi
 }
 watcher_deps(){
@@ -603,7 +624,7 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="56c1701c005413e5d8329ecaecd457de"
+        ["funcs"]="3c35e4d19b8c69971c564afb6ac22728"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
         ["ui.py"]="8edf48e6780460bd8ea7b01614592296"
@@ -669,10 +690,6 @@ fetch_km_helper(){
 get_response_code(){
     local url="$1"
     curl -Ls -I -o /dev/null -w "%{http_code}" "$url"
-}
-raise_error_and_quit(){
-    echo "$1"
-    exit 1
 }
 fetch_ip_db(){
     parse_dl_url(){
