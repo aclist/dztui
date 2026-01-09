@@ -64,6 +64,7 @@ def format_player_count(model: Gtk.TreeModel | None) -> str:
     hits_pretty = pluralize("matches", hits)
     suffix = distance_suffix
     status = f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
+    return status
     return f"{status} | {suffix}"
 
 

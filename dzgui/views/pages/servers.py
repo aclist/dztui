@@ -52,22 +52,22 @@ class ServerNotebook(Gtk.ScrolledWindow):
                 pass
                 #store.append(["BAR", "a", "a", "a", 1, 1, 1, "1:1", 0, 0, "a", False])
             else:
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
                 tree.loaded = True
             # TODO: set model on init of servertreeview
             tree.set_model(store)
@@ -110,12 +110,13 @@ class ServerNotebook(Gtk.ScrolledWindow):
         child.grab_focus()
 
         # FIXME: doesn't fire on first run
-        self.controller.update_server_status()
+        #self.controller.update_server_status()
+        self.controller.present_servers()
         self.controller.populate_model()
 
     # TODO: put in controller
     def query_test(self) -> None:
-        data = (["BAR", "a", "a", "a", 1, 1, 1, "1:1", 0, 0, "a", False])
+        data = (["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False])
         return data
 
     def get_cached_label(self) -> str:

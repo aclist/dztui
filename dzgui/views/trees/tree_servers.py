@@ -92,7 +92,7 @@ class ServerTreeView(TreeView):
             column.connect("notify::fixed-width", self._on_col_width_changed)
             self.append_column(column)
 
-        self.connect("on_distcalc_started", self._on_calclat_started)
+        self.connect("on_distcalc_started", self._on_distcalc_started)
         self.connect("button-release-event", self._on_server_button_release)
         self.connect("key-press-event", self._on_server_keypress)
         self.connect("generic_row_activated", self._parent_row_activated)
@@ -150,22 +150,28 @@ class ServerTreeView(TreeView):
       if self.current_proc and self.current_proc.is_alive():
           self.current_proc.terminate()
 
-    def _on_calclat_started(self, treeview):
-        server_tooltip[0] = format_tooltip()
-        server_tooltip[1] = server_tooltip[0] + "| Distance: calculating..."
-        self.update_statusbar(server_tooltip[1])
+    def _on_distcalc_started(self, treeview):
+        record = self.get_record()
+        if record is None:
+            return
+        ip = record.ip
+        self.current_proc = CalcDist(record.ip, self.queue, self.controller)
+        self.current_proc.start()
 
     def _check_result_queue(self) -> Literal[True]:
+        # TODO: trigger signal when changing page contexts
+        # TODO: delegate to controller
         latest_result = None
         while not self.queue.empty():
             latest_result = self.queue.get()
 
+        cache = self.controller.get_dist_cache()
         if latest_result:
             addr = latest_result[0]
-            km = latest_result[1]
-            cache[addr] = km
+            haversine = latest_result[1]
+            cache[addr] = haversine
             # FIXME
-            self.statusbar.append_distance(km)
+            self.controller.set_statusbar_dist(haversine)
         return True
 
     def _on_server_keypress(
@@ -261,23 +267,8 @@ class ServerTreeView(TreeView):
         print(self.get_value_at_index(0))
 
     def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
-
         self.terminate_process()
-        record = self.get_record()
-
-        if record is None:
-            return
-
-        #model = self.get_model()
-        #if record is None:
-        #    self.controller.update_server_status(model)
-        #    return
-
-        ip = record.ip
-        # TODO
-        #self.emit("on_distcalc_started")
-        #self.current_proc = CalcDist(self, record.ip, self.queue, cache)
-        #self.current_proc.start()
+        self.emit("on_distcalc_started")
 
     def get_record_string(self) -> str:
         addr = self.get_value_at_index(7)

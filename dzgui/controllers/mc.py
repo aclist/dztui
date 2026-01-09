@@ -38,9 +38,10 @@ from dzgui.config import update
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.controllers.model import ModelManager
-from dzgui.util.diag import write_diagnostic
 from dzgui.util import cooldown, strings
+from dzgui.util.diag import write_diagnostic
 from dzgui.util._json import read_json, write_json
+from dzgui.util.localize import number
 from dzgui.util.open_links import open_workshop_page, open_user_workshop
 from dzgui.util.format import format_mods, format_player_count, pluralize
 from dzgui.util.redact import redact_log
@@ -55,16 +56,17 @@ from gi.repository import Gtk, Gdk, GLib, GObject # noqa E402
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from dzgui.views.components.buttonbox import ContextualButton
-    from dzgui.views.base import OuterWindow
-    from dzgui.views.trees.tree_base import TreeView
-    from dzgui.views.trees.tree_mods import ModTreeView
-    from dzgui.views.trees.tree_servers import ServerTreeView
-    from dzgui.views.trees.tree_log import LogTreeView
+    from dzgui.util.dist import Haversine
     from dzgui.views.base import Notebook, Grid, OuterWindow
+    from dzgui.views.components.buttonbox import ContextualButton
     from dzgui.views.components.statusbar import Statusbar
     from dzgui.views.components.right_panel import RightPanel
     from dzgui.views.pages.servers import ServerNotebook
+    from dzgui.views.trees.tree_base import TreeView
+    from dzgui.views.trees.tree_menu import MenuTreeView
+    from dzgui.views.trees.tree_mods import ModTreeView
+    from dzgui.views.trees.tree_servers import ServerTreeView
+    from dzgui.views.trees.tree_log import LogTreeView
 
 class AppNavigation:
     window: "OuterWindow"
@@ -79,13 +81,11 @@ class AppNavigation:
     saved: "ServerTreeView"
     recent: "ServerTreeView"
     lan: "ServerTreeView"
-    modtreeview: "ModTreeView"
     logtreeview: "LogTreeView"
-
-# TODO: most server contexts can be dropped from this struct
 
 class Controller:
     def __init__(self) -> None:
+        self.dist_cache: dict[str, "Haversine"] = {}
         self.crumbs_cache = ""
         self.mediator = AppNavigation()
         self.prefs: UserPrefs
@@ -238,10 +238,29 @@ class Controller:
         Gtk.main_quit()
 
     def get_statusbar(self) -> str:
-        return self.mediator.grid.statusbar.get_text()
+        return self.mediator.statusbar.get_text()
 
     def set_statusbar(self, text: str) -> None:
-        self.mediator.grid.statusbar.set_text(text)
+        self.mediator.statusbar.set_text(text)
+
+    def set_statusbar_placeholder(self, text: str) -> None:
+        self.statusbar_placeholder = text
+
+    def set_statusbar_dist(self, haversine: "Haversine") -> None:
+        dist: str
+        if haversine is None:
+            dist = "Unknown"
+        else:
+            if self.query_config(Preferences.DIST) is True:
+                raw = round(haversine.as_miles())
+                separated = number(raw)
+                dist = str(separated) + " mi"
+            else:
+                raw = round(haversine.as_kilometers())
+                separated = number(raw)
+                dist = str(separated) + " km"
+        text = self.statusbar_placeholder
+        self.set_statusbar(f"{text} | Distance: {dist}")
 
     def delete_multiple_mods(self) -> None:
         sel = self.mediator.modtreeview.get_selection()
@@ -327,7 +346,7 @@ class Controller:
         return False
 
     def set_statusbar_by_row(self, row: "RowType") -> None:
-        self.mediator.grid.statusbar.refresh(row)
+        self.mediator.statusbar.refresh(row)
 
     def toggle_server_panels(self, state: bool) -> None:
         self.mediator.grid.toggle_filter_panel(state)
@@ -357,7 +376,7 @@ class Controller:
             case ButtonType.MODS:
                 self.load_mods()
             case ButtonType.HELP:
-                self.mediator.grid.statusbar.refresh(RowType.CHANGELOG)
+                self.mediator.statusbar.refresh(RowType.CHANGELOG)
                 pass
             case ButtonType.SERVERS:
                 self.mediator.notebook.set_page_by_enum(button.opens)
@@ -432,7 +451,7 @@ class Controller:
     def update_mod_statusbar(self) -> None:
         total_mods, total_size = self.calc_mod_size()
         msg = format_mods(total_size, total_mods)
-        self.mediator.grid.statusbar.set_text(msg)
+        self.mediator.statusbar.set_text(msg)
 
     def calc_mod_size(self) -> tuple[int, int]:
         model = self.model_manager.get_mod_store()
@@ -614,7 +633,8 @@ class Controller:
         treeview = self.mediator.notebook.servers.get_active_treeview()
         model = treeview.get_model()
         status = format_player_count(model)
-        self.mediator.statusbar.set_text(status)
+        self.set_statusbar_placeholder(status)
+        self.set_statusbar(status + "| Calculating...")
 
     def propagate_column_width(self, col: Gtk.TreeViewColumn) -> None:
         GLib.idle_add(self.mediator.servers.update_tab_widths, col)
@@ -651,10 +671,13 @@ class Controller:
         self.mediator.right_panel.focus_button_box()
 
     def present_servers(self) -> None:
+        tree = self.get_active_treeview()
+        # TODO: abstract
         self.grab_active_treeview()
         self.update_server_status()
         crumbs = self.mediator.servers.get_cached_label()
         self.set_crumbs(crumbs)
+        tree.emit("on_distcalc_started")
 
     def toggle_check(self, event: Gdk.EventKey) -> None:
         keyname = Gdk.keyval_name(event.keyval)
@@ -677,3 +700,6 @@ class Controller:
         if len(fav) < 1:
             return None
         return fav
+    
+    def get_dist_cache(self) -> dict[str, "Haversine"]:
+        return self.dist_cache

@@ -1,10 +1,9 @@
+import logging
 import multiprocessing
 from math import radians, cos, sin, asin, sqrt
 from typing import TYPE_CHECKING
 
-
-import dzgui.util.ip as ip
-from dzgui.util.ip import GeolocationError
+from dzgui.util.ip import GeolocationError, get_coords
 from dzgui.util.localize import number
 
 import gi
@@ -13,6 +12,9 @@ from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.util.ip import Coords
+    from dzgui.controllers.mc import Controller
+
+logger = logging.getLogger(__name__)
 
 class Haversine():
     def __init__(self, lat1: float, lon1: float, lat2: float, lon2: float) -> None:
@@ -35,53 +37,40 @@ class Haversine():
     def as_miles(self) -> float:
         return self.dist / 1609.344
 
-def compare(local: "Coords", remote_c: str, fmt: str) -> int | None:
-    if local is None:
-        return None
-    try:
-        # FIXME: expects XDG.ips
-        remote = ip.get_coords(remote_c)
-    except GeolocationError:
-        return None
-
-    haversine = Haversine(local.lat, local.lon, remote.lat, remote.lon)
-    if fmt == "km":
-        dist = haversine.as_kilometers()
-    else:
-        dist = haversine.as_miles()
-    return round(dist)
-
 class CalcDist(multiprocessing.Process):
     def __init__(
         self,
-        widget: Gtk.Widget,
         addr: str,
         result_queue: multiprocessing.Queue,
-        cache: dict,
-    ):
+        controller: "Controller",
+    ) -> None:
         super().__init__()
 
+        self.controller = controller
         self.result_queue = result_queue
         self.addr = addr
         self.ip = addr.split(":")[0]
 
-    # TODO: pass  controller correctly
     def run(self) -> None:
-        use_miles = MainController.query_config("use_miles")
-        fmt = "mi" if use_miles else "km"
-
-        # TODO: get cache accordingly
+        cache = self.controller.get_dist_cache()
         if self.addr in cache:
-            if fmt in cache[self.addr]:
-                logger.info(f"Address '{self.addr}' already in cache")
-                self.result_queue.put([self.addr, cache[self.addr]])
-                return
+            logger.info(f"Address '{self.addr}' already in cache")
+            self.result_queue.put([self.addr, cache[self.addr]])
+            return
 
-        prefs = MainController.get_prefs()
-        dist = compare(prefs.coords, prefs.paths.ips, self.ip, fmt)
-        if dist is None:
-            dist_pretty =  "Unknown"
-        else:
-            d = number(dist)
-            dist_pretty = f"{d} {fmt}"
-        self.result_queue.put([self.addr, dist_pretty])
+        dist = self.compare(self.ip)
+        self.result_queue.put([self.addr, dist])
+
+    def compare(self, remote: str) -> int | None:
+        prefs = self.controller.get_prefs()
+        local = prefs.coords
+        if local is None:
+            return None
+        try:
+            remote = get_coords(prefs.paths.ips, remote)
+        except GeolocationError:
+            return None
+
+        # TODO: handle failed remote dist
+        haversine = Haversine(local.lat, local.lon, remote.lat, remote.lon)
+        return haversine
