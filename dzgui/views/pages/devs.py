@@ -2,8 +2,9 @@ from dataclasses import fields
 from typing import Union, TYPE_CHECKING
 
 from dzgui.const.enum import NotebookPage
-from dzgui.util.strings import developers
 from dzgui.util.css import add_class
+from dzgui.util.strings import developers
+from dzgui.views.components.labels import BoldLabel
 
 import gi  # noqa E402
 gi.require_version("Gtk", "3.0")
@@ -14,19 +15,21 @@ if TYPE_CHECKING:
     from dzgui.config.userprefs import UserPrefs
     from dzgui.config.xdg import Xdg
 
-class Developers(Gtk.Box):
+class Developers(Gtk.ScrolledWindow):
     """
     Shows TreeViews displaying contents of parsed XDG paths
     and user preferences
     """
     def __init__(self, controller: "Controller") -> None:
         super().__init__(
-            orientation=Gtk.Orientation.VERTICAL,
-            margin_start=10,
-            margin_end=10,
         )
 
         self.controller = controller
+        self.box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            margin_start=10,
+            margin_end=10
+        )
 
         heading = Gtk.Label(label=developers.header)
         heading.set_halign(Gtk.Align.CENTER)
@@ -34,11 +37,9 @@ class Developers(Gtk.Box):
 
         back_button = Gtk.Button(label="Back", halign=Gtk.Align.START)
         back_button.connect("clicked", self._on_back_clicked)
-        paths_label = Gtk.Label()
-        paths_label.set_markup(f"<b>{developers.paths_label}</b>")
 
-        prefs_label = Gtk.Label()
-        prefs_label.set_markup(f"<b>{developers.prefs_label}</b>")
+        paths_label = BoldLabel(developers.paths_label)
+        prefs_label = BoldLabel(developers.prefs_label)
 
         paths_tree = self._make_tree(self.controller.prefs.paths)
         prefs_tree = self._make_tree(self.controller.prefs)
@@ -48,23 +49,20 @@ class Developers(Gtk.Box):
         paths_tree.set_cursor(path)
         prefs_tree.set_cursor(path)
 
-        for el in [
-            paths_label,
-            paths_tree,
-            prefs_label,
-            prefs_tree
-        ]:
+        for el in [paths_label, paths_tree, prefs_label, prefs_tree]:
             trees_box.add(el)
 
-        self.add(heading)
-        self.add(back_button)
-        self.add(trees_box)
+        for el in [heading, back_button, trees_box]:
+            self.box.add(el)
+
+        self.add(self.box)
 
     def _on_back_clicked(self, button: Gtk.Button) -> None:
         self.controller.open_page(NotebookPage.OPTIONS)
 
     def _make_tree(self, prefs: Union["Xdg", "UserPrefs"]) -> Gtk.TreeView:
-        view = Gtk.TreeView()
+        from dzgui.views.trees.tree_base import TreeView
+        view = TreeView(self.controller)
         renderer = Gtk.CellRendererText()
         for i, col in enumerate(developers.columns):
             column = Gtk.TreeViewColumn(col, renderer, text=i)

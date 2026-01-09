@@ -8,7 +8,7 @@ from dzgui.util import strings, css, open_links
 
 from dzgui.views.components.label import LeftLabel
 from dzgui.views.components.eventbox import InfoEventBox
-from dzgui.views.components.web_button import WebButton
+from dzgui.views.components.buttons import WebButton
 from dzgui.views.dialogs.link_dialog import WorkshopLinkDialog
 
 from dzgui.const.enum import Preferences, Popup
@@ -23,6 +23,7 @@ from dzgui.const.constants import (
     FLATPAK_SANDBOX,
     NO_EXPAND,
     NO_FILL,
+    NO_PADDING,
     STEAM_CMD,
     VIEW_CONCEAL,
     VIEW_REVEAL,
@@ -91,7 +92,7 @@ class Options(Gtk.Box):
         self.client_combo.set_active(0)
         self.client_combo.connect("changed", self._on_client_changed)
         hbox = Gtk.Box(spacing=5, halign=Gtk.Align.START)
-        hbox.pack_start(self.client_combo, NO_EXPAND, NO_FILL, 0)
+        hbox.pack_start(self.client_combo, NO_EXPAND, NO_FILL, NO_PADDING)
 
         self.distance_toggle = self.make_binary_radio(
             strings.options.km, strings.options.mi, Preferences.DIST
@@ -167,7 +168,10 @@ class Options(Gtk.Box):
 
         developers=Gtk.Button(label="Developers", halign=Gtk.Align.START)
         developers.connect("clicked", self._on_developers_clicked)
-        if self.controller.get_developer_mode():
+
+        prefs = self.controller.get_prefs()
+        is_developer = prefs.is_developer
+        if is_developer:
             grid.attach(
                 developers, 1, 0, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT
             )
@@ -186,6 +190,15 @@ class Options(Gtk.Box):
         self.scrollable = Gtk.ScrolledWindow(vexpand=True)
         self.scrollable.add(grid)
         self.add(self.scrollable)
+
+    def block_text_entry(self) -> None:
+        for entry in self.steam_entry, self.bm_entry:
+            entry.set_position(-1)
+            entry.set_can_focus(False)
+
+    def unblock_text_entry(self) -> None:
+        for entry in self.steam_entry, self.bm_entry:
+            entry.set_can_focus(True)
 
     def _on_developers_clicked(self, button: Gtk.Button) -> None:
         self.controller.show_developers_page()
@@ -290,6 +303,7 @@ class Options(Gtk.Box):
         #call_on_thread(show_wait_dialog, cmd, wait_msg, "")
 
     def _on_client_changed(self, combo: Gtk.ComboBoxText) -> None:
+        # TODO: use two columns or constants here, not strings
         client = combo.get_active_text()
         match client:
             case "Steam":
@@ -390,8 +404,8 @@ class Options(Gtk.Box):
         radio2 = Gtk.RadioButton.new_from_widget(radio1)
         radio2.set_label(second_option)
         radio1.connect("toggled", self._on_radio_toggled, context)
-        hbox.pack_start(radio1, NO_EXPAND, NO_FILL, 0)
-        hbox.pack_start(radio2, NO_EXPAND, NO_FILL, 0)
+        hbox.pack_start(radio1, NO_EXPAND, NO_FILL, NO_PADDING)
+        hbox.pack_start(radio2, NO_EXPAND, NO_FILL, NO_PADDING)
 
         return hbox
 
@@ -410,9 +424,10 @@ class Options(Gtk.Box):
         return box
 
     def populate_settings(self) -> None:
+        # TODO: controller.get_config()
         prefs = self.controller.get_prefs()
         if prefs.paths.config.is_file() is False:
-            # in case file got deleted locally
+            # NOTE: in case file got deleted locally
             self.controller.spawn_dialog(strings.config_not_found, Popup.QUIT)
             return
 

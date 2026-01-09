@@ -27,11 +27,11 @@ def get_ipdb(ips_path: Path) -> None:
 
     date = find_date(url)
     month_file = ips_path.parent / ".month"
-    if month_file.exists() is True:
-        old_date = month_file.read_text().rstrip("\n")
-        if old_date == date:
-            logger.info(f"IP DB date matches: {date}")
-            return
+    if ips_path.exists() and month_file.exists():
+            old_date = month_file.read_text().rstrip("\n")
+            if old_date == date:
+                logger.info(f"IP DB date matches: {date}")
+                return
 
     # TODO: log additional output
     logger.info(f"Fetching IPDB for {date} from {url}")

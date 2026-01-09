@@ -8,6 +8,7 @@ from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
 from dzgui.const.enum import (
     ContextMenu,
+    ContextMenuGroup,
     RowType,
     )
 from dzgui.const.constants import UDP_PORT
@@ -29,6 +30,12 @@ if TYPE_CHECKING:
 # TODO: add multiprocessing queue
 # TODO: fix cache
 
+class EnumeratedMenuItem(Gtk.MenuItem):
+    def __init__(self, enum: ContextMenu):
+        super().__init__(label=enum.dict["label"])
+        self.enum = enum
+
+
 class ServerTreeView(TreeView):
     __gsignals__ = {
         "on_distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())
@@ -36,6 +43,13 @@ class ServerTreeView(TreeView):
     def __init__(self, controller: "Controller") -> None:
         super().__init__(controller)
 
+        QUEUE_CHECK_DELAY = 200
+
+        self.loaded = False
+        self.query_func: Callable = None
+
+        self.menu = Gtk.Menu()
+        self.menu.connect("key-press-event", self._on_key)
         self.controller = controller
 
         self.set_fixed_height_mode(True)
@@ -62,9 +76,6 @@ class ServerTreeView(TreeView):
             column.set_resizable(True)
             column.set_sort_column_id(i)
 
-            # TODO: use index of column instead of name
-            # so literal name won't matter
-            # needs conversion logic for old configs
             if valid_json:
                 try:
                     saved_size = data["cols"][column_title]
@@ -78,27 +89,62 @@ class ServerTreeView(TreeView):
                 if column_title == "Map":
                     column.set_fixed_width(300)
 
+            column.connect("notify::fixed-width", self._on_col_width_changed)
             self.append_column(column)
 
-        # TODO: do not load model on initial init
-        # TODO: row_store = self.controller.get_row_store()
-        # TODO: test values: see below
-        r = Gtk.ListStore(
-            str, str, str, str, int, int, int, str, int, int, str, bool
-        )
-        r.append(["TEST", "a", "a", "a", 0, 0, 0, "a", 0, 0, "a", False])
-        self.set_model(r)
-
         self.connect("on_distcalc_started", self._on_calclat_started)
-
-
         self.connect("button-release-event", self._on_server_button_release)
         self.connect("key-press-event", self._on_server_keypress)
-
         self.connect("generic_row_activated", self._parent_row_activated)
         self.connect("generic_treesel_changed", self._parent_selection_changed)
 
-        GLib.timeout_add(200, self._check_result_queue)
+        GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
+
+    def _on_key(self, menu: Gtk.Menu, event: Gdk.EventKey) -> bool | None:
+        if not is_navkey(event.keyval):
+            return False
+        sel = menu.get_selected_item()
+        children = menu.get_children()
+        for i, child in enumerate(children):
+            if sel is child:
+                ind = i
+                break
+
+        match event.keyval:
+            case Gdk.KEY_j:
+                if ind == len(children) - 1:
+                    return True
+                menu.select_item(children[ind+1])
+            case Gdk.KEY_k:
+                if ind - 1 < 0:
+                    return True
+                menu.select_item(children[ind-1])
+            case Gdk.KEY_g:
+                menu.select_item(children[0])
+            case Gdk.KEY_G:
+                ind = len(children) - 1
+                menu.select_item(children[ind])
+            case _:
+                return False
+        return True
+
+    def set_query_func(self, func: Callable) -> None:
+        self.query_func = func
+
+    def get_query_func(self) -> Callable | None:
+        return self.query_func
+
+    def _on_col_width_changed(
+        self, col: Gtk.TreeViewColumn, width: GObject.ParamSpecInt
+    ) -> None:
+        """
+        Propagate width change to other tabs
+        """
+        title = col.get_title()
+        size = col.get_width()
+
+        # NOTE: get final width after drag action completes
+        GLib.idle_add(self.controller.propagate_column_width, col)
 
     def terminate_process(self) -> None:
       if self.current_proc and self.current_proc.is_alive():
@@ -118,7 +164,7 @@ class ServerTreeView(TreeView):
             addr = latest_result[0]
             km = latest_result[1]
             cache[addr] = km
-            # TODO: fixme
+            # FIXME
             self.statusbar.append_distance(km)
         return True
 
@@ -134,37 +180,35 @@ class ServerTreeView(TreeView):
                 case Gdk.KEY_r:
                     self.refresh_player_count()
                 case Gdk.KEY_f:
-                    if not AppNav.treeview.is_server_context(AppNav.treeview.view):
-                        return True
-                    AppNav.right_panel.filters_vbox.keyword_entry.grab_focus()
+                    # TODO: register filter panel instead of mediating thru right panel
+                    self.controller.mediator.grid.right_panel.filters_vbox.keyword_entry.grab_focus()
                 case Gdk.KEY_m:
-                    # FIXME: should no longer be relevant
-                    if AppNav.treeview.view == WindowContext.TABLE_MODS:
-                        return True
-                    AppNav.right_panel.filters_vbox.maps_entry.grab_focus()
+                    self.controller.mediator.grid.right_panel.filters_vbox.maps_entry.grab_focus()
+                case Gdk.KEY_i:
+                    self.controller.mediator.grid.conpan.entry.grab_focus()
         else:
-            keyname = Gdk.keyval_name(event.keyval)
-            if keyname.isnumeric() and int(keyname) > 0:
-                digit = int(keyname) - 1
-                AppNav.grid.right_panel.filters_vbox.toggle_check(digit)
-                return False
             match event.keyval:
                 case Gdk.KEY_l | Gdk.KEY_Right:
-                    #if event.state is Gdk.ModifierType.CONTROL_MASK:
-                    #    return
                     self.controller.mediator.right_panel.focus_button_box()
-                case Gdk.KEY_0:
-                    grid.right_panel.filters_vbox.toggle_check(9)
-                case Gdk.KEY_minus:
-                    grid.right_panel.filters_vbox.toggle_check(10)
-                case Gdk.KEY_backslash:
-                    grid.right_panel.filters_vbox.toggle_check(11)
                 case _:
-                    return False
+                    self.controller.toggle_check(event)
+
+    def set_context_menu(self, items: ContextMenuGroup) -> None:
+        # TODO: if debug is on, add raw command copy to context menu
+        for item in items.value:
+            menu_item = EnumeratedMenuItem(item)
+            menu_item.connect("activate", self._on_menu_click)
+            self.menu.append(menu_item)
+        self.menu.show_all()
+
+    def _on_menu_click(self, item) -> None:
+        print(f"UNIMPLEMENTED: {item.enum}")
+        pass
 
     def _on_server_button_release(
         self, widget: Gtk.Widget, event: Gdk.EventButton
     ) -> None:
+        # TODO: use ContextMixin
         if event.type is Gdk.EventType.BUTTON_RELEASE and event.button != 3:
             return
 
@@ -179,73 +223,23 @@ class ServerTreeView(TreeView):
         except AttributeError:
             pass
 
-        self.menu = Gtk.Menu()
         mod_context_items = [ContextMenu.OPEN_WORKSHOP, ContextMenu.DELETE_MOD]
-        # TODO: reimplement server context enums
-        server_context_items = {
-            RowType.SERVER_BROWSER: [
-                ContextMenu.ADD_SERVER,
-                ContextMenu.COPY_NAME,
-                ContextMenu.COPY_CLIPBOARD,
-                ContextMenu.ADD_NOTE,
-                ContextMenu.SHOW_MODS,
-                ContextMenu.SHOW_DETAILS,
-                ContextMenu.REFRESH_PLAYERS,
-            ],
-            RowType.SCAN_LAN: [
-                ContextMenu.COPY_NAME,
-                ContextMenu.COPY_CLIPBOARD,
-                ContextMenu.ADD_NOTE,
-                ContextMenu.SHOW_MODS,
-                ContextMenu.SHOW_DETAILS,
-                ContextMenu.REFRESH_PLAYERS,
-            ],
-            RowType.SAVED_SERVERS: [
-                ContextMenu.REMOVE_SERVER,
-                ContextMenu.COPY_NAME,
-                ContextMenu.COPY_CLIPBOARD,
-                ContextMenu.ADD_NOTE,
-                ContextMenu.SHOW_MODS,
-                ContextMenu.SHOW_DETAILS,
-                ContextMenu.REFRESH_PLAYERS,
-            ],
-            RowType.RECENT_SERVERS: [
-                ContextMenu.ADD_SERVER,
-                ContextMenu.REMOVE_HISTORY,
-                ContextMenu.COPY_NAME,
-                ContextMenu.ADD_NOTE,
-                ContextMenu.COPY_CLIPBOARD,
-                ContextMenu.SHOW_MODS,
-                ContextMenu.SHOW_DETAILS,
-                ContextMenu.REFRESH_PLAYERS,
-            ],
-        }
 
-        # TODO: how to get current server context
-        if self.view == WindowContext.TABLE_MODS:
-            items = mod_context_items
-        elif self.subpage in server_context_items:
-            items = server_context_items[self.subpage]
-        else:
-            return
-
-        for row in items:
-            if row == ContextMenu.ADD_SERVER:
-                if self.is_in_favs():
-                    row = ContextMenu.REMOVE_SERVER
-            item = Gtk.MenuItem(label=row.dict["label"])
-            item.type = row
-            item.action = row.dict["action"]
-            item.connect("activate", self._on_menu_click)
-            self.menu.append(item)
-            if row == ContextMenu.SHOW_MODS:
-                if not self.has_mods():
-                    item.set_sensitive(False)
-            if row == ContextMenu.ADD_NOTE:
-                if self.get_record_string() in notes_cache:
-                    item.set_label(strings.edit_note)
-
-        self.menu.show_all()
+        # TODO: dynamic menu entries
+        #for row in items:
+        #    if row == ContextMenu.ADD_SERVER:
+        #        if self.is_in_favs():
+        #            row = ContextMenu.REMOVE_SERVER
+        #    item = Gtk.MenuItem(label=row.dict["label"])
+        #    item.type = row
+        #    item.action = row.dict["action"]
+        #    self.menu.append(item)
+        #    if row == ContextMenu.SHOW_MODS:
+        #        if not self.has_mods():
+        #            item.set_sensitive(False)
+        #    if row == ContextMenu.ADD_NOTE:
+        #        if self.get_record_string() in notes_cache:
+        #            item.set_label(strings.edit_note)
 
         if event.type is Gdk.EventType.KEY_PRESS and event.keyval is Gdk.KEY_l:
             if self.is_selection_empty():
@@ -263,25 +257,27 @@ class ServerTreeView(TreeView):
             column: Gtk.TreeViewColumn
         ) -> None:
         # TODO: process server connection
+        # TODO: get record
         print(self.get_value_at_index(0))
 
     def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
-        print(self.get_value_at_index(0))
 
         self.terminate_process()
         record = self.get_record()
-        print(record)
 
-        # TODO: ?
-        if not record:
-            grid.statusbar.update_server_meta()
+        if record is None:
             return
 
-        ip = record.ip
+        #model = self.get_model()
+        #if record is None:
+        #    self.controller.update_server_status(model)
+        #    return
 
-        self.emit("on_distcalc_started")
-        self.current_proc = CalcDist(self, record.ip, self.queue, cache)
-        self.current_proc.start()
+        ip = record.ip
+        # TODO
+        #self.emit("on_distcalc_started")
+        #self.current_proc = CalcDist(self, record.ip, self.queue, cache)
+        #self.current_proc.start()
 
     def get_record_string(self) -> str:
         addr = self.get_value_at_index(7)
@@ -289,6 +285,7 @@ class ServerTreeView(TreeView):
         return f"{addr}:{qport}"
 
     def get_record(self) -> dict | None:
+        # TODO: delegate to controller
         select = self.get_selection()
         sels = select.get_selected_rows()
         (model, pathlist) = sels
@@ -303,3 +300,9 @@ class ServerTreeView(TreeView):
         ip = addr.split(":")[0]
         gameport = int(addr.split(":")[1])
         return Record(ip, gameport, qport)
+
+    def get_loaded(self) -> bool:
+        return self.loaded
+
+    def set_loaded(self, status: bool) -> None:
+        self.loaded = status

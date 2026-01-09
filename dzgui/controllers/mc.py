@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any, Callable, TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
+import dzgui.util._json as JSON  # noqa
+
 from dzgui.api.probe import test_steam_api, test_bm_api
 from dzgui.api.mods import (
     get_delimited_mods,
@@ -21,6 +23,7 @@ from dzgui.const.enum import (
     NotebookPage,
     ButtonType,
     ContextMenu,
+    RowType
 )
 
 from dzgui.const.constants import (
@@ -38,8 +41,8 @@ from dzgui.controllers.model import ModelManager
 from dzgui.util.diag import write_diagnostic
 from dzgui.util import cooldown, strings
 from dzgui.util._json import read_json, write_json
-from dzgui.util.open_links import open_workshop_page
-from dzgui.util.format import format_mods
+from dzgui.util.open_links import open_workshop_page, open_user_workshop
+from dzgui.util.format import format_mods, format_player_count, pluralize
 from dzgui.util.redact import redact_log
 
 from dzgui.views.dialogs.filepicker import FilePicker
@@ -53,34 +56,66 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from dzgui.views.components.buttonbox import ContextualButton
-    from dzgui.views.base import AppNavigation
-    from dzgui.const.enum import ContextMenu, RowType
     from dzgui.views.base import OuterWindow
+    from dzgui.views.trees.tree_base import TreeView
+    from dzgui.views.trees.tree_mods import ModTreeView
+    from dzgui.views.trees.tree_servers import ServerTreeView
+    from dzgui.views.trees.tree_log import LogTreeView
+    from dzgui.views.base import Notebook, Grid, OuterWindow
+    from dzgui.views.components.statusbar import Statusbar
+    from dzgui.views.components.right_panel import RightPanel
+    from dzgui.views.pages.servers import ServerNotebook
+
+class AppNavigation:
+    window: "OuterWindow"
+    grid: "Grid"
+    right_panel: "RightPanel"
+    statusbar: "Statusbar"
+    notebook: "Notebook"
+    modtreeview: "ModTreeView"
+    menu: "MenuTreeView"
+    servers: "ServerNotebook"
+    browser: "ServerTreeView"
+    saved: "ServerTreeView"
+    recent: "ServerTreeView"
+    lan: "ServerTreeView"
+    modtreeview: "ModTreeView"
+    logtreeview: "LogTreeView"
+
+# TODO: most server contexts can be dropped from this struct
 
 class Controller:
     def __init__(self) -> None:
-        self.is_developer: bool
-        self.mediator: AppNavigation
+        self.crumbs_cache = ""
+        self.mediator = AppNavigation()
         self.prefs: UserPrefs
         self.cooldown = 0
 
         self.model_manager = ModelManager()
 
-    def set_help_menu_crumbs(self) -> None:
-        # TODO: going to be deprecated after server notebook is added
-        tip = self.mediator.treeview.get_model()[0][0]
-        store = self.model_manager.get_help_store()[0][0]
-        if tip == store:
-            self.set_crumbs("Help")
+    def register_widget(self, attr: str, widget: Gtk.Widget) -> None:
+        try:
+            setattr(self.mediator, attr, widget)
+        except AttributeError:
+            logger.critical(f"{attr} is not a valid AppNavigation attribute.")
 
-    def set_crumbs(self, crumbs: str) -> None:
-        self.mediator.grid.set_breadcrumbs(crumbs)
+    def set_crumbs(self, text: str) -> None:
+        self.mediator.grid.set_breadcrumbs(text)
 
     def get_crumbs(self) -> str:
         return self.mediator.grid.get_breadcrumbs()
 
-    def get_row_store(self) -> Gtk.ListStore:
-        return self.model_manager.get_row_store()
+    def get_server_store(self) -> Gtk.ListStore:
+        return self.model_manager.get_server_store()
+
+    def get_saved_store(self) -> Gtk.ListStore:
+        return self.model_manager.get_saved_store()
+
+    def get_recent_store(self) -> Gtk.ListStore:
+        return self.model_manager.get_recent_store()
+
+    def get_lan_store(self) -> Gtk.ListStore:
+        return self.model_manager.get_lan_store()
 
     def get_help_store(self) -> Gtk.ListStore:
         return self.model_manager.get_help_store()
@@ -99,7 +134,7 @@ class Controller:
 
     def terminate_process(self) -> None:
         # TODO: only used by server table multiprocessing queue
-        self.mediator.notebook.servers.terminate_process()
+        self.mediator.notebook.servers.browser.terminate_process()
 
     def get_prefs(self) -> UserPrefs:
         return self.prefs
@@ -120,12 +155,6 @@ class Controller:
     def append_map(self, map_row: list) -> None:
         self.model_manager.append_map(map_row)
 
-    def set_mediator(self, mediator: "AppNavigation") -> None:
-        self.mediator = mediator
-
-    def get_mediator(self) -> "AppNavigation":
-        return self.mediator
-
     def unblock_signals(self) -> None:
         self.block_signals(False)
 
@@ -137,12 +166,12 @@ class Controller:
             state,
         )
         self.suppress_signal(
-            self.mediator.treeview,
-            self.mediator.treeview.selected_row,
+            self.mediator.menu,
+            self.mediator.menu.selected_row,
             "_on_tree_selection_changed",
             state,
         )
-        self.suppress_signal(self.mediator.treeview, self.mediator.treeview, "_on_keypress", state)
+        self.suppress_signal(self.mediator.menu, self.mediator.menu, "_on_keypress", state)
         for check in self.mediator.grid.right_panel.filters_vbox.checks:
             self.suppress_signal(
                 self.mediator.grid.right_panel.filters_vbox,
@@ -160,12 +189,39 @@ class Controller:
             widget.handler_block_by_func(func)
         else:
             widget.handler_unblock_by_func(func)
-        self.mediator.treeview.sel_blocked = state
+        # TODO: deprecated?
+        #self.mediator.menu.sel_blocked = state
 
     def toggle_debug_mode(self) -> None:
         self.toggle_config(Preferences.DEBUG)
 
+    def get_active_treeview(self) -> "TreeView":
+        return self.mediator.notebook.servers.get_active_treeview()
+
+    def grab_active_treeview(self) -> None:
+        self.get_active_treeview().grab_focus()
+
     def save_res_and_quit(self, *args: Any) -> None:
+        treeview = self.get_active_treeview()
+        columns = treeview.get_columns()
+
+        columns_file = self.prefs.paths.columns
+        try:
+            data = JSON.read_json(columns_file)
+        except Exception as e:
+            logger.critical(e)
+            data = {"cols": {}}
+
+        for column in columns:
+            title = column.get_title()
+            size = column.get_width()
+            data["cols"][title] = size
+
+        try:
+            JSON.write_json(data, columns_file)
+        except Exception as e:
+            logger.critical(e)
+
         if self.mediator.window.props.is_maximized:
             Gtk.main_quit()
             return
@@ -181,13 +237,16 @@ class Controller:
 
         Gtk.main_quit()
 
+    def get_statusbar(self) -> str:
+        return self.mediator.grid.statusbar.get_text()
+
     def set_statusbar(self, text: str) -> None:
         self.mediator.grid.statusbar.set_text(text)
 
     def delete_multiple_mods(self) -> None:
         sel = self.mediator.modtreeview.get_selection()
         model, pathlist = sel.get_selected_rows()
-        # NOTE: reverse when multiple
+        # NOTE: reverse when multiple selection
         for path in reversed(pathlist):
             self.delete_single_mod(path)
 
@@ -222,16 +281,19 @@ class Controller:
             logger.critical(e)
             self.spawn_dialog(strings.something_wrong, Popup.NOTIFY)
             # TODO: suppress signals
-            # then reenable (or it spawns twice)
+            # then reenable (or it spawns dialog twice)
             self.mediator.grid.notebook.settings.populate_settings()
             return
 
     # NOTE: disabled for now
-    def present_toast(self, text: str) -> None:
-        self.mediator.window.toast.set_text_and_fade(text)
+    #def present_toast(self, text: str) -> None:
+    #    self.mediator.window.toast.set_text_and_fade(text)
 
     def start_cooldown(self) -> None:
         self.cooldown = cooldown.get_time()
+
+    def get_cooldown(self) -> None:
+        return self.cooldown
 
     def manage_cooldown(self) -> bool:
         if cooldown.is_elapsed(self.cooldown):
@@ -267,16 +329,24 @@ class Controller:
     def set_statusbar_by_row(self, row: "RowType") -> None:
         self.mediator.grid.statusbar.refresh(row)
 
+    def toggle_server_panels(self, state: bool) -> None:
+        self.mediator.grid.toggle_filter_panel(state)
+        self.mediator.grid.toggle_connect_panel(state)
+        self.mediator.grid.toggle_refresh_button(state)
+
     def toggle_mod_panel(self, state: bool) -> None:
-        self.mediator.grid.sel_panel.set_visible(state)
+        self.mediator.grid.right_panel.sel_panel.set_visible(state)
 
     def show_developers_page(self) -> None:
         self.open_page(NotebookPage.DEVELOPERS)
+        # TODO: put cursor on first row
+        #self.mediator.developers.focus_first_row()
 
     def open_page(self, page: NotebookPage) -> None:
         self.mediator.grid.notebook.set_page_by_enum(page)
 
     def open_page_by_button(self, button: "ContextualButton") -> None:
+        # TODO: consolidate methods with set_page_by_enum
         match button.context:
             case ButtonType.EXIT:
                 logger.info("Normal user exit")
@@ -287,21 +357,21 @@ class Controller:
             case ButtonType.MODS:
                 self.load_mods()
             case ButtonType.HELP:
-                help_store = self.model_manager.get_help_store()
-                self.mediator.treeview.set_model(help_store)
-            case ButtonType.MAIN_MENU:
-                # TODO: going to be deprecated after server notebook is added
-                row_store = self.model_manager.get_row_store()
-                self.mediator.treeview.set_model(row_store)
+                self.mediator.grid.statusbar.refresh(RowType.CHANGELOG)
+                pass
+            case ButtonType.SERVERS:
+                self.mediator.notebook.set_page_by_enum(button.opens)
+                # TODO: use cache
+                self.update_server_status()
+                return
 
-        self.mediator.grid.notebook.set_page_by_enum(button.opens)
+        self.mediator.notebook.set_page_by_enum(button.opens)
         self.set_crumbs(button.get_label())
 
-    # TODO: deprecated?
-    def open_self_workshop(self, uid: str) -> None:
+    def open_user_workshop(self, uid: str) -> None:
         # NOTE: uid may contain leading zeroes, not a real integer
         client = self.query_config(Preferences.CLIENT)
-        open_workshop_page(uid, client)
+        open_user_workshop(uid, client)
 
     def copy_log(self, paths: list[Gtk.TreePath]) -> str:
         if len(paths) < 1:
@@ -364,7 +434,6 @@ class Controller:
         msg = format_mods(total_size, total_mods)
         self.mediator.grid.statusbar.set_text(msg)
 
-
     def calc_mod_size(self) -> tuple[int, int]:
         model = self.model_manager.get_mod_store()
         total_mods = len(model)
@@ -376,9 +445,11 @@ class Controller:
 
     def menu_action(self, action: ContextMenu, path: Gtk.TreePath) -> None:
         match action:
-            # NOTE: manipulates server store
+            # NOTE: manipulates server stores
             # TODO: unimplemented
             case ContextMenu.ADD_SERVER:
+                pass
+            case ContextMenu.ADD_FAV:
                 pass
             case ContextMenu.ADD_NOTE:
                 pass
@@ -539,8 +610,70 @@ class Controller:
             logger.info(f"Using default window size {w},{h}")
             window.set_default_size(w, h)
 
-    def set_developer_mode(self, mode: bool) -> None:
-        self.is_developer = mode
+    def update_server_status(self) -> None:
+        treeview = self.mediator.notebook.servers.get_active_treeview()
+        model = treeview.get_model()
+        status = format_player_count(model)
+        self.mediator.statusbar.set_text(status)
 
-    def get_developer_mode(self) -> bool:
-        return self.is_developer
+    def propagate_column_width(self, col: Gtk.TreeViewColumn) -> None:
+        GLib.idle_add(self.mediator.servers.update_tab_widths, col)
+
+    def set_crumbs_cache(self, text: str) -> None:
+        self.crumbs_cache = text
+
+    def get_crumbs_cache(self) -> str:
+        return self.crumbs_cache
+
+    def refresh_tree(self) -> None:
+        treeview = self.mediator.notebook.servers.get_active_treeview()
+        treeview.set_loaded(False)
+        self.populate_model()
+
+    def populate_model(self) -> None:
+        # TODO: always use same server model, store in servertreeview class
+        treeview = self.mediator.notebook.servers.get_active_treeview()
+        if treeview.get_loaded() is False:
+            new_model = self.model_manager.new_model()
+            # NOTE: set_query_func()
+            func = treeview.get_query_func()
+            if func is not None:
+                model = treeview.get_model()
+                model.clear()
+                data = func()
+                # TODO: threading
+                model.append(data)
+            treeview.set_loaded(True)
+            self.update_server_status()
+        treeview.grab_focus()
+
+    def focus_button_box(self) -> None:
+        self.mediator.right_panel.focus_button_box()
+
+    def present_servers(self) -> None:
+        self.grab_active_treeview()
+        self.update_server_status()
+        crumbs = self.mediator.servers.get_cached_label()
+        self.set_crumbs(crumbs)
+
+    def toggle_check(self, event: Gdk.EventKey) -> None:
+        keyname = Gdk.keyval_name(event.keyval)
+        if keyname.isnumeric() and int(keyname) > 0:
+            digit = int(keyname) - 1
+            self.mediator.grid.right_panel.filters_vbox.toggle_check(digit)
+        else:
+            match event.keyval:
+                case Gdk.KEY_0:
+                    self.mediator.grid.right_panel.filters_vbox.toggle_check(9)
+                case Gdk.KEY_minus:
+                    self.mediator.grid.right_panel.filters_vbox.toggle_check(10)
+                case Gdk.KEY_backslash:
+                    self.mediator.grid.right_panel.filters_vbox.toggle_check(11)
+                case _:
+                    return False
+
+    def get_favorite_label(self) -> str | None:
+        fav = str(self.query_config(Preferences.FAV_LBL))
+        if len(fav) < 1:
+            return None
+        return fav

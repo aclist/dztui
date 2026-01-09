@@ -29,8 +29,8 @@ class MenuTreeView(TreeView):
         column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
         self.append_column(column)
 
-        row_store = self.controller.get_row_store()
-        self.set_model(row_store)
+        help_store = self.controller.get_help_store()
+        self.set_model(help_store)
 
         self.selected_row = self.get_selection()
 
@@ -44,7 +44,6 @@ class MenuTreeView(TreeView):
             column: Gtk.TreeViewColumn
         ) -> None:
         row_type = self.get_value_at_index(1)
-        print(row_type)
 
         match row_type:
             case RowType.THANKS:

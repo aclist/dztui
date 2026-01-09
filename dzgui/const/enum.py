@@ -77,18 +77,15 @@ class Preferences(EnumWithAttrs):
 
 
 class NotebookPage(EnumWithAttrs):
-    CHANGELOG = {"crumbs": strings.crumbs.changelog,}
-    HISTORY = {"crumbs": strings.crumbs.history,}
-    KEYS = {"crumbs": strings.crumbs.keys,}
-    LAN = {"crumbs": strings.crumbs.lan,}
-    LOG = {"crumbs": strings.crumbs.log,}
-    MAIN = {"crumbs": strings.crumbs.main,}
-    MODS = {"crumbs": strings.crumbs.mods,}
-    MY_SERVERS = {"crumbs": strings.crumbs.my_servers,}
-    OPTIONS = {"crumbs": strings.crumbs.options,}
-    SERVERS = {"crumbs": strings.crumbs.servers,}
-    THANKS = {"crumbs": strings.crumbs.thanks,}
-    DEVELOPERS = {"crumbs": strings.crumbs.developers,}
+    CHANGELOG = {"crumbs": strings.crumbs.changelog, "statusbar": False}
+    KEYS = {"crumbs": strings.crumbs.keys, "statusbar": False}
+    LOG = {"crumbs": strings.crumbs.log, "statusbar": False}
+    HELP = {"crumbs": strings.crumbs._help, "statusbar": True}
+    MODS = {"crumbs": strings.crumbs.mods, "statusbar": True}
+    OPTIONS = {"crumbs": strings.crumbs.options, "statusbar": False}
+    SERVERS = {"crumbs": strings.crumbs.servers, "statusbar": True}
+    THANKS = {"crumbs": strings.crumbs.thanks, "statusbar": False}
+    DEVELOPERS = {"crumbs": strings.crumbs.developers, "statusbar": False}
 
 
 class RowType(EnumWithAttrs):
@@ -300,6 +297,7 @@ class RowType(EnumWithAttrs):
 # TODO: rename to ContextItem
 class ContextMenu(EnumWithAttrs):
     ADD_SERVER = {"label": strings.add}
+    ADD_FAV = {"label": strings.add_fav}
     REMOVE_SERVER = {"label": strings.remove}
     COPY_NAME = {"label": strings.copy_name}
     COPY_CLIPBOARD = {"label": strings.copy_ip}
@@ -311,6 +309,7 @@ class ContextMenu(EnumWithAttrs):
     OPEN_WORKSHOP = {"label": strings.open_workshop}
     DELETE_MOD = {"label": strings.delete_mod}
     COPY_LOG_CLIPBOARD = {"label": strings.copy_log}
+    CONNECT = {"label": strings.connect}
 
 
 class ContextMenuGroup(Enum):
@@ -324,7 +323,9 @@ class ContextMenuGroup(Enum):
         ContextMenu.COPY_LOG_CLIPBOARD,
     )
     SERVER_BROWSER = (
+        ContextMenu.CONNECT,
         ContextMenu.ADD_SERVER,
+        ContextMenu.ADD_FAV,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
         ContextMenu.ADD_NOTE,
@@ -333,6 +334,8 @@ class ContextMenuGroup(Enum):
         ContextMenu.REFRESH_PLAYERS,
     )
     SCAN_LAN = (
+        ContextMenu.CONNECT,
+        ContextMenu.ADD_FAV,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
         ContextMenu.ADD_NOTE,
@@ -341,6 +344,8 @@ class ContextMenuGroup(Enum):
         ContextMenu.REFRESH_PLAYERS,
     )
     SAVED = (
+        ContextMenu.CONNECT,
+        ContextMenu.ADD_FAV,
         ContextMenu.REMOVE_SERVER,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
@@ -350,7 +355,9 @@ class ContextMenuGroup(Enum):
         ContextMenu.REFRESH_PLAYERS,
     )
     RECENT = (
+        ContextMenu.CONNECT,
         ContextMenu.ADD_SERVER,
+        ContextMenu.ADD_FAV,
         ContextMenu.REMOVE_HISTORY,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
@@ -359,117 +366,6 @@ class ContextMenuGroup(Enum):
         ContextMenu.SHOW_DETAILS,
         ContextMenu.REFRESH_PLAYERS,
     )
-
-
-MAIN_MENU_ROWS = (
-    RowType.SERVER_BROWSER,
-    RowType.SAVED_SERVERS,
-    RowType.RECENT_SERVERS,
-    RowType.SCAN_LAN,
-    RowType.SEPARATOR,
-    RowType.QUICK_CONNECT,
-    RowType.CONN_BY_IP,
-    RowType.CONN_BY_ID,
-    RowType.SEPARATOR,
-    RowType.ADD_BY_IP,
-    RowType.ADD_BY_ID,
-    RowType.CHNG_FAV,
-)
-HELP_MENU_ROWS = (
-    RowType.CHANGELOG,
-    RowType.SHOW_LOG,
-    RowType.DUMP_LOG,
-    RowType.SEPARATOR,
-    RowType.DOCS,
-    RowType.DOCS_FALLBACK,
-    RowType.BUGS,
-    RowType.FORUM,
-    RowType.SPONSOR,
-    RowType.SEPARATOR,
-    RowType.THANKS,
-)
-
-#class WindowContext(EnumWithAttrs):
-#    # TODO: deprecated
-#    @classmethod
-#    def row2con(cls, row: RowType) -> "WindowContext":
-#        m = WindowContext.MAIN_MENU
-#        for member in cls:
-#            if row in member.dict["rows"]:
-#                m = member
-#            elif row in member.dict["called_by"]:
-#                m = member
-#            else:
-#                continue
-#        return m
-#
-#    # outer menu pages
-#    # TODO: some deprecated keys in here
-#    #MAIN_MENU = {
-#    #    RowType.SERVER_BROWSER,
-#    #    RowType.SAVED_SERVERS,
-#    #    RowType.RECENT_SERVERS,
-#    #    RowType.SCAN_LAN,
-#    #    RowType.SEPARATOR,
-#    #    RowType.QUICK_CONNECT,
-#    #    RowType.CONN_BY_IP,
-#    #    RowType.CONN_BY_ID,
-#    #    RowType.SEPARATOR,
-#    #    RowType.ADD_BY_IP,
-#    #    RowType.ADD_BY_ID,
-#    #    RowType.CHNG_FAV,
-#    #    }
-#    #MODS = {
-#    #    "label": "Mods",
-#    #    "rows": [],
-#    #    "called_by": [],
-#    #}
-#    HELP = {
-#        "label": "Help",
-#        "rows": [
-#            RowType.CHANGELOG,
-#            RowType.SHOW_LOG,
-#            RowType.DUMP_LOG,
-#            RowType.SEPARATOR,
-#            RowType.DOCS,
-#            RowType.DOCS_FALLBACK,
-#            RowType.BUGS,
-#            RowType.FORUM,
-#            RowType.SPONSOR,
-#            RowType.SEPARATOR,
-#            RowType.THANKS,
-#        ],
-#        "called_by": [],
-#    }
-#
-#    ## inner server contexts
-#    #TABLE_API = {
-#    #    "label": "",
-#    #    "rows": [],
-#    #    "called_by": [RowType.SERVER_BROWSER],
-#    #}
-#    #TABLE_SERVER = {
-#    #    "label": "",
-#    #    "rows": [],
-#    #    "called_by": [
-#    #        RowType.SAVED_SERVERS,
-#    #        RowType.RECENT_SERVERS,
-#    #        RowType.SCAN_LAN,
-#    #    ],
-#    #}
-#    #TABLE_MODS = {
-#    #    "label": "",
-#    #    "rows": [],
-#    #    "called_by": [
-#    #        RowType.LIST_MODS,
-#    #    ],
-#    #}
-#    #TABLE_LOG = {
-#    #    "label": "",
-#    #    "rows": [],
-#    #    "called_by": [RowType.SHOW_LOG],
-#    #}
-
 
 class ModButton(EnumWithAttrs):
     SELECT_ALL = {
@@ -499,10 +395,10 @@ class ModButton(EnumWithAttrs):
 
 
 class ButtonType(EnumWithAttrs):
-    MAIN_MENU = {
-        "label": strings.buttons.main_label,
-        "tooltip": strings.buttons.main_tooltip,
-        "opens": NotebookPage.MAIN,
+    SERVERS = {
+        "label": strings.buttons.servers_label,
+        "tooltip": strings.buttons.servers_tooltip,
+        "opens": NotebookPage.SERVERS,
     }
     MODS = {
         "label": strings.buttons.mods_label,
@@ -517,10 +413,25 @@ class ButtonType(EnumWithAttrs):
     HELP = {
         "label": strings.buttons.help_label,
         "tooltip": strings.buttons.help_tooltip,
-        "opens": NotebookPage.MAIN,
+        "opens": NotebookPage.HELP,
     }
     EXIT = {
         "label": strings.buttons.exit_label,
         "tooltip": strings.buttons.exit_tooltip,
         "opens": None,
     }
+
+
+HELP_MENU_ROWS = (
+    RowType.CHANGELOG,
+    RowType.SHOW_LOG,
+    RowType.DUMP_LOG,
+    RowType.SEPARATOR,
+    RowType.DOCS,
+    RowType.DOCS_FALLBACK,
+    RowType.BUGS,
+    RowType.FORUM,
+    RowType.SPONSOR,
+    RowType.SEPARATOR,
+    RowType.THANKS,
+)

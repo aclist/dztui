@@ -6,6 +6,7 @@ from dzgui.util.ip import Coords
 class UserPrefs:
     is_steam_deck: bool
     is_game_mode: bool
+    is_developer: bool
     coords: Coords | None
     version: str
     allow_updates: bool

@@ -43,7 +43,7 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
                 column.set_fixed_width(500)
             else:
                 column.set_fixed_width(150)
-            # hidden color property column
+            # NOTE: hidden color property column
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             column.set_sort_column_id(i)
             if i != 4:
@@ -61,6 +61,13 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
         self.s = self.get_selection().get_selected_rows()
 
     def _on_mods_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
+        #if event.keyval is Gdk.KEY_space:
+        #    it = self.get_focused_row_iter()
+        #    self.get_selection().select_iter(it)
+        #    path = self.get_focused_row_path()
+        #    self.set_cursor(path)
+        #    return False
+        # TODO: parse keys
         self.present_menu(widget, event)
 
     def _on_mods_button_press(self,

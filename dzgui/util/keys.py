@@ -19,8 +19,7 @@ def is_navkey(key: int) -> bool:
     return False
 
 def is_ctrl_mask(event: Gdk.EventKey) -> bool:
-    if event.keyval is Gdk.KEY_l \
-        and event.state is Gdk.ModifierType.CONTROL_MASK:
-            return True
+    if event.state is Gdk.ModifierType.CONTROL_MASK:
+        return True
     else:
         return False

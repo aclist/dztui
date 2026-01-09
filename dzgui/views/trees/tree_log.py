@@ -21,10 +21,11 @@ class LogTreeView(ContextMixin, TreeView):
         super().__init__(controller, menu=ContextMenuGroup.LOG)
 
         self.controller = controller
+        self.controller.register_widget("logtreeview", self)
 
         # TODO: maybe put this in init
-        self.set_fixed_height_mode(True)
         self.set_headers_visible(True)
+        self.set_fixed_height_mode(True)
         self.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
 
         model = self.controller.get_log_store()

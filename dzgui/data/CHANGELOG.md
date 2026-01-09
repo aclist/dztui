@@ -14,6 +14,7 @@
 - Open filepicker when generating system log
 - Developers page (and -d flag)
 - Redact API key in log table
+- Integrate add/connect widgets into main menu
 
 ## Changed
 - Reduce padding on keys button
@@ -23,4 +24,3 @@
 
 ## Unreleased
 - Setup wizard
-- Integrate add/connect widgets into main menu

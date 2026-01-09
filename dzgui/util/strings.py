@@ -53,8 +53,10 @@ copy_name = "Copy name to clipboard"
 copy_ip = "Copy IP to clipboard"
 copy_log = "Copy record(s) to clipboard"
 add = "Add to my servers"
+add_fav = "Set as favorite"
 remove = "Remove from my servers"
 remove_history = "Remove from history"
+connect = "Connect"
 
 # Columns
 server_mod_cols = ["Mod", "ID", "Installed"]
@@ -63,10 +65,10 @@ log_cols = ["Timestamp", "Flag", "Traceback", "Message"]
 browser_cols = [
     "Name",
     "Map",
-    "Perspective",
+    "View",
     "Gametime",
     "Players",
-    "Maximum",
+    "Max",
     "Queue",
     "IP",
     "Qport",
@@ -126,6 +128,7 @@ servers = {
     "Ctrl-f": "jump to keyword search field",
     "Ctrl-m": "jump to maps field",
     "Ctrl-d": "toggle dry run (debug) mode",
+    "Ctrl-i": "jump to IP insert field",
     "ESC": "return to table",
     "1-9": "toggle filter 1-9 on/off",
     "0": "toggle filter 10",
@@ -152,7 +155,7 @@ label_main_menu = "Main menu"
 ping_servers = "Ping servers"
 debug_mode = "Debug mode"
 keys_button = "Keys"
-keys_tooltip = "Opens the keybindings dialog"
+keys_tooltip = "Toggles the keybindings dialog"
 debug_tooltip = (
     "Used to perform a dry run without\n"
     "actually connecting to a server"
@@ -240,8 +243,8 @@ class Init:
 
 @dataclass(slots=True, frozen=True)
 class Button:
-    main_label: str
-    main_tooltip: str
+    servers_label: str
+    servers_tooltip: str
     mods_label: str
     mods_tooltip: str
     options_label: str
@@ -254,13 +257,10 @@ class Button:
 @dataclass(slots=True, frozen=True)
 class Crumbs:
     changelog: str
-    history: str
     keys: str
-    lan: str
     log: str
-    main: str
+    _help: str
     mods: str
-    my_servers: str
     options: str
     servers: str
     thanks: str
@@ -426,8 +426,8 @@ dialog = Dialog(
 )
 
 buttons = Button(
-    main_label="Main menu",
-    main_tooltip="Search for and connect to servers",
+    servers_label="Servers",
+    servers_tooltip="Search for and connect to servers",
     mods_label="Mods",
     mods_tooltip="Manage local mods",
     options_label="Options",
@@ -440,21 +440,19 @@ buttons = Button(
 
 crumbs = Crumbs(
     changelog="Help > Changelog",
-    history="Main menu > Recent servers",
     keys="Keybindings",
-    lan="Main menu > Local servers",
     log="Help > Debug log",
-    main="Main menu",
+    _help="Help",
     mods="Mods",
-    my_servers="Main menu > Saved servers",
     options="Options",
-    servers="Main menu > Server browser",
+    servers="Servers > Server browser",
     thanks="Help > Special thanks",
     developers="Options > Developers",
 )
 
 checkmark = "✓"
 no_mods = "No local mods found."
+no_servers = "No server metadata to list."
 
 @dataclass(slots=True, frozen=True)
 class Flags:
@@ -496,3 +494,51 @@ developers = DevelopersPage(
     prefs_label="Boot preferences",
     columns=["Key", "Value"]
 )
+
+@dataclass(slots=True, frozen=True)
+class ServerLabels:
+    browser: str
+    saved: str
+    recent: str
+    lan: str
+
+server_labels = ServerLabels(
+    browser="Server Browser",
+    saved="Saved Servers",
+    recent="Recent",
+    lan="LAN",
+)
+
+@dataclass(slots=True, frozen=True)
+class ConnectPanel:
+    connect: str
+    add: str
+    edit: str
+    favorite: str
+    add_con: str
+    placeholder: str
+    entry_tooltip: str
+    add_tooltip: str
+    connect_tooltip: str
+    no_fav: str
+
+connect_panel = ConnectPanel(
+    connect="Connect",
+    add="Add",
+    edit="Edit",
+    favorite="Favorite server",
+    add_con="Add/connect",
+    placeholder="Enter IP or Battlemetrics ID",
+    entry_tooltip=(
+        "- IP: Format as IP:Query port\ne.g. 192.168.1.1:27016\n"
+        "- Battlemetrics: numeric server ID\ne.g. 123456"
+    ),
+    add_tooltip="Add to my servers",
+    connect_tooltip="Connect to this server",
+    no_fav="None set. Right click a server and select 'Set favorite' to set.",
+)
+
+distance_suffix = "Distance: calculating..."
+
+refresh = "Refresh"
+refresh_tooltip = "Refresh server data"

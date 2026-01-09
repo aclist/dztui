@@ -1,8 +1,9 @@
 from typing import TYPE_CHECKING
 
 from dzgui.const.enum import ModButton
-from dzgui.const.constants import NO_EXPAND, FILL
-from dzgui.util import strings
+from dzgui.const.constants import NO_EXPAND, FILL, NO_PADDING
+from dzgui.util.strings import mod_panel
+from dzgui.views.components.labels import BoldLabel
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -26,32 +27,34 @@ class ModSelectionPanel(Gtk.Box):
 
         self.controller = controller
 
+        header = BoldLabel(mod_panel.header)
+
+        self.main_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         buttons = (
             ModButton.SELECT_ALL,
             ModButton.UNSELECT_ALL,
-            ModButton.HIGHLIGHT_STALE,
             ModButton.DELETE_SELECTED,
         )
-
-        self.header = Gtk.Label()
-        self.header.set_markup(f"<b>{strings.mod_panel.header}</b>")
-
-        self.main_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         for button in buttons:
             b = EnumeratedModButton(button)
             b.connect("clicked", self._on_button_clicked)
-            self.main_panel.pack_start(b, NO_EXPAND, FILL, 0)
+            self.main_panel.pack_start(b, NO_EXPAND, FILL, NO_PADDING)
 
-        self.extra_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        for button in (ModButton.SELECT_STALE, ModButton.UNHIGHLIGHT_STALE):
+        self.stale_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        buttons = (
+            ModButton.HIGHLIGHT_STALE,
+            ModButton.SELECT_STALE,
+            ModButton.UNHIGHLIGHT_STALE,
+        )
+        for button in buttons:
             b = EnumeratedModButton(button)
             b.connect("clicked", self._on_button_clicked)
-            b.set_sensitive(False)
-            self.extra_panel.pack_start(b, NO_EXPAND, FILL, 0)
+            if button is not ModButton.HIGHLIGHT_STALE:
+                b.set_sensitive(False)
+            self.stale_panel.pack_start(b, NO_EXPAND, FILL, NO_PADDING)
 
-        self.pack_start(self.header, NO_EXPAND, FILL, 0)
-        self.pack_start(self.main_panel, NO_EXPAND, FILL, 0)
-        self.pack_start(self.extra_panel, NO_EXPAND, FILL, 0)
+        for el in header, self.main_panel, self.stale_panel:
+            self.pack_start(el, NO_EXPAND, FILL, NO_PADDING)
 
     def after_colorize(self) -> None:
         self.controller.unselect_all_mods()

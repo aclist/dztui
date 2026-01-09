@@ -50,4 +50,6 @@ def copy_ipdb(ips_path: Path) -> None:
     legacy = home / LEGACY_IPS_PATH
     if ips_path == legacy:
         return
+    if legacy.is_file() is False:
+        return
     shutil.copy(legacy, ips_path)

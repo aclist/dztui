@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from typing import Self
 
-from dzgui.const.enum import FilterMode, MAIN_MENU_ROWS, HELP_MENU_ROWS
+from dzgui.const.enum import FilterMode, HELP_MENU_ROWS
 from dzgui.util import strings
 
 import gi
@@ -69,16 +69,15 @@ class ModelManager:
         self.ping_cache: dict[str, int] = {}
 
         self.map_store = ListStore(str)
-        self.row_store = self.new_model_from_class(MenuCols)
         self.help_store = self.new_model_from_class(MenuCols)
-
         self.mod_store = self.new_model_from_class(ModCols)
         self.log_store = self.new_model_from_class(LogCols)
         self.modlist_store = self.new_model_from_class(ServerModCols)
 
-        for row in MAIN_MENU_ROWS:
-            label = row.dict["label"]
-            self.row_store.append([label, row])
+        self.server_store = self.new_model()
+        self.saved_store = self.new_model()
+        self.recent_store = self.new_model()
+        self.lan_store = self.new_model()
 
         for row in HELP_MENU_ROWS:
             label = row.dict["label"]
@@ -88,10 +87,22 @@ class ModelManager:
         self.filtered = None
         self.success = True
 
-    def __new__(cls) -> Self:
-        if not hasattr(cls, "instance"):
-            cls.instance = super(ModelManager, cls).__new__(cls)
-        return cls.instance
+    #def __new__(cls) -> Self:
+    #    if not hasattr(cls, "instance"):
+    #        cls.instance = super(ModelManager, cls).__new__(cls)
+    #    return cls.instance
+
+    def get_recent_store(self) -> ListStore:
+        return self.recent_store
+
+    def get_lan_store(self) -> ListStore:
+        return self.lan_store
+
+    def get_saved_store(self) -> ListStore:
+        return self.saved_store
+
+    def get_server_store(self) -> ListStore:
+        return self.server_store
 
     def new_model_from_class(self, cls: type) -> ListStore:
         store = ListStore(*[ftype for field, ftype in cls.__annotations__.items()])
@@ -100,8 +111,8 @@ class ModelManager:
     def get_map_store(self) -> ListStore:
         return self.map_store
 
-    def get_row_store(self) -> ListStore:
-        return self.row_store
+    #def get_row_store(self) -> ListStore:
+    #    return self.row_store
 
     def get_help_store(self) -> ListStore:
         return self.help_store
@@ -140,11 +151,9 @@ class ModelManager:
                 if prior_map == "All maps":
                     rows = self.filter_map(filters)
                 else:
-                    AppNav.right_panel.ping.set_sensitive(True)
                     rows = self.filter_toggle_on(filters, *args)
 
             case FilterMode.KEYWORD:
-                AppNav.right_panel.ping.set_sensitive(True)
                 rows = self.filter_toggle_on(filters, *args)
 
             case FilterMode.TOGGLE_OFF:
@@ -153,7 +162,6 @@ class ModelManager:
                 rows = self.filtered
 
             case FilterMode.TOGGLE_ON:
-                AppNav.right_panel.ping.set_sensitive(True)
                 rows = self.filter_toggle_on(filters, *args)
 
         if mode is not FilterMode.INITIAL:

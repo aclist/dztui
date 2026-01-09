@@ -5,6 +5,7 @@ from importlib import resources
 
 from dzgui.const.constants import APP_NAME_LOWER
 from dzgui.util.format import format_pango
+from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -16,9 +17,9 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
-class Changelog(Gtk.Box):
+class Changelog(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
     def __init__(self, controller: "Controller"):
-        super().__init__()
+        super().__init__(propagate_natural_width=False)
 
         try:
             changelog = resources.read_text(APP_NAME_LOWER, "data/CHANGELOG.md")
@@ -30,4 +31,8 @@ class Changelog(Gtk.Box):
         formatted = format_pango(changelog)
         self.changelog_label = Gtk.Label(valign=Gtk.Align.START, margin=15)
         self.changelog_label.set_markup(formatted)
-        self.add(self.changelog_label)
+        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.box.add(self.changelog_label)
+        self.add(self.box)
+
+        self.connect("key-press-event", self._on_keypress)

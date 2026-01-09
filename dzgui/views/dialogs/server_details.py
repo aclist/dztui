@@ -2,6 +2,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
+from dzgui.const.constants import EXPAND, FILL, NO_PADDING
 from dzgui.const.enum import Popup
 
 class ServerDetailsDialog(GenericDialog):
@@ -57,8 +58,8 @@ class ServerDetailsDialog(GenericDialog):
             box.add(el)
         scrollable_message.add(box)
 
-        dialog_box.pack_start(scrollable_tree, EXPAND, FILL, 0)
-        dialog_box.pack_start(scrollable_message, EXPAND, FILL, 0)
+        dialog_box.pack_start(scrollable_tree, EXPAND, FILL, NO_PADDING)
+        dialog_box.pack_start(scrollable_message, EXPAND, FILL, NO_PADDING)
 
         self.wait_dialog = GenericDialog(strings.details, Popup.WAIT)
         self.wait_dialog.show_all()

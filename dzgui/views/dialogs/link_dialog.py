@@ -5,7 +5,7 @@ from dzgui.const.enum import Popup, Preferences
 from dzgui.const.constants import NO_EXPAND, NO_FILL
 from dzgui.util.open_links import open_user_workshop
 from dzgui.views.dialogs.generic import GenericDialog
-from dzgui.views.components.web_button import WebButton
+from dzgui.views.components.buttons import WebButton
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -41,8 +41,9 @@ class WorkshopLinkDialog(GenericDialog):
 
     def _on_button_clicked(self, button: Gtk.Button, uid: str) -> None:
         # TODO: currently checks user id on instantiation
-        client = self.controller.query_config(Preferences.CLIENT)
-        open_user_workshop(uid, client)
+        self.controller.open_user_workshop(uid)
+        #client = self.controller.query_config(Preferences.CLIENT)
+        #open_user_workshop(uid, client)
 
     def _on_dialog_response(
         self, dialog: Self, resp: Gtk.ResponseType

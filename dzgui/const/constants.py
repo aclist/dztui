@@ -34,10 +34,12 @@ VIEW_CONCEAL = "view-conceal-symbolic"
 VIEW_REVEAL = "view-reveal-symbolic"
 INPUT_KEYBOARD = "input-keyboard-symbolic"
 HELP_BUBBLE = "help-about-symbolic"
+REFRESH_ICON = "view-refresh-symbolic"
 WEB_BROWSER = "web-browser-symbolic"
 
 SEPARATOR = "SEPARATOR"
 
+NO_PADDING = 0
 NO_EXPAND = False
 NO_FILL = False
 EXPAND = True

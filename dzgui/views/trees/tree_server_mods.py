@@ -76,14 +76,14 @@ class ModDialog(GenericDialog):
     #        dialog.destroy()
     #        # TODO: natively implemented
     #        #if data.returncode == 1:
-    #        #    AppNav.window.spawn_dialog(strings.server_error, Popup.NOTIFY)
+    #        #    spawn_dialog(strings.server_error, Popup.NOTIFY)
     #        #    return
     #        self.show_all()
     #        self.set_markup(f"Modlist ({mod_count} mods)")
     #        self.run()
     #        self.destroy()
 
-    #    record = AppNav.treeview.get_record()
+    #    record = treeview.get_record()
     #    if not record:
     #        return
 
