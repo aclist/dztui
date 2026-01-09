@@ -635,6 +635,7 @@ class Controller:
         treeview = self.mediator.notebook.servers.get_active_treeview()
         if treeview.get_loaded() is False:
             new_model = self.model_manager.new_model()
+            # NOTE: set_query_func()
             func = treeview.get_query_func()
             if func is not None:
                 model = treeview.get_model()
