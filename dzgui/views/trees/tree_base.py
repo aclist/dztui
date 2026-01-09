@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.const.enum import ContextMenuGroup
 
-class TreeView(CursorMixin, Gtk.TreeView):
+class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
     def __init__(self, controller: "Controller", menu: "ContextMenuGroup" = None) -> None:
         super().__init__(
             enable_search=False,

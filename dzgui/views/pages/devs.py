@@ -15,19 +15,21 @@ if TYPE_CHECKING:
     from dzgui.config.userprefs import UserPrefs
     from dzgui.config.xdg import Xdg
 
-class Developers(Gtk.Box):
+class Developers(Gtk.ScrolledWindow):
     """
     Shows TreeViews displaying contents of parsed XDG paths
     and user preferences
     """
     def __init__(self, controller: "Controller") -> None:
         super().__init__(
-            orientation=Gtk.Orientation.VERTICAL,
-            margin_start=10,
-            margin_end=10,
         )
 
         self.controller = controller
+        self.box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            margin_start=10,
+            margin_end=10
+        )
 
         heading = Gtk.Label(label=developers.header)
         heading.set_halign(Gtk.Align.CENTER)
@@ -47,17 +49,13 @@ class Developers(Gtk.Box):
         paths_tree.set_cursor(path)
         prefs_tree.set_cursor(path)
 
-        for el in [
-            paths_label,
-            paths_tree,
-            prefs_label,
-            prefs_tree
-        ]:
+        for el in [paths_label, paths_tree, prefs_label, prefs_tree]:
             trees_box.add(el)
 
-        self.add(heading)
-        self.add(back_button)
-        self.add(trees_box)
+        for el in [heading, back_button, trees_box]:
+            self.box.add(el)
+
+        self.add(self.box)
 
     def _on_back_clicked(self, button: Gtk.Button) -> None:
         self.controller.open_page(NotebookPage.OPTIONS)

@@ -33,6 +33,7 @@ from dzgui.views.components.connect_panel import ConnectPanel
 from dzgui.views.pages.devs import Developers
 from dzgui.views.pages.help import Help
 from dzgui.views.pages.keys import Keybindings
+from dzgui.views.pages.log import Log
 from dzgui.views.pages.mods import Mods
 from dzgui.views.pages.options import Options
 from dzgui.views.pages.servers import ServerNotebook
@@ -207,7 +208,6 @@ class OuterWindow(Gtk.Window):
             self.set_titlebar(self.hb)
 
         self.connect("delete-event", self._on_delete_event)
-        #self.connect("key-press-event", self._on_keypress)
 
         self.grid = Grid()
         self.add(self.grid)
@@ -236,33 +236,6 @@ class AppHeaderBar(Gtk.HeaderBar):
         self.set_show_close_button(True)
 
 
-# TODO: deprecated
-class ScrollableNote(ScrollableMixin, Gtk.Box):  # type: ignore
-    def __init__(self, content_box: Gtk.Box, back_button: bool = False):
-        super().__init__(orientation=Gtk.Orientation.VERTICAL)
-
-        self.scrollable = Gtk.ScrolledWindow()
-        self.scrollable.set_vexpand(True)
-
-        self.back_button = Gtk.Button(
-            label="Back", hexpand=True, halign=Gtk.Align.CENTER
-        )
-
-        self.gutter = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL, valign=Gtk.Align.END
-        )
-        if back_button:
-            self.gutter.add(self.back_button)
-            self.back_button.connect("clicked", self._on_back_clicked)
-
-        self.scrollable.add(content_box)
-        self.add(self.scrollable)
-        self.add(self.gutter)
-
-    def _on_back_clicked(self, button: Gtk.Button) -> None:
-        pass
-
-
 class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
     def __init__(self) -> None:
         super().__init__(show_tabs=False)
@@ -278,21 +251,12 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
         self.keys = Keybindings()
         self.settings = Options(MainController)
 
-        # NOTE: server, mod, and log tables should have hexpand property set to True
         self.servers = ServerNotebook(MainController)
         self.mods = Mods(MainController)
 
-        # TODO: make all treeviews internally scrollable in base class
-        self.scroll_log = Gtk.ScrolledWindow()
-        self.scroll_log.set_hexpand(True)
-        self.log_table = LogTreeView(MainController)
-        self.scroll_log.add(self.log_table)
-
-        # TODO: make all treeviews internally scrollable in base class
-        self.thanks = ScrollableNote(Thanks(), back_button=False)
-        # TODO: change this class to scrolledwindow
-        developers = Developers(MainController)
-        self.developers = ScrollableNote(developers)
+        self.thanks = Thanks()
+        self.log = Log(MainController)
+        self.developers = Developers(MainController)
 
         self.pages = {
             self.help: NotebookPage.HELP,
@@ -301,7 +265,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
             self.settings: NotebookPage.OPTIONS,
             self.servers: NotebookPage.SERVERS,
             self.mods: NotebookPage.MODS,
-            self.scroll_log: NotebookPage.LOG,
+            self.log: NotebookPage.LOG,
             self.thanks: NotebookPage.THANKS,
             self.developers: NotebookPage.DEVELOPERS,
         }

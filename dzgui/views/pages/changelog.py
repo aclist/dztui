@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
-class Changelog(ScrollableMixin, Gtk.ScrolledWindow):
+class Changelog(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
     def __init__(self, controller: "Controller"):
         super().__init__(propagate_natural_width=False)
 
