@@ -19,7 +19,6 @@ from dzgui.init.migrate import (
     migrate_cols_file,
     migrate_legacy_conf,
     copy_state_files,
-    copy_ipdb,
 )
 from dzgui.init.prefix import get_version
 from dzgui.init.prereqs import has_steam_client
@@ -73,7 +72,6 @@ def main() -> None:
         migrate_legacy_conf(XDG.config)
         migrate_cols_file(XDG.columns)
         copy_state_files(xdg_paths["XDG_STATE_HOME"])
-        copy_ipdb(XDG.ips)
 
     _format = "%(asctime)s␞%(levelname)s␞%(filename)s::%(funcName)s::%(lineno)s␞%(message)s"
     logging.basicConfig(filename=XDG.debug, format=_format, level=logging.DEBUG)
