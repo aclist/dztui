@@ -42,7 +42,23 @@ parser.add_argument("-u", "--uninstall", action="store_true", help=flags.uninsta
 parser.add_argument("-d", "--developers", action="store_true", help=flags.developers)
 args = parser.parse_args()
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
 # TODO: profile load time
+def make_parents(path: "Path") -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+def uninstall() -> None:
+    # TODO: uninstall data files (-u)
+    # -u removes state, log, freedesktop
+    # XDG_SHARE_HOME/dzgui
+    # XDG_STATE_HOME/dzgui
+    # XDG_DATA_HOME/dzgui
+    pass
+
 def main() -> None:
     lock = lock_acquire()  # noqa
 
@@ -50,11 +66,9 @@ def main() -> None:
         print(get_version())
         sys.exit(0)
 
-    # TODO: uninstall data files (-u)
-    # -u removes state, log, freedesktop
-    # XDG_SHARE_HOME/dzgui
-    # XDG_STATE_HOME/dzgui
-    # XDG_DATA_HOME/dzgui
+    if args.uninstall is True:
+        uninstall()
+        sys.exit(0)
 
     version = get_version()
     set_locale()
@@ -62,11 +76,11 @@ def main() -> None:
     # NOTE: consider aborting this check if steam deck
     xdg_paths = get_xdg_paths()
     XDG = parse_filepaths(xdg_paths)
-    # TODO: ensure state path is created
 
-    # NOTE: required for logs to be written
+    if XDG.resolution.parent.is_dir() is False:
+        make_parents(XDG.resolution)
     if XDG.debug.is_file() is False:
-        XDG.debug.parent.mkdir(parents=True, exist_ok=True)
+        make_parents(XDG.debug)
 
     if has_new_config(XDG.config) is False:
         migrate_legacy_conf(XDG.config)
@@ -78,17 +92,13 @@ def main() -> None:
     with open(XDG.debug, "w") as f:
         f.truncate(0)
 
-
     _is_steam_deck = is_steam_deck()
-    _is_game_mode = False
-    if _is_steam_deck:
-        _is_game_mode = is_game_mode()
+    _is_game_mode = is_game_mode() if _is_steam_deck else False
     if _is_game_mode:
         # NOTE: this may no longer be necessary on newer versions of SteamOS
         del os.environ["GTK_IM_MODULE"]
 
     # TODO: test spamming timeout
-    allow = False
     allow = allow_updates(ALLOW_UPDATES)
     if allow is True:
         check_updates(version)
