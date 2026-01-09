@@ -292,6 +292,9 @@ class Controller:
     def start_cooldown(self) -> None:
         self.cooldown = cooldown.get_time()
 
+    def get_cooldown(self) -> None:
+        return self.cooldown
+
     def manage_cooldown(self) -> bool:
         if cooldown.is_elapsed(self.cooldown):
             self.cooldown = cooldown.get_time()

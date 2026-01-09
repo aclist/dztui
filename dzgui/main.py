@@ -79,6 +79,7 @@ def main() -> None:
 
     if XDG.resolution.parent.is_dir() is False:
         make_parents(XDG.resolution)
+    # TODO: test
     if XDG.debug.is_file() is False:
         make_parents(XDG.debug)
 

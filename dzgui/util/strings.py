@@ -539,3 +539,6 @@ connect_panel = ConnectPanel(
 )
 
 distance_suffix = "Distance: calculating..."
+
+refresh = "Refresh"
+refresh_tooltip = "Refresh server data"

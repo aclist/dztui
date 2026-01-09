@@ -1,6 +1,8 @@
+from typing import Literal, TYPE_CHECKING
+
 import gi  # noqa E402
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, GLib
 
 from dzgui.const.enum import Preferences
 from dzgui.views.components.buttonbox import ButtonBox
@@ -9,13 +11,17 @@ from dzgui.views.components.mod_panel import ModSelectionPanel
 from dzgui.views.components.icon import Icon
 from dzgui.views.components.buttons import RefreshButton, KeysButton
 from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL, INPUT_KEYBOARD, NO_PADDING
-from dzgui.util import strings
+from dzgui.util.strings import refresh_tooltip, refresh, keys_button, keys_tooltip
+
+if TYPE_CHECKING:
+    from GLib import SOURCE_REMOVE
 
 # TODO: refactor depends on ServerTreeView
 class RightPanel(Gtk.Box):
     def __init__(self, controller):
         super().__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL)
 
+        self.time = 30
 
         self.controller = controller
         self.controller.register_widget("right_panel", self)
@@ -24,15 +30,12 @@ class RightPanel(Gtk.Box):
         self.filters_vbox = FilterPanel(controller)
         self.sel_panel = ModSelectionPanel(controller)
 
-        # TODO: strings, move strings into buttons.py
-        self.refresh_button = RefreshButton("Refresh")
-        # TODO: tooltip, strings
-        # TODO: update refresh button sensitivity on cooldown
-        self.refresh_button.set_tooltip_text("Refresh server data")
+        self.refresh_button = RefreshButton()
+        self.refresh_button.set_tooltip_text(refresh_tooltip)
         self.refresh_button.connect("clicked", self._on_refresh_clicked)
 
-        self.keys = KeysButton(strings.keys_button)
-        self.keys.set_tooltip_text(strings.keys_tooltip)
+        self.keys = KeysButton(keys_button)
+        self.keys.set_tooltip_text(keys_tooltip)
         self.keys.connect("clicked", self._on_question_clicked)
 
         for el in self.button_vbox, self.keys, self.filters_vbox, self.refresh_button:
@@ -49,7 +52,20 @@ class RightPanel(Gtk.Box):
         self.selected = "All maps"
         self.filters_vbox.set_unique_maps(rows)
 
+    def decrement(self) -> "SOURCE_REMOVE" | Literal[True]:
+        self.time -= 1
+        if self.time == 0:
+            self.time = 30
+            self.refresh_button.set_label(refresh)
+            self.refresh_button.set_sensitive(True)
+            return GLib.SOURCE_REMOVE
+        self.refresh_button.set_label(f"{refresh} ({str(self.time)})")
+        return True
+
     def _on_refresh_clicked(self, button: RefreshButton) -> None:
+        self.refresh_button.set_sensitive(False)
+        self.refresh_button.set_label(f"{refresh} ({str(self.time)})")
+        GLib.timeout_add_seconds(1, self.decrement)
         self.controller.refresh_tree()
 
     # TODO: reference
