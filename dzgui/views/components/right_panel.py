@@ -30,7 +30,9 @@ class RightPanel(Gtk.Box):
         self.sel_panel = ModSelectionPanel(controller)
 
         self.refresh_button = RefreshButton()
+        # TODO: consolidate into class
         self.refresh_button.set_tooltip_text(refresh_tooltip)
+        self.refresh_button.set_focus_on_click(False)
         self.refresh_button.connect("clicked", self._on_refresh_clicked)
 
         self.keys = KeysButton(keys_button)
@@ -63,6 +65,7 @@ class RightPanel(Gtk.Box):
         return True
 
     def _on_refresh_clicked(self, button: RefreshButton) -> None:
+        # TODO: could be internal to refresh button class
         self.refresh_button.set_sensitive(False)
         self.refresh_button.set_label(f"{refresh} ({str(self.time)})")
         GLib.timeout_add_seconds(1, self.decrement)

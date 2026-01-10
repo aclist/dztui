@@ -15,12 +15,21 @@
 - Developers page (and -d flag)
 - Redact API key in log table
 - Integrate add/connect widgets into main menu
+- Favorite/connect/LAN panels integrated with server views
+- Colorized IP/ID validation
+- Visual icons
+- Integrated server notebook
+- Retain position on servers
+- Propagate width changes to all tables
 
 ## Changed
 - Reduce padding on keys button
-- Add icon to keys button
-- Add icons to API buttons
 - Boldface breadcrumbs
+- Bold labels inside frames
 
 ## Unreleased
 - Setup wizard
+- Copy favorite server IP to clipboard
+- Set favorite server from tables
+- Detailed/copyable trace in critical error dialogs
+- Local documentation

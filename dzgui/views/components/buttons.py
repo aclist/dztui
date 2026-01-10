@@ -1,3 +1,5 @@
+from typing import Callable, Self, TYPE_CHECKING
+
 from dzgui.util.strings import refresh, connect_panel
 from dzgui.const.constants import (
     CLIPBOARD,
@@ -11,6 +13,9 @@ from dzgui.const.constants import (
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
+
+if TYPE_CHECKING:
+    from dzgui.controllers.mc import Controller
 
 
 class Icon(Gtk.Image):
@@ -52,8 +57,13 @@ class LargeIconTextButton(IconButton):
 
 
 class ClipboardButton(IconButton):
-    def __init__(self) -> None:
+    def __init__(self, controller: "Controller", data: str) -> None:
         super().__init__(CLIPBOARD)
+        self.controller = controller
+        self.connect("clicked", self._on_button_clicked, data)
+
+    def _on_button_clicked(self, button: Self, data: str) -> None:
+        self.controller.copy_clipboard(data)
 
 
 class WebButton(IconTextButton):

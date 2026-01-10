@@ -1,7 +1,7 @@
 import textwrap
-from typing import Any, Literal, TYPE_CHECKING
+from typing import Any, Literal, Self, TYPE_CHECKING
 
-from dzgui.const.constants import NO_EXPAND, NO_FILL
+from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL
 from dzgui.const.enum import Popup, ButtonType, NotebookPage
 from dzgui.util import strings
 
@@ -12,6 +12,63 @@ from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+
+class ExceptionDialog(Gtk.MessageDialog):
+    def __init__(self, controller: "Controller", trace: str):
+        super().__init__(
+            transient_for=controller.mediator.window,
+            message_type=Gtk.MessageType.ERROR,
+            buttons=Gtk.ButtonsType.OK,
+            text="Error",
+            secondary_text="Something went wrong. See the detailed error below.",
+            title=strings.dialog_header,
+            modal=True,
+        )
+
+        # TODO: strings
+        self.set_size_request(550, 250)
+
+        from dzgui.views.components.buttons import ClipboardButton
+        content = self.get_content_area()
+        content.set_spacing(0)
+
+        box = Gtk.Box(hexpand=True, vexpand=True, orientation=Gtk.Orientation.VERTICAL)
+        textview = Gtk.TextView(wrap_mode=Gtk.WrapMode.WORD, editable=False, left_margin=10, right_margin=10)
+        textview.set_buffer(Gtk.TextBuffer(text=trace))
+        # NOTE: box expands to end of content area
+        box.pack_start(textview, EXPAND, FILL, 10)
+
+        action_area = self.get_action_area()
+        action_area.set_spacing(10)
+        action_area.set_margin_bottom(10)
+        action_area.set_layout(Gtk.ButtonBoxStyle.CENTER)
+
+        but = ClipboardButton(controller, trace)
+        # TODO: flag to set button with text, or other class
+        but.set_label("Copy")
+        action_area.pack_start(but, True, True, 10)
+        # NOTE: reverse button order after insertion
+        action_area.set_direction(Gtk.TextDirection.RTL)
+        content.add(box)
+
+        self.set_default_response(Gtk.ResponseType.OK)
+        self.connect("response", self._on_response)
+        self.show_all()
+        """
+        usage:
+        from dzgui.views.dialogs.generic import ExceptionDialog
+        try:
+            a.banana()
+        except Exception as e:
+            trace = traceback.format_exc()
+            dialog = ExceptionDialog(MainController, trace)
+            dialog.run()
+        """
+
+
+    def _on_response(self, dialog: Self, response: Gtk.ResponseType) -> None:
+        self.destroy()
+
 
 class GenericDialog(Gtk.MessageDialog):
     def __init__(self, controller: "Controller", text: str, mode: Popup):
@@ -41,7 +98,6 @@ class GenericDialog(Gtk.MessageDialog):
                 button_type = Gtk.ButtonsType.OK
                 header_text = strings.server_details
 
-        # NOTE: steam deck prints <2> if dialog title is same as window title
         Gtk.MessageDialog.__init__(
             self,
             transient_for=controller.mediator.window,
@@ -49,6 +105,7 @@ class GenericDialog(Gtk.MessageDialog):
             buttons=button_type,
             text=header_text,
             secondary_text=textwrap.fill(text, 50),
+            # NOTE: steam deck prints <2> if dialog title is same as window title
             title=strings.dialog_header,
             modal=True,
         )
