@@ -140,7 +140,7 @@ vim = {
     "k": "Move up a row/scroll down",
     "l": "Jump to main area from sidebar",
     "h": "Jump to sidebar from main area",
-    "gg": "Jump to first row/top of page",
+    "g": "Jump to first row/top of page",
     "G": "Jump to last row/bottom of page",
 }
 key_contexts = ["Servers", "Navigation", "Vim-style keys"]

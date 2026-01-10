@@ -696,12 +696,13 @@ class Controller:
                 case _:
                     return False
 
-    def get_favorite_label(self) -> str | None:
+    def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
         fav = str(self.query_config(Preferences.FAV_LBL))
         if len(fav) < 1:
-            return None
-        return fav
-    
+            return None, None
+        ip = str(self.query_config(Preferences.FAV_SRV))
+        return fav, ip
+
     def get_dist_cache(self) -> dict[str, "Haversine"]:
         return self.dist_cache
 

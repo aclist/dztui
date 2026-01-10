@@ -28,8 +28,6 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
 # TODO: restore missing methods
-# TODO: add multiprocessing queue
-# TODO: fix cache
 
 class EnumeratedMenuItem(Gtk.MenuItem):
     def __init__(self, enum: ContextMenu):
@@ -190,7 +188,8 @@ class ServerTreeView(TreeView):
         if latest_result:
             addr = latest_result[0]
             haversine = latest_result[1]
-            cache[addr] = haversine
+            if addr not in cache:
+                cache[addr] = haversine
             # FIXME
             self.controller.set_statusbar_dist(haversine)
         return True

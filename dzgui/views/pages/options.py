@@ -416,9 +416,9 @@ class Options(Gtk.Box):
 
         frame = Gtk.Frame(hexpand=True)
         frame.add(widget)
+        frame.set_label_widget(label)
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        box.add(label)
         box.add(frame)
 
         return box

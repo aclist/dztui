@@ -8,7 +8,6 @@ from dzgui.const.enum import Preferences
 from dzgui.views.components.buttonbox import ButtonBox
 from dzgui.views.components.filter_panel import FilterPanel
 from dzgui.views.components.mod_panel import ModSelectionPanel
-from dzgui.views.components.icon import Icon
 from dzgui.views.components.buttons import RefreshButton, KeysButton
 from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL, INPUT_KEYBOARD, NO_PADDING
 from dzgui.util.strings import refresh_tooltip, refresh, keys_button, keys_tooltip
@@ -35,8 +34,9 @@ class RightPanel(Gtk.Box):
         self.refresh_button.connect("clicked", self._on_refresh_clicked)
 
         self.keys = KeysButton(keys_button)
+        self.keys.set_focus_on_click(False)
         self.keys.set_tooltip_text(keys_tooltip)
-        self.keys.connect("clicked", self._on_question_clicked)
+        self.keys.connect("clicked", self._on_keys_clicked)
 
         for el in self.button_vbox, self.keys, self.filters_vbox, self.refresh_button:
             self.pack_start(el, NO_EXPAND, FILL, NO_PADDING)
@@ -100,7 +100,7 @@ class RightPanel(Gtk.Box):
     #    thread = threading.Thread(target=_update_pings, args=())
     #    thread.start()
 
-    def _on_question_clicked(self, button: Gtk.Button) -> None:
+    def _on_keys_clicked(self, button: Gtk.Button) -> None:
         self.controller.open_keybindings()
 
     def focus_button_box(self) -> None:

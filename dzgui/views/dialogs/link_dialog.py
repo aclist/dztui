@@ -5,7 +5,7 @@ from dzgui.const.enum import Popup, Preferences
 from dzgui.const.constants import NO_EXPAND, NO_FILL
 from dzgui.util.open_links import open_user_workshop
 from dzgui.views.dialogs.generic import GenericDialog
-from dzgui.views.components.buttons import WebButton
+from dzgui.views.components.buttons import SteamTextButton, WebButton
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -30,7 +30,7 @@ class WorkshopLinkDialog(GenericDialog):
         a clickable link to their workshop subscriptions is added
         """
         if uid is not None:
-            button = WebButton(label=button_label)
+            button = SteamTextButton(label=button_label)
             button.set_margin_start(60)
             button.set_margin_end(60)
             button.connect("clicked", self._on_button_clicked, uid)
