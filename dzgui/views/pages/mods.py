@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import Self, TYPE_CHECKING
 from dzgui.views.trees.tree_mods import ModTreeView
 
 import gi
@@ -17,3 +17,12 @@ class Mods(Gtk.ScrolledWindow):
 
         self.add(self.tree)
         self.controller.register_widget("modtreeview", self.tree)
+
+        self.connect("map", self._on_map)
+        self.connect("unmap", self._on_unmap)
+
+    def _on_unmap(self, widget: Self) -> None:
+        self.controller.toggle_mod_panel(False)
+
+    def _on_map(self, widget: Self) -> None:
+        self.controller.toggle_mod_panel(True)

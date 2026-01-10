@@ -217,6 +217,9 @@ class OuterWindow(Gtk.Window):
 
         css.load_css()
         MainController.open_page(NotebookPage.SERVERS)
+        # TODO: first run
+        MainController.mediator.grid.conpan.lan.set_visible(False)
+        self.grid.right_panel.sel_panel.hide()
 
     def _on_delete_event(
         self, window: "OuterWindow", event: Gdk.EventKey
@@ -365,11 +368,11 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
             status = enum.dict["statusbar"]
             MainController.set_crumbs(crumbs)
 
-        is_mods = True if enum is NotebookPage.MODS else False
-        is_servers = True if enum is NotebookPage.SERVERS else False
-
-        MainController.toggle_mod_panel(is_mods)
-        MainController.toggle_server_panels(is_servers)
+        #is_mods = True if enum is NotebookPage.MODS else False
+        #is_servers = True if enum is NotebookPage.SERVERS else False
+        # TODO: use signals internal to servers.py
+        #MainController.toggle_mod_panel(is_mods)
+        #MainController.toggle_server_panels(is_servers)
 
         if status is False:
             MainController.set_statusbar("")

@@ -2,7 +2,7 @@ import logging
 
 from typing import Self, TYPE_CHECKING
 
-from dzgui.const.enum import ContextMenuGroup
+from dzgui.const.enum import ContextMenuGroup, ServerTab
 from dzgui.views.trees.tree_servers import ServerTreeView
 from dzgui.util.strings import server_labels
 
@@ -24,10 +24,10 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.controller.register_widget("servers", self)
         self.notebook = Gtk.Notebook(show_tabs=True)
 
-        self.browser = ServerTreeView(controller)
-        self.saved = ServerTreeView(controller)
-        self.recent = ServerTreeView(controller)
-        self.lan = ServerTreeView(controller)
+        self.browser = ServerTreeView(controller, ServerTab.BROWSER)
+        self.saved = ServerTreeView(controller, ServerTab.SAVED)
+        self.recent = ServerTreeView(controller, ServerTab.RECENT)
+        self.lan = ServerTreeView(controller, ServerTab.LAN)
 
         self.lan.set_query_func(self.query_test)
         # TODO: set context menu on init
@@ -50,7 +50,6 @@ class ServerNotebook(Gtk.ScrolledWindow):
             store = func()
             if label == "LAN":
                 pass
-                #store.append(["BAR", "a", "a", "a", 1, 1, 1, "1:1", 0, 0, "a", False])
             else:
                 store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
                 store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
@@ -79,6 +78,14 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.add(self.notebook)
         self.notebook.connect_after("switch-page", self._on_page_changed)
         self.connect("key-press-event", self._on_keypress)
+        self.connect("map", self._on_map)
+        self.connect("unmap", self._on_unmap)
+
+    def _on_map(self, widget: Self) -> None:
+        self.controller.toggle_server_panels(True)
+
+    def _on_unmap(self, widget: Self) -> None:
+        self.controller.toggle_server_panels(False)
 
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
 
@@ -94,7 +101,6 @@ class ServerNotebook(Gtk.ScrolledWindow):
 
     def _on_page_changed(self, notebook: Gtk.Notebook, child: Gtk.Widget, index: int) -> None:
         # TODO: abstract
-        # TODO: load on first run
         label = self.notebook.get_tab_label_text(child)
         if label is None:
             return
@@ -105,19 +111,27 @@ class ServerNotebook(Gtk.ScrolledWindow):
         # TODO: strings
         string = f"Servers > {text}"
         self.controller.set_crumbs(string)
-        self.tab_cache = string
+        self.set_cached_label(string)
 
-        child.grab_focus()
-
-        # FIXME: doesn't fire on first run
-        #self.controller.update_server_status()
         self.controller.present_servers()
         self.controller.populate_model()
+
+        # TODO: start with lan panel hidden
+        # FIXME: grid conpan is not set up at init
+        # TODO: refresh button only usable if LAN has servers?
+        # or just remove it
+        #if self.get_active_treeview() is self.lan:
+        #    self.controller.mediator.grid.conpan.lan.set_visible(True)
+        #else:
+        #    self.controller.mediator.grid.conpan.lan.set_visible(False)
 
     # TODO: put in controller
     def query_test(self) -> None:
         data = (["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False])
         return data
+
+    def set_cached_label(self, label: str) -> None:
+        self.tab_cache = label
 
     def get_cached_label(self) -> str:
         return self.tab_cache

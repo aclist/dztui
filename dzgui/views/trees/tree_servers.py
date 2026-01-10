@@ -12,6 +12,7 @@ from dzgui.const.enum import (
     RowType,
     )
 from dzgui.const.constants import UDP_PORT
+from dzgui.const.enum import ServerTab
 from dzgui.api.servers import Record
 from dzgui.util.dist import CalcDist
 from dzgui.util.keys import is_navkey
@@ -40,11 +41,12 @@ class ServerTreeView(TreeView):
     __gsignals__ = {
         "on_distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())
     }
-    def __init__(self, controller: "Controller") -> None:
+    def __init__(self, controller: "Controller", enum: ServerTab) -> None:
         super().__init__(controller)
 
         QUEUE_CHECK_DELAY = 200
 
+        self.enum = enum
         self.loaded = False
         self.query_func: Callable = None
 
@@ -97,8 +99,27 @@ class ServerTreeView(TreeView):
         self.connect("key-press-event", self._on_server_keypress)
         self.connect("generic_row_activated", self._parent_row_activated)
         self.connect("generic_treesel_changed", self._parent_selection_changed)
+        self.connect("map", self._on_map)
+        self.connect("unmap", self._on_unmap)
+
+        self.connect("focus-in-event", self._on_kb_focus)
 
         GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
+
+    def _on_kb_focus(self, a, b) -> None:
+        self.emit("on_distcalc_started")
+
+    def get_enum(self) -> None:
+        return self.enum
+
+    def _on_map(self, a) -> None:
+        if self.get_enum() is ServerTab.LAN:
+            self.controller.mediator.grid.conpan.lan.set_visible(True)
+
+    def _on_unmap(self, a) -> None:
+        # TODO: could be done just when changing pages?
+        if self.get_enum() is ServerTab.LAN:
+            self.controller.mediator.grid.conpan.lan.set_visible(False)
 
     def _on_key(self, menu: Gtk.Menu, event: Gdk.EventKey) -> bool | None:
         if not is_navkey(event.keyval):

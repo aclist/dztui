@@ -652,7 +652,7 @@ class Controller:
 
     def populate_model(self) -> None:
         # TODO: always use same server model, store in servertreeview class
-        treeview = self.mediator.notebook.servers.get_active_treeview()
+        treeview = self.get_active_treeview()
         if treeview.get_loaded() is False:
             new_model = self.model_manager.new_model()
             # NOTE: set_query_func()
@@ -671,13 +671,14 @@ class Controller:
         self.mediator.right_panel.focus_button_box()
 
     def present_servers(self) -> None:
-        tree = self.get_active_treeview()
         # TODO: abstract
         self.grab_active_treeview()
         self.update_server_status()
         crumbs = self.mediator.servers.get_cached_label()
         self.set_crumbs(crumbs)
-        tree.emit("on_distcalc_started")
+        # TODO: could emit this when treeview gains keyboard focus
+        #tree = self.get_active_treeview()
+        #tree.emit("on_distcalc_started")
 
     def toggle_check(self, event: Gdk.EventKey) -> None:
         keyname = Gdk.keyval_name(event.keyval)
@@ -703,3 +704,6 @@ class Controller:
     
     def get_dist_cache(self) -> dict[str, "Haversine"]:
         return self.dist_cache
+
+    def toggle_lan_panel(self, state: bool) -> None:
+        self.mediator.grid.conpan.set_visible(state)

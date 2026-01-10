@@ -435,3 +435,9 @@ HELP_MENU_ROWS = (
     RowType.SEPARATOR,
     RowType.THANKS,
 )
+
+class ServerTab(Enum):
+    BROWSER = 1
+    SAVED = 2
+    RECENT = 3
+    LAN = 4

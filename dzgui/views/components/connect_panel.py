@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from dzgui.api.servers import validate_ip
+from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
 from dzgui.util.css import add_class, remove_class
 from dzgui.util.strings import connect_panel
 from dzgui.views.components.buttons import WebButton
@@ -13,9 +14,37 @@ from gi.repository import Gtk, Gdk # noqa E402
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
-class ConnectPanel(Gtk.Frame):
+class LanPanel(Gtk.Frame):
     def __init__(self, controller: "Controller") -> None:
         super().__init__(margin_top=10, margin_bottom=5)
+
+        # TODO: use grid, more column spacing
+        # TODO: hide lan panel on other tabs
+        hbox = Gtk.Box(margin=10, spacing=5, halign=Gtk.Align.START)
+        # TODO: strings
+        label = BoldLabel("LAN query port")
+        radio1 = Gtk.RadioButton.new_with_label(None, "Default port (27016)")
+        radio2 = Gtk.RadioButton.new_from_widget(radio1)
+        radio2.set_label("Custom port")
+        self.entry = Gtk.Entry(placeholder_text="Query port")
+        self.button = Gtk.Button(label="Scan")
+        radio1.connect("toggled", self._on_radio_toggled)
+        hbox.pack_start(label, NO_EXPAND, NO_FILL, NO_PADDING)
+        hbox.pack_start(radio1, NO_EXPAND, NO_FILL, NO_PADDING)
+        hbox.pack_start(radio2, NO_EXPAND, NO_FILL, NO_PADDING)
+        hbox.pack_start(self.entry, NO_EXPAND, NO_FILL, NO_PADDING)
+        hbox.pack_start(self.button, NO_EXPAND, NO_FILL, NO_PADDING)
+        self.entry.set_sensitive(False)
+        self.button.set_sensitive(False)
+        self.add(hbox)
+
+    def _on_radio_toggled(self, button: Gtk.RadioButton) -> None:
+        for el in self.entry, self.button:
+            el.set_sensitive(not button.get_active())
+
+class ConnectPanel(Gtk.Box):
+    def __init__(self, controller: "Controller") -> None:
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
         COLS = 1
         ROWS = 1
@@ -74,7 +103,14 @@ class ConnectPanel(Gtk.Frame):
         for el, sibling, pos, h_span, v_span in els:
             self.grid.attach_next_to(el, sibling, pos, h_span, v_span)
 
-        self.add(self.grid)
+        self.lan = LanPanel(self.controller)
+        self.add(self.lan)
+
+        frame = Gtk.Frame(margin_top=10, margin_bottom=5)
+        frame.add(self.grid)
+        self.add(frame)
+
+        self.lan.set_visible(False)
 
     def mark_valid(self) -> None:
         self.conn_server.set_sensitive(True)
