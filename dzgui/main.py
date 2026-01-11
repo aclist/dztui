@@ -3,14 +3,13 @@ import logging
 import os
 import sys
 
-from dzgui.api.mods import remove_stale_signatures
+from typing import TYPE_CHECKING
 
+from dzgui.api.mods import remove_stale_signatures
 from dzgui.config.ipdb import get_ipdb
 from dzgui.config.userprefs import UserPrefs
 from dzgui.config.xdg import get_xdg_paths, parse_filepaths
-
 from dzgui.const.update import ALLOW_UPDATES
-
 from dzgui.init.coords import get_local_coords
 from dzgui.init.dayz import is_dayz_installed
 from dzgui.init.flock import lock_acquire
@@ -41,8 +40,6 @@ parser.add_argument("-v", "--version", action="store_true", help=flags.version)
 parser.add_argument("-u", "--uninstall", action="store_true", help=flags.uninstall)
 parser.add_argument("-d", "--developers", action="store_true", help=flags.developers)
 args = parser.parse_args()
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -110,7 +107,6 @@ def main() -> None:
         # TODO: move into module
         if has_steam_client() is False:
             EarlyAlertDialog(init.requires_steam)
-            sys.exit(1)
 
     is_dayz_installed(XDG.config)
     is_dayz_running()

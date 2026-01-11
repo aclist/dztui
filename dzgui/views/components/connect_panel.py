@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 from dzgui.api.servers import validate_ip
-from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
 from dzgui.util.css import add_class, remove_class
 from dzgui.util.strings import connect_panel
 from dzgui.views.components.buttons import AddButton, ClipboardButton, SteamConnectButton
@@ -14,6 +13,9 @@ from gi.repository import Gtk, Gdk # noqa E402
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
+COLS = 1
+ROWS = 1
+
 class LanPanel(Gtk.Frame):
     def __init__(self, controller: "Controller") -> None:
         super().__init__(margin_top=10, margin_bottom=5)
@@ -24,26 +26,24 @@ class LanPanel(Gtk.Frame):
         self.set_label_widget(label)
 
         radio1 = Gtk.RadioButton.new_with_label(None, "Default port (27016)")
-        radio2 = Gtk.RadioButton.new_from_widget(radio1)
-        # TODO: new_with_label_from_widget
-        radio2.set_label("Custom port")
+        radio2 = Gtk.RadioButton.new_with_label_from_widget(radio1, "Custom port")
 
-        self.entry = Gtk.Entry(placeholder_text="Query port", sensitive=False)
+        self.entry = Gtk.Entry(placeholder_text="Enter the query port (1-65535)", sensitive=False, hexpand=True)
         self.button = Gtk.Button(label="Scan")
         radio1.connect("toggled", self._on_radio_toggled)
 
-        # TODO: use grid, more column spacing
-        hbox = Gtk.Box(margin=10, spacing=5, halign=Gtk.Align.START)
-        hbox.pack_start(radio1, NO_EXPAND, NO_FILL, NO_PADDING)
-        hbox.pack_start(radio2, NO_EXPAND, NO_FILL, NO_PADDING)
-        hbox.pack_start(self.entry, NO_EXPAND, NO_FILL, NO_PADDING)
-        hbox.pack_start(self.button, NO_EXPAND, NO_FILL, NO_PADDING)
+        self.grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
+        self.grid.attach(radio1, 0, 0, COLS, ROWS)
+        # TODO: expression to attach in a line
+        self.grid.attach_next_to(radio2, radio1, Gtk.PositionType.RIGHT, COLS, ROWS)
+        self.grid.attach_next_to(self.entry, radio2, Gtk.PositionType.RIGHT, COLS, ROWS)
+        self.grid.attach_next_to(self.button, self.entry, Gtk.PositionType.RIGHT, COLS, ROWS)
 
-        self.add(hbox)
+        self.add(self.grid)
 
     def _on_radio_toggled(self, button: Gtk.RadioButton) -> None:
-        for el in self.entry, self.button:
-            el.set_sensitive(not button.get_active())
+        self.entry.set_sensitive(not button.get_active())
+        # TODO: validate custom port entry
 
 class AddPanel(Gtk.Frame):
     def __init__(self, controller: "Controller") -> None:
@@ -52,14 +52,10 @@ class AddPanel(Gtk.Frame):
         label = BoldLabel("Connect")
         self.set_label_widget(label)
 
-class ConnectPanel(Gtk.Box):
-    def __init__(self, controller: "Controller") -> None:
-        super().__init__(orientation=Gtk.Orientation.VERTICAL)
-
-        COLS = 1
-        ROWS = 1
-        self.classname = "invalid-entry"
-        self.controller = controller
+        self.add_server = AddButton()
+        self.conn_server = SteamConnectButton()
+        self.conn_server.set_sensitive(False)
+        self.add_server.set_sensitive(False)
 
         self.entry = Gtk.Entry(
             placeholder_text=connect_panel.placeholder,
@@ -68,24 +64,6 @@ class ConnectPanel(Gtk.Box):
         )
         self.entry.connect("key-press-event", self._on_entry_keypress)
         self.entry.connect("changed", self._on_text_changed)
-
-        user_fav, self.fav_ip = self.controller.get_favorite()
-
-        server_name = f"{user_fav} ({self.fav_ip})" if user_fav is not None else connect_panel.no_fav
-        self.fav_label = Gtk.Label(label=server_name, track_visited_links=False, halign=Gtk.Align.START, hexpand=True)
-        scrollable_label = Gtk.ScrolledWindow()
-        scrollable_label.add(self.fav_label)
-
-        self.fav_button = SteamConnectButton()
-        self.fav_edit = Gtk.Button(label=connect_panel.edit)
-
-        self.add_server = AddButton()
-        self.conn_server = SteamConnectButton()
-
-        self.conn_server.set_sensitive(False)
-        self.add_server.set_sensitive(False)
-        if server_name is None:
-            self.fav_button.set_sensitive(False)
 
         self.grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
         self.grid.attach(self.entry, 0, 0, COLS, ROWS)
@@ -98,32 +76,7 @@ class ConnectPanel(Gtk.Box):
         for el, sibling, pos, h_span, v_span in els:
             self.grid.attach_next_to(el, sibling, pos, h_span, v_span)
 
-        self.lan = LanPanel(self.controller)
-        self.add(self.lan)
-
-        label = BoldLabel("Favorite server")
-        frame = Gtk.Frame(margin_top=10, margin_bottom=5, label_widget=label)
-        b = ClipboardButton(self.controller, self.get_fav_ip())
-        b.set_focus_on_click(False)
-        b.set_tooltip_text("Copy IP to clipboard")
-
-        # FIXME: height of connect buttons is not equivalent
-        grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
-        grid.attach(scrollable_label, 0, 0, 3, ROWS)
-        grid.attach_next_to(b, scrollable_label, Gtk.PositionType.RIGHT, COLS, ROWS)
-        grid.attach_next_to(self.fav_button, b, Gtk.PositionType.RIGHT, COLS, ROWS)
-        frame.add(grid)
-        self.add(frame)
-
-        label = BoldLabel("Connect")
-        frame = Gtk.Frame(margin_top=10, margin_bottom=5, label_widget=label)
-        frame.add(self.grid)
-        self.add(frame)
-
-        #self.lan.set_visible(False)
-
-    def get_fav_ip(self) -> str:
-        return self.fav_ip
+        self.add(self.grid)
 
     def mark_valid(self) -> None:
         self.conn_server.set_sensitive(True)
@@ -152,12 +105,53 @@ class ConnectPanel(Gtk.Box):
             else:
                 self.mark_invalid()
 
-    def set_fav_label(self, text: str) -> None:
-        # TODO: called by controller when changing fav
-        self.fav_label.set_text(text)
-
     def _on_entry_keypress(self, entry: Gtk.Entry, event: Gdk.EventKey) -> None:
         if event.keyval == Gdk.KEY_Escape:
             # NOTE: unselect text
             entry.select_region(0, 0)
             self.controller.grab_active_treeview()
+
+
+class ConnectPanel(Gtk.Box):
+    def __init__(self, controller: "Controller") -> None:
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+
+        self.classname = "invalid-entry"
+        self.controller = controller
+
+        user_fav, self.fav_ip = self.controller.get_favorite()
+
+        server_name = f"{user_fav} ({self.fav_ip})" if user_fav is not None else connect_panel.no_fav
+        self.fav_label = Gtk.Label(label=server_name, track_visited_links=False, halign=Gtk.Align.START, hexpand=True)
+        scrollable_label = Gtk.ScrolledWindow()
+        scrollable_label.add(self.fav_label)
+
+        self.fav_button = SteamConnectButton()
+        self.fav_edit = Gtk.Button(label=connect_panel.edit)
+        if server_name is None:
+            self.fav_button.set_sensitive(False)
+
+        self.lan = LanPanel(self.controller)
+        self.add_panel = AddPanel(self.controller)
+
+        label = BoldLabel("Favorite server")
+        frame = Gtk.Frame(margin_top=10, margin_bottom=5, label_widget=label)
+        b = ClipboardButton(self.controller, self.get_fav_ip())
+
+        # FIXME: height of connect buttons is not equivalent
+        grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
+        grid.attach(scrollable_label, 0, 0, 3, ROWS)
+        grid.attach_next_to(b, scrollable_label, Gtk.PositionType.RIGHT, COLS, ROWS)
+        grid.attach_next_to(self.fav_button, b, Gtk.PositionType.RIGHT, COLS, ROWS)
+        frame.add(grid)
+
+        for el in self.lan, frame, self.add_panel:
+            self.add(el)
+
+    def get_fav_ip(self) -> str:
+        return self.fav_ip
+
+    def set_fav_label(self, text: str) -> None:
+        # TODO: called by controller when changing fav
+        self.fav_label.set_text(text)
+

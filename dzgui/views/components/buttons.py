@@ -1,6 +1,6 @@
-from typing import Callable, Self, TYPE_CHECKING
+from typing import Self, TYPE_CHECKING
 
-from dzgui.util.strings import refresh, connect_panel
+from dzgui.util.strings import atomic_buttons, connect_panel
 from dzgui.const.constants import (
     CLIPBOARD,
     INPUT_KEYBOARD,
@@ -47,6 +47,8 @@ class IconTextButton(IconButton):
         super().__init__(icon, margin=5)
         self.set_label(label)
 
+        self.set_focus_on_click(False)
+
 
 class LargeIconTextButton(IconButton):
     def __init__(self, icon: str, label: str) -> None:
@@ -56,11 +58,13 @@ class LargeIconTextButton(IconButton):
         self.set_image(LargeIcon(icon))
 
 
-class ClipboardButton(IconButton):
+class ClipboardButton(IconTextButton):
     def __init__(self, controller: "Controller", data: str) -> None:
-        super().__init__(CLIPBOARD)
+        super().__init__(CLIPBOARD, atomic_buttons.copy)
         self.controller = controller
         self.connect("clicked", self._on_button_clicked, data)
+
+        self.set_tooltip_text("Copy IP to clipboard")
 
     def _on_button_clicked(self, button: Self, data: str) -> None:
         self.controller.copy_clipboard(data)
@@ -74,18 +78,20 @@ class WebButton(IconTextButton):
 
 class RefreshButton(IconTextButton):
     def __init__(self) -> None:
-        super().__init__(icon=REFRESH_ICON, label=refresh)
+        super().__init__(icon=REFRESH_ICON, label=atomic_buttons.refresh)
         self.set_margin_top(10)
         self.set_margin_start(80)
         self.set_margin_end(80)
 
 
 class KeysButton(IconTextButton):
-    def __init__(self, label: str) -> None:
-        super().__init__(icon=INPUT_KEYBOARD, label=label)
+    def __init__(self) -> None:
+        super().__init__(icon=INPUT_KEYBOARD, label=atomic_buttons.keys)
         self.set_margin_top(10)
         self.set_margin_start(80)
         self.set_margin_end(80)
+
+        self.set_tooltip_text(atomic_buttons.keys_tooltip)
 
 
 class SteamConnectButton(LargeIconTextButton):

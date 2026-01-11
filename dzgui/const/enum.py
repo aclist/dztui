@@ -14,7 +14,6 @@ class Popup(Enum):
     NOTIFY = 2
     CONFIRM = 3
     ENTRY = 4
-    RETURN = 5
     MODLIST = 6
     DETAILS = 7
     QUIT = 8

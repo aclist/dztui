@@ -26,6 +26,7 @@
 - Reduce padding on keys button
 - Boldface breadcrumbs
 - Bold labels inside frames
+- Unsticky keys when clicking sidebar
 
 ## Unreleased
 - Setup wizard

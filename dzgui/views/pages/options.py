@@ -424,7 +424,6 @@ class Options(Gtk.Box):
         return box
 
     def populate_settings(self) -> None:
-        # TODO: controller.get_config()
         prefs = self.controller.get_prefs()
         if prefs.paths.config.is_file() is False:
             # NOTE: in case file got deleted locally

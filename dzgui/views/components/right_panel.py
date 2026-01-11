@@ -10,7 +10,7 @@ from dzgui.views.components.filter_panel import FilterPanel
 from dzgui.views.components.mod_panel import ModSelectionPanel
 from dzgui.views.components.buttons import RefreshButton, KeysButton
 from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL, INPUT_KEYBOARD, NO_PADDING
-from dzgui.util.strings import refresh_tooltip, refresh, keys_button, keys_tooltip
+from dzgui.util.strings import atomic_buttons
 
 if TYPE_CHECKING:
     from GLib import SOURCE_REMOVE
@@ -31,14 +31,13 @@ class RightPanel(Gtk.Box):
 
         self.refresh_button = RefreshButton()
         # TODO: consolidate into class
-        self.refresh_button.set_tooltip_text(refresh_tooltip)
+        #self.refresh_button.set_tooltip_text(refresh_tooltip)
         self.refresh_button.set_focus_on_click(False)
         self.refresh_button.connect("clicked", self._on_refresh_clicked)
 
-        self.keys = KeysButton(keys_button)
-        self.keys.set_focus_on_click(False)
-        self.keys.set_tooltip_text(keys_tooltip)
+        self.keys = KeysButton()
         self.keys.connect("clicked", self._on_keys_clicked)
+        #self.keys.set_focus_on_click(False)
 
         for el in self.button_vbox, self.keys, self.filters_vbox, self.refresh_button:
             self.pack_start(el, NO_EXPAND, FILL, NO_PADDING)
@@ -61,13 +60,14 @@ class RightPanel(Gtk.Box):
             self.refresh_button.set_label(refresh)
             self.refresh_button.set_sensitive(True)
             return GLib.SOURCE_REMOVE
-        self.refresh_button.set_label(f"{refresh} ({str(self.time)})")
+        # TODO: abstract this formatting logic
+        self.refresh_button.set_label(f"{atomic_buttons.refresh} ({str(self.time)})")
         return True
 
     def _on_refresh_clicked(self, button: RefreshButton) -> None:
         # TODO: could be internal to refresh button class
         self.refresh_button.set_sensitive(False)
-        self.refresh_button.set_label(f"{refresh} ({str(self.time)})")
+        self.refresh_button.set_label(f"{atomic_buttons.refresh} ({str(self.time)})")
         GLib.timeout_add_seconds(1, self.decrement)
         self.controller.refresh_tree()
 

@@ -8,7 +8,6 @@ import signal
 import subprocess
 import textwrap
 import threading
-import traceback
 import typing  # noqa
 import warnings
 
@@ -466,3 +465,8 @@ class App(Gtk.Application):
         self.win.halt_proc_and_quit()
 
 MainController = Controller()
+
+# TODO: icon sanity check, log result
+#theme = Gtk.IconTheme.get_default()
+#icons = theme.list_icons(None)
+#print("steam_tray_mono" in icons)

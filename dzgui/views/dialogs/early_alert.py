@@ -1,22 +1,21 @@
 import textwrap
+import sys
+
+from typing import Self
+from dzgui.util.strings import dialog_error, dialog_header
 
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
 class EarlyAlertDialog(Gtk.MessageDialog):
-    def __init__(self, string):
-        # TODO: strings
+    def __init__(self, string: str) -> None:
         super().__init__(
-            title="DZGUI - Dialog",
-            flags=0,
-            text="ERROR",
+            title=dialog_header,
+            text=dialog_error,
             transient_for=None,
             buttons=Gtk.ButtonsType.OK
         )
-        ok = self.action_area.get_children()[0]
-        ok.set_label("OK")
-        ok.connect("clicked", Gtk.main_quit)
 
         msg = textwrap.fill(string, 50)
         self.format_secondary_text(msg)
@@ -28,8 +27,10 @@ class EarlyAlertDialog(Gtk.MessageDialog):
 
         self.set_default_size(250, 100)
 
-        self.connect("delete-event", Gtk.main_quit)
-        self.connect("destroy", Gtk.main_quit)
+        self.connect("response", self._on_response)
 
-        self.show_all()
-        Gtk.main()
+        self.run()
+        self.destroy()
+
+    def _on_response(self, dialog: Self, response: Gtk.ResponseType) -> None:
+        sys.exit(1)

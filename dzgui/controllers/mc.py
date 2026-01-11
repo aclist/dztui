@@ -2,12 +2,14 @@ import logging
 import shutil
 import threading
 import textwrap
+import traceback
 
 from pathlib import Path
 from typing import Any, Callable, TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
 import dzgui.util._json as JSON  # noqa
+from dzgui.views.dialogs.generic import ExceptionDialog
 
 from dzgui.api.probe import test_steam_api, test_bm_api
 from dzgui.api.mods import (
@@ -38,7 +40,7 @@ from dzgui.config import update
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.controllers.model import ModelManager
-from dzgui.util import cooldown, strings
+from dzgui.util import strings
 from dzgui.util.diag import write_diagnostic
 from dzgui.util._json import read_json, write_json
 from dzgui.util.localize import number
@@ -89,7 +91,6 @@ class Controller:
         self.crumbs_cache = ""
         self.mediator = AppNavigation()
         self.prefs: UserPrefs
-        self.cooldown = 0
 
         self.model_manager = ModelManager()
 
@@ -291,14 +292,18 @@ class Controller:
             update.toggle_config(config, context)
         except Exception as e:
             logger.critical(e)
-            self.spawn_dialog(strings.something_wrong, Popup.NOTIFY)
+            trace = traceback.format_exc()
+            dialog = ExceptionDialog(self, trace)
+            dialog.run()
 
     def update_config(self, key: Preferences, value: str) -> None:
         try:
             update.write_config(self.prefs.paths.config, key, value)
         except Exception as e:
             logger.critical(e)
-            self.spawn_dialog(strings.something_wrong, Popup.NOTIFY)
+            trace = traceback.format_exc()
+            dialog = ExceptionDialog(self, trace)
+            dialog.run()
             # TODO: suppress signals
             # then reenable (or it spawns dialog twice)
             self.mediator.grid.notebook.settings.populate_settings()
@@ -308,19 +313,6 @@ class Controller:
     #def present_toast(self, text: str) -> None:
     #    self.mediator.window.toast.set_text_and_fade(text)
 
-    def start_cooldown(self) -> None:
-        self.cooldown = cooldown.get_time()
-
-    def get_cooldown(self) -> None:
-        return self.cooldown
-
-    def manage_cooldown(self) -> bool:
-        if cooldown.is_elapsed(self.cooldown):
-            self.cooldown = cooldown.get_time()
-            return True
-        else:
-            return False
-
     def open_keybindings(self) -> None:
         notebook = self.mediator.grid.notebook
         notebook.toggle_keybindings()
@@ -329,6 +321,7 @@ class Controller:
         notebook = self.mediator.grid.notebook
         notebook.focus_current()
 
+    # TODO: deprecated
     def spawn_dialog(self, msg: str, mode: Popup) -> bool:
         """
         Spawns a GenericDialog transient to the OuterWindow

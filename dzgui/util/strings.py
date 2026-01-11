@@ -86,9 +86,10 @@ scan_servers = "Scan LAN servers"
 select_port = "Select the query port"
 
 # Errors
+error_heading = "Error"
 config_not_found = "DZGUI configuration file not found. Please exit and restart."
 cannot_acquire_lock = "DZGUI is already open."
-something_wrong = "Something went wrong."
+something_wrong = "Something went wrong. See the detailed error below."
 steam_key_missing = "No Steam API key is set."
 malformed_mods = "Found mods on system, but was unable to parse results."
 steam_missing = "Local Steam installation is not set, possibly malformed config file."
@@ -154,8 +155,6 @@ label_main_menu = "Main menu"
 # buttons
 ping_servers = "Ping servers"
 debug_mode = "Debug mode"
-keys_button = "Keys"
-keys_tooltip = "Toggles the keybindings dialog"
 debug_tooltip = (
     "Used to perform a dry run without\n"
     "actually connecting to a server"
@@ -539,6 +538,20 @@ connect_panel = ConnectPanel(
 )
 
 distance_suffix = "Distance: calculating..."
+dialog_error = "ERROR"
 
-refresh = "Refresh"
-refresh_tooltip = "Refresh server data"
+@dataclass(slots=True, frozen=True)
+class AtomicButton:
+    refresh: str
+    refresh_tooltip: str
+    copy: str
+    keys: str
+    keys_tooltip: str
+
+atomic_buttons = AtomicButton(
+    refresh="Refresh",
+    refresh_tooltip="Refresh server data",
+    copy="Copy",
+    keys="Keys",
+    keys_tooltip="Toggles the keybindings dialog",
+)
