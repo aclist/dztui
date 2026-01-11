@@ -49,6 +49,9 @@ class AddPanel(Gtk.Frame):
     def __init__(self, controller: "Controller") -> None:
         super().__init__(margin_top=10, margin_bottom=5)
 
+        self.controller = controller
+        self.classname = "invalid-entry"
+
         label = BoldLabel("Connect")
         self.set_label_widget(label)
 
@@ -116,7 +119,6 @@ class ConnectPanel(Gtk.Box):
     def __init__(self, controller: "Controller") -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
-        self.classname = "invalid-entry"
         self.controller = controller
 
         user_fav, self.fav_ip = self.controller.get_favorite()
