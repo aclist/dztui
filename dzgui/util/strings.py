@@ -512,30 +512,54 @@ server_labels = ServerLabels(
 class ConnectPanel:
     connect: str
     add: str
-    edit: str
-    favorite: str
     add_con: str
     placeholder: str
     entry_tooltip: str
     add_tooltip: str
     connect_tooltip: str
-    no_fav: str
 
 connect_panel = ConnectPanel(
     connect="Connect",
     add="Add",
-    edit="Edit",
-    favorite="Favorite server",
     add_con="Add/connect",
     placeholder="Enter IP or Battlemetrics ID",
     entry_tooltip=(
-        "- IP: Format as IP:Query port\ne.g. 192.168.1.1:27016\n"
+        "- IP: format as IP:Query port\ne.g. 192.168.1.1:27016\n"
         "- Battlemetrics: numeric server ID\ne.g. 123456"
     ),
     add_tooltip="Add to my servers",
     connect_tooltip="Connect to this server",
+)
+
+@dataclass(slots=True, frozen=True)
+class FavPanel:
+    heading: str
+    no_fav: str
+
+fav_panel = FavPanel(
+    heading="Favorite server",
     no_fav="None set. Right click a server and select 'Set favorite' to set.",
 )
+
+@dataclass(slots=True, frozen=True)
+class LanPanel:
+    heading: str
+    default_button: str
+    custom_button: str
+    scan_button: str
+    placeholder: str
+    entry_tooltip: str
+
+lan_panel = LanPanel(
+    heading="LAN query port",
+    default_button="Default port (27016)",
+    custom_button="Custom port",
+    scan_button="Scan",
+    placeholder="Enter the query port (1-65535)",
+    entry_tooltip="Specify the port to search for DayZ servers on the local network"
+)
+
+
 
 distance_suffix = "Distance: calculating..."
 dialog_error = "ERROR"

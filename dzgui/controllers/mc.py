@@ -694,7 +694,8 @@ class Controller:
         if len(fav) < 1:
             return None, None
         ip = str(self.query_config(Preferences.FAV_SRV))
-        return fav, ip
+        addr = ip.split(":")
+        return fav, f"{addr[0]}:{addr[2]}"
 
     def get_dist_cache(self) -> dict[str, "Haversine"]:
         return self.dist_cache

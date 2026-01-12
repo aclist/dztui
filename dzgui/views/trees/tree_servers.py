@@ -211,7 +211,8 @@ class ServerTreeView(TreeView):
                 case Gdk.KEY_m:
                     self.controller.mediator.grid.right_panel.filters_vbox.maps_entry.grab_focus()
                 case Gdk.KEY_i:
-                    self.controller.mediator.grid.conpan.entry.grab_focus()
+                    # TODO:
+                    self.controller.mediator.grid.conpan.add_panel.entry.grab_focus()
         else:
             match event.keyval:
                 case Gdk.KEY_l | Gdk.KEY_Right:
