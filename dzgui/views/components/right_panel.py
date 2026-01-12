@@ -12,10 +12,11 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib  # noqa E402
 
 if TYPE_CHECKING:
+    from dzgui.controllers.mc import Controller
     from GLib import SOURCE_REMOVE
 
 class RightPanel(Gtk.Box):
-    def __init__(self, controller):
+    def __init__(self, controller: "Controller"):
         super().__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL)
 
         self.controller = controller

@@ -91,8 +91,9 @@ class Controller:
         self.crumbs_cache = ""
         self.mediator = AppNavigation()
         self.prefs: UserPrefs
-
         self.model_manager = ModelManager()
+        # TODO: poc
+        self.loaded = False
 
     def register_widget(self, attr: str, widget: Gtk.Widget) -> None:
         try:
@@ -483,6 +484,8 @@ class Controller:
             # NOTE: manipulates mod store
             case ContextMenu.DELETE_MOD:
                 self.delete_single_mod(path)
+                # TODO: hook treeview changed signal
+                # Gtk.TreeModel, row-inserted/row-deleted
                 self.update_mod_statusbar()
                 remove_stale_signatures(
                     self.prefs.paths.config,
@@ -545,11 +548,31 @@ class Controller:
     def unselect_all_mods(self) -> None:
         self.mediator.modtreeview.get_selection().unselect_all()
 
+    def dump_test(self) -> None:
+        import time
+        time.sleep(1)
+        # TODO: use model managers, etc.
+        self.data = (["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False])
+        # TODO: refer to prior implementation--should need to load data into model while in thread
+        self.get_func_data()
+        self.destroy_on_idle()
+
+    def get_func_data(self) -> tuple:
+        # TODO: use model manager
+        treeview = self.get_active_treeview()
+        model = treeview.get_model()
+        data = self.data
+        model.append(data)
+        treeview.set_loaded(True)
+        self.update_server_status()
+        treeview.grab_focus()
+
     def highlight_stale(self) -> None:
         self.call_on_thread(self.colorize_mods)
 
     def call_on_thread(self, func: Callable, *args) -> None:
-        self.wait_dialog = GenericDialog(self, strings.dialog.fetching, Popup.WAIT)
+        from dzgui.views.dialogs.generic import WaitDialog
+        self.wait_dialog = WaitDialog(self, strings.dialog.fetching)
         self.wait_dialog.show_all()
         thread = threading.Thread(target=func, args=args)
         thread.start()
@@ -644,21 +667,21 @@ class Controller:
         self.populate_model()
 
     def populate_model(self) -> None:
+        print("POPULATING MODEL")
         # TODO: always use same server model, store in servertreeview class
         treeview = self.get_active_treeview()
         if treeview.get_loaded() is False:
             new_model = self.model_manager.new_model()
             # NOTE: set_query_func()
             func = treeview.get_query_func()
+            print(func)
             if func is not None:
                 model = treeview.get_model()
+                print(model)
+                # TODO: this may lag?
                 model.clear()
-                data = func()
-                # TODO: threading
-                model.append(data)
-            treeview.set_loaded(True)
-            self.update_server_status()
-        treeview.grab_focus()
+                self.set_callback(None, None)#self.get_func_data)
+                self.call_on_thread(func)
 
     def focus_button_box(self) -> None:
         self.mediator.right_panel.focus_button_box()

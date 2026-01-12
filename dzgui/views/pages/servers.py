@@ -29,6 +29,7 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.recent = ServerTreeView(controller, ServerTab.RECENT)
         self.lan = ServerTreeView(controller, ServerTab.LAN)
 
+        self.browser.set_query_func(self.query_test2)
         self.lan.set_query_func(self.query_test)
         # TODO: set context menu on init
         self.browser.set_context_menu(ContextMenuGroup.SERVER_BROWSER)
@@ -51,23 +52,24 @@ class ServerNotebook(Gtk.ScrolledWindow):
             if label == "LAN":
                 pass
             else:
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                tree.loaded = True
+                pass
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
+                #tree.loaded = True
             # TODO: set model on init of servertreeview
             tree.set_model(store)
 
@@ -98,8 +100,9 @@ class ServerNotebook(Gtk.ScrolledWindow):
                 return
         self.get_active_treeview().grab_focus()
 
-
     def _on_page_changed(self, notebook: Gtk.Notebook, child: Gtk.Widget, index: int) -> None:
+        if self.controller.loaded is False:
+            return
         # TODO: abstract
         label = self.notebook.get_tab_label_text(child)
         if label is None:
@@ -126,6 +129,10 @@ class ServerNotebook(Gtk.ScrolledWindow):
         #    self.controller.mediator.grid.conpan.lan.set_visible(False)
 
     # TODO: put in controller
+    def query_test2(self) -> None:
+        # TODO: should trigger first page action after entire UI is loaded
+        self.controller.dump_test()
+
     def query_test(self) -> None:
         data = (["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False])
         return data

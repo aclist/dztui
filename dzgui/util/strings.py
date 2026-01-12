@@ -549,6 +549,7 @@ class LanPanel:
     scan_button: str
     placeholder: str
     entry_tooltip: str
+    scan_tooltip: str
 
 lan_panel = LanPanel(
     heading="LAN query port",
@@ -556,10 +557,9 @@ lan_panel = LanPanel(
     custom_button="Custom port",
     scan_button="Scan",
     placeholder="Enter the query port (1-65535)",
-    entry_tooltip="Specify the port to search for DayZ servers on the local network"
+    entry_tooltip="Specify the port to search for DayZ servers on the local network",
+    scan_tooltip="Scan for servers"
 )
-
-
 
 distance_suffix = "Distance: calculating..."
 dialog_error = "ERROR"
