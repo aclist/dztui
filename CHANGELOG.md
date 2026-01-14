@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.0-beta.18] 2026-01-14
+## Fixed
+- Update UI checksums
+
 ## [6.0.0-beta.17] 2026-01-14
 ## Added
 - More descriptive help dialogs when initial dependencies are missing
