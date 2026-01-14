@@ -398,13 +398,20 @@ class Grid(Gtk.Grid):
         self.breadcrumbs = Gtk.Label(halign=Gtk.Align.START)
         self.set_breadcrumbs(strings.label_main_menu)
 
+        self.bu = Gtk.Button(label="Shrink to fit", halign=Gtk.Align.END)
+        self.crumb_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self.crumb_box.add(self.breadcrumbs)
+        self.crumb_box.add(self.bu)
+        self.bu.connect("clicked", self._shrink)
+
         self.notebook = Notebook()
         self.conpan = ConnectPanel(MainController)
 
         self.attach(self.notebook, 0, 0, MAX_COLS, SINGLE_ROW)
 
+
         els = (
-            (self.breadcrumbs, self.notebook, Gtk.PositionType.TOP, MAX_COLS, SINGLE_ROW),
+            (self.crumb_box, self.notebook, Gtk.PositionType.TOP, MAX_COLS, SINGLE_ROW),
             (self.conpan, self.notebook, Gtk.PositionType.BOTTOM, MAX_COLS, SINGLE_ROW),
             (self.statusbar, self.conpan, Gtk.PositionType.BOTTOM, MAX_COLS, SINGLE_ROW),
             (self.right_panel, self.notebook, Gtk.PositionType.RIGHT, SINGLE_COL, MAX_ROWS),
@@ -413,6 +420,10 @@ class Grid(Gtk.Grid):
             self.attach_next_to(el, sibling, pos, h_span, v_span)
 
         self.show_all()
+
+    def _shrink(self, button: Gtk.Button) -> None:
+        tv = MainController.get_active_treeview()
+        tv.shrink_to_fit()
 
     def toggle_filter_panel(self, state: bool) -> None:
         self.right_panel.filters_vbox.set_visible(state)

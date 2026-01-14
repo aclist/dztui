@@ -31,14 +31,12 @@ class ServerNotebook(Gtk.ScrolledWindow):
 
         self.browser.set_query_func(self.query_test2)
         self.lan.set_query_func(self.query_test)
-        # TODO: set context menu on init
+
+        # TODO: set context menu on init of ServerTreeView?
         self.browser.set_context_menu(ContextMenuGroup.SERVER_BROWSER)
         self.saved.set_context_menu(ContextMenuGroup.SAVED)
         self.recent.set_context_menu(ContextMenuGroup.RECENT)
         self.lan.set_context_menu(ContextMenuGroup.SCAN_LAN)
-
-        # TODO: set model manager for each tab on init
-        # TODO: add set_ and get_model_manager() methods
 
         tabs = [
             (self.browser, server_labels.browser, self.controller.get_server_store),
@@ -53,24 +51,9 @@ class ServerNotebook(Gtk.ScrolledWindow):
                 pass
             else:
                 pass
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #store.append(["BAR", "a", "a", "a", 0, 0, 0, "189.127.165.207:2302", 0, 0, "a", False])
-                #tree.loaded = True
             # TODO: set model on init of servertreeview
+            # TODO: set model manager for each tab on init
+            # TODO: add set_ and get_model_manager() methods
             tree.set_model(store)
 
             scrolled = Gtk.ScrolledWindow()
@@ -82,6 +65,8 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.connect("key-press-event", self._on_keypress)
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
+
+        self.set_crumbs("Server browser")
 
     def _on_map(self, widget: Self) -> None:
         self.controller.toggle_server_panels(True)
@@ -100,21 +85,24 @@ class ServerNotebook(Gtk.ScrolledWindow):
                 return
         self.get_active_treeview().grab_focus()
 
+    def set_crumbs(self, text: str) -> None:
+        string = f"Servers > {text}"
+        self.controller.set_crumbs(string)
+        self.set_cached_label(string)
+
     def _on_page_changed(self, notebook: Gtk.Notebook, child: Gtk.Widget, index: int) -> None:
         if self.controller.loaded is False:
             return
         # TODO: abstract
         label = self.notebook.get_tab_label_text(child)
+
         if label is None:
             return
         # TODO: strings
         text = label.strip("*")
         self.notebook.set_tab_label_text(child, text)
 
-        # TODO: strings
-        string = f"Servers > {text}"
-        self.controller.set_crumbs(string)
-        self.set_cached_label(string)
+        self.set_crumbs(text)
 
         self.controller.present_servers()
         self.controller.populate_model()

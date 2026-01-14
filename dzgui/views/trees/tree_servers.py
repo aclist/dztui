@@ -88,6 +88,14 @@ class ServerTreeView(TreeView):
                     column.set_fixed_width(800)
                 if column_title == "Map":
                     column.set_fixed_width(300)
+            # TODO: standardize widths based on column title and longest content
+            # TODO: resize col width func causes snapping behavior
+            if column_title == "Name":
+                column.set_fixed_width(500)
+            if column_title == "Map":
+                column.set_fixed_width(200)
+            if column_title == "IP":
+                column.set_fixed_width(240)
 
             column.connect("notify::fixed-width", self._on_col_width_changed)
             self.append_column(column)
@@ -103,6 +111,28 @@ class ServerTreeView(TreeView):
         self.connect("focus-in-event", self._on_kb_focus)
 
         GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
+
+    def shrink_to_fit(self) -> None:
+        cols = self.get_columns()
+        # TODO: run on only one treeview and propagate results
+        # TODO: does not shrink name, map, ip fields to fit
+        # TODO: col width changed signal is buggy on current treeview
+        for col in cols:
+            title = col.get_title()
+            if title == "Name":
+                continue
+            if title == "Map":
+                continue
+            if title == "IP":
+                continue
+            label = Gtk.Label(title)
+            pango = label.get_layout()
+            size = pango.get_pixel_size()
+            if size.width > 50:
+                width = size.width * 1.30
+            else:
+                width = size.width * 1.65
+            col.set_fixed_width(width)
 
     def _on_kb_focus(self, a, b) -> None:
         self.emit("on_distcalc_started")
