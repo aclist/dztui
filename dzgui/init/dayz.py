@@ -18,5 +18,5 @@ def is_dayz_installed(config: Path) -> None:
         PeFile.get_app_path(Path(path) / LIBRARYFOLDERS_PATH, APPID_DAYZ)
     except Exception as e:
         logger.critical(e)
-        EarlyAlertDialog(e)
+        EarlyAlertDialog(str(e))
         sys.exit(1)

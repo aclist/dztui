@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def get_latest_release() -> str | None:
     tag = None
     # TODO: check order; github often has gateway errors
-    for url in [CODEBERG_RELEASES, GITHUB_RELEASES]:
+    for url in [GITHUB_RELEASES, CODEBERG_RELEASES]:
         try:
             res = requests.get(url, timeout=REQUEST_TIMEOUT)
             if res.status_code == 200:
