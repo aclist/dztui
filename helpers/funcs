@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
+
 version="6.0.0"
 
 #CONSTANTS
@@ -396,6 +397,7 @@ get_dist(){
         logger INFO "Distance: $dist km"
     fi
 }
+
 query_config(){
     [[ -n $2 ]] && local key=$2
     keys=(
@@ -421,6 +423,7 @@ query_config(){
         echo "${!i}"
     done
 }
+
 align_versions_file(){
     shift
     local mod="$1"
@@ -478,6 +481,9 @@ test_cooldown(){
         printf "Global API cooldown in effect. Please wait %s %s." "$remains" "$suffix"
         exit 1
     fi
+}
+redact(){
+    sed 's@\(/home/\)[^/]*@\1REDACTED@g'
 }
 redact(){
     sed 's@\(/home/\)[^/]*@\1REDACTED@g'

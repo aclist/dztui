@@ -691,6 +691,7 @@ get_response_code(){
     local url="$1"
     curl -Ls -I -o /dev/null -w "%{http_code}" "$url"
 }
+
 fetch_ip_db(){
     parse_dl_url(){
         curl -Ls "$url" \
