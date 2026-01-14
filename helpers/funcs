@@ -484,9 +484,6 @@ test_cooldown(){
 redact(){
     sed 's@\(/home/\)[^/]*@\1REDACTED@g'
 }
-redact(){
-    sed 's@\(/home/\)[^/]*@\1REDACTED@g'
-}
 logger(){
     local date="$(date "+%F %T,%3N")"
     local tag="$1"
