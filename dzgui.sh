@@ -41,7 +41,6 @@ cols_file="$state_path/$prefix.cols.json"
 #CACHE FILES
 coords_file="$cache_path/$prefix.coords"
 src_path_file="$cache_path/$prefix.src"
-echo "$src_path" > "$src_path_file"
 
 #legacy paths
 hist_file="$config_path/history"
@@ -118,6 +117,7 @@ setup_state_files(){
         done
         logger INFO "Wiped cache files"
     fi
+    echo "$src_path" > "$src_path_file"
 }
 print_config_vals(){
     local keys=(
