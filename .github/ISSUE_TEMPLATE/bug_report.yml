@@ -5,6 +5,10 @@ labels: ["bug"]
 assignees:
   - aclist
 body:
+  - type: markdown
+    attributes:
+      value: |
+          ### WARNING: When posting log/config data, redact any sensitive information like API keys.
   - type: checkboxes
     id: kb
     attributes:

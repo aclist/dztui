@@ -3,7 +3,7 @@ set -o pipefail
 
 src_path="$(readlink -e "$0")"
 
-version=6.0.0.beta-19
+version=6.0.0.beta-20
 
 #CONSTANTS
 aid=221100
@@ -41,6 +41,7 @@ cols_file="$state_path/$prefix.cols.json"
 
 #CACHE FILES
 coords_file="$cache_path/$prefix.coords"
+src_path_file="$cache_path/$prefix.src"
 
 #legacy paths
 hist_file="$config_path/history"
@@ -117,6 +118,7 @@ setup_state_files(){
         done
         logger INFO "Wiped cache files"
     fi
+    echo "$src_path" > "$src_path_file"
 }
 print_config_vals(){
     local keys=(
@@ -624,7 +626,7 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="8f44e648bde4fa50adddd3c238c6fe42"
+        ["funcs"]="1441bb0654b398c68daa22d86275c3ce"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
         ["ui.py"]="3d67e5e8e85a23dde1fd0e85a9be62a9"
@@ -691,6 +693,7 @@ get_response_code(){
     local url="$1"
     curl -Ls -I -o /dev/null -w "%{http_code}" "$url"
 }
+
 fetch_ip_db(){
     parse_dl_url(){
         curl -Ls "$url" \

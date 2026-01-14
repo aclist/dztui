@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.0-beta.20] 2026-01-14
+## Fixed
+- Write cache file after wiping
+
 ## [6.0.0-beta.19] 2026-01-14
 ## Fixed
 - Steam Deck compatible script path expansion
