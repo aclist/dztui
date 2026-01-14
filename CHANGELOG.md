@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.0-beta.19] 2026-01-14
+## Fixed
+- Steam Deck compatible script path expansion
+
 ## [6.0.0-beta.18] 2026-01-14
 ## Fixed
 - Update UI checksums
