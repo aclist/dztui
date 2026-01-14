@@ -1343,6 +1343,7 @@ class ScrollableTree(Gtk.ScrolledWindow):
         self.treeview = TreeView()
         self.add(self.treeview)
 
+
 class RightPanel(Gtk.Box):
     def __init__(self):
         super().__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL)
@@ -2744,8 +2745,7 @@ class TreeView(Gtk.TreeView):
                 if column_title == "Map":
                     column.set_fixed_width(300)
 
-            if i != 10:
-                self.append_column(column)
+            self.append_column(column)
 
     @update_window_labels
     def _update_multi_column(self, mode: RowType, port: int = 27016) -> None:
@@ -4657,7 +4657,6 @@ class App(Gtk.Application):
         self.win = OuterWindow()
         self.win.set_icon_name("{app_name_lower}")
 
-
         accel = Gtk.AccelGroup()
         accel.connect(
             Gdk.KEY_q,
@@ -4684,35 +4683,6 @@ class App(Gtk.Application):
     ) -> None:
         self.win.halt_proc_and_quit()
 
-
-def save_res_and_quit(window):
-    if window.props.is_maximized:
-        Gtk.main_quit()
-        return
-    rect = window.get_size()
-
-    def write_json(rect):
-        data = {"res": { "width": rect.width, "height": rect.height } }
-        j = json.dumps(data, indent=2)
-        with open(res_path, "w") as outfile:
-            outfile.write(j)
-        logger.info("Wrote initial window size to '%s'" %(res_path))
-
-    if os.path.isfile(res_path):
-        with open(res_path, "r") as infile:
-            try:
-                data = json.load(infile)
-                data["res"]["width"] = rect.width
-                data["res"]["height"] = rect.height
-                with open(res_path, "w") as outfile:
-                    outfile.write(json.dumps(data, indent=2))
-            except json.decoder.JSONDecodeError:
-                logger.critical("JSON decode error in '%s'" %(res_path))
-                write_json(rect)
-    else:
-        write_json(rect)
-
-    Gtk.main_quit()
 
 class ModSelectionPanel(Gtk.Box):
     def __init__(self):
