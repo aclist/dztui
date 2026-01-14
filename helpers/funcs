@@ -51,6 +51,7 @@ _cache_binary="$cache_dir/$prefix.binary"
 _cache_coords="$cache_path/$prefix.coords"
 _cache_cooldown="$cache_path/$prefix.cooldown"
 _cache_lan="$cache_path/$prefix.lan"
+_cache_src_path="$cache_path/$prefix.src"
 
 #XDG
 freedesktop_path="$HOME/.local/share/applications"
@@ -588,9 +589,6 @@ default_steam_path="$default_steam_path"
 
 #Preferred Steam launch command (for Flatpak support)
 preferred_client="$preferred_client"
-
-#DZGUI source path
-src_path="$src_path"
 END
 }
 format_version_url(){
@@ -644,6 +642,7 @@ download_new_version(){
         return 1
     fi
     local version_url="$(format_version_url)"
+    local src_path="$(< "$_cache_src_path")"
     mv "$src_path" "$src_path.old"
     curl -Ls "$version_url" > "$src_path"
     rc=$?

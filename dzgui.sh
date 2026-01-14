@@ -2,7 +2,6 @@
 set -o pipefail
 
 src_path="$(readlink -e "$0")"
-
 version=6.0.0
 
 #CONSTANTS
@@ -41,6 +40,8 @@ cols_file="$state_path/$prefix.cols.json"
 
 #CACHE FILES
 coords_file="$cache_path/$prefix.coords"
+src_path_file="$cache_path/$prefix.src"
+echo "$src_path" > "$src_path_file"
 
 #legacy paths
 hist_file="$config_path/history"
@@ -624,7 +625,7 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="7844ba7d7a1bc8bd6e638317aab694d7"
+        ["funcs"]="2ac0ccc6c697208a1b097508d55ad886"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
         ["ui.py"]="3d67e5e8e85a23dde1fd0e85a9be62a9"
