@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-version=5.8.3
+src_path="$(readlink -e "$0")"
+version=6.0.0
 
 #CONSTANTS
 aid=221100
@@ -39,6 +40,7 @@ cols_file="$state_path/$prefix.cols.json"
 
 #CACHE FILES
 coords_file="$cache_path/$prefix.coords"
+src_path_file="$cache_path/$prefix.src"
 
 #legacy paths
 hist_file="$config_path/history"
@@ -63,17 +65,14 @@ testing_url="$url_prefix/testing"
 releases_url="https://github.com/$author/$repo/releases/download/browser"
 km_helper_url="$releases_url/latlon"
 
-
 set_im_module(){
     #TODO: drop pending SteamOS changes
-    pgrep -a gamescope | grep -q "generate-drm-mode"
-    if [[ $? -eq 0 ]]; then
-        GTK_IM_MODULE=""
+    if pgrep -a gamescope | grep -q "generate-drm-mode"; then
+        unset GTK_IM_MODULE
         logger INFO "Detected Steam Deck (Game Mode), unsetting GTK_IM_MODULE"
-    else
-        return
     fi
 }
+
 redact(){
     sed 's@\(/home/\)[^/]*@\1REDACTED@g'
 }
@@ -87,13 +86,21 @@ logger(){
     printf "%s␞%s␞%s::%s()::%s␞%s\n" "$date" "$tag" "$self" "$caller" "$line" "$string" \
         | redact >> "$debug_log"
 }
+
 setup_dirs(){
-    for dir in "$state_path" "$cache_path" "$share_path" "$helpers_path" "$freedesktop_path" "$config_path" "$log_path"; do
-        if [[ ! -d $dir ]]; then
-            mkdir -p "$dir"
-        fi
+    directories=()
+    directories+=("$state_path")
+    directories+=("$cache_path")
+    directories+=("$share_path")
+    directories+=("$helpers_path")
+    directories+=("$freedesktop_path")
+    directories+=("$config_path")
+    directories+=("$log_path")
+    for dir in "${directories[@]}"; do
+        mkdir -p "$dir"
     done
 }
+
 setup_state_files(){
     if [[ -f "$debug_log" ]]; then
         rm "$debug_log" && touch $debug_log
@@ -104,13 +111,13 @@ setup_state_files(){
         logger INFO "Migrating legacy version file"
     fi
     # wipe cache files
-    local path="$cache_path"
-    if find "$path" -mindepth 1 -maxdepth 1 | read; then
-        for file in $path/*; do
+    if [[ $(ls -A "$cache_path") ]]; then
+        for file in "$cache_path"/*; do
             rm "$file"
         done
         logger INFO "Wiped cache files"
     fi
+    echo "$src_path" > "$src_path_file"
 }
 print_config_vals(){
     local keys=(
@@ -132,10 +139,10 @@ print_config_vals(){
 
 }
 test_gobject(){
-    python3 -c "import gi"
+    python3.13 -c "import gi"
     if [[ ! $? -eq 0 ]]; then
         logger CRITICAL "Missing PyGObject"
-        fdialog "Requires PyGObject (python-gobject)"
+        quit_with_pdialog "Requires PyGObject (python-gobject)"
         exit 1
     fi
     logger INFO "Found PyGObject in Python env"
@@ -214,17 +221,14 @@ default_steam_path="$default_steam_path"
 
 #Preferred Steam launch command (for Flatpak support)
 preferred_client="$preferred_client"
-
-#DZGUI source path
-src_path="$src_path"
 END
 }
 depcheck(){
     for dep in "${!deps[@]}"; do
-        command -v "$dep" 2>&1>/dev/null
-        if [[ $? -eq 1 ]]; then
+        if ! command -v "$dep" &> /dev/null; then
             local msg="Requires $dep >= ${deps[$dep]}"
-            raise_error_and_quit "$msg"
+            echo "$msg"
+            exit 1
         fi
     done
     local jqmsg="jq must be compiled with support for oniguruma"
@@ -233,14 +237,31 @@ depcheck(){
     [[ $? -ne 0 ]] && raise_error_and_quit "$jqmsg"
     logger INFO "Initial dependencies satisfied"
 }
-check_pyver(){
-    local pyver=$(python3 --version | awk '{print $2}')
-    local minor=$(<<< $pyver awk -F. '{print $2}')
-    if [[ -z $pyver ]] || [[ ${pyver:0:1} -lt 3 ]] || [[ $minor -lt 10 ]]; then
-        local msg="Requires Python >=3.10"
-        raise_error_and_quit "$msg"
+open_url(){
+    url="$1"
+    if [[ -n "$BROWSER" ]]; then
+        logger INFO "Opening '$url' in '$BROWSER'"
+        "$BROWSER" "$url"
+    else
+        logger INFO "Opening '$url' with xdg-open"
+        xdg-open "$url"
     fi
-    logger INFO "Found Python version: $pyver"
+}
+quit_with_pdialog(){
+    local sel
+    msg="$1"
+    help_button="Open help page"
+    url="https://aclist.github.io/dzgui/installation.html"
+    logger CRITICAL "$msg"
+    sel=$(zenity --info --extra-button="$help_button" --text="$msg")
+    [[ $sel == "$help_button" ]] && open_url "$url" &
+    exit 1
+}
+check_pyver(){
+    if [[ ! $(python3.13 --version) ]]; then
+        local msg="Requires Python 3.13"
+        quit_with_pdialog "$msg"
+    fi
 }
 watcher_deps(){
     if [[ ! $(command -v wmctrl) ]] && [[ ! $(command -v xdotool) ]]; then
@@ -314,6 +335,7 @@ check_unmerged(){
     fi
 }
 check_version(){
+    [[ -n $reference_branch ]] && return
     local version_url=$(format_version_url)
     local upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
     local res=$(get_response_code "$version_url")
@@ -377,10 +399,11 @@ prompt_dl(){
 dl_changelog(){
     local mdbranch
     local md
+    source "$config_file"
     [[ $branch == "stable" ]] && mdbranch="dzgui"
     [[ $branch == "testing" ]] && mdbranch="testing"
-    local md="$url_prefix/${mdbranch}/$file"
-    curl -Ls "$md" > "$state_path/CHANGELOG.md"
+    local changelog="$url_prefix/${mdbranch}/CHANGELOG.md"
+    curl -Ls "$changelog" > "$state_path/CHANGELOG.md"
 }
 test_display_mode(){
     pgrep -a gamescope | grep -q "generate-drm-mode"
@@ -464,18 +487,7 @@ steam_deps(){
         local msg="Found neither Steam nor Flatpak Steam"
         raise_error_and_quit "$msg"
         exit 1
-    elif [[ -n "$steam" ]] && [[ -n "$flatpak" ]]; then
-        [[ -n $preferred_client ]] && return 0
-        if [[ -z $preferred_client ]]; then
-            preferred_client="steam"
-        fi
-    elif [[ -n "$steam" ]]; then
-        preferred_client="steam"
-    else
-        preferred_client="flatpak"
     fi
-    update_config
-    logger INFO "Preferred client set to '$preferred_client'"
 }
 migrate_files(){
     if [[ ! -f $config_path/dztuirc.oldapi ]]; then
@@ -494,27 +506,54 @@ stale_symlinks(){
         unlink "$link"
     done
 }
+
+check_availability() {
+    if [[ -z $1 ]]; then
+        return 1
+    fi
+    local url=$1
+    local timeout_sec="3"
+    if [[ $2 ]]; then
+        timeout_sec=$2
+    fi
+    if ! ping -w "$timeout_sec" "$url" > /dev/null 2>&1; then
+        logger WARN "Failed to reach $url, service may be down."
+        return 1
+    fi
+}
+
 local_latlon(){
     if [[ -z $(command -v dig) ]]; then
-        local local_ip=$(curl -Ls "https://ipecho.net/plain")
+        local url_ipecho="https://ipecho.net/plain"
+        if ! check_availability "ipecho.net"; then
+            logger WARN "Failed to get external ip address, ipecho.net service may be down."
+            return 1
+        fi
+        local local_ip=$(curl -Ls "$url_ipecho")
     else
+        # TODO : implement checking remote
         local local_ip=$(dig -4 +short myip.opendns.com @resolver1.opendns.com)
     fi
-    local url="http://ip-api.com/json/$local_ip"
-    local res=$(curl -Ls "$url" | jq -r '"\(.lat)\n\(.lon)"')
+    local url_ip_api="http://ip-api.com/json/$local_ip"
+    if ! check_availability "ip-api.com"; then
+        logger WARN "Failed to get local coordinates, ip-api.com service may be down."
+        return 1
+    fi
+    local res=$(curl -Ls "$url_ip_api" | jq -r '"\(.lat)\n\(.lon)"')
     if [[ -z "$res" ]]; then
         logger WARN "Failed to get local coordinates"
         return 1
     fi
     echo "$res" > "$coords_file"
 }
+
 lock(){
     [[ ! -f $lock_file ]] && touch $lock_file
     local pid=$(cat $lock_file)
     ps -p $pid -o pid= >/dev/null 2>&1
     res=$?
     if [[ $res -eq 0 ]]; then
-        local msg="DZGUI already running ($pid)"
+        local msg="DZGUI is already running ($pid)"
         raise_error_and_quit "$msg"
     elif [[ $pid == $$ ]]; then
         :
@@ -543,13 +582,13 @@ fetch_a2s(){
     logger INFO "Updated A2S helper to sha '$sha'"
 }
 fetch_dzq(){
-    local sum="9caed1445c45832f4af87736ba3f9637"
+    local sum="0a334e1e144e76e560419d155435c91e"
     local file="$helpers_path/a2s/dayzquery.py"
     if [[ -f $file ]] && [[ $(get_hash "$file") == $sum ]]; then
         logger INFO "DZQ is current"
         return 0
     fi
-    local sha=3088bbfb147b77bc7b6a9425581b439889ff3f7f
+    local sha=a22a9f428cbe075d7dda62f78000296955eea92a
     local author="yepoleb"
     local repo="dayzquery"
     local url="https://raw.githubusercontent.com/$author/$repo/$sha/dayzquery.py"
@@ -586,11 +625,12 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["ui.py"]="f128a97e744e9e11036d707198feb8a8"
+        ["funcs"]="2ac0ccc6c697208a1b097508d55ad886"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
+        ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
+        ["ui.py"]="3d67e5e8e85a23dde1fd0e85a9be62a9"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["funcs"]="93402a7b9ebae2901debb5cc3bc011a6"
-        ["lan"]="c62e84ddd1457b71a85ad21da662b9af"
+        ["pefile.py"]="21531f2c0d9dfa5f110cf6779f9d22c0"
     )
     local author="aclist"
     local repo="dztui"
@@ -607,6 +647,10 @@ fetch_helpers_by_sum(){
     fi
     if [[ $realbranch == "stable" ]]; then
         realbranch="dzgui"
+    fi
+
+    if [[ -n $reference_branch ]]; then
+        realbranch="$reference_branch"
     fi
 
     for i in "${!sums[@]}"; do
@@ -632,7 +676,6 @@ fetch_helpers_by_sum(){
             logger INFO "Updated '$full_path' to sum '$sum'"
         fi
         [[ $file == "funcs" ]] && chmod +x "$full_path"
-        [[ $file == "lan" ]] && chmod +x "$full_path"
     done
     return 0
 }
@@ -649,10 +692,7 @@ get_response_code(){
     local url="$1"
     curl -Ls -I -o /dev/null -w "%{http_code}" "$url"
 }
-raise_error_and_quit(){
-    echo "$1"
-    exit 1
-}
+
 fetch_ip_db(){
     parse_dl_url(){
         curl -Ls "$url" \
@@ -880,6 +920,7 @@ create_config(){
     unset default_steam_path
     unset steam_path
 
+    preferred_client="steam"
     while true; do
         local player_input="$($steamsafe_zenity \
             --forms \
@@ -941,7 +982,7 @@ create_config(){
 }
 varcheck(){
     local msg="Config file '$config_file' missing. Start first-time setup now?"
-    local msg2="The Steam paths set in your config file appear to be invalid. Restart first-time setup now?"
+    local msg2="The Steam paths set in your config file appear to be invalid (DayZ was moved or uninstalled). Restart first-time setup now?"
     if [[ ! -f $config_file ]]; then
         qdialog "$msg" "Yes" "Exit"
         if [[ $? -eq 1 ]]; then
@@ -963,10 +1004,6 @@ varcheck(){
         fi
         create_config
         return 0
-    fi
-    if [[ $src_path != $(realpath "$0") ]]; then
-        src_path=$(realpath "$0")
-        update_config
     fi
 }
 is_dzg_downloading(){
@@ -1021,6 +1058,7 @@ legacy_cols(){
     mv $cols_file.new $cols_file
 }
 stale_mod_signatures(){
+    [[ ! -f "$versions_file" ]] && return
     local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
     if [[ -d $workshop_dir ]]; then
         readarray -t old_mod_ids < <(awk -F, '{print $1}' $versions_file)
@@ -1104,13 +1142,61 @@ uninstall(){
     rm "$self"
     echo "Uninstall routine complete"
 }
+
+usage(){
+cat <<- EOM
+DZGUI - Free and Open Source DayZ launcher
+
+Usage:
+
+  dzgui.sh [options]
+
+Description:
+
+  When no option is provided, the script launches DZGUI.
+
+Options:
+
+  -u, --uninstall:
+      Uninstalls the software
+
+  -v, --version:
+      Prints the version
+
+  -h, --help:
+      Prints this message
+EOM
+}
+
 main(){
-    local zenv=$(zenity --version 2>/dev/null)
+    # setup zenity environment
+    local zenv=""
+    zenv=$(zenity --version 2>/dev/null)
     [[ -z $zenv ]] && { echo "Requires zenity >= ${deps[$steamsafe_zenity]}"; exit 1; }
-    if [[ $1 == "--uninstall" ]] || [[ $1 == "-u" ]]; then
-        uninstall &&
-        exit 0
-    fi
+
+    # parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            "--uninstall" | "-u")
+                uninstall
+                exit 0
+                # shift
+                ;;
+            "--version" | "-v")
+                echo $version
+                exit 0
+                # shift
+                ;;
+            "--help" | "-h")
+                usage
+                exit 0
+                # shift
+                ;;
+            *)
+                echo "Unrecognized command!"
+                return 1
+        esac
+    done
 
     set_im_module
 
@@ -1118,8 +1204,13 @@ main(){
     initial_setup
 
     printf "All OK. Kicking off UI...\n"
-    python3 "$ui_helper" "--init-ui" "$version" "$is_steam_deck"
+    python3.13 "$ui_helper" "--init-ui" "$version" "$is_steam_deck"
+
 }
-main "$@"
-#TODO: tech debt: cruddy handling for steam forking
-[[ $? -eq 1 ]] && pkill -f dzgui.sh
+
+if [[ $(basename "$0") == "dzgui.sh" ]]; then
+   main "$@"
+
+   #TODO: tech debt: cruddy handling for steam forking
+   [[ $? -eq 1 ]] && pkill -f dzgui.sh
+fi
