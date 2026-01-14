@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-src_path=$(realpath "$0")
+src_path="$(readlink -e "$0")"
 
 version=6.0.0
 
