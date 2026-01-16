@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version="6.0.0-beta.20"
+version="6.0.1-beta.1"
 
 #CONSTANTS
 aid=221100
@@ -286,7 +286,7 @@ a2s(){
     local mode="$3"
     logger INFO "Querying '$ip:$qport' with mode '$mode'"
     local res
-    res=$(python3 "$query_helper" "$ip" "$qport" "$mode")
+    res=$(python3.13 "$query_helper" "$ip" "$qport" "$mode")
     if [[ $? -eq 1 ]]; then
         res=$(try_fallback "$ip" "$qport" "$mode")
         if [[ $? -eq 1 ]]; then
@@ -309,7 +309,7 @@ is_in_favs(){
 find_id(){
     local file="$default_steam_path/config/loginusers.vdf"
     [[ ! -f $file ]] && return 1
-    local res=$(python3 "$helpers_path/vdf2json.py" \
+    local res=$(python3.13 "$helpers_path/vdf2json.py" \
     -i "$file" \
     | jq -r '.users
         |to_entries[]
@@ -338,7 +338,7 @@ list_mods(){
             name=$(awk -F\" '/name/ {print $2}' "${dir}/meta.cpp")
             base_dir=$(basename $(readlink -f $game_dir/$symlink))
             size=$(du -s "$(readlink -f "$game_dir/$symlink")" | awk '{print $1}')
-            size=$(python3 -c "n=($size/1024) +.005; print(round(n,4))")
+            size=$(python3.13 -c "n=($size/1024) +.005; print(round(n,4))")
             LC_NUMERIC=C printf "%s$sep%s$sep%s$sep%3.3f\n" "$name" "$symlink" "$base_dir" "$size"
         done | sort -k1)
         # user may have manually pruned mods out-of-band

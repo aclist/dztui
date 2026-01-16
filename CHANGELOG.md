@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.1-beta.1] 2026-01-16
+## Fixed
+- Explicitly use Python 3.13 when calling subprocesses
+
 ## [6.0.0-beta.20] 2026-01-14
 ## Fixed
 - Write cache file after wiping
