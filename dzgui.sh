@@ -2,7 +2,7 @@
 set -o pipefail
 
 src_path="$(readlink -e "$0")"
-version=6.0.0
+version=6.0.1
 
 #CONSTANTS
 aid=221100
@@ -625,7 +625,7 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="2ac0ccc6c697208a1b097508d55ad886"
+        ["funcs"]="5e35a9812c03fc64d75843a23d024f0d"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
         ["ui.py"]="3d67e5e8e85a23dde1fd0e85a9be62a9"
@@ -892,7 +892,7 @@ file_picker(){
 }
 find_library_folder(){
     local search_path="$1"
-    readarray -t paths < <(python3 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" \
+    readarray -t paths < <(python3.13 "$helpers_path/vdf2json.py" -i "$1/steamapps/libraryfolders.vdf" \
         | jq -r '.libraryfolders[]|select(.apps|has("221100")).path')
     if [[ ! $? -eq 0 ]]; then
         logger WARN "Failed to parse Steam path using '$search_path'"
