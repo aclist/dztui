@@ -1,26 +1,16 @@
-import json
-import locale
 import logging
-import multiprocessing
-import os
-import re
+#import multiprocessing
 import signal
-import subprocess
-import textwrap
-import threading
+#import threading
 import typing  # noqa
 import warnings
 
 #from concurrent.futures import wait
 #from concurrent.futures import ThreadPoolExecutor
 
-from dataclasses import dataclass
-from enum import Enum
-from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-from dzgui.const.enum import NotebookPage, VAdjustment
-from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
+from dzgui.const.enum import NotebookPage
 from dzgui.const.constants import APP_NAME, APP_NAME_LOWER
 from dzgui.controllers.mc import Controller
 from dzgui.util import css, strings
@@ -40,20 +30,8 @@ from dzgui.views.pages.servers import ServerNotebook
 from dzgui.views.pages.thanks import Thanks
 
 from dzgui.views.components.statusbar import Statusbar
-from dzgui.views.components.mod_panel import ModSelectionPanel
 from dzgui.views.components.right_panel import RightPanel
-from dzgui.views.components.toast import Toast
-from dzgui.views.dialogs.generic import GenericDialog
 from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
-
-# TREES
-from dzgui.views.trees.tree_menu import MenuTreeView
-from dzgui.views.trees.tree_log import LogTreeView
-from dzgui.views.trees.tree_mods import ModTreeView
-from dzgui.views.trees.tree_servers import ServerTreeView
-
-# TODO: not going to be in base anymore
-import dzgui.util._json as JSON  # noqa
 
 if TYPE_CHECKING:
     from dzgui.config.userprefs import UserPrefs
@@ -160,41 +138,6 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 #    #return
 #
 #
-#def process_user_input(enum: RowType) -> None:
-#    prompt = enum.dict["prompt"]
-#    link_label = enum.dict["link_label"]
-#    cmd_string = enum.dict["label"]
-#
-#    if enum == RowType.CONN_BY_ID:
-#        key = MainController.query_config(Preferences.BM)
-#        if len(key) == 0:
-#            spawn_dialog(
-#                "No Battlemetrics API key is set; see Options", Popup.NOTIFY
-#            )
-#            return
-#
-#    user_entry = EntryDialog(prompt, Popup.ENTRY, link_label, button_type=enum)
-#    response = user_entry.get_input()
-#
-#    if response is None:
-#        logger.info("User aborted entry dialog")
-#        return
-#    logger.info(f"User entered: '{response}'")
-#
-#    if enum == RowType.CONN_BY_IP:
-#        connect_by_ip(enum, response)
-#        return
-#
-#    if enum == RowType.CONN_BY_ID:
-#        connect_by_id(enum, response, key)
-#        return
-#
-#    show_wait_dialog = True
-#    wait_msg = "Working"
-#    call_on_thread(
-#        show_wait_dialog, cmd_string, wait_msg, response, choice=enum
-#    )
-#    return
 
 class OuterWindow(Gtk.Window):
     def __init__(self) -> None:
@@ -216,6 +159,7 @@ class OuterWindow(Gtk.Window):
         self.show_all()
 
         css.load_css()
+
         # TODO: first run
         MainController.open_page(NotebookPage.SERVERS)
         MainController.mediator.grid.conpan.lan.set_visible(False)
@@ -344,7 +288,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
         try:
             w.focus_first_row()
             w.grab_focus()
-        except Exception as e:
+        except Exception:
             w.grab_focus()
 
     def get_page(self) -> Gtk.Widget | None:
@@ -369,12 +313,6 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
             crumbs = enum.dict["crumbs"]
             status = enum.dict["statusbar"]
             MainController.set_crumbs(crumbs)
-
-        #is_mods = True if enum is NotebookPage.MODS else False
-        #is_servers = True if enum is NotebookPage.SERVERS else False
-        # TODO: use signals internal to servers.py
-        #MainController.toggle_mod_panel(is_mods)
-        #MainController.toggle_server_panels(is_servers)
 
         if status is False:
             MainController.set_statusbar("")
@@ -408,7 +346,6 @@ class Grid(Gtk.Grid):
         self.conpan = ConnectPanel(MainController)
 
         self.attach(self.notebook, 0, 0, MAX_COLS, SINGLE_ROW)
-
 
         els = (
             (self.crumb_box, self.notebook, Gtk.PositionType.TOP, MAX_COLS, SINGLE_ROW),

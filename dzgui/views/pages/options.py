@@ -9,9 +9,10 @@ from dzgui.util import strings, css, open_links
 from dzgui.views.components.label import LeftLabel
 from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.buttons import WebButton
+from dzgui.views.dialogs.generic import ExceptionDialog
 from dzgui.views.dialogs.link_dialog import WorkshopLinkDialog
 
-from dzgui.const.enum import Preferences, Popup
+from dzgui.const.enum import Preferences
 from dzgui.const.endpoints import STEAM_API_SETUP, BM_API_SETUP
 from dzgui.const.constants import (
     APPID_DAYZ,
@@ -427,7 +428,10 @@ class Options(Gtk.Box):
         prefs = self.controller.get_prefs()
         if prefs.paths.config.is_file() is False:
             # NOTE: in case file got deleted locally
-            self.controller.spawn_dialog(strings.config_not_found, Popup.QUIT)
+            dialog = ExceptionDialog(self.controller, strings.config_not_found)
+            dialog.run()
+            raise Exception
+            # FIXME: return to main menu
             return
 
         config = query.get_config(prefs.paths.config)

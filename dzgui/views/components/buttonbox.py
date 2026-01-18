@@ -13,7 +13,8 @@ class ContextualButton(Gtk.Button):
     def __init__(self, label, opens, tooltip, context):
         super().__init__(
             label=label,
-            tooltip_text=tooltip
+            tooltip_text=tooltip,
+            focus_on_click=False,
         )
 
         self.context = context

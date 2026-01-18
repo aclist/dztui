@@ -1,6 +1,7 @@
 import logging
 import multiprocessing
 import subprocess
+from typing import Self
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -145,7 +146,6 @@ class ServerTreeView(TreeView):
             self.controller.mediator.grid.conpan.lan.set_visible(True)
 
     def _on_unmap(self, a) -> None:
-        # TODO: could be done just when changing pages?
         if self.get_enum() is ServerTab.LAN:
             self.controller.mediator.grid.conpan.lan.set_visible(False)
 
@@ -199,7 +199,7 @@ class ServerTreeView(TreeView):
       if self.current_proc and self.current_proc.is_alive():
           self.current_proc.terminate()
 
-    def _on_distcalc_started(self, treeview):
+    def _on_distcalc_started(self, treeview: Self):
         record = self.get_record()
         if record is None:
             return

@@ -5,7 +5,7 @@ import textwrap
 import traceback
 
 from pathlib import Path
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, Callable, Literal, TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
 import dzgui.util._json as JSON  # noqa
@@ -246,6 +246,7 @@ class Controller:
         self.mediator.statusbar.set_text(text)
 
     def set_statusbar_placeholder(self, text: str) -> None:
+        # TODO: use statusbar stacks instead
         self.statusbar_placeholder = text
 
     def set_statusbar_dist(self, haversine: "Haversine") -> None:
@@ -263,6 +264,7 @@ class Controller:
                 dist = str(separated) + " km"
         text = self.statusbar_placeholder
         self.set_statusbar(f"{text} | Distance: {dist}")
+        self.mediator.statusbar.spinner.stop()
 
     def delete_multiple_mods(self) -> None:
         sel = self.mediator.modtreeview.get_selection()
@@ -275,6 +277,7 @@ class Controller:
         self.update_mod_statusbar()
 
     def load_mods(self) -> None:
+        # TODO: threading
         model = self.model_manager.get_mod_store()
         model.clear()
         path = self.query_config(Preferences.DEFAULT)
@@ -310,10 +313,6 @@ class Controller:
             self.mediator.grid.notebook.settings.populate_settings()
             return
 
-    # NOTE: disabled for now
-    #def present_toast(self, text: str) -> None:
-    #    self.mediator.window.toast.set_text_and_fade(text)
-
     def open_keybindings(self) -> None:
         notebook = self.mediator.grid.notebook
         notebook.toggle_keybindings()
@@ -321,23 +320,6 @@ class Controller:
     def focus_notebook(self) -> None:
         notebook = self.mediator.grid.notebook
         notebook.focus_current()
-
-    # TODO: deprecated
-    def spawn_dialog(self, msg: str, mode: Popup) -> bool:
-        """
-        Spawns a GenericDialog transient to the OuterWindow
-        """
-        msg = textwrap.dedent(msg)
-        dialog = GenericDialog(self, msg, mode)
-        response = dialog.run()
-        dialog.destroy()
-
-        match response:
-            case Gtk.ResponseType.OK:
-                return False
-            case Gtk.ResponseType.CANCEL | Gtk.ResponseType.DELETE_EVENT:
-                return True
-        return False
 
     def set_statusbar_by_row(self, row: "RowType") -> None:
         self.mediator.statusbar.refresh(row)
@@ -366,7 +348,11 @@ class Controller:
                 self.save_res_and_quit()
                 return
             case ButtonType.OPTIONS:
-                self.mediator.grid.notebook.settings.populate_settings()
+                try:
+                    # TODO: where to put config file check
+                    self.mediator.grid.notebook.settings.populate_settings()
+                except Exception:
+                    return
             case ButtonType.MODS:
                 self.load_mods()
             case ButtonType.HELP:
@@ -374,11 +360,10 @@ class Controller:
                 pass
             case ButtonType.SERVERS:
                 self.mediator.notebook.set_page_by_enum(button.opens)
-                # TODO: use cache
-                self.update_server_status()
                 return
 
         self.mediator.notebook.set_page_by_enum(button.opens)
+        # TODO: set crumbs by signal
         self.set_crumbs(button.get_label())
 
     def open_user_workshop(self, uid: str) -> None:
@@ -445,7 +430,9 @@ class Controller:
     def update_mod_statusbar(self) -> None:
         total_mods, total_size = self.calc_mod_size()
         msg = format_mods(total_size, total_mods)
+        # TODO: combine
         self.mediator.statusbar.set_text(msg)
+        self.mediator.statusbar.spinner.stop()
 
     def calc_mod_size(self) -> tuple[int, int]:
         model = self.model_manager.get_mod_store()
@@ -508,13 +495,16 @@ class Controller:
         log = self.prefs.paths.debug
         store = self.model_manager.get_log_store()
         store.clear()
-
-        # TODO: pop dialog if log is missing
-        with open(log, "r") as f:
-            lines = [line.split(strings.delimiter) for line in f.read().splitlines()]
-            for record in lines:
-                clean = redact_log(record)
-                store.append(clean)
+        # NOTE: this model is reloaded each time as log changes
+        try:
+            with open(log, "r") as f:
+                lines = [line.split(strings.delimiter) for line in f.read().splitlines()]
+                for record in lines:
+                    clean = redact_log(record)
+                    store.append(clean)
+        except Exception as e:
+            dialog = ExceptionDialog(self, str(e))
+            dialog.run()
         self.open_page(NotebookPage.LOG)
 
     def select_colorized(self) -> None:
@@ -552,20 +542,51 @@ class Controller:
         import time
         time.sleep(1)
         # TODO: use model managers, etc.
-        self.data = (["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False])
+        self.data = (
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+        )
         # TODO: refer to prior implementation--should need to load data into model while in thread
         self.get_func_data()
         self.destroy_on_idle()
 
     def get_func_data(self) -> tuple:
+        def test():
+            # NOTE: do not insert model until main thread is idle
+            # TODO: grab from model manager and insert entire model
+            # TODO: do not start refresh button count until load finished
+            for row in data:
+                model.append(row)
+            treeview.set_loaded(True)
+            self.update_server_status()
+            treeview.grab_focus()
         # TODO: use model manager
         treeview = self.get_active_treeview()
         model = treeview.get_model()
         data = self.data
-        model.append(data)
-        treeview.set_loaded(True)
-        self.update_server_status()
-        treeview.grab_focus()
+        GLib.idle_add(test)
 
     def highlight_stale(self) -> None:
         self.call_on_thread(self.colorize_mods)
@@ -577,14 +598,11 @@ class Controller:
         thread = threading.Thread(target=func, args=args)
         thread.start()
 
-    def destroy_on_idle(self) -> None:
-        self.wait_dialog.destroy()
-        # TODO: improve upon this
-        func = self.callback["func"]
-        if func is not None:
-            args = self.callback["args"]
-            GLib.idle_add(func, *args)
-            self.set_callback(None, None)
+    def get_callback(self) -> Callable | None:
+        return self.callback["func"]
+
+    def get_callback_args(self) -> Any:
+        return self.callback["args"]
 
     def set_callback(self, callback: Callable | None, *args) -> None:
         """
@@ -593,6 +611,14 @@ class Controller:
         """
         self.callback = { "func": callback, "args": args }
 
+    def destroy_on_idle(self) -> None:
+        self.wait_dialog.destroy()
+        func = self.get_callback()
+        if func is not None:
+            args = self.get_callback_args()
+            GLib.idle_add(func, *args)
+            self.set_callback(None, None)
+
     def dump_diagnostics(self) -> None:
         picker = FilePicker(self.mediator.window)
         file = picker.pick_file()
@@ -600,7 +626,8 @@ class Controller:
             try:
                 write_diagnostic(self.prefs.paths.config, file)
             except Exception as e:
-                self.spawn_dialog(str(e), Popup.NOTIFY)
+                dialog = ExceptionDialog(self, str(e))
+                dialog.run()
 
     def test_api_response(self, text: str, key: Preferences) -> None:
         if key is Preferences.STEAM:
@@ -614,7 +641,8 @@ class Controller:
             self.destroy_on_idle()
         else:
             self.destroy_on_idle()
-            self.spawn_dialog(strings.api_error, Popup.NOTIFY)
+            dialog = ExceptionDialog(self, strings.api_error)
+            dialog.run()
 
 
     def update_api_key(self, text: str, key: Preferences) -> None:
@@ -645,13 +673,6 @@ class Controller:
             logger.info(f"Using default window size {w},{h}")
             window.set_default_size(w, h)
 
-    def update_server_status(self) -> None:
-        treeview = self.mediator.notebook.servers.get_active_treeview()
-        model = treeview.get_model()
-        status = format_player_count(model)
-        self.set_statusbar_placeholder(status)
-        self.set_statusbar(status + "| Calculating...")
-
     def propagate_column_width(self, col: Gtk.TreeViewColumn) -> None:
         GLib.idle_add(self.mediator.servers.update_tab_widths, col)
 
@@ -662,25 +683,31 @@ class Controller:
         return self.crumbs_cache
 
     def refresh_tree(self) -> None:
-        treeview = self.mediator.notebook.servers.get_active_treeview()
+        treeview = self.get_active_treeview()
         treeview.set_loaded(False)
         self.populate_model()
 
+    def update_server_status(self) -> None:
+        # TODO: emit signal on statusbar only if page changed
+        treeview = self.get_active_treeview()
+        model = treeview.get_model()
+        status = format_player_count(model)
+        self.set_statusbar_placeholder(status)
+        self.set_statusbar(status)
+        self.mediator.statusbar.spinner.start()
+
     def populate_model(self) -> None:
-        print("POPULATING MODEL")
         # TODO: always use same server model, store in servertreeview class
         treeview = self.get_active_treeview()
         if treeview.get_loaded() is False:
             new_model = self.model_manager.new_model()
             # NOTE: set_query_func()
             func = treeview.get_query_func()
-            print(func)
             if func is not None:
                 model = treeview.get_model()
-                print(model)
                 # TODO: this may lag?
                 model.clear()
-                self.set_callback(None, None)#self.get_func_data)
+                self.set_callback(None, None)
                 self.call_on_thread(func)
 
     def focus_button_box(self) -> None:
@@ -688,7 +715,7 @@ class Controller:
 
     def present_servers(self) -> None:
         # TODO: abstract
-        self.grab_active_treeview()
+        # TODO: signal for crumbs
         self.update_server_status()
         crumbs = self.mediator.servers.get_cached_label()
         self.set_crumbs(crumbs)
@@ -696,21 +723,26 @@ class Controller:
         #tree = self.get_active_treeview()
         #tree.emit("on_distcalc_started")
 
-    def toggle_check(self, event: Gdk.EventKey) -> None:
-        keyname = Gdk.keyval_name(event.keyval)
-        if keyname.isnumeric() and int(keyname) > 0:
-            digit = int(keyname) - 1
-            self.mediator.grid.right_panel.filters_vbox.toggle_check(digit)
-        else:
-            match event.keyval:
-                case Gdk.KEY_0:
-                    self.mediator.grid.right_panel.filters_vbox.toggle_check(9)
-                case Gdk.KEY_minus:
-                    self.mediator.grid.right_panel.filters_vbox.toggle_check(10)
-                case Gdk.KEY_backslash:
-                    self.mediator.grid.right_panel.filters_vbox.toggle_check(11)
-                case _:
-                    return False
+    def toggle_check(self, event: Gdk.EventKey) -> None | Literal[False]:
+        mappings = {
+            Gdk.KEY_1: 0,
+            Gdk.KEY_2: 1,
+            Gdk.KEY_3: 2,
+            Gdk.KEY_4: 3,
+            Gdk.KEY_5: 4,
+            Gdk.KEY_6: 5,
+            Gdk.KEY_7: 6,
+            Gdk.KEY_8: 7,
+            Gdk.KEY_9: 8,
+            Gdk.KEY_0: 9,
+            Gdk.KEY_minus: 10,
+            Gdk.KEY_backslash: 11,
+        }
+        if event.keyval not in mappings:
+            return False
+        index = mappings[event.keyval]
+        # TODO: register filter panel widget
+        self.mediator.grid.right_panel.filters_vbox.toggle_check(index)
 
     def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
         fav = str(self.query_config(Preferences.FAV_LBL))
@@ -723,5 +755,6 @@ class Controller:
     def get_dist_cache(self) -> dict[str, "Haversine"]:
         return self.dist_cache
 
+    # TODO: deprecated in favor of map/unmap
     def toggle_lan_panel(self, state: bool) -> None:
         self.mediator.grid.conpan.set_visible(state)

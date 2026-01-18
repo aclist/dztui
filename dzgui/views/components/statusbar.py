@@ -10,32 +10,40 @@ from gi.repository import Gtk # noqa E402
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
-class Statusbar(Gtk.Statusbar):
+class Statusbar(Gtk.Grid):
     def __init__(self, controller: "Controller") -> None:
-        super().__init__()
+        super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
 
         self.controller = controller
         self.controller.register_widget("statusbar", self)
 
         help_text = strings.statusbar_helptext
-        self.set_text(help_text)
+
+        self.statusbar = Gtk.Statusbar()
+
+        self.spinner = Gtk.Spinner()
+        self.spinner.start()
 
         version = self.controller.get_prefs().version
-        self.status_right_label = Gtk.Label(label=version)
-        self.add(self.status_right_label)
+        self.status_right_label = Gtk.Label(label=version, hexpand=True, halign=Gtk.Align.END)
 
+        self.attach(self.statusbar, 0, 0, 3, 1)
+        self.attach_next_to(self.spinner, self.statusbar, Gtk.PositionType.RIGHT, 3, 1)
+        self.attach_next_to(self.status_right_label, self.spinner, Gtk.PositionType.RIGHT, 3, 1)
+
+        self.set_text(help_text)
         self.players = ""
 
     def get_text(self) -> str:
-        area = self.get_message_area()
+        area = self.statusbar.get_message_area()
         label = area.get_children()[0]
         return label.get_text()
 
     def set_text(self, string: str) -> None:
         if string is None:
             return
-        meta = self.get_context_id("Statusbar")
-        self.push(meta, string)
+        meta = self.statusbar.get_context_id("Statusbar")
+        self.statusbar.push(meta, string)
 
     def refresh(self, row: "RowType") -> None:
         if row is None:

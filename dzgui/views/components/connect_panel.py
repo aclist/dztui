@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING
 
-from dzgui.api.servers import validate_ip
-from dzgui.util.css import add_class, remove_class
 from dzgui.util.strings import connect_panel, fav_panel, lan_panel
 from dzgui.views.components.buttons import AddButton, ClipboardButton, SteamConnectButton
 from dzgui.views.components.entry import IpEntry, PortEntry
@@ -63,7 +61,8 @@ class FavPanel(Gtk.Frame):
         user_fav, self.fav_ip = self.controller.get_favorite()
         server_name = f"{user_fav} ({self.fav_ip})" if user_fav is not None else connect_panel.no_fav
         self.fav_label = Gtk.Label(label=server_name, track_visited_links=False, halign=Gtk.Align.START, hexpand=True)
-        scrollable_label = Gtk.ScrolledWindow()
+        # NOTE: disable vscrollbar to prevent layout jumping behavior
+        scrollable_label = Gtk.ScrolledWindow(vscrollbar_policy=Gtk.PolicyType.NEVER)
         scrollable_label.add(self.fav_label)
 
         self.fav_button = SteamConnectButton()

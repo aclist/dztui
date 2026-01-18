@@ -53,7 +53,7 @@ def concat_mods(mods: list[str]) -> str:
 
 # TEST: set config to name=user, use official server and no mods,
 # ensure that formatted string is identical to fixture
-def connect(addr: str, appid: int, name: str, mods: list):
+def connect(addr: str, appid: int, name: str, mods: list) -> None:
     # TODO: get name from configs
     # TODO: concat_mods(mods):
     # @<mod>;@<mod>;

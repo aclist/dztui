@@ -51,7 +51,7 @@ class ServerNotebook(Gtk.ScrolledWindow):
                 pass
             else:
                 pass
-            # TODO: set model on init of servertreeview
+            # TODO: set model only on init of servertreeview
             # TODO: set model manager for each tab on init
             # TODO: add set_ and get_model_manager() methods
             tree.set_model(store)
