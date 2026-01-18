@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.2-beta.2] 2026-01-18
+## Fixed
+- Helpers not being downloaded (uncommented boilerplate)
+
 ## [6.0.2-beta.1] 2026-01-18
 ## Fixed
 - Do not spawn dialogs from inside of thread when fetching prereqs

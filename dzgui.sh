@@ -2,7 +2,7 @@
 set -o pipefail
 
 src_path="$(readlink -e "$0")"
-version=6.0.2-beta.1
+version=6.0.2-beta.2
 
 #CONSTANTS
 aid=221100
@@ -1123,7 +1123,7 @@ calc_local_coords(){
 initial_setup(){
     check_architecture
     test_connection
-    #fetch_helpers
+    fetch_helpers
     varcheck
     source "$config_file"
     lock
