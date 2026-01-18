@@ -19,7 +19,7 @@ from collections.abc import Callable
 from concurrent.futures import wait
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Literal, Self, Any
+from typing import Literal, Self, Any, TYPE_CHECKING
 
 import servers as Servers  # noqa E402
 import pefile as PeFile  # noqa E402
@@ -32,10 +32,12 @@ from pefile import (
 )
 from pefile import VersionMatch
 
+if TYPE_CHECKING:
+    from servers import Prereqs
+
 locale.setlocale(locale.LC_ALL, "")
 
 import gi  # noqa E402
-
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 
@@ -1027,13 +1029,7 @@ def process_tree_option(choice: RowType) -> None:
             return
 
         record = str_to_record(record)
-        thread_new_with_dialog(
-            App.treeview.prepare_connection,
-            parse_shell_output,
-            "Querying server",
-            command,
-            [record],
-        )
+        prepare_connection(command, record)
         return
 
     match command.dict["type"]:
@@ -1061,48 +1057,54 @@ def parse_shell_output(proc: subprocess.CompletedProcess, row: RowType):
     process_shell_return_code(msg, proc.returncode, row)
 
 
-def thread_new_with_dialog(
-    func: Callable,
-    callback: Callable | None,
-    msg: str,
-    row: RowType | None,
-    args: list,
+def prepare_connection(rowtype: RowType, record: Record) -> None:
+    def background(rowtype: RowType, record: Record) -> None:
+        def cleanup() -> None:
+            App.treeview.wait_dialog.destroy()
+            # NOTE: When using RowType.CONN_BY_IP, the gameport needs to be interpolated
+            record.gameport = prereqs.gameport
+            addr = record_to_str(record)
+
+            if proceed is False:
+                spawn_dialog(msg, Popup.NOTIFY)
+                return
+            if msg != "":
+                res = spawn_dialog(msg, Popup.CONFIRM)
+                if res is False:
+                    try_connect(addr, str(prereqs.appid), str(pefile_path), rowtype)
+            else:
+                try_connect(addr, str(prereqs.appid), str(pefile_path), rowtype)
+
+        proceed, msg, pefile_path, prereqs = App.treeview.get_prereqs(record)
+        GLib.idle_add(cleanup)
+
+    msg = "Checking prerequisites"
+    App.treeview.dialog_show(msg)
+    thread = threading.Thread(target=background, args=(rowtype, record))
+    thread.start()
+
+def try_connect(
+    addr: str,
+    appid: str,
+    path: str,
+    row: RowType
 ) -> None:
-    """
-    Pop a GenericDialog transient to App.treeview and
-    call a function on a thread, with optional callback.
-    Chiefly used for connection-related subprocesses.
-
-    After completion, the dialog is destroyed in the main event loop
-    and additional exception handling occurs.
-
-    This is intended as a bridge between legacy shell methods and the UI.
-    A more abstracted version of call_on_thread() for when extra threaded
-    processing occurs before calls to shell subprocesses.
-    """
-
-    def background(*args):
+    def background(addr, appid, path):
         def cleanup():
             App.treeview.dialog_hide()
-            if exception is not None:
-                spawn_dialog(str(exception), Popup.NOTIFY)
-                process_user_input(row)
-                return
-            if callback is not None and proc is not None:
-                callback(proc, row)
+            parse_shell_output(proc, row)
 
-        exception = None
-        proc = None
         try:
-            proc = func(*args)
+            proc = call_out("try_connect", addr, appid, path)
         except Exception as e:
-            exception = e
+            logger.critical(e)
             GLib.idle_add(cleanup)
             return
         GLib.idle_add(cleanup)
 
+    msg = "Querying server"
     App.treeview.dialog_show(msg)
-    thread = threading.Thread(target=background, args=(args))
+    thread = threading.Thread(target=background, args=(addr, appid, path))
     thread.start()
 
 
@@ -1142,27 +1144,31 @@ def record_to_str(record: Record) -> str:
 
 
 def connect_by_ip(enum: RowType, response: str) -> None:
-    def _prep(response: str) -> None:
+    try:
         record = Servers.validate_ip(response)
-        proc = App.treeview.prepare_connection(record)
-        return proc
-
-    thread_new_with_dialog(
-        _prep, parse_shell_output, "Querying IP", enum, [response]
-    )
-    return
-
+    except Exception as e:
+        spawn_dialog(str(e), Popup.NOTIFY)
+        return
+    prepare_connection(enum, record)
 
 def connect_by_id(enum: RowType, response: str, key: str) -> None:
     def _prep(key: str, response: str) -> None:
-        record = Servers.query_bm_api(key, response)
-        proc = App.treeview.prepare_connection(record)
-        return proc
+        def cleanup() -> None:
+            App.treeview.dialog_hide()
+            prepare_connection(enum, record)
 
-    thread_new_with_dialog(
-        _prep, parse_shell_output, "Querying API", enum, [key, response]
-    )
-    return
+        try:
+            record = Servers.query_bm_api(key, response)
+        except Exception as e:
+            spawn_dialog(str(e), Popup.NOTIFY)
+            App.treeview.dialog_hide()
+            return
+        GLib.idle_add(cleanup)
+
+    msg = "Validating ID"
+    App.treeview.dialog_show(msg)
+    thread = threading.Thread(target=_prep, args=(key, response))
+    thread.start()
 
 
 def process_user_input(enum: RowType) -> None:
@@ -2493,6 +2499,8 @@ class TreeView(Gtk.TreeView):
     def _dump_servers(self, ips: list) -> list | None:
         if len(ips) == 0:
             return []
+        # NOTE: block malformed records
+        ips = [ip for ip in ips if len(ip.split(":")) == 3 and ip.split(":")[2] != "" ]
         with ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(
@@ -2943,9 +2951,9 @@ class TreeView(Gtk.TreeView):
     def get_view(self):
         return self.view
 
-    def prepare_connection(
+    def get_prereqs(
         self, record: Record
-    ) -> subprocess.CompletedProcess | None:
+    ) -> tuple[bool, str, str|None, "Prereqs"]:
         """
         Always called on a thread with a dialog on the transient parent window
         """
@@ -2953,8 +2961,7 @@ class TreeView(Gtk.TreeView):
         if prereqs.appid is None:
             logger.warning(f"Query to '{record.ip}:{record.qport}' timed out")
             msg = "Timed out when querying server, check IP or try again later"
-            spawn_dialog(msg, Popup.NOTIFY)
-            return None
+            return (False, msg, None, prereqs)
 
         build = "DayZ" if prereqs.appid == APPID_DAYZ else "DayZ Experimental"
         steam_path = query_config("default_steam_path")[0]
@@ -2964,8 +2971,7 @@ class TreeView(Gtk.TreeView):
                 "Config file has no value set for 'default_steam_path'"
             )
             msg = "Local Steam installation is not set, possibly malformed config file."
-            spawn_dialog(msg, Popup.NOTIFY)
-            return None
+            return (False, msg, None, prereqs)
 
         try:
             pefile_path = PeFile.get_pefile_path(steam_path, prereqs.appid)
@@ -2979,8 +2985,7 @@ class TreeView(Gtk.TreeView):
                 f"If you recently installed {build} or moved it to a different drive, "
                 "restart Steam to allow these changes to synchronize, then try again."
             )
-            spawn_dialog(msg, Popup.NOTIFY)
-            return None
+            return (False, msg, None, prereqs)
         except AppMovedError:
             logger.critical(
                 f"Library folder synch error for '{prereqs.appid}'"
@@ -2990,13 +2995,11 @@ class TreeView(Gtk.TreeView):
                 f"If you recently installed {build} or moved it to a different drive, "
                 "restart Steam to allow these changes to synchronize, then try again."
             )
-            spawn_dialog(msg, Popup.NOTIFY)
-            return None
+            return (False, msg, None, prereqs)
         except (VDFLoadError, PeFileError, Exception) as e:
             logger.critical(e)
             msg = "Steam settings or DayZ installation may be corrupted. Try restarting Steam."
-            spawn_dialog(msg, Popup.NOTIFY)
-            return None
+            return (False, msg, None, prereqs)
 
         try:
             local_vers = PeFile.get_dayz_version(pefile_path)
@@ -3008,7 +3011,7 @@ class TreeView(Gtk.TreeView):
             local_vers = None
 
         try:
-            remote_vers = PeFile.dayz_version_from_str(prereqs.version)
+            remote_vers = PeFile.dayz_version_from_str(prereqs)
         except Exception:
             remote_vers = None
 
@@ -3021,18 +3024,15 @@ class TreeView(Gtk.TreeView):
                         f"This server is running a newer build ({prereqs.version}) of {build} than "
                         f"your local version. You may be unable to connect. Proceed anyway?"
                     )
-                    res = spawn_dialog(msg, Popup.CONFIRM)
-                    if res is True:
-                        return None
+                    return (True, msg, pefile_path, prereqs)
                 case VersionMatch.LOCAL_NEWER:
                     msg = (
                         f"This server is running an out-of-date build ({prereqs.version}) of {build}. "
                         "You may be unable to connect. Proceed anyway?"
                     )
-                    res = spawn_dialog(msg, Popup.CONFIRM)
-                    if res is True:
-                        return None
+                    return (True, msg, pefile_path, prereqs)
                 case VersionMatch.SAME_VERSION:
+                    return (True, "", pefile_path, prereqs)
                     pass
 
         if prereqs.password is True:
@@ -3040,19 +3040,10 @@ class TreeView(Gtk.TreeView):
                 "This server is password-protected and you will be "
                 "prompted when connecting. Do you want to proceed?"
             )
-            res = spawn_dialog(msg, Popup.CONFIRM)
-            if res is True:
-                return None
+            return (True, msg, pefile_path, prereqs)
 
-        """
-        When using RowType.CONN_BY_IP, the gameport needs to be interpolated
-        """
-        record.gameport = prereqs.gameport
-        addr = record_to_str(record)
-        proc = call_out(
-            "try_connect", addr, str(prereqs.appid), str(pefile_path)
-        )
-        return proc
+        return (True, "", pefile_path, prereqs)
+
 
     @signal_emission
     @update_window_labels
@@ -3122,13 +3113,7 @@ class TreeView(Gtk.TreeView):
                 record = self.get_record()
                 if record is None:
                     return
-                thread_new_with_dialog(
-                    self.prepare_connection,
-                    parse_shell_output,
-                    "Querying server",
-                    None,
-                    [record],
-                )
+                prepare_connection(None, record)
             case _:  # any other non-server option from the main menu
                 process_tree_option(output)
 
