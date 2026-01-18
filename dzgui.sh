@@ -2,8 +2,7 @@
 set -o pipefail
 
 src_path="$(readlink -e "$0")"
-
-version=6.0.1.beta-1
+version=6.0.2-beta.1
 
 #CONSTANTS
 aid=221100
@@ -143,7 +142,7 @@ test_gobject(){
     python3.13 -c "import gi"
     if [[ ! $? -eq 0 ]]; then
         logger CRITICAL "Missing PyGObject"
-        quit_with_pdialog "Requires PyGObject (python-gobject)"
+        quit_with_help_dialog "Requires PyGObject (python-gobject)"
         exit 1
     fi
     logger INFO "Found PyGObject in Python env"
@@ -248,7 +247,7 @@ open_url(){
         xdg-open "$url"
     fi
 }
-quit_with_pdialog(){
+quit_with_help_dialog(){
     local sel
     msg="$1"
     help_button="Open help page"
@@ -261,7 +260,7 @@ quit_with_pdialog(){
 check_pyver(){
     if [[ ! $(python3.13 --version) ]]; then
         local msg="Requires Python 3.13"
-        quit_with_pdialog "$msg"
+        quit_with_help_dialog "$msg"
     fi
 }
 watcher_deps(){
@@ -336,6 +335,7 @@ check_unmerged(){
     fi
 }
 check_version(){
+    echo "# Checking version"
     [[ -n $reference_branch ]] && return
     local version_url=$(format_version_url)
     local upstream=$(curl -Ls "$version_url" | awk -F= '/^version=/ {print $2}')
@@ -415,6 +415,7 @@ test_display_mode(){
     fi
 }
 check_architecture(){
+    echo "# Checking system architecture"
     local cpu=$(< /proc/cpuinfo awk -F": " '/AMD Custom APU [0-9]{4}$/ {print $2; exit}')
     read -a APU_MODEL <<< "$cpu"
     if [[ ${APU_MODEL[3]} != "0932" ]] && [[ ${APU_MODEL[3]} != "0405" ]]; then
@@ -431,6 +432,7 @@ check_architecture(){
     logger INFO "Setting architecture to 'Steam Deck'"
 }
 check_map_count(){
+    echo "# Checking map count"
     [[ $is_steam_deck -gt 0 ]] && return 0
     local map_count_file="/proc/sys/vm/max_map_count"
     local min_count=1048576
@@ -480,6 +482,7 @@ tdialog(){
     $steamsafe_zenity --info --text="$1" "${zenity_flags[@]}"
 }
 steam_deps(){
+    echo "# Checking Steam"
     local flatpak
     local steam
     [[ $(command -v flatpak) ]] && flatpak=$(flatpak list | grep valvesoftware.Steam)
@@ -490,16 +493,8 @@ steam_deps(){
         exit 1
     fi
 }
-migrate_files(){
-    if [[ ! -f $config_path/dztuirc.oldapi ]]; then
-        cp $config_file $config_path/dztuirc.oldapi
-        logger INFO "Migrated old API file"
-    fi
-    [[ ! -f $hist_file ]] && return
-    rm $hist_file
-    logger INFO "Wiped old history file"
-}
 stale_symlinks(){
+    echo "# Cleaning stale symlinks"
     local game_dir="$steam_path/steamapps/common/DayZ"
     readarray -t links < <(find "$game_dir" -xtype l)
     for link in "${links[@]}"; do
@@ -513,7 +508,7 @@ check_availability() {
         return 1
     fi
     local url=$1
-    local timeout_sec="3"
+    local timeout_sec="1"
     if [[ $2 ]]; then
         timeout_sec=$2
     fi
@@ -524,6 +519,7 @@ check_availability() {
 }
 
 local_latlon(){
+    echo "# Checking coordinates"
     if [[ -z $(command -v dig) ]]; then
         local url_ipecho="https://ipecho.net/plain"
         if ! check_availability "ipecho.net"; then
@@ -534,6 +530,9 @@ local_latlon(){
     else
         # TODO : implement checking remote
         local local_ip=$(dig -4 +short myip.opendns.com @resolver1.opendns.com)
+    fi
+    if calc_local_coords "$local_ip"; then
+        return 0
     fi
     local url_ip_api="http://ip-api.com/json/$local_ip"
     if ! check_availability "ip-api.com"; then
@@ -549,6 +548,7 @@ local_latlon(){
 }
 
 lock(){
+    echo "# Setting up lock file"
     [[ ! -f $lock_file ]] && touch $lock_file
     local pid=$(cat $lock_file)
     ps -p $pid -o pid= >/dev/null 2>&1
@@ -626,10 +626,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="2a71d60974f5a869ff170366fd80676f"
+        ["funcs"]="69e83db00cbc7674e241565c88aed83d"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
-        ["ui.py"]="3d67e5e8e85a23dde1fd0e85a9be62a9"
+        ["ui.py"]="d09b9d8bed3854efd51377289786c5ac"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["pefile.py"]="21531f2c0d9dfa5f110cf6779f9d22c0"
     )
@@ -691,12 +691,12 @@ fetch_km_helper(){
 }
 get_response_code(){
     local url="$1"
-    curl -Ls -I -o /dev/null -w "%{http_code}" "$url"
+    curl --connect-timeout 3 -Ls -I -o /dev/null -w "%{http_code}" "$url"
 }
 
 fetch_ip_db(){
     parse_dl_url(){
-        curl -Ls "$url" \
+        curl --connect-timeout 3 -Ls "$url" \
         | grep "csv.gz" \
         | awk -F"['']" '{print $2}'
     }
@@ -712,6 +712,9 @@ fetch_ip_db(){
     fetch(){
         logger INFO "Triggering fetch routine"
         local url="$1"
+        local ip_file="${state_path}/ips.csv"
+        local base_file="${state_path}/${this_month}.csv.gz"
+        local extracted_file="${state_path}/${this_month}.csv"
 
         curl -Ls "$url" > "$base_file"
         if [[ $? -ne 0 ]]; then
@@ -731,7 +734,7 @@ fetch_ip_db(){
             logger WARN "Abnormal exit while parsing IPs"
             return
         fi
-        rm "${state_path}/${month}.csv"
+        rm "${state_path}/${this_month}.csv"
 
         readarray -t records < <(cat $ip_file | awk -F, 'NR==1 {print $1} END {print $1}')
         if [[ ${records[0]} != "0.0.0.0" ]] && [[ ${records[1]} != "224.0.0.0" ]]; then
@@ -746,55 +749,57 @@ fetch_ip_db(){
             rm "$ip_file"
         fi
 
-        echo "$month" > "$month_file"
-        logger INFO "Wrote '$month' to stub '$month_file'"
+        echo "$this_month" > "$month_file"
+        logger INFO "Wrote '$this_month' to stub '$month_file'"
         logger INFO "Updated '$ip_file'"
     }
 
+    check_remote(){
+        local url="$1"
+        local res=$(get_response_code "$url")
+        if [[ $res -ne 200 ]]; then
+            logger WARN "Failed to retrieve remote resource: '$url' ($res)"
+            return
+        fi
+        logger INFO "Resolved remote URL: '$url'"
+
+        # test dl url
+        local dl_url="$(parse_dl_url)"
+        local res=$(get_response_code "$dl_url")
+        if [[ $res -ne 200 ]]; then
+            logger WARN "Remote resource unavailable: '$dl_url' ($res)"
+            return
+        fi
+        logger INFO "Resolved download URL: '$dl_url'"
+        fetch "$dl_url"
+    }
+
     local url="https://db-ip.com/db/download/ip-to-city-lite"
-    local month_file="${state_path}/.month"
-    local ip_file="${state_path}/ips.csv"
-
-    # test main url
-    local res=$(get_response_code "$url")
-    if [[ $res -ne 200 ]]; then
-        logger WARN "Failed to retrieve remote resource: '$url' ($res)"
-        return
-    fi
-    logger INFO "Resolved remote URL: '$url'"
-
-    # test dl url
-    local dl_url="$(parse_dl_url)"
-    local res=$(get_response_code "$dl_url")
-    if [[ $res -ne 200 ]]; then
-        logger WARN "Remote resource unavailable: '$dl_url' ($res)"
-        return
-    fi
-    logger INFO "Resolved download URL: '$dl_url'"
-
-    local month=$(parse_dl_url_date "$dl_url")
-    local base_file="${state_path}/${month}.csv.gz"
-    local extracted_file="${state_path}/${month}.csv"
+    month_file="${state_path}/.month"
+    this_month=$(date +%Y-%m)
 
     # no stub file
     if [[ ! -f $month_file ]]; then
         logger WARN "No stub file '$month_file' present"
-        fetch "$dl_url"
-        return
-    fi
-
-    # local needs update
-    local last_month=$(< "$month_file")
-    if [[ $last_month != "$month" ]]; then
-        logger WARN "Local stub '$last_month' does not match remote stub '$month'"
-        fetch "$dl_url"
+        check_remote "$url"
         return
     fi
 
     # if stub is same date, abort
-    logger INFO "Local stub '$last_month' is identical to remote, skipping"
+    local last_month=$(< "$month_file")
+    if [[ $last_month == "$this_month" ]]; then
+        logger INFO "Local stub '$last_month' is identical to remote, skipping"
+        return
+    fi
+
+    # local needs update
+    logger WARN "Local stub '$last_month' does not match '$this_month'"
+    check_remote "$url"
+    return
+
 }
 fetch_helpers(){
+    echo "# Checking helper files"
     fetch_a2s
     fetch_dzq
     fetch_km_helper
@@ -982,6 +987,7 @@ create_config(){
     done
 }
 varcheck(){
+    echo "# Checking config file"
     local msg="Config file '$config_file' missing. Start first-time setup now?"
     local msg2="The Steam paths set in your config file appear to be invalid (DayZ was moved or uninstalled). Restart first-time setup now?"
     if [[ ! -f $config_file ]]; then
@@ -1008,12 +1014,14 @@ varcheck(){
     fi
 }
 is_dzg_downloading(){
+    echo "# Checking DayZ"
     if [[ -d $steam_path ]] && [[ -d $steam_path/downloading/$aid ]]; then
         logger WARN "DayZ may be scheduling updates"
         return 0
     fi
 }
 is_steam_running(){
+    echo "# Checking Steam"
     local res=$(ps aux | grep "steamwebhelper" | grep -v grep)
     if [[ -z $res ]]; then
         logger WARN "Steam may not be running"
@@ -1026,6 +1034,7 @@ get_response_code(){
     curl -Ls -I -o /dev/null -w "%{http_code}" "$url"
 }
 test_connection(){
+    echo "# Testing connection"
     declare -A hr
     local res1
     local res2
@@ -1059,6 +1068,7 @@ legacy_cols(){
     mv $cols_file.new $cols_file
 }
 stale_mod_signatures(){
+    echo "# Checking stale mods"
     [[ ! -f "$versions_file" ]] && return
     local workshop_dir="$steam_path/steamapps/workshop/content/$aid"
     if [[ -d $workshop_dir ]]; then
@@ -1072,18 +1082,48 @@ stale_mod_signatures(){
 
 }
 create_new_links(){
+    echo "# Setting up symlinks"
     "$func_helper" "update_symlinks"
 }
+calc_local_coords(){
+    local ip="$1"
+    [[ ! -f "$geo_helper" ]] && return 1
+
+    IFS="." read -ra split <<< "$ip"
+    [[ ${#split[@]} -ne 4 ]] && return 1
+
+    prefix="^${split[0]}.${split[1]}."
+    readarray -t res < <(grep "$prefix" "$geo_helper")
+
+    for address in "${res[@]}"; do
+        IFS="," read -ra fields <<< "$address"
+        upper="${fields[1]}"
+        IFS="." read -ra upper_digits <<< "$upper"
+        if [[ ${split[2]} -gt ${upper_digits[2]} ]]; then
+            continue
+        fi
+        if [[ ${split[2]} -eq ${upper_digits[2]} ]]; then
+            if [[ ${split[3]} -gt ${upper_digits[3]} ]]; then
+                continue
+            fi
+            if [[ ${split[3]} -eq ${upper_digits[3]} ]]; then
+                echo "${fields[-2]}" >> "$coords_file"
+                echo "${fields[-1]}" >> "$coords_file"
+                return 0
+            fi
+        fi
+        if [[ ${split[2]} -lt ${upper_digits[2]} ]]; then
+            echo "${fields[-2]}" >> "$coords_file"
+            echo "${fields[-1]}" >> "$coords_file"
+            return 0
+        fi
+    done
+    return 1
+}
 initial_setup(){
-    setup_dirs
-    setup_state_files
-    depcheck
-    check_pyver
-    test_gobject
-    watcher_deps
     check_architecture
     test_connection
-    fetch_helpers > >(pdialog "Checking helper files")
+    #fetch_helpers
     varcheck
     source "$config_file"
     lock
@@ -1092,14 +1132,12 @@ initial_setup(){
     check_version
     check_map_count
     steam_deps
-    migrate_files
     stale_symlinks
     stale_mod_signatures
     create_new_links
     local_latlon
     is_steam_running
     is_dzg_downloading
-    print_config_vals
 }
 uninstall(){
     _full(){
@@ -1201,8 +1239,15 @@ main(){
 
     set_im_module
 
-    printf "Initializing setup...\n"
-    initial_setup
+    printf "Checking dependencies...\n"
+    setup_dirs
+    setup_state_files
+    depcheck
+    check_pyver
+    test_gobject
+    watcher_deps
+
+    initial_setup > >(pdialog "Initializing setup")
 
     printf "All OK. Kicking off UI...\n"
     python3.13 "$ui_helper" "--init-ui" "$version" "$is_steam_deck"

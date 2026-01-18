@@ -1,5 +1,14 @@
 # Changelog
 
+## [6.0.2-beta.1] 2026-01-18
+## Fixed
+- Do not spawn dialogs from inside of thread when fetching prereqs
+## Changed
+- Optimize time complexity of startup checks
+- Optimize coordinate calculation by using local records first
+- Rename some internal functions
+- Wrap entire startup process in dialog
+
 ## [6.0.1-beta.1] 2026-01-16
 ## Fixed
 - Explicitly use Python 3.13 when calling subprocesses
