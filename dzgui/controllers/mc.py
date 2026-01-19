@@ -61,14 +61,15 @@ if TYPE_CHECKING:
     from dzgui.util.dist import Haversine
     from dzgui.views.base import Notebook, Grid, OuterWindow
     from dzgui.views.components.buttonbox import ContextualButton
-    from dzgui.views.components.statusbar import Statusbar
+    from dzgui.views.components.filter_panel import FilterPanel
     from dzgui.views.components.right_panel import RightPanel
+    from dzgui.views.components.statusbar import Statusbar
     from dzgui.views.pages.servers import ServerNotebook
     from dzgui.views.trees.tree_base import TreeView
+    from dzgui.views.trees.tree_log import LogTreeView
     from dzgui.views.trees.tree_menu import MenuTreeView
     from dzgui.views.trees.tree_mods import ModTreeView
     from dzgui.views.trees.tree_servers import ServerTreeView
-    from dzgui.views.trees.tree_log import LogTreeView
 
 class AppNavigation:
     window: "OuterWindow"
@@ -84,6 +85,7 @@ class AppNavigation:
     recent: "ServerTreeView"
     lan: "ServerTreeView"
     logtreeview: "LogTreeView"
+    filters: "FilterPanel"
 
 class Controller:
     def __init__(self) -> None:
@@ -152,8 +154,8 @@ class Controller:
 
     def block_signals(self, state: bool = True) -> None:
         self.suppress_signal(
-            self.mediator.grid.right_panel.filters_vbox,
-            self.mediator.grid.right_panel.filters_vbox.maps_combo,
+            self.mediator.filters,
+            self.mediator.filters.maps_combo,
             "_on_map_changed",
             state,
         )
@@ -164,9 +166,9 @@ class Controller:
             state,
         )
         self.suppress_signal(self.mediator.menu, self.mediator.menu, "_on_keypress", state)
-        for check in self.mediator.grid.right_panel.filters_vbox.checks:
+        for check in self.mediator.filters.checks:
             self.suppress_signal(
-                self.mediator.grid.right_panel.filters_vbox,
+                self.mediator.filters,
                 check,
                 "_on_check_toggled",
                 state,
@@ -315,6 +317,7 @@ class Controller:
         self.mediator.statusbar.refresh(row)
 
     def toggle_server_panels(self, state: bool) -> None:
+        # TODO: this is going to be signal dependent now
         self.mediator.grid.toggle_filter_panel(state)
         self.mediator.grid.toggle_connect_panel(state)
         self.mediator.grid.toggle_refresh_button(state)
@@ -551,14 +554,6 @@ class Controller:
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
         )
         # TODO: refer to prior implementation--should need to load data into model while in thread
         self.get_func_data()
@@ -745,7 +740,7 @@ class Controller:
             return False
         index = mappings[event.keyval]
         # TODO: register filter panel widget
-        self.mediator.grid.right_panel.filters_vbox.toggle_check(index)
+        self.mediator.filters.toggle_check(index)
 
     def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
         fav = str(self.query_config(Preferences.FAV_LBL))

@@ -164,7 +164,8 @@ ping_tooltip = (
     "Available once per unique filter context"
 )
 
-statusbar_helptext = "Select a row to see its detailed description"
+# statusbar_helptext = "Select a row to see its detailed description"
+statusbar_helptext = "No server metadata to list."
 
 # use e.g. filters.1pp
 filter_1pp = "1PP"

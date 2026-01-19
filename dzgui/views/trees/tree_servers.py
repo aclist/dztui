@@ -257,9 +257,9 @@ class ServerTreeView(TreeView):
                     self.refresh_player_count()
                 case Gdk.KEY_f:
                     # TODO: register filter panel instead of mediating thru right panel
-                    self.controller.mediator.grid.right_panel.filters_vbox.keyword_entry.grab_focus()
+                    self.controller.mediator.filters.keyword_entry.grab_focus()
                 case Gdk.KEY_m:
-                    self.controller.mediator.grid.right_panel.filters_vbox.maps_entry.grab_focus()
+                    self.controller.mediator.filters.maps_entry.grab_focus()
                 case Gdk.KEY_i:
                     # TODO:
                     self.controller.mediator.grid.conpan.add_panel.entry.grab_focus()

@@ -33,6 +33,7 @@ class FilterPanel(Gtk.Box):
         }
 
         self.controller = controller
+        self.controller.register_widget("filters", self)
 
         map_store = self.controller.get_map_store()
 
