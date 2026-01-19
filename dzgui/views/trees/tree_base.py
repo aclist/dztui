@@ -89,7 +89,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
 
         if is_navkey(event.keyval):
             # TODO: if model is None
-            if len(self.get_model()) < 1:
+            if len(self.get_model()) < 2:
                 return
             if self.sel_blocked is False:
                 self.controller.suppress_signal(
@@ -112,6 +112,9 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         #    it = self.get_focused_row_iter()
         #    self.get_selection().select_iter(it)
         #    return True
+
+        if len(self.get_model()) < 2:
+            return
 
         if is_navkey(event.keyval):
             if self.sel_blocked is True:
