@@ -166,6 +166,7 @@ class OuterWindow(Gtk.Window):
         self.grid.right_panel.sel_panel.hide()
         # TODO: POC, trigger page change here
         MainController.loaded = True
+        MainController.populate_model()
 
     def _on_delete_event(
         self, window: "OuterWindow", event: Gdk.EventKey

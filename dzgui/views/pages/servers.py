@@ -29,8 +29,8 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.recent = ServerTreeView(controller, ServerTab.RECENT, ContextMenuGroup.RECENT)
         self.lan = ServerTreeView(controller, ServerTab.LAN, ContextMenuGroup.SCAN_LAN)
 
-        self.browser.set_query_func(self.query_test2)
-        self.lan.set_query_func(self.query_test)
+        self.browser.set_query_func(self.controller.dump_test_1)
+        self.lan.set_query_func(self.controller.dump_test_2)
 
         tabs = [
             (self.browser, server_labels.browser),
@@ -101,13 +101,13 @@ class ServerNotebook(Gtk.ScrolledWindow):
         #    self.controller.mediator.grid.conpan.lan.set_visible(False)
 
     # TODO: put in controller
-    def query_test2(self) -> None:
-        # TODO: should trigger first page action after entire UI is loaded
-        self.controller.dump_test()
-
-    def query_test(self) -> None:
-        data = (["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False])
-        return data
+    # def query_test2(self) -> None:
+    #     # TODO: should trigger first page action after entire UI is loaded
+    #     self.controller.dump_test_1()
+    #
+    # def query_test(self) -> None:
+    #     data = (["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False])
+    #     return data
 
     def set_cached_label(self, label: str) -> None:
         self.tab_cache = label

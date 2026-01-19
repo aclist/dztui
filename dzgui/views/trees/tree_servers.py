@@ -13,7 +13,7 @@ from dzgui.const.enum import (
     RowType,
     )
 from dzgui.const.constants import UDP_PORT
-from dzgui.const.enum import ServerTab
+from dzgui.const.enum import FilterMode, ServerTab
 from dzgui.api.servers import Record
 from dzgui.model.filtered_model import FilteredModelManager
 from dzgui.util.dist import CalcDist
@@ -118,6 +118,10 @@ class ServerTreeView(TreeView):
         self.connect("focus-in-event", self._on_kb_focus)
 
         GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
+
+    def filter(self, mode: FilterMode, label: str) -> None:
+        print("TOGGLE:", mode)
+        print("LABEL: ", label)
 
     def get_filter_man(self) -> FilteredModelManager:
         return self.filter_man

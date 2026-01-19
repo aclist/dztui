@@ -49,6 +49,7 @@ class FilterPanel(Gtk.Box):
         )
         row = 1
         col = 0
+        # TODO: use enumerated checks
         for check in self.default_filters.keys():
             checkbox = Gtk.CheckButton(label=check)
             label = checkbox.get_children()

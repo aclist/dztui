@@ -528,7 +528,7 @@ class Controller:
     def unselect_all_mods(self) -> None:
         self.mediator.modtreeview.get_selection().unselect_all()
 
-    def dump_test(self) -> None:
+    def dump_test_1(self) -> None:
         import time
         time.sleep(1)
         # TODO: use model managers, etc.
@@ -556,6 +556,17 @@ class Controller:
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+        )
+        # TODO: refer to prior implementation--should need to load data into model while in thread
+        self.get_func_data()
+        self.destroy_on_idle()
+
+    def dump_test_2(self) -> None:
+        import time
+        time.sleep(1)
+        # TODO: use model managers, etc.
+        self.data = (
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
         )
         # TODO: refer to prior implementation--should need to load data into model while in thread
@@ -685,6 +696,8 @@ class Controller:
         self.set_statusbar_placeholder(status)
         self.set_statusbar(status)
         self.mediator.statusbar.spinner.start()
+        if len(model) < 1:
+            self.mediator.statusbar.spinner.stop()
 
     def populate_model(self) -> None:
         treeview = self.get_active_treeview()
