@@ -59,11 +59,12 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.controller.toggle_server_panels(False)
 
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
-
         match event.keyval:
             case Gdk.KEY_n:
                 self.notebook.next_page()
             case Gdk.KEY_p:
+                if event.state is Gdk.ModifierType.CONTROL_MASK:
+                    return
                 self.notebook.prev_page()
             case _:
                 return

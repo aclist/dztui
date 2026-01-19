@@ -421,8 +421,10 @@ class Controller:
         total_mods, total_size = self.calc_mod_size()
         msg = format_mods(total_size, total_mods)
         # TODO: combine
-        self.mediator.statusbar.set_text(msg)
-        self.mediator.statusbar.spinner.stop()
+        meta = self.mediator.statusbar.statusbar.get_context_id("Mods")
+        self.mediator.statusbar.statusbar.push(meta, msg)
+        #meta = self.mediator.statusbar.set_text(msg)
+
 
     def calc_mod_size(self) -> tuple[int, int]:
         model = self.model_man.get_mod_store()

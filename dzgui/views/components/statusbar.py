@@ -43,6 +43,8 @@ class Statusbar(Gtk.Grid):
         if string is None:
             return
         meta = self.statusbar.get_context_id("Statusbar")
+        # TODO: substacks
+        # get_context_id(ServerTab)
         self.statusbar.push(meta, string)
 
     def refresh(self, row: "RowType") -> None:

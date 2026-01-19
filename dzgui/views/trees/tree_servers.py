@@ -46,7 +46,9 @@ class ServerTreeView(TreeView):
 
         QUEUE_CHECK_DELAY = 200
 
+        self.controller = controller
         self.enum = enum
+
         self.loaded = False
         self.query_func: Callable = None
 
@@ -56,7 +58,6 @@ class ServerTreeView(TreeView):
 
         self.menu = Gtk.Menu()
         self.menu.connect("key-press-event", self._on_key)
-        self.controller = controller
 
         self.set_context_menu(menu)
         self.set_fixed_height_mode(True)
@@ -67,7 +68,6 @@ class ServerTreeView(TreeView):
 
         prefs = self.controller.get_prefs()
         columns = prefs.paths.columns
-
         try:
             data = JSON.read_json(columns)
             valid_json = True
@@ -75,6 +75,7 @@ class ServerTreeView(TreeView):
             logger.critical(e)
             valid_json = False
 
+        # TODO: abstract
         browser_cols = strings.browser_cols
         for i, column_title in enumerate(browser_cols):
             renderer = Gtk.CellRendererText()
@@ -114,7 +115,6 @@ class ServerTreeView(TreeView):
         self.connect("generic_treesel_changed", self._parent_selection_changed)
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
-
         self.connect("focus-in-event", self._on_kb_focus)
 
         GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
@@ -149,6 +149,10 @@ class ServerTreeView(TreeView):
             col.set_fixed_width(width)
 
     def _on_kb_focus(self, a, b) -> None:
+        # TODO: may generate superfluous calc events when page changed but selection is the same
+        # this can probably be dropped in favor of statusbar cache system
+        # meta = self.controller.mediator.statusbar.statusbar.get_context_id("Mods")
+        # self.controller.mediator.statusbar.statusbar.pop(meta)
         self.emit("on_distcalc_started")
 
     def get_enum(self) -> None:
@@ -163,6 +167,7 @@ class ServerTreeView(TreeView):
             self.controller.mediator.grid.conpan.lan.set_visible(False)
 
     def _on_key(self, menu: Gtk.Menu, event: Gdk.EventKey) -> bool | None:
+        # TODO: abstract as navigable context menu
         if not is_navkey(event.keyval):
             return False
         sel = menu.get_selected_item()
@@ -258,6 +263,11 @@ class ServerTreeView(TreeView):
                 case Gdk.KEY_i:
                     # TODO:
                     self.controller.mediator.grid.conpan.add_panel.entry.grab_focus()
+                case Gdk.KEY_p:
+                    if self.enum is ServerTab.LAN:
+                        self.controller.mediator.grid.conpan.lan.entry.grab_focus()
+                case Gdk.KEY_c:
+                    print("copy to clipboard")
         else:
             match event.keyval:
                 case Gdk.KEY_l | Gdk.KEY_Right:
