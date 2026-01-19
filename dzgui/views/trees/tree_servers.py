@@ -15,6 +15,7 @@ from dzgui.const.enum import (
 from dzgui.const.constants import UDP_PORT
 from dzgui.const.enum import ServerTab
 from dzgui.api.servers import Record
+from dzgui.model.filtered_model import FilteredModelManager
 from dzgui.util.dist import CalcDist
 from dzgui.util.keys import is_navkey
 from dzgui.util import strings
@@ -40,7 +41,7 @@ class ServerTreeView(TreeView):
     __gsignals__ = {
         "on_distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())
     }
-    def __init__(self, controller: "Controller", enum: ServerTab) -> None:
+    def __init__(self, controller: "Controller", enum: ServerTab, menu: ContextMenuGroup) -> None:
         super().__init__(controller)
 
         QUEUE_CHECK_DELAY = 200
@@ -49,10 +50,15 @@ class ServerTreeView(TreeView):
         self.loaded = False
         self.query_func: Callable = None
 
+        self.filter_man = FilteredModelManager()
+        model = self.filter_man.get_model()
+        self.set_model(model)
+
         self.menu = Gtk.Menu()
         self.menu.connect("key-press-event", self._on_key)
         self.controller = controller
 
+        self.set_context_menu(menu)
         self.set_fixed_height_mode(True)
         self.set_headers_visible(True)
 
@@ -112,6 +118,9 @@ class ServerTreeView(TreeView):
         self.connect("focus-in-event", self._on_kb_focus)
 
         GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
+
+    def get_filter_man(self) -> FilteredModelManager:
+        return self.filter_man
 
     def shrink_to_fit(self) -> None:
         cols = self.get_columns()
@@ -203,6 +212,8 @@ class ServerTreeView(TreeView):
         record = self.get_record()
         if record is None:
             return
+        # TODO:
+        self.controller.mediator.statusbar.spinner.start()
         ip = record.ip
         self.current_proc = CalcDist(record.ip, self.queue, self.controller)
         self.current_proc.start()

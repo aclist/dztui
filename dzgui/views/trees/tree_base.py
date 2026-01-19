@@ -88,14 +88,13 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
     ) -> None:
 
         if is_navkey(event.keyval):
-            # FIXME: will fail on mod list
-            tv = self.controller.get_active_treeview()
-            if len(tv.get_model()) < 1:
+            # TODO: if model is None
+            if len(self.get_model()) < 1:
                 return
             if self.sel_blocked is False:
                 self.controller.suppress_signal(
-                    tv,
-                    tv.selected_row,
+                    self,
+                    self.selected_row,
                     "_on_tree_selection_changed",
                     True,
                 )

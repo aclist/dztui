@@ -39,7 +39,7 @@ from dzgui.const.constants import (
 from dzgui.config import update
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
-from dzgui.controllers.model import ModelManager
+from dzgui.model.misc_model import ModelManager
 from dzgui.util import strings
 from dzgui.util.diag import write_diagnostic
 from dzgui.util._json import read_json, write_json
@@ -91,7 +91,9 @@ class Controller:
         self.crumbs_cache = ""
         self.mediator = AppNavigation()
         self.prefs: UserPrefs
-        self.model_manager = ModelManager()
+
+        self.model_man = ModelManager()
+
         # TODO: poc
         self.loaded = False
 
@@ -107,32 +109,20 @@ class Controller:
     def get_crumbs(self) -> str:
         return self.mediator.grid.get_breadcrumbs()
 
-    def get_server_store(self) -> Gtk.ListStore:
-        return self.model_manager.get_server_store()
-
-    def get_saved_store(self) -> Gtk.ListStore:
-        return self.model_manager.get_saved_store()
-
-    def get_recent_store(self) -> Gtk.ListStore:
-        return self.model_manager.get_recent_store()
-
-    def get_lan_store(self) -> Gtk.ListStore:
-        return self.model_manager.get_lan_store()
-
     def get_help_store(self) -> Gtk.ListStore:
-        return self.model_manager.get_help_store()
+        return self.model_man.get_help_store()
 
     def get_map_store(self) -> Gtk.ListStore:
-        return self.model_manager.get_map_store()
+        return self.model_man.get_map_store()
 
     def get_modlist_store(self) -> Gtk.ListStore:
-        return self.model_manager.get_modlist_store()
+        return self.model_man.get_modlist_store()
 
     def get_mod_store(self) -> Gtk.ListStore:
-        return self.model_manager.get_mod_store()
+        return self.model_man.get_mod_store()
 
     def get_log_store(self) -> Gtk.ListStore:
-        return self.model_manager.get_log_store()
+        return self.model_man.get_log_store()
 
     def terminate_process(self) -> None:
         # TODO: only used by server table multiprocessing queue
@@ -152,10 +142,10 @@ class Controller:
         return self.query_config(Preferences.INSTALL)
 
     def reinit_map_store(self) -> None:
-        self.model_manager.set_all_maps()
+        self.model_man.set_all_maps()
 
     def append_map(self, map_row: list) -> None:
-        self.model_manager.append_map(map_row)
+        self.model_man.append_map(map_row)
 
     def unblock_signals(self) -> None:
         self.block_signals(False)
@@ -197,7 +187,7 @@ class Controller:
     def toggle_debug_mode(self) -> None:
         self.toggle_config(Preferences.DEBUG)
 
-    def get_active_treeview(self) -> "TreeView":
+    def get_active_treeview(self) -> "ServerTreeView":
         return self.mediator.notebook.servers.get_active_treeview()
 
     def grab_active_treeview(self) -> None:
@@ -278,7 +268,7 @@ class Controller:
 
     def load_mods(self) -> None:
         # TODO: threading
-        model = self.model_manager.get_mod_store()
+        model = self.model_man.get_mod_store()
         model.clear()
         path = self.query_config(Preferences.DEFAULT)
         mods = get_delimited_mods(Path(path))
@@ -394,7 +384,7 @@ class Controller:
 
     # TODO: put in model manager (dedicated manager for mod store)
     def get_mod_from_tree_path(self, tree_path: Gtk.TreePath) -> tuple[str, Gtk.TreeIter]:
-        model = self.model_manager.get_mod_store()
+        model = self.model_man.get_mod_store()
         tree_iter = model.get_iter(tree_path)
         mod = model.get(tree_iter, 2)[0]
         return mod, tree_iter
@@ -423,7 +413,7 @@ class Controller:
         except PeFile.AppNotInstalledError:
             pass
 
-        model = self.model_manager.get_mod_store()
+        model = self.model_man.get_mod_store()
         model.remove(it)
 
 
@@ -435,7 +425,7 @@ class Controller:
         self.mediator.statusbar.spinner.stop()
 
     def calc_mod_size(self) -> tuple[int, int]:
-        model = self.model_manager.get_mod_store()
+        model = self.model_man.get_mod_store()
         total_mods = len(model)
         total_size = 0
         for mod in model:
@@ -493,7 +483,7 @@ class Controller:
 
     def populate_log(self) -> None:
         log = self.prefs.paths.debug
-        store = self.model_manager.get_log_store()
+        store = self.model_man.get_log_store()
         store.clear()
         # NOTE: this model is reloaded each time as log changes
         try:
@@ -508,7 +498,7 @@ class Controller:
         self.open_page(NotebookPage.LOG)
 
     def select_colorized(self) -> None:
-        model = self.model_manager.get_mod_store()
+        model = self.model_man.get_mod_store()
         sel = self.mediator.modtreeview.get_selection()
         for mod in model:
             it = mod.iter
@@ -517,14 +507,14 @@ class Controller:
                 sel.select_path(path)
 
     def uncolorize_mods(self) -> None:
-        model = self.model_manager.get_mod_store()
+        model = self.model_man.get_mod_store()
         for mod in model:
             it = mod.iter
             path = model.get_path(it)
             model[path][4] = None
 
     def colorize_mods(self) -> None:
-        model = self.model_manager.get_mod_store()
+        model = self.model_man.get_mod_store()
         stale = find_stale_mods(self.prefs.paths.config)
         for mod in model:
             it = mod.iter
@@ -544,7 +534,7 @@ class Controller:
         # TODO: use model managers, etc.
         self.data = (
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "172.111.51.156:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
@@ -572,19 +562,19 @@ class Controller:
         self.get_func_data()
         self.destroy_on_idle()
 
-    def get_func_data(self) -> tuple:
+    def get_func_data(self):
         def test():
             # NOTE: do not insert model until main thread is idle
             # TODO: grab from model manager and insert entire model
             # TODO: do not start refresh button count until load finished
             for row in data:
-                model.append(row)
+                manager.append_row(row)
             treeview.set_loaded(True)
             self.update_server_status()
             treeview.grab_focus()
-        # TODO: use model manager
         treeview = self.get_active_treeview()
-        model = treeview.get_model()
+
+        manager = treeview.get_filter_man()
         data = self.data
         GLib.idle_add(test)
 
@@ -697,16 +687,14 @@ class Controller:
         self.mediator.statusbar.spinner.start()
 
     def populate_model(self) -> None:
-        # TODO: always use same server model, store in servertreeview class
         treeview = self.get_active_treeview()
         if treeview.get_loaded() is False:
-            new_model = self.model_manager.new_model()
-            # NOTE: set_query_func()
+            # NOTE: cf. set_query_func()
             func = treeview.get_query_func()
             if func is not None:
-                model = treeview.get_model()
+                manager = treeview.get_filter_man()
                 # TODO: this may lag?
-                model.clear()
+                manager.clear_model()
                 self.set_callback(None, None)
                 self.call_on_thread(func)
 

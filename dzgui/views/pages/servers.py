@@ -24,38 +24,22 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.controller.register_widget("servers", self)
         self.notebook = Gtk.Notebook(show_tabs=True)
 
-        self.browser = ServerTreeView(controller, ServerTab.BROWSER)
-        self.saved = ServerTreeView(controller, ServerTab.SAVED)
-        self.recent = ServerTreeView(controller, ServerTab.RECENT)
-        self.lan = ServerTreeView(controller, ServerTab.LAN)
+        self.browser = ServerTreeView(controller, ServerTab.BROWSER, ContextMenuGroup.SERVER_BROWSER)
+        self.saved = ServerTreeView(controller, ServerTab.SAVED, ContextMenuGroup.SAVED)
+        self.recent = ServerTreeView(controller, ServerTab.RECENT, ContextMenuGroup.RECENT)
+        self.lan = ServerTreeView(controller, ServerTab.LAN, ContextMenuGroup.SCAN_LAN)
 
         self.browser.set_query_func(self.query_test2)
         self.lan.set_query_func(self.query_test)
 
-        # TODO: set context menu on init of ServerTreeView?
-        self.browser.set_context_menu(ContextMenuGroup.SERVER_BROWSER)
-        self.saved.set_context_menu(ContextMenuGroup.SAVED)
-        self.recent.set_context_menu(ContextMenuGroup.RECENT)
-        self.lan.set_context_menu(ContextMenuGroup.SCAN_LAN)
-
         tabs = [
-            (self.browser, server_labels.browser, self.controller.get_server_store),
-            (self.saved, server_labels.saved, self.controller.get_saved_store),
-            (self.recent, server_labels.recent, self.controller.get_recent_store),
-            (self.lan, server_labels.lan, self.controller.get_lan_store),
-            ]
+            (self.browser, server_labels.browser),
+            (self.saved, server_labels.saved),
+            (self.recent, server_labels.recent),
+            (self.lan, server_labels.lan),
+        ]
 
-        for tree, label, func in tabs:
-            store = func()
-            if label == "LAN":
-                pass
-            else:
-                pass
-            # TODO: set model only on init of servertreeview
-            # TODO: set model manager for each tab on init
-            # TODO: add set_ and get_model_manager() methods
-            tree.set_model(store)
-
+        for tree, label in tabs:
             scrolled = Gtk.ScrolledWindow()
             scrolled.add(tree)
             self.notebook.append_page(scrolled, Gtk.Label(label=label))

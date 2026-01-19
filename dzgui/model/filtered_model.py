@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from typing import Self
 
-from dzgui.const.enum import FilterMode, HELP_MENU_ROWS
+from dzgui.const.enum import FilterMode
 from dzgui.util import strings
 
 import gi
@@ -10,7 +10,6 @@ gi.require_version("Gtk", "3.0")
 from gi.repository.Gtk import ListStore  # noqa E402
 from gi.repository import GObject, GLib  # noqa E402
 
-@dataclass
 @dataclass(slots=True, frozen=True)
 class ServerColumns:
     name: str
@@ -27,104 +26,37 @@ class ServerColumns:
     modded: bool
 
 
-@dataclass(slots=True, frozen=True)
-class ModCols:
-    name: str
-    symlink: str
-    directory: str
-    size: float
-    color: str
-
-
-@dataclass(slots=True, frozen=True)
-class LogCols:
-    timestamp: str
-    flag: str
-    traceback: str
-    msg: str
-
-
-@dataclass(slots=True, frozen=True)
-class ServerModCols:
-    name: str
-    uid: GObject.TYPE_INT64
-    installed: str
-
-
-@dataclass(slots=True, frozen=True)
-class MenuCols:
-    name: str
-    hidden: GObject.TYPE_PYOBJECT
-
-
-class ModelManager:
+class FilteredModelManager:
     """
     Manages access to cached ListStore resources and
-    performs filtering on behalf of TreeViews.
+    performs filtering on behalf of atomic TreeViews,
+    which share the same column structure.
 
-    Methods are not thread-safe in themselves.
+    A FilteredModelManager is attached to each ServerTreeView.
+    Filter methods are not thread-safe in themselves.
     """
     def __init__(self) -> None:
         self.filter_cache: tuple
         self.ping_cache: dict[str, int] = {}
 
-        self.map_store = ListStore(str)
-        self.help_store = self.new_model_from_class(MenuCols)
-        self.mod_store = self.new_model_from_class(ModCols)
-        self.log_store = self.new_model_from_class(LogCols)
-        self.modlist_store = self.new_model_from_class(ServerModCols)
-
-        self.server_store = self.new_model()
-        self.saved_store = self.new_model()
-        self.recent_store = self.new_model()
-        self.lan_store = self.new_model()
-
-        for row in HELP_MENU_ROWS:
-            label = row.dict["label"]
-            self.help_store.append([label, row])
+        self.model = self.new_model_from_class(ServerColumns)
 
         self.control_model = None
         self.filtered = None
         self.success = True
 
-    #def __new__(cls) -> Self:
-    #    if not hasattr(cls, "instance"):
-    #        cls.instance = super(ModelManager, cls).__new__(cls)
-    #    return cls.instance
+    def append_row(self, row: list) -> None:
+        self.model.append(row)
 
-    def get_recent_store(self) -> ListStore:
-        return self.recent_store
+    def clear_model(self) -> None:
+        self.model.clear()
 
-    def get_lan_store(self) -> ListStore:
-        return self.lan_store
-
-    def get_saved_store(self) -> ListStore:
-        return self.saved_store
-
-    def get_server_store(self) -> ListStore:
-        return self.server_store
+    def get_model(self) -> ListStore:
+        return self.model
 
     def new_model_from_class(self, cls: type) -> ListStore:
         store = ListStore(*[ftype for field, ftype in cls.__annotations__.items()])
         return store
-
-    def get_map_store(self) -> ListStore:
-        return self.map_store
-
-    #def get_row_store(self) -> ListStore:
-    #    return self.row_store
-
-    def get_help_store(self) -> ListStore:
-        return self.help_store
-
-    def get_mod_store(self) -> ListStore:
-        return self.mod_store
-
-    def get_modlist_store(self) -> ListStore:
-        return self.modlist_store
-
-    def get_log_store(self) -> ListStore:
-        return self.log_store
 
     def filter(self, mode: FilterMode, *args, **kwargs) -> None:
         """
@@ -290,10 +222,6 @@ class ModelManager:
     ) -> None:
         self.filter_cache[filters] = (model, rows)
 
-    def new_model(self) -> ListStore:
-        store = self.new_model_from_class(ServerColumns)
-        return store
-
     def resync_model(self, addr: str, qport: int) -> None:
         """
         Handle in-situ updates to model during
@@ -344,10 +272,3 @@ class ModelManager:
         self.ping_cache = {}
         if full:
             self.control_model = None
-
-    def set_all_maps(self) -> None:
-        self.map_store.clear()
-        self.map_store.append(["All maps"])
-
-    def append_map(self, row: list) -> None:
-        self.map_store.append(row)
