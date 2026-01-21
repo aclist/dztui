@@ -1,28 +1,23 @@
 import logging
 import multiprocessing
-import subprocess
 from typing import Self
 
-import gi
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
-
-from dzgui.const.enum import (
-    ContextMenu,
-    ContextMenuGroup,
-    RowType,
-    )
-from dzgui.const.constants import UDP_PORT
-from dzgui.const.enum import FilterMode, ServerTab
+from dzgui.const.enum import ContextMenu, ContextMenuGroup, FilterMode, ServerTab
 from dzgui.api.servers import Record
 from dzgui.model.filtered_model import FilteredModelManager
 from dzgui.util.dist import CalcDist
 from dzgui.util.keys import is_navkey
 from dzgui.util import strings
-from typing import Any, Callable, Literal, TYPE_CHECKING
+from typing import Callable, Literal, TYPE_CHECKING
 
 from dzgui.views.trees.tree_base import TreeView
 import dzgui.util._json as JSON  # noqa
+
+import gi
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
+
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +26,7 @@ if TYPE_CHECKING:
 
 # TODO: restore missing methods
 
+
 class EnumeratedMenuItem(Gtk.MenuItem):
     def __init__(self, enum: ContextMenu):
         super().__init__(label=enum.dict["label"])
@@ -38,10 +34,11 @@ class EnumeratedMenuItem(Gtk.MenuItem):
 
 
 class ServerTreeView(TreeView):
-    __gsignals__ = {
-        "on_distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())
-    }
-    def __init__(self, controller: "Controller", enum: ServerTab, menu: ContextMenuGroup) -> None:
+    __gsignals__ = {"on_distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())}
+
+    def __init__(
+        self, controller: "Controller", enum: ServerTab, menu: ContextMenuGroup
+    ) -> None:
         super().__init__(controller)
 
         QUEUE_CHECK_DELAY = 200
@@ -181,11 +178,11 @@ class ServerTreeView(TreeView):
             case Gdk.KEY_j:
                 if ind == len(children) - 1:
                     return True
-                menu.select_item(children[ind+1])
+                menu.select_item(children[ind + 1])
             case Gdk.KEY_k:
                 if ind - 1 < 0:
                     return True
-                menu.select_item(children[ind-1])
+                menu.select_item(children[ind - 1])
             case Gdk.KEY_g:
                 menu.select_item(children[0])
             case Gdk.KEY_G:
@@ -207,15 +204,12 @@ class ServerTreeView(TreeView):
         """
         Propagate width change to other tabs
         """
-        title = col.get_title()
-        size = col.get_width()
-
         # NOTE: get final width after drag action completes
         GLib.idle_add(self.controller.propagate_column_width, col)
 
     def terminate_process(self) -> None:
-      if self.current_proc and self.current_proc.is_alive():
-          self.current_proc.terminate()
+        if self.current_proc and self.current_proc.is_alive():
+            self.current_proc.terminate()
 
     def _on_distcalc_started(self, treeview: Self):
         record = self.get_record()
@@ -223,8 +217,9 @@ class ServerTreeView(TreeView):
             return
         # TODO:
         self.controller.mediator.statusbar.spinner.start()
-        ip = record.ip
-        self.current_proc = CalcDist(record.ip, self.queue, self.controller)
+        self.current_proc = CalcDist(
+            record.ip, self.get_enum(), self.queue, self.controller
+        )
         self.current_proc.start()
 
     def _check_result_queue(self) -> Literal[True]:
@@ -235,13 +230,15 @@ class ServerTreeView(TreeView):
             latest_result = self.queue.get()
 
         cache = self.controller.get_dist_cache()
+
         if latest_result:
+            # NOTE: if CalcDist was spawned on other tab
             addr = latest_result[0]
             haversine = latest_result[1]
             if addr not in cache:
                 cache[addr] = haversine
             # FIXME
-            self.controller.set_statusbar_dist(haversine)
+            self.controller.set_statusbar_dist(haversine, self.get_enum())
         return True
 
     def _on_server_keypress(
@@ -308,7 +305,7 @@ class ServerTreeView(TreeView):
         mod_context_items = [ContextMenu.OPEN_WORKSHOP, ContextMenu.DELETE_MOD]
 
         # TODO: dynamic menu entries
-        #for row in items:
+        # for row in items:
         #    if row == ContextMenu.ADD_SERVER:
         #        if self.is_in_favs():
         #            row = ContextMenu.REMOVE_SERVER
@@ -326,18 +323,14 @@ class ServerTreeView(TreeView):
         if event.type is Gdk.EventType.KEY_PRESS and event.keyval is Gdk.KEY_l:
             if self.is_selection_empty():
                 return
-            self.menu.popup_at_widget(
-                widget, Gdk.Gravity.CENTER, Gdk.Gravity.WEST
-            )
+            self.menu.popup_at_widget(widget, Gdk.Gravity.CENTER, Gdk.Gravity.WEST)
         else:
             self.menu.popup_at_pointer(event)
         self.menu.select_first(False)
 
-    def _parent_row_activated(self,
-            tree: TreeView,
-            path: Gtk.TreePath,
-            column: Gtk.TreeViewColumn
-        ) -> None:
+    def _parent_row_activated(
+        self, tree: TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn
+    ) -> None:
         # TODO: process server connection
         # TODO: get record
         print(self.get_value_at_index(0))

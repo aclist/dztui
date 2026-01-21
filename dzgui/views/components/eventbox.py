@@ -26,13 +26,14 @@ class InfoEventBox(Gtk.EventBox):
         self, eventbox: Gtk.EventBox, eventcrossing: Gdk.EventCrossing
     ) -> None:
         self.icon.set_opacity(1)
-        self.parent.controller.set_statusbar(self.text)
+        self.parent.controller.set_statusbar(self.text, "Options")
 
     def _on_leave_tooltip(
         self, eventbox: Gtk.EventBox, eventcrossing: Gdk.EventCrossing
     ) -> None:
         self.icon.set_opacity(0.8)
-        self.parent.controller.set_statusbar("")
+        #self.parent.controller.set_statusbar("", "Options")
+        self.parent.controller.remove_statusbar("Options")
 
     def set_text(self, text: str) -> None:
         self.text = text

@@ -1,7 +1,6 @@
 import logging
 import shutil
 import threading
-import textwrap
 import traceback
 
 from pathlib import Path
@@ -17,23 +16,16 @@ from dzgui.api.mods import (
     get_local_mod_path,
     find_stale_mods,
     _hash,
-    remove_stale_signatures
+    remove_stale_signatures,
 )
-from dzgui.const.enum import (
-    Preferences,
-    Popup,
-    NotebookPage,
-    ButtonType,
-    ContextMenu,
-    RowType
-)
+from dzgui.const.enum import Preferences, NotebookPage, ButtonType, ContextMenu, RowType
 
 from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
     HEX_RED,
     WINDOW_DEFAULT_X,
-    WINDOW_DEFAULT_Y
+    WINDOW_DEFAULT_Y,
 )
 
 from dzgui.config import update
@@ -45,19 +37,20 @@ from dzgui.util.diag import write_diagnostic
 from dzgui.util._json import read_json, write_json
 from dzgui.util.localize import number
 from dzgui.util.open_links import open_workshop_page, open_user_workshop
-from dzgui.util.format import format_mods, format_player_count, pluralize
+from dzgui.util.format import format_mods, format_player_count
 from dzgui.util.redact import redact_log
 
 from dzgui.views.dialogs.filepicker import FilePicker
-from dzgui.views.dialogs.generic import GenericDialog
 
 import gi
+
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GLib, GObject # noqa E402
+from gi.repository import Gtk, Gdk, GLib, GObject  # noqa E402
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from dzgui.const.enum import ServerTab
     from dzgui.util.dist import Haversine
     from dzgui.views.base import Notebook, Grid, OuterWindow
     from dzgui.views.components.buttonbox import ContextualButton
@@ -65,11 +58,11 @@ if TYPE_CHECKING:
     from dzgui.views.components.right_panel import RightPanel
     from dzgui.views.components.statusbar import Statusbar
     from dzgui.views.pages.servers import ServerNotebook
-    from dzgui.views.trees.tree_base import TreeView
     from dzgui.views.trees.tree_log import LogTreeView
     from dzgui.views.trees.tree_menu import MenuTreeView
     from dzgui.views.trees.tree_mods import ModTreeView
     from dzgui.views.trees.tree_servers import ServerTreeView
+
 
 class AppNavigation:
     window: "OuterWindow"
@@ -80,16 +73,16 @@ class AppNavigation:
     modtreeview: "ModTreeView"
     menu: "MenuTreeView"
     servers: "ServerNotebook"
-    browser: "ServerTreeView"
     saved: "ServerTreeView"
     recent: "ServerTreeView"
     lan: "ServerTreeView"
     logtreeview: "LogTreeView"
     filters: "FilterPanel"
 
+
 class Controller:
     def __init__(self) -> None:
-        self.dist_cache: dict[str, "Haversine"] = {}
+        self.dist_cache: dict[str, "Haversine", "ServerTab"] = {}
         self.crumbs_cache = ""
         self.mediator = AppNavigation()
         self.prefs: UserPrefs
@@ -128,7 +121,8 @@ class Controller:
 
     def terminate_process(self) -> None:
         # TODO: only used by server table multiprocessing queue
-        self.mediator.notebook.servers.browser.terminate_process()
+        tv = self.get_active_treeview()
+        tv.terminate_process()
 
     def get_prefs(self) -> UserPrefs:
         return self.prefs
@@ -165,7 +159,9 @@ class Controller:
             "_on_tree_selection_changed",
             state,
         )
-        self.suppress_signal(self.mediator.menu, self.mediator.menu, "_on_keypress", state)
+        self.suppress_signal(
+            self.mediator.menu, self.mediator.menu, "_on_keypress", state
+        )
         for check in self.mediator.filters.checks:
             self.suppress_signal(
                 self.mediator.filters,
@@ -184,7 +180,7 @@ class Controller:
         else:
             widget.handler_unblock_by_func(func)
         # TODO: deprecated?
-        #self.mediator.menu.sel_blocked = state
+        # self.mediator.menu.sel_blocked = state
 
     def toggle_debug_mode(self) -> None:
         self.toggle_config(Preferences.DEBUG)
@@ -234,14 +230,22 @@ class Controller:
     def get_statusbar(self) -> str:
         return self.mediator.statusbar.get_text()
 
-    def set_statusbar(self, text: str) -> None:
-        self.mediator.statusbar.set_text(text)
+    def remove_statusbar(self, context: str) -> None:
+        c = self.mediator.statusbar.statusbar.get_context_id(context)
+        self.mediator.statusbar.statusbar.remove_all(c)
+
+    def set_statusbar(self, text: str, context: str) -> None:
+        self.mediator.statusbar.set_text(text, context)
 
     def set_statusbar_placeholder(self, text: str) -> None:
         # TODO: use statusbar stacks instead
         self.statusbar_placeholder = text
 
-    def set_statusbar_dist(self, haversine: "Haversine") -> None:
+    def set_statusbar_dist(self, haversine: "Haversine", enum: "ServerTab") -> None:
+        tv = self.get_active_treeview()
+        if tv.get_enum() != enum:
+            self.mediator.statusbar.spinner.stop()
+            return
         dist: str
         if haversine is None:
             dist = "Unknown"
@@ -255,7 +259,8 @@ class Controller:
                 separated = number(raw)
                 dist = str(separated) + " km"
         text = self.statusbar_placeholder
-        self.set_statusbar(f"{text} | Distance: {dist}")
+        # TODO: abstract
+        self.set_statusbar(f"{text} | Distance: {dist}", "Servers")
         self.mediator.statusbar.spinner.stop()
 
     def delete_multiple_mods(self) -> None:
@@ -328,7 +333,7 @@ class Controller:
     def show_developers_page(self) -> None:
         self.open_page(NotebookPage.DEVELOPERS)
         # TODO: put cursor on first row
-        #self.mediator.developers.focus_first_row()
+        # self.mediator.developers.focus_first_row()
 
     def open_page(self, page: NotebookPage) -> None:
         self.mediator.grid.notebook.set_page_by_enum(page)
@@ -386,7 +391,9 @@ class Controller:
         open_workshop_page(mod, cmd)
 
     # TODO: put in model manager (dedicated manager for mod store)
-    def get_mod_from_tree_path(self, tree_path: Gtk.TreePath) -> tuple[str, Gtk.TreeIter]:
+    def get_mod_from_tree_path(
+        self, tree_path: Gtk.TreePath
+    ) -> tuple[str, Gtk.TreeIter]:
         model = self.model_man.get_mod_store()
         tree_iter = model.get_iter(tree_path)
         mod = model.get(tree_iter, 2)[0]
@@ -403,7 +410,7 @@ class Controller:
         app_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
 
         md5 = _hash(mod)
-        symlink =  app_path / md5
+        symlink = app_path / md5
         symlink.unlink()
         shutil.rmtree(mods_path / mod)
 
@@ -419,15 +426,13 @@ class Controller:
         model = self.model_man.get_mod_store()
         model.remove(it)
 
-
     def update_mod_statusbar(self) -> None:
         total_mods, total_size = self.calc_mod_size()
         msg = format_mods(total_size, total_mods)
         # TODO: combine
-        meta = self.mediator.statusbar.statusbar.get_context_id("Mods")
-        self.mediator.statusbar.statusbar.push(meta, msg)
-        #meta = self.mediator.statusbar.set_text(msg)
-
+        # meta = self.mediator.statusbar.statusbar.get_context_id("Mods")
+        # self.mediator.statusbar.statusbar.push(meta, msg)
+        self.mediator.statusbar.set_text(msg, "Mods")
 
     def calc_mod_size(self) -> tuple[int, int]:
         model = self.model_man.get_mod_store()
@@ -436,7 +441,6 @@ class Controller:
         for mod in model:
             total_size += mod[3]
         return total_mods, total_size
-
 
     def menu_action(self, action: ContextMenu, path: Gtk.TreePath) -> None:
         match action:
@@ -470,13 +474,11 @@ class Controller:
                 # Gtk.TreeModel, row-inserted/row-deleted
                 self.update_mod_statusbar()
                 remove_stale_signatures(
-                    self.prefs.paths.config,
-                    self.prefs.paths.version
+                    self.prefs.paths.config, self.prefs.paths.version
                 )
 
             case ContextMenu.OPEN_WORKSHOP:
                 self.open_mod_page(path)
-
 
     def toggle_mod_selection(self, state: bool) -> None:
         sel = self.mediator.modtreeview.get_selection()
@@ -493,7 +495,9 @@ class Controller:
         # NOTE: this model is reloaded each time as log changes
         try:
             with open(log, "r") as f:
-                lines = [line.split(strings.delimiter) for line in f.read().splitlines()]
+                lines = [
+                    line.split(strings.delimiter) for line in f.read().splitlines()
+                ]
                 for record in lines:
                     clean = redact_log(record)
                     store.append(clean)
@@ -535,6 +539,7 @@ class Controller:
 
     def dump_test_1(self) -> None:
         import time
+
         time.sleep(1)
         # TODO: use model managers, etc.
         self.data = (
@@ -561,6 +566,7 @@ class Controller:
 
     def dump_test_2(self) -> None:
         import time
+
         time.sleep(1)
         # TODO: use model managers, etc.
         self.data = (
@@ -570,7 +576,7 @@ class Controller:
         self.get_func_data()
         self.destroy_on_idle()
 
-    def get_func_data(self):
+    def get_func_data(self) -> None:
         def test():
             # NOTE: do not insert model until main thread is idle
             # TODO: grab from model manager and insert entire model
@@ -580,6 +586,7 @@ class Controller:
             treeview.set_loaded(True)
             self.update_server_status()
             treeview.grab_focus()
+
         treeview = self.get_active_treeview()
 
         manager = treeview.get_filter_man()
@@ -591,6 +598,7 @@ class Controller:
 
     def call_on_thread(self, func: Callable, *args) -> None:
         from dzgui.views.dialogs.generic import WaitDialog
+
         self.wait_dialog = WaitDialog(self, strings.dialog.fetching)
         self.wait_dialog.show_all()
         thread = threading.Thread(target=func, args=args)
@@ -607,7 +615,7 @@ class Controller:
         Lets calling widgets register a callback function
         when spawning a threaded process
         """
-        self.callback = { "func": callback, "args": args }
+        self.callback = {"func": callback, "args": args}
 
     def destroy_on_idle(self) -> None:
         self.wait_dialog.destroy()
@@ -641,7 +649,6 @@ class Controller:
             self.destroy_on_idle()
             dialog = ExceptionDialog(self, strings.api_error)
             dialog.run()
-
 
     def update_api_key(self, text: str, key: Preferences) -> None:
         self.call_on_thread(self.test_api_response, text, key)
@@ -688,13 +695,15 @@ class Controller:
     def update_server_status(self) -> None:
         # TODO: emit signal on statusbar only if page changed
         treeview = self.get_active_treeview()
+        context = str(treeview.enum)
         model = treeview.get_model()
         status = format_player_count(model)
         self.set_statusbar_placeholder(status)
-        self.set_statusbar(status)
-        self.mediator.statusbar.spinner.start()
-        if len(model) < 1:
-            self.mediator.statusbar.spinner.stop()
+
+        self.set_statusbar(status, context)
+        if len(model) >= 1:
+            self.mediator.statusbar.spinner.start()
+            # self.mediator.statusbar.spinner.stop()
 
     def populate_model(self) -> None:
         treeview = self.get_active_treeview()
@@ -718,8 +727,8 @@ class Controller:
         crumbs = self.mediator.servers.get_cached_label()
         self.set_crumbs(crumbs)
         # TODO: could emit this when treeview gains keyboard focus
-        #tree = self.get_active_treeview()
-        #tree.emit("on_distcalc_started")
+        # tree = self.get_active_treeview()
+        # tree.emit("on_distcalc_started")
 
     def toggle_check(self, event: Gdk.EventKey) -> None | Literal[False]:
         mappings = {
@@ -739,7 +748,6 @@ class Controller:
         if event.keyval not in mappings:
             return False
         index = mappings[event.keyval]
-        # TODO: register filter panel widget
         self.mediator.filters.toggle_check(index)
 
     def get_favorite(self) -> tuple[str, str] | tuple[None, None]:

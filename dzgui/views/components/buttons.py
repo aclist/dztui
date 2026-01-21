@@ -93,6 +93,9 @@ class RefreshButton(IconTextButton):
         self.connect("clicked", self._on_refresh_clicked)
 
     def _on_refresh_clicked(self, button: Self) -> None:
+        # TODO: get page enum
+        print(self.controller.mediator.notebook.get_page_by_enum())
+        # if .MODS, .LOG, .OPTIONS, reload in place
         self.set_sensitive(False)
         self.show_time(True)
         GLib.timeout_add_seconds(1, self.decrement)

@@ -19,6 +19,7 @@ class Statusbar(Gtk.Grid):
 
         help_text = strings.statusbar_helptext
 
+        self.context: int
         self.statusbar = Gtk.Statusbar()
 
         self.spinner = Gtk.Spinner()
@@ -31,7 +32,7 @@ class Statusbar(Gtk.Grid):
         self.attach_next_to(self.spinner, self.statusbar, Gtk.PositionType.RIGHT, 3, 1)
         self.attach_next_to(self.status_right_label, self.spinner, Gtk.PositionType.RIGHT, 3, 1)
 
-        self.set_text(help_text)
+        self.set_text(help_text, "Help")
         self.players = ""
 
     def get_text(self) -> str:
@@ -39,20 +40,41 @@ class Statusbar(Gtk.Grid):
         label = area.get_children()[0]
         return label.get_text()
 
-    def set_text(self, string: str) -> None:
-        if string is None:
-            return
-        meta = self.statusbar.get_context_id("Statusbar")
+    def set_text(self, string: str, context: str) -> None:
+        # if string is None:
+        #     return
+        meta = self.statusbar.get_context_id(context)
+        #tv = self.controller.get_active_treeview()
+        #cur_context = tv.get_enum()
+        #cid = self.get_context_by_enum(cur_context)
+        #if cid != meta:
+        #    print("requested: ", meta)
+        #    print("current: ", cid)
+        #    return
         # TODO: substacks
         # get_context_id(ServerTab)
         self.statusbar.push(meta, string)
+        #self.set_context(meta)
+
+
+    # TODO: type checking
+    # def get_context_by_enum(self, context: "ServerTab") -> int:
+    #     cid = self.statusbar.get_context_id(str(context))
+    #     # TODO: substacks
+    #     return cid
+    #
+    # def get_context(self) -> int:
+    #     return self.context
+    #
+    # def set_context(self, context: int) -> None:
+    #     self.context = context
 
     def refresh(self, row: "RowType") -> None:
         if row is None:
             formatted = ""
         else:
             formatted = self.format_metadata(row)
-        self.set_text(formatted)
+        self.set_text(formatted, "Help")
 
     def append_distance(self, dist: str) -> None:
         # TODO: process strings in controller

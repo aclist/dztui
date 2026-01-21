@@ -44,9 +44,11 @@ args = parser.parse_args()
 if TYPE_CHECKING:
     from pathlib import Path
 
+
 # TODO: profile load time
 def make_parents(path: "Path") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+
 
 def uninstall() -> None:
     # TODO: uninstall data files (-u)
@@ -55,6 +57,7 @@ def uninstall() -> None:
     # XDG_STATE_HOME/dzgui
     # XDG_DATA_HOME/dzgui
     pass
+
 
 def main() -> None:
     lock = lock_acquire()  # noqa
@@ -85,7 +88,9 @@ def main() -> None:
         migrate_cols_file(XDG.columns)
         copy_state_files(xdg_paths["XDG_STATE_HOME"])
 
-    _format = "%(asctime)s␞%(levelname)s␞%(filename)s::%(funcName)s::%(lineno)s␞%(message)s"
+    _format = (
+        "%(asctime)s␞%(levelname)s␞%(filename)s::%(funcName)s::%(lineno)s␞%(message)s"
+    )
     logging.basicConfig(filename=XDG.debug, format=_format, level=logging.DEBUG)
     with open(XDG.debug, "w") as f:
         f.truncate(0)
@@ -126,7 +131,7 @@ def main() -> None:
         local_coords,
         version,
         allow,
-        XDG
+        XDG,
     )
     print("All OK. Loading UI...")
     App(prefs)

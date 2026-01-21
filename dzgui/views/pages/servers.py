@@ -78,6 +78,8 @@ class ServerNotebook(Gtk.ScrolledWindow):
     def _on_page_changed(self, notebook: Gtk.Notebook, child: Gtk.Widget, index: int) -> None:
         if self.controller.loaded is False:
             return
+
+        # self.controller.remove_statusbar("Servers")
         # TODO: abstract
         label = self.notebook.get_tab_label_text(child)
 

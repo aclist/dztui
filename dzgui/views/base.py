@@ -1,12 +1,6 @@
 import logging
-#import multiprocessing
 import signal
-#import threading
-import typing  # noqa
 import warnings
-
-#from concurrent.futures import wait
-#from concurrent.futures import ThreadPoolExecutor
 
 from typing import TYPE_CHECKING, Literal
 
@@ -37,6 +31,7 @@ if TYPE_CHECKING:
     from dzgui.config.userprefs import UserPrefs
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 
@@ -46,10 +41,10 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 
 # TODO: move to controller
 # kilometer cache; note, user may change measurement it partway through, flush cache
-#cache: dict[str, int] = {}
+# cache: dict[str, int] = {}
 
 ## TODO: move to configs/servers
-#def query_history() -> list | None:
+# def query_history() -> list | None:
 #    history_file = MainController.get_prefs().paths.history
 #    try:
 #        with open(history_file, "r") as f:
@@ -58,7 +53,7 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 #        rows = None
 #    return rows
 #
-#def process_tree_option(choice: RowType) -> None:
+# def process_tree_option(choice: RowType) -> None:
 #    # server tables
 #    if command == RowType.RESOLVE_IP:
 #        record = treeview.get_record()
@@ -91,18 +86,18 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 #        return
 #
 ## TODO: belongs in model
-#def str_to_record(record: str) -> Record | None:
+# def str_to_record(record: str) -> Record | None:
 #    r = record.split(":")
 #    if len(r) != 3:
 #        return None
 #    return Record(r[0], int(r[1]), int(r[2]))
 #
 ## TODO: ibid
-#def record_to_str(record: Record) -> str:
+# def record_to_str(record: Record) -> str:
 #    return f"{record.ip}:{record.gameport}:{record.qport}"
 #
 #
-#def connect_by_ip(enum: RowType, response: str) -> None:
+# def connect_by_ip(enum: RowType, response: str) -> None:
 #    def _prep(response: str) -> None:
 #        record = Servers.validate_ip(response)
 #        proc = treeview.prepare_connection(record)
@@ -114,7 +109,7 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 #    return
 #
 #
-#def connect_by_id(enum: RowType, uid: str, key: str) -> None:
+# def connect_by_id(enum: RowType, uid: str, key: str) -> None:
 #    def _prep(key: str, response: str) -> None:
 #        # TODO: if response is non numeric, raise dialog
 #        if response.isnumeric() is False:
@@ -138,6 +133,7 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 #    #return
 #
 #
+
 
 class OuterWindow(Gtk.Window):
     def __init__(self) -> None:
@@ -168,9 +164,7 @@ class OuterWindow(Gtk.Window):
         MainController.loaded = True
         MainController.populate_model()
 
-    def _on_delete_event(
-        self, window: "OuterWindow", event: Gdk.EventKey
-    ) -> None:
+    def _on_delete_event(self, window: "OuterWindow", event: Gdk.EventKey) -> None:
         self.halt_proc_and_quit()
 
     def halt_proc_and_quit(self) -> None:
@@ -316,7 +310,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
             MainController.set_crumbs(crumbs)
 
         if status is False:
-            MainController.set_statusbar("")
+            MainController.set_statusbar("", "")
         if enum is NotebookPage.SERVERS:
             MainController.present_servers()
 
@@ -351,8 +345,20 @@ class Grid(Gtk.Grid):
         els = (
             (self.crumb_box, self.notebook, Gtk.PositionType.TOP, MAX_COLS, SINGLE_ROW),
             (self.conpan, self.notebook, Gtk.PositionType.BOTTOM, MAX_COLS, SINGLE_ROW),
-            (self.statusbar, self.conpan, Gtk.PositionType.BOTTOM, MAX_COLS, SINGLE_ROW),
-            (self.right_panel, self.notebook, Gtk.PositionType.RIGHT, SINGLE_COL, MAX_ROWS),
+            (
+                self.statusbar,
+                self.conpan,
+                Gtk.PositionType.BOTTOM,
+                MAX_COLS,
+                SINGLE_ROW,
+            ),
+            (
+                self.right_panel,
+                self.notebook,
+                Gtk.PositionType.RIGHT,
+                SINGLE_COL,
+                MAX_ROWS,
+            ),
         )
         for el, sibling, pos, h_span, v_span in els:
             self.attach_next_to(el, sibling, pos, h_span, v_span)
@@ -372,7 +378,7 @@ class Grid(Gtk.Grid):
     def toggle_refresh_button(self, state: bool) -> None:
         self.right_panel.refresh_button.set_visible(state)
 
-    # TODO make this method internal to Statusbar
+    # TODO: make this method internal to Statusbar
     def get_breadcrumbs(self) -> str:
         return self.breadcrumbs.get_text()
 
@@ -397,9 +403,7 @@ class App(Gtk.Application):
         )
         self.win.add_accel_group(accel)
 
-        GLib.unix_signal_add(
-            GLib.PRIORITY_DEFAULT, signal.SIGINT, self._catch_sigint
-        )
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self._catch_sigint)
         Gtk.main()
 
     def _catch_sigint(self) -> Literal[True]:
@@ -415,9 +419,11 @@ class App(Gtk.Application):
     ) -> None:
         self.win.halt_proc_and_quit()
 
+
 MainController = Controller()
 
 # TODO: icon sanity check, log result
-#theme = Gtk.IconTheme.get_default()
-#icons = theme.list_icons(None)
-#print("steam_tray_mono" in icons)
+# theme = Gtk.IconTheme.get_default()
+# icons = theme.list_icons(None)
+# print("steam_tray_mono" in icons)
+# FIXME:
