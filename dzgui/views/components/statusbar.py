@@ -2,7 +2,6 @@ from warnings import deprecated
 from typing import Self, Union, TYPE_CHECKING
 
 from dzgui.const.enum import NotebookPage, RowType
-from dzgui.util import strings
 
 import gi
 
@@ -29,13 +28,10 @@ class Statusbar(Gtk.Grid):
         self.controller = controller
         self.controller.register_widget("statusbar", self)
 
-        help_text = strings.statusbar_helptext
-
         self.playercount = ""
         self.statusbar = Gtk.Statusbar()
 
         self.spinner = Gtk.Spinner()
-        self.spinner.start()
 
         version = self.controller.get_prefs().version
         self.status_right_label = Gtk.Label(
@@ -48,7 +44,6 @@ class Statusbar(Gtk.Grid):
             self.status_right_label, self.spinner, Gtk.PositionType.RIGHT, 3, 1
         )
 
-        self.set_text(help_text, "Help")
         self.players = ""
 
         self.connect("server_row_changed", self._on_server_row_changed)
@@ -60,6 +55,9 @@ class Statusbar(Gtk.Grid):
     def _on_notebook_page_changed(
         self, statusbar: Self, context: "NotebookPage"
     ) -> None:
+        if self.controller.loaded is False:
+            return
+
         status = context.dict["statusbar"]
         bar = ""
         if status is False:
@@ -70,9 +68,13 @@ class Statusbar(Gtk.Grid):
             case NotebookPage.MODS:
                 bar = self.controller.format_mod_statusbar()
             case NotebookPage.HELP:
-                bar = self.controller.get_help_text()
+                bar = self.controller.get_help_row()
             case NotebookPage.SERVERS:
-                pass
+                # TODO:
+                from dzgui.const.enum import ServerTab
+
+                self.emit("server_page_changed", ServerTab.BROWSER)
+                return
 
         self.set_by_context(context, bar)
 
@@ -98,10 +100,10 @@ class Statusbar(Gtk.Grid):
             self.set_by_context(context, pretty)
 
     def _on_server_page_changed(self, statusbar: Self, context: "ServerTab") -> None:
-        c = self.controller.get_player_count()
-        self.playercount = c
+        count = self.controller.get_player_count()
+        self.playercount = count
 
-        self.set_by_context(context, c)
+        self.set_by_context(context, count)
         tree = self.controller.get_active_treeview()
         tree.emit("distcalc_started")
 
@@ -132,7 +134,9 @@ class Statusbar(Gtk.Grid):
         self.statusbar.push(meta, string)
         self.set_cache(string)
 
+    @deprecated("use set_by_context()")
     def refresh(self, row: "RowType") -> None:
+        # FIXME: brittle
         if row is None:
             formatted = ""
         else:

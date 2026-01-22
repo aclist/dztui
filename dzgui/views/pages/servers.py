@@ -101,7 +101,7 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.notebook.set_tab_label_text(child, text)
         self.set_crumbs(text)
 
-        self.controller.present_servers()
+        #self.controller.present_servers()
         self.controller.populate_model()
 
     def set_cached_label(self, label: str) -> None:

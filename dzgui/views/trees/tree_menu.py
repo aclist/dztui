@@ -76,4 +76,6 @@ class MenuTreeView(TreeView):
         row = self.get_value_at_index(1)
         if row == "":
             return
+        if self.controller.loaded is False:
+            return
         self.controller.set_statusbar_by_row(row)

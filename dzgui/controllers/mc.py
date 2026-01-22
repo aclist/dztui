@@ -374,12 +374,12 @@ class Controller:
         # TODO: set crumbs by signal
         self.set_crumbs(button.get_label())
 
-    def get_help_text(self) -> str:
+    def get_help_row(self) -> str:
         tv = self.mediator.menu
         model = self.get_help_store()
         tree_iter = tv.get_focused_row_iter()
-        value = model.get_value(tree_iter, 0)
-        return value
+        value = model.get_value(tree_iter, 1)
+        return value.dict["tooltip"]
 
     def open_user_workshop(self, uid: str) -> None:
         # NOTE: uid may contain leading zeroes, not a real integer
@@ -719,27 +719,23 @@ class Controller:
 
     def populate_model(self) -> None:
         treeview = self.get_active_treeview()
-        if treeview.get_loaded() is False:
-            # NOTE: cf. set_query_func()
-            func = treeview.get_query_func()
-            if func is not None:
-                manager = treeview.get_filter_man()
-                # TODO: this may lag?
-                manager.clear_model()
-                self.set_callback(None, None)
-                self.call_on_thread(func)
+        if treeview.get_loaded() is True:
+            self.mediator.statusbar.emit("server_page_changed", treeview.get_enum())
+            return
+
+        func = treeview.get_query_func()
+        if func is None:
+            self.mediator.statusbar.emit("server_page_changed", treeview.get_enum())
+            return
+        manager = treeview.get_filter_man()
+        # TODO: this may lag?
+        manager.clear_model()
+        self.set_callback(None, None)
+        self.call_on_thread(func)
+
 
     def focus_button_box(self) -> None:
         self.mediator.right_panel.focus_button_box()
-
-    def present_servers(self) -> None:
-        treeview = self.get_active_treeview()
-        context = treeview.get_enum()
-
-        self.mediator.statusbar.emit("server_page_changed", context)
-        # TODO: signal for crumbs
-        crumbs = self.mediator.servers.get_cached_label()
-        self.set_crumbs(crumbs)
 
     def toggle_check(self, event: Gdk.EventKey) -> None | Literal[False]:
         mappings = {

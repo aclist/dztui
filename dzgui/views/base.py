@@ -314,8 +314,8 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
             MainController.mediator.statusbar.emit("notebook_page_changed", enum)
 
         self.is_return = False
-        if enum is NotebookPage.SERVERS:
-            MainController.present_servers()
+        #if enum is NotebookPage.SERVERS:
+        #    MainController.present_servers()
 
 
 class Grid(Gtk.Grid):

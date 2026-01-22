@@ -21,6 +21,7 @@
 - Integrated server notebook
 - Retain position on servers
 - Propagate width changes to all tables
+- Remember tree position in menus
 
 ## Changed
 - Reduce padding on keys button
