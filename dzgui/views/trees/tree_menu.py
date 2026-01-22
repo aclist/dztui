@@ -51,11 +51,6 @@ class MenuTreeView(TreeView):
         match row_type:
             case RowType.THANKS:
                 self.controller.open_page(NotebookPage.THANKS)
-            case RowType.SERVER_BROWSER:
-                # TODO: add threading
-                # TODO: handle recent, saved, lan, etc.
-                # self.controller.open_page(NotebookPage.SERVERS)
-                return
             case RowType.SHOW_LOG:
                 self.controller.populate_log()
             case RowType.CHANGELOG:

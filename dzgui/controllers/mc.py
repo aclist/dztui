@@ -518,6 +518,7 @@ class Controller:
         except Exception as e:
             dialog = ExceptionDialog(self, str(e))
             dialog.run()
+            return
         self.open_page(NotebookPage.LOG)
 
     def select_colorized(self) -> None:
