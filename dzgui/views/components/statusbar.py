@@ -1,7 +1,7 @@
 from warnings import deprecated
 from typing import Self, Union, TYPE_CHECKING
 
-from dzgui.const.enum import NotebookPage, Preferences, RowType
+from dzgui.const.enum import NotebookPage, RowType
 from dzgui.util import strings
 
 import gi
@@ -142,11 +142,4 @@ class Statusbar(Gtk.Grid):
     @deprecated("use controller")
     def format_metadata(self, row: "RowType") -> str:
         prefix = row.dict["tooltip"]
-
-        if row == RowType.QUICK_CONNECT or row == RowType.CHNG_FAV:
-            label = self.controller.query_config(Preferences.FAV_LBL)
-            if len(label) < 1:
-                label = "unset"
-            return f"{prefix} ({label})"
-        else:
-            return prefix
+        return prefix

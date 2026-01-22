@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import sys
+import warnings
 
 from typing import TYPE_CHECKING
 
@@ -70,6 +71,8 @@ def main() -> None:
         uninstall()
         sys.exit(0)
 
+    if args.developers is True:
+        warnings.filterwarnings("default", category=DeprecationWarning)
     version = get_version()
     set_locale()
 

@@ -135,7 +135,7 @@ class ServerTreeView(TreeView):
                 continue
             if title == "IP":
                 continue
-            label = Gtk.Label(title)
+            label = Gtk.Label(label=title)
             pango = label.get_layout()
             size = pango.get_pixel_size()
             if size.width > 50:
