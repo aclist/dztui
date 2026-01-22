@@ -49,8 +49,8 @@ class ServerTreeView(TreeView):
         self.loaded = False
         self.query_func: Callable = None
 
-        self.filter_man = FilteredModelManager()
-        model = self.filter_man.get_model(controller)
+        self.filter_man = FilteredModelManager(controller)
+        model = self.filter_man.get_model()
         self.set_model(model)
 
         self.menu = Gtk.Menu()

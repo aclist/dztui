@@ -91,8 +91,8 @@ class Controller:
 
         self.model_man = ModelManager()
 
-        # TODO: poc
-        # self.loaded = False
+        # NOTE: suppress requests until entire UI is loaded
+        self.loaded = False
 
     def register_widget(self, attr: str, widget: Gtk.Widget) -> None:
         try:
