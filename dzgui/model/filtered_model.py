@@ -1,14 +1,19 @@
 import re
 from dataclasses import dataclass
-from typing import Self
+from typing import TYPE_CHECKING
 
 from dzgui.const.enum import FilterMode
 from dzgui.util import strings
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository.Gtk import ListStore  # noqa E402
 from gi.repository import GObject, GLib  # noqa E402
+
+if TYPE_CHECKING:
+    from dzgui.controllers.mc import Controller
+
 
 @dataclass(slots=True, frozen=True)
 class ServerColumns:
@@ -35,7 +40,8 @@ class FilteredModelManager:
     A FilteredModelManager is attached to each ServerTreeView.
     Filter methods are not thread-safe in themselves.
     """
-    def __init__(self) -> None:
+
+    def __init__(self, controller: "Controller") -> None:
         self.filter_cache: tuple
         self.ping_cache: dict[str, int] = {}
 
@@ -63,13 +69,15 @@ class FilteredModelManager:
         Native Gtk.TreeView.refilter() method was not performant enough
         when running in the main loop with 40k+ records
         """
-        filters = AppNav.right_panel.filters_vbox.get_filters()
+        filters = self.controller.get_filters()
 
         if filters in self.filter_cache:
             cache = self.filter_cache[filters]
             self.set_store(cache[0])
             self.set_filtered(cache[1])
-            GLib.idle_add(AppNav.treeview._filter_cleanup)
+            GLib.idle_add(
+                self.controller.mediator.get_active_treeview()._filter_cleanup
+            )
             return
 
         match mode:
@@ -77,8 +85,7 @@ class FilteredModelManager:
                 rows = self.filter_initial(filters)
 
             case FilterMode.MAP:
-                panel = AppNav.right_panel.filters_vbox
-                prior_map = panel.get_prior_map()
+                prior_map = self.controller.get_prior_map()
 
                 if prior_map == "All maps":
                     rows = self.filter_map(filters)
@@ -111,7 +118,7 @@ class FilteredModelManager:
 
         self.set_cache(filters, clone, rows)
         self.set_store(clone)
-        GLib.idle_add(AppNav.treeview._filter_cleanup)
+        GLib.idle_add(self.controller.mediator.get_active_treeview()._filter_cleanup)
 
     def sort_rows(self, rows: list) -> list:
         rows.sort(key=lambda x: re.sub(r"[^A-Za-z0-9]+", "", x[0].lower()))
@@ -131,7 +138,7 @@ class FilteredModelManager:
         Multi-filtration for any context starts by narrowing by map
         """
         rows = self.filtered
-        panel = AppNav.right_panel.filters_vbox
+        panel = self.controller.get_map()
         sel_map = panel.get_selected_map()
 
         if sel_map == "All maps":
@@ -141,7 +148,7 @@ class FilteredModelManager:
         return rows
 
     def filter_keyword(self, filters: tuple) -> list:
-        keyword = AppNav.right_panel.filters_vbox.get_keyword_filter()
+        keyword = self.controller.get_keyword()
         rows = self.filtered
 
         if keyword == "":
@@ -163,7 +170,7 @@ class FilteredModelManager:
         pairs = {
             strings.filter_3pp: strings.filter_1pp,
             strings.filter_day: strings.filter_night,
-            strings.filter_official: strings.filter_unofficial
+            strings.filter_official: strings.filter_unofficial,
         }
         for k, v in pairs.items():
             if k in filters and v in filters:
@@ -217,9 +224,7 @@ class FilteredModelManager:
             self.set_filtered(self.filter_toggle_off(filters, f))
         return self.filtered
 
-    def set_cache(
-        self, filters: tuple, model: ListStore | None, rows: list
-    ) -> None:
+    def set_cache(self, filters: tuple, model: ListStore | None, rows: list) -> None:
         self.filter_cache[filters] = (model, rows)
 
     def resync_model(self, addr: str, qport: int) -> None:
@@ -233,11 +238,11 @@ class FilteredModelManager:
                 self.control_model.remove(row)
 
         self.wipe_cache()
-        filters = AppNav.right_panel.filters_vbox.get_filters()
+        filters = self.controller.get_filters()
         refiltered = self.filter_toggle_on(filters)
         self.set_filtered(refiltered)
         self.set_success(True)
-        GLib.idle_add(AppNav.treeview._filter_cleanup)
+        GLib.idle_add(self.controller.mediator.get_active_treeview()._filter_cleanup)
 
     def convert_model_to_list(self, model: ListStore) -> list:
         return [[el for el in row] for row in model]

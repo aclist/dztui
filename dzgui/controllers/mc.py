@@ -92,7 +92,7 @@ class Controller:
         self.model_man = ModelManager()
 
         # TODO: poc
-        self.loaded = False
+        # self.loaded = False
 
     def register_widget(self, attr: str, widget: Gtk.Widget) -> None:
         try:
@@ -231,9 +231,6 @@ class Controller:
 
         Gtk.main_quit()
 
-    def get_statusbar(self) -> str:
-        return self.mediator.statusbar.get_text()
-
     @deprecated("use statusbar internal contexts")
     def remove_statusbar(self, context: str) -> None:
         c = self.mediator.statusbar.statusbar.get_context_id(context)
@@ -264,6 +261,7 @@ class Controller:
         if haversine is None:
             dist = "Unknown"
         else:
+            # FIXME: always opens file; cache distance pref
             if self.query_config(Preferences.DIST) is True:
                 raw = round(haversine.as_miles())
                 separated = number(raw)
@@ -711,10 +709,9 @@ class Controller:
 
     def get_player_count(self) -> str:
         treeview = self.get_active_treeview()
-        context = treeview.get_enum()
         model = treeview.get_model()
-        status = format_player_count(model)
-        return status
+        count = format_player_count(model)
+        return count
 
     def get_statusbar(self) -> None:
         return self.mediator.statusbar
@@ -777,3 +774,16 @@ class Controller:
     # TODO: deprecated in favor of map/unmap
     def toggle_lan_panel(self, state: bool) -> None:
         self.mediator.grid.conpan.set_visible(state)
+
+    # TODO: use model manager, map and keyword caches
+    def get_filters(self) -> list:
+        self.mediator.filters.get_filters()
+
+    def get_keyword(self) -> str:
+        self.mediator.filters.get_keyword_filter()
+
+    def get_map(self) -> str:
+        self.mediator.filters.get_selected_map()
+
+    def get_prio_map(self) -> str:
+        self.mediator.filters.get_prior_map()

@@ -1,5 +1,4 @@
 import ipaddress
-import json
 import logging
 import math
 import os
@@ -23,6 +22,7 @@ import dayzquery
 logger = logging.getLogger(__name__)
 
 # TODO: confirm that patches from testing are incorporated here
+# particularly around malformed values. check commit log
 
 params = [
     r"\nor\1\map\chernarusplus\nor\1\map\sakhal\nor\1\map\enoch\empty\1\nor\1\map\namalsk",  # noqa
@@ -180,7 +180,7 @@ def parse_json(json: list) -> list:
     return rows
 
 
-def query_direct(ip: str, qport: int, TIMEOUT: float=3.0) -> dict | None:
+def query_direct(ip: str, qport: int, TIMEOUT: float = 3.0) -> dict | None:
     try:
         info = a2s.info((ip, qport), TIMEOUT)
 
@@ -248,6 +248,7 @@ class Record:
     """
     The gameport field is manipulated by the RowType.CONN_BY_IP method
     """
+
     ip: str
     gameport: int
     qport: int
@@ -391,7 +392,7 @@ def ping(iteration: int, row: list) -> Ping:
 def query_api(key: str, appid: int, param: str) -> Res:
     LIMIT = 10000
     payload: dict[str, Union[int, str]] = {
-        "filter": r"\appid" + fr"\{appid}" + param,
+        "filter": r"\appid" + rf"\{appid}" + param,
         "limit": LIMIT,
         "key": key,
     }
@@ -401,7 +402,7 @@ def query_api(key: str, appid: int, param: str) -> Res:
         res.raise_for_status()
         parsed = True
         data = res.json()
-    except Exception as e:
+    except Exception:
         status = res.status_code
         parsed = False
         data = None
@@ -434,6 +435,7 @@ def validate_ip(addr: str) -> Record:
     qport = int(addr.split(":")[1])
     record = Record(ip, 0, qport)
     return record
+
 
 def get_rules(ip: str, qport: int) -> list[int]:
     try:

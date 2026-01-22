@@ -3,20 +3,23 @@ from dzgui.views.trees.tree_base import TreeView
 from dzgui.const.enum import ContextMenu
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 
 
 logger = logging.getLogger(__name__)
 
+
 class ContextMixin(TreeView):
-    def present_menu(self,
+    def present_menu(
+        self,
         widget: Gtk.Widget,
         event: Gdk.EventButton | Gdk.EventKey,
     ) -> None:
 
-        #if self.is_selection_empty():
-        #    return
+        if self.is_selection_empty():
+            return
 
         if event.type is Gdk.EventType.BUTTON_PRESS:
             try:

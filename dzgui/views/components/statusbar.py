@@ -1,7 +1,7 @@
 from warnings import deprecated
 from typing import Self, Union, TYPE_CHECKING
 
-from dzgui.const.enum import NotebookPage, RowType
+from dzgui.const.enum import NotebookPage, Preferences, RowType
 from dzgui.util import strings
 
 import gi

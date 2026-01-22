@@ -50,7 +50,7 @@ class ServerTreeView(TreeView):
         self.query_func: Callable = None
 
         self.filter_man = FilteredModelManager()
-        model = self.filter_man.get_model()
+        model = self.filter_man.get_model(controller)
         self.set_model(model)
 
         self.menu = Gtk.Menu()
