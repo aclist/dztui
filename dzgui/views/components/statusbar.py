@@ -1,16 +1,26 @@
-from typing import TYPE_CHECKING
+from warnings import deprecated
+from typing import Self, Union, TYPE_CHECKING
 
-from dzgui.const.enum import RowType, Preferences
+from dzgui.const.enum import NotebookPage, RowType
 from dzgui.util import strings
 
 import gi
+
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk # noqa E402
+from gi.repository import Gtk, GObject  # noqa E402
 
 if TYPE_CHECKING:
+    from dzgui.const.enum import ServerTab
     from dzgui.controllers.mc import Controller
 
+
 class Statusbar(Gtk.Grid):
+    __gsignals__ = {
+        "server_page_changed": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
+        "notebook_page_changed": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
+        "notebook_page_returned": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
+    }
+
     def __init__(self, controller: "Controller") -> None:
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
 
@@ -26,48 +36,79 @@ class Statusbar(Gtk.Grid):
         self.spinner.start()
 
         version = self.controller.get_prefs().version
-        self.status_right_label = Gtk.Label(label=version, hexpand=True, halign=Gtk.Align.END)
+        self.status_right_label = Gtk.Label(
+            label=version, hexpand=True, halign=Gtk.Align.END
+        )
 
         self.attach(self.statusbar, 0, 0, 3, 1)
         self.attach_next_to(self.spinner, self.statusbar, Gtk.PositionType.RIGHT, 3, 1)
-        self.attach_next_to(self.status_right_label, self.spinner, Gtk.PositionType.RIGHT, 3, 1)
+        self.attach_next_to(
+            self.status_right_label, self.spinner, Gtk.PositionType.RIGHT, 3, 1
+        )
 
         self.set_text(help_text, "Help")
         self.players = ""
+
+        self.connect("server_page_changed", self._on_server_page_changed)
+        self.connect("notebook_page_changed", self._on_notebook_page_changed)
+        self.connect("notebook_page_returned", self._on_notebook_page_returned)
+
+    def _on_notebook_page_changed(
+        self, statusbar: Self, context: "NotebookPage"
+    ) -> None:
+        status = context.dict["statusbar"]
+        bar = ""
+        if status is False:
+            self.set_by_context(context, "")
+            return
+
+        match context:
+            case NotebookPage.MODS:
+                bar = self.controller.format_mod_statusbar()
+            case NotebookPage.HELP:
+                bar = self.controller.get_help_text()
+        self.set_by_context(context, bar)
+
+    def _on_notebook_page_returned(
+        self, statusbar: Self, prior_context: "NotebookPage"
+    ) -> None:
+        self.pop(prior_context)
+
+    def _on_server_page_changed(self, statusbar: Self, context: "ServerTab") -> None:
+        self.pop(context)
+
+    def start_spinner(self) -> None:
+        self.spinner.start()
+
+    def stop_spinner(self) -> None:
+        self.spinner.stop()
+
+    def pop(self, context: Union["ServerTab", "NotebookPage"]) -> None:
+        cid = self.statusbar.get_context_id(str(context))
+        self.statusbar.pop(cid)
 
     def get_text(self) -> str:
         area = self.statusbar.get_message_area()
         label = area.get_children()[0]
         return label.get_text()
 
-    def set_text(self, string: str, context: str) -> None:
-        # if string is None:
-        #     return
-        meta = self.statusbar.get_context_id(context)
-        #tv = self.controller.get_active_treeview()
-        #cur_context = tv.get_enum()
-        #cid = self.get_context_by_enum(cur_context)
-        #if cid != meta:
-        #    print("requested: ", meta)
-        #    print("current: ", cid)
-        #    return
-        # TODO: substacks
-        # get_context_id(ServerTab)
+    def set_by_context(
+        self, context: Union[NotebookPage, "ServerTab"], string: str
+    ) -> None:
+        meta = self.statusbar.get_context_id(str(context))
         self.statusbar.push(meta, string)
-        #self.set_context(meta)
+        self.set_cache(string)
 
+    def get_cache(self) -> str:
+        return self.cache
 
-    # TODO: type checking
-    # def get_context_by_enum(self, context: "ServerTab") -> int:
-    #     cid = self.statusbar.get_context_id(str(context))
-    #     # TODO: substacks
-    #     return cid
-    #
-    # def get_context(self) -> int:
-    #     return self.context
-    #
-    # def set_context(self, context: int) -> None:
-    #     self.context = context
+    def set_cache(self, string: str) -> None:
+        self.cache = string
+
+    def set_text(self, string: str, context: str) -> None:
+        meta = self.statusbar.get_context_id(context)
+        self.statusbar.push(meta, string)
+        self.set_cache(string)
 
     def refresh(self, row: "RowType") -> None:
         if row is None:
@@ -76,14 +117,7 @@ class Statusbar(Gtk.Grid):
             formatted = self.format_metadata(row)
         self.set_text(formatted, "Help")
 
-    def append_distance(self, dist: str) -> None:
-        # TODO: process strings in controller
-        if dist == strings.unknown:
-            dist = f"| Distance: {dist}"
-        else:
-            dist = f"| Distance: {dist}"
-        self.set_text(self.players + dist)
-
+    @deprecated("use controller")
     def format_metadata(self, row: "RowType") -> str:
         prefix = row.dict["tooltip"]
 

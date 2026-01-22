@@ -186,6 +186,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
 
         self.prior_page: NotebookPage
         self.prior_status: str
+        self.is_return = False
 
         MainController.register_widget("notebook", self)
 
@@ -253,8 +254,8 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
             self.set_page_by_enum(self.prior_page)
             self.settings.unblock_text_entry()
             return
+        self.is_return = True
         self.set_page_by_enum(self.prior_page)
-        MainController.set_statusbar(self.prior_status)
 
     def get_page_by_enum(self) -> NotebookPage | None:
         for k, v in self.indexes.items():
@@ -267,7 +268,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
         if cur_page == NotebookPage.KEYS:
             self.return_prior()
         else:
-            self.prior_status = MainController.get_statusbar()
+            # self.prior_status = MainController.get_statusbar()
             self.set_page_by_enum(NotebookPage.KEYS)
 
     def focus_current(self) -> None:
@@ -280,11 +281,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
             return
 
         w = widget.get_children()[0]
-        try:
-            w.focus_first_row()
-            w.grab_focus()
-        except Exception:
-            w.grab_focus()
+        w.grab_focus()
 
     def get_page(self) -> Gtk.Widget | None:
         ind = self.get_current_page()
@@ -304,13 +301,19 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
         self, notebook: "Notebook", page: Gtk.Widget, page_num: int
     ) -> None:
         enum = self.get_page_by_enum()
+        # TODO: crumbs signal
         if enum is not None:
             crumbs = enum.dict["crumbs"]
-            status = enum.dict["statusbar"]
             MainController.set_crumbs(crumbs)
 
-        if status is False:
-            MainController.set_statusbar("", "")
+        if self.is_return is True:
+            MainController.mediator.statusbar.emit(
+                "notebook_page_returned", self.prior_page
+            )
+        else:
+            MainController.mediator.statusbar.emit("notebook_page_changed", enum)
+
+        self.is_return = False
         if enum is NotebookPage.SERVERS:
             MainController.present_servers()
 

@@ -7,9 +7,10 @@ from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.views.mixins.mods_mixin import ModsMixin
 from dzgui.const.enum import (
     ContextMenuGroup,
-    )
+)
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
@@ -18,6 +19,7 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
 logger = logging.getLogger(__name__)
+
 
 class ModTreeView(ModsMixin, ContextMixin, TreeView):
     def __init__(self, controller: "Controller") -> None:
@@ -32,13 +34,9 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
 
         for i, column_title in enumerate(strings.mod_cols):
             renderer = Gtk.CellRendererText()
-            column = Gtk.TreeViewColumn(
-                column_title, renderer, text=i, foreground=4
-            )
+            column = Gtk.TreeViewColumn(column_title, renderer, text=i, foreground=4)
             if i == 3:
-                column.set_cell_data_func(
-                    renderer, self._format_float, func_data=None
-                )
+                column.set_cell_data_func(renderer, self._format_float, func_data=None)
             if column_title == "Mod":
                 column.set_fixed_width(500)
             else:
@@ -57,11 +55,10 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
         self.connect("button-press-event", self._on_mods_button_press)
         self.connect("key-press-event", self._on_mods_keypress)
 
-        self.focus_first_row()
         self.s = self.get_selection().get_selected_rows()
 
     def _on_mods_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
-        #if event.keyval is Gdk.KEY_space:
+        # if event.keyval is Gdk.KEY_space:
         #    it = self.get_focused_row_iter()
         #    self.get_selection().select_iter(it)
         #    path = self.get_focused_row_path()
@@ -70,10 +67,7 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
         # TODO: parse keys
         self.present_menu(widget, event)
 
-    def _on_mods_button_press(self,
-        widget: Gtk.Widget,
-        event: Gdk.EventButton
-    ) -> None:
+    def _on_mods_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
         if event.button == 3:
             self.present_menu(widget, event)
 

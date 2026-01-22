@@ -212,6 +212,7 @@ class Controller:
         except Exception as e:
             logger.critical(e)
 
+        logger.info("Normal user exit")
         if self.mediator.window.props.is_maximized:
             Gtk.main_quit()
             return
@@ -232,20 +233,30 @@ class Controller:
 
     def remove_statusbar(self, context: str) -> None:
         c = self.mediator.statusbar.statusbar.get_context_id(context)
-        self.mediator.statusbar.statusbar.remove_all(c)
+        self.mediator.statusbar.statusbar.pop(c)
 
-    def set_statusbar(self, text: str, context: str) -> None:
-        self.mediator.statusbar.set_text(text, context)
+    def set_statusbar(self, text: str, context: str) -> int:
+        msg_id = self.mediator.statusbar.set_text(text, context)
+        return msg_id
 
     def set_statusbar_placeholder(self, text: str) -> None:
         # TODO: use statusbar stacks instead
         self.statusbar_placeholder = text
 
     def set_statusbar_dist(self, haversine: "Haversine", enum: "ServerTab") -> None:
+        # NOTE: prevent race condition where page was changed before distance was written
+        if self.mediator.notebook.get_page_by_enum() is not NotebookPage.SERVERS:
+            cid = self.mediator.statusbar.statusbar.get_context_id(str(enum))
+            self.mediator.statusbar.statusbar.pop(cid)
+            self.mediator.statusbar.spinner.stop()
+            return
+
         tv = self.get_active_treeview()
         if tv.get_enum() != enum:
             self.mediator.statusbar.spinner.stop()
             return
+
+        # NOTE: user may have changed km/mi toggle, so recalculate
         dist: str
         if haversine is None:
             dist = "Unknown"
@@ -285,7 +296,7 @@ class Controller:
             mod.append(None)
             model.append(mod)
 
-        self.update_mod_statusbar()
+        # self.update_mod_statusbar()
 
     def toggle_config(self, context: Preferences) -> None:
         config = self.prefs.paths.config
@@ -342,7 +353,6 @@ class Controller:
         # TODO: consolidate methods with set_page_by_enum
         match button.context:
             case ButtonType.EXIT:
-                logger.info("Normal user exit")
                 self.save_res_and_quit()
                 return
             case ButtonType.OPTIONS:
@@ -352,17 +362,25 @@ class Controller:
                 except Exception:
                     return
             case ButtonType.MODS:
+                # TODO: reload using refresh button, rather than on demand
                 self.load_mods()
             case ButtonType.HELP:
-                self.mediator.statusbar.refresh(RowType.CHANGELOG)
                 pass
             case ButtonType.SERVERS:
+                # TODO: drop after fixing crumbs signal
                 self.mediator.notebook.set_page_by_enum(button.opens)
                 return
 
         self.mediator.notebook.set_page_by_enum(button.opens)
         # TODO: set crumbs by signal
         self.set_crumbs(button.get_label())
+
+    def get_help_text(self) -> str:
+        tv = self.mediator.menu
+        model = self.get_help_store()
+        tree_iter = tv.get_focused_row_iter()
+        value = model.get_value(tree_iter, 0)
+        return value
 
     def open_user_workshop(self, uid: str) -> None:
         # NOTE: uid may contain leading zeroes, not a real integer
@@ -426,13 +444,10 @@ class Controller:
         model = self.model_man.get_mod_store()
         model.remove(it)
 
-    def update_mod_statusbar(self) -> None:
+    def format_mod_statusbar(self) -> None:
         total_mods, total_size = self.calc_mod_size()
         msg = format_mods(total_size, total_mods)
-        # TODO: combine
-        # meta = self.mediator.statusbar.statusbar.get_context_id("Mods")
-        # self.mediator.statusbar.statusbar.push(meta, msg)
-        self.mediator.statusbar.set_text(msg, "Mods")
+        return msg
 
     def calc_mod_size(self) -> tuple[int, int]:
         model = self.model_man.get_mod_store()
@@ -698,12 +713,24 @@ class Controller:
         context = str(treeview.enum)
         model = treeview.get_model()
         status = format_player_count(model)
-        self.set_statusbar_placeholder(status)
 
+        self.set_statusbar_placeholder(status)
         self.set_statusbar(status, context)
-        if len(model) >= 1:
-            self.mediator.statusbar.spinner.start()
-            # self.mediator.statusbar.spinner.stop()
+        #if len(model) >= 1:
+        #    self.mediator.statusbar.spinner.start()
+
+    def start_spinner(self) -> None:
+        # TODO: use signal instead
+        self.mediator.statusbar.start_spinner()
+
+    def notify_statusbar_of_notebook_change(self) -> None:
+        enum = self.mediator.notebook.get_page_by_enum()
+        self.mediator.statusbar.emit("notebook_page_changed", enum)
+
+    def notify_statusbar(self) -> None:
+        tv = self.get_active_treeview()
+        enum = tv.get_enum()
+        self.mediator.statusbar.emit("server_page_changed", enum)
 
     def populate_model(self) -> None:
         treeview = self.get_active_treeview()
@@ -722,13 +749,13 @@ class Controller:
 
     def present_servers(self) -> None:
         # TODO: abstract
-        # TODO: signal for crumbs
         self.update_server_status()
+        # TODO: signal for crumbs
         crumbs = self.mediator.servers.get_cached_label()
         self.set_crumbs(crumbs)
-        # TODO: could emit this when treeview gains keyboard focus
-        # tree = self.get_active_treeview()
-        # tree.emit("on_distcalc_started")
+
+        tree = self.get_active_treeview()
+        tree.emit("on_distcalc_started")
 
     def toggle_check(self, event: Gdk.EventKey) -> None | Literal[False]:
         mappings = {

@@ -2,11 +2,13 @@ from typing import TYPE_CHECKING
 from dzgui.views.trees.tree_menu import MenuTreeView
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+
 
 class Help(Gtk.ScrolledWindow):
     def __init__(self, controller: "Controller") -> None:
@@ -15,7 +17,8 @@ class Help(Gtk.ScrolledWindow):
         self.add(self.treeview)
 
         self.controller = controller
-        self.controller.register_widget("menu", self.treeview)
+
+        self.treeview.focus_first_row()
 
     def get_treeview(self) -> MenuTreeView:
         return self.treeview

@@ -150,7 +150,8 @@ class ServerTreeView(TreeView):
         # this can probably be dropped in favor of statusbar cache system
         # meta = self.controller.mediator.statusbar.statusbar.get_context_id("Mods")
         # self.controller.mediator.statusbar.statusbar.pop(meta)
-        self.emit("on_distcalc_started")
+        pass
+        # self.emit("on_distcalc_started")
 
     def get_enum(self) -> None:
         return self.enum
@@ -215,8 +216,17 @@ class ServerTreeView(TreeView):
         record = self.get_record()
         if record is None:
             return
-        # TODO:
-        self.controller.mediator.statusbar.spinner.start()
+
+        cache = self.controller.get_dist_cache()
+
+        if record.ip in cache:
+            haversine = cache[record.ip]
+            self.controller.set_statusbar_dist(haversine, None)
+            return
+
+        if len(self.get_model()) > 1:
+            self.controller.start_spinner()
+
         self.current_proc = CalcDist(
             record.ip, self.get_enum(), self.queue, self.controller
         )
@@ -232,12 +242,10 @@ class ServerTreeView(TreeView):
         cache = self.controller.get_dist_cache()
 
         if latest_result:
-            # NOTE: if CalcDist was spawned on other tab
             addr = latest_result[0]
             haversine = latest_result[1]
             if addr not in cache:
                 cache[addr] = haversine
-            # FIXME
             self.controller.set_statusbar_dist(haversine, self.get_enum())
         return True
 
@@ -253,7 +261,6 @@ class ServerTreeView(TreeView):
                 case Gdk.KEY_r:
                     self.refresh_player_count()
                 case Gdk.KEY_f:
-                    # TODO: register filter panel instead of mediating thru right panel
                     self.controller.mediator.filters.keyword_entry.grab_focus()
                 case Gdk.KEY_m:
                     self.controller.mediator.filters.maps_entry.grab_focus()
@@ -344,7 +351,7 @@ class ServerTreeView(TreeView):
         qport = self.get_value_at_index(8)
         return f"{addr}:{qport}"
 
-    def get_record(self) -> dict | None:
+    def get_record(self) -> Record | None:
         # TODO: delegate to controller
         select = self.get_selection()
         sels = select.get_selected_rows()
