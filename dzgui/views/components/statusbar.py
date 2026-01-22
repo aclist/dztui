@@ -103,7 +103,7 @@ class Statusbar(Gtk.Grid):
 
         self.set_by_context(context, c)
         tree = self.controller.get_active_treeview()
-        tree.emit("on_distcalc_started")
+        tree.emit("distcalc_started")
 
     def pop(self, context: Union["ServerTab", "NotebookPage"]) -> None:
         cid = self.statusbar.get_context_id(str(context))

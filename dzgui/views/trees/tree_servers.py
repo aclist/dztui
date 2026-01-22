@@ -34,7 +34,7 @@ class EnumeratedMenuItem(Gtk.MenuItem):
 
 
 class ServerTreeView(TreeView):
-    __gsignals__ = {"on_distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())}
+    __gsignals__ = {"distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())}
 
     def __init__(
         self, controller: "Controller", enum: ServerTab, menu: ContextMenuGroup
@@ -105,14 +105,13 @@ class ServerTreeView(TreeView):
             column.connect("notify::fixed-width", self._on_col_width_changed)
             self.append_column(column)
 
-        self.connect("on_distcalc_started", self._on_distcalc_started)
+        self.connect("distcalc_started", self._on_distcalc_started)
         self.connect("button-release-event", self._on_server_button_release)
         self.connect("key-press-event", self._on_server_keypress)
         self.connect("generic_row_activated", self._parent_row_activated)
         self.connect("generic_treesel_changed", self._parent_selection_changed)
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
-        self.connect("focus-in-event", self._on_kb_focus)
 
         GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
 
@@ -144,14 +143,6 @@ class ServerTreeView(TreeView):
             else:
                 width = size.width * 1.65
             col.set_fixed_width(width)
-
-    def _on_kb_focus(self, a, b) -> None:
-        # TODO: may generate superfluous calc events when page changed but selection is the same
-        # this can probably be dropped in favor of statusbar cache system
-        # meta = self.controller.mediator.statusbar.statusbar.get_context_id("Mods")
-        # self.controller.mediator.statusbar.statusbar.pop(meta)
-        pass
-        # self.emit("on_distcalc_started")
 
     def get_enum(self) -> None:
         return self.enum
@@ -343,7 +334,7 @@ class ServerTreeView(TreeView):
 
     def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
         self.terminate_process()
-        self.emit("on_distcalc_started")
+        self.emit("distcalc_started")
 
     def get_record_string(self) -> str:
         addr = self.get_value_at_index(7)
