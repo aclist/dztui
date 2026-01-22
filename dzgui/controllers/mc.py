@@ -2,6 +2,7 @@ import logging
 import shutil
 import threading
 import traceback
+from warnings import deprecated
 
 from pathlib import Path
 from typing import Any, Callable, Literal, TYPE_CHECKING
@@ -83,6 +84,7 @@ class AppNavigation:
 class Controller:
     def __init__(self) -> None:
         self.dist_cache: dict[str, "Haversine", "ServerTab"] = {}
+        # TODO: store in crumbs class
         self.crumbs_cache = ""
         self.mediator = AppNavigation()
         self.prefs: UserPrefs
@@ -98,6 +100,7 @@ class Controller:
         except AttributeError:
             logger.critical(f"{attr} is not a valid AppNavigation attribute.")
 
+    # TODO: relegate to crumbs class
     def set_crumbs(self, text: str) -> None:
         self.mediator.grid.set_breadcrumbs(text)
 
@@ -231,29 +234,29 @@ class Controller:
     def get_statusbar(self) -> str:
         return self.mediator.statusbar.get_text()
 
+    @deprecated("use statusbar internal contexts")
     def remove_statusbar(self, context: str) -> None:
         c = self.mediator.statusbar.statusbar.get_context_id(context)
         self.mediator.statusbar.statusbar.pop(c)
 
+    # TODO: use set_by_context()
     def set_statusbar(self, text: str, context: str) -> int:
         msg_id = self.mediator.statusbar.set_text(text, context)
         return msg_id
 
-    def set_statusbar_placeholder(self, text: str) -> None:
-        # TODO: use statusbar stacks instead
-        self.statusbar_placeholder = text
-
     def set_statusbar_dist(self, haversine: "Haversine", enum: "ServerTab") -> None:
-        # NOTE: prevent race condition where page was changed before distance was written
-        if self.mediator.notebook.get_page_by_enum() is not NotebookPage.SERVERS:
-            cid = self.mediator.statusbar.statusbar.get_context_id(str(enum))
-            self.mediator.statusbar.statusbar.pop(cid)
+        tv = self.get_active_treeview()
+        context = tv.get_enum()
+        page = self.mediator.notebook.get_page_by_enum()
+        """
+        NOTE: prevents race condition when notebook page changed,
+        but allows caching the distance in the background
+        """
+        if page != NotebookPage.SERVERS:
             self.mediator.statusbar.spinner.stop()
             return
-
-        tv = self.get_active_treeview()
-        if tv.get_enum() != enum:
-            self.mediator.statusbar.spinner.stop()
+        if enum != context:
+            self.mediator.statusbar.emit("distcalc_ended", None, context)
             return
 
         # NOTE: user may have changed km/mi toggle, so recalculate
@@ -269,10 +272,8 @@ class Controller:
                 raw = round(haversine.as_kilometers())
                 separated = number(raw)
                 dist = str(separated) + " km"
-        text = self.statusbar_placeholder
-        # TODO: abstract
-        self.set_statusbar(f"{text} | Distance: {dist}", "Servers")
-        self.mediator.statusbar.spinner.stop()
+
+        self.mediator.statusbar.emit("distcalc_ended", dist, context)
 
     def delete_multiple_mods(self) -> None:
         sel = self.mediator.modtreeview.get_selection()
@@ -334,6 +335,8 @@ class Controller:
 
     def toggle_server_panels(self, state: bool) -> None:
         # TODO: this is going to be signal dependent now
+        # cf. map/unmap
+        #self.mediator.grid.emit("toggle panels", state)
         self.mediator.grid.toggle_filter_panel(state)
         self.mediator.grid.toggle_connect_panel(state)
         self.mediator.grid.toggle_refresh_button(state)
@@ -343,8 +346,6 @@ class Controller:
 
     def show_developers_page(self) -> None:
         self.open_page(NotebookPage.DEVELOPERS)
-        # TODO: put cursor on first row
-        # self.mediator.developers.focus_first_row()
 
     def open_page(self, page: NotebookPage) -> None:
         self.mediator.grid.notebook.set_page_by_enum(page)
@@ -599,10 +600,11 @@ class Controller:
             for row in data:
                 manager.append_row(row)
             treeview.set_loaded(True)
-            self.update_server_status()
+            self.mediator.statusbar.emit("server_page_changed", context)
             treeview.grab_focus()
 
         treeview = self.get_active_treeview()
+        context = treeview.get_enum()
 
         manager = treeview.get_filter_man()
         data = self.data
@@ -707,30 +709,15 @@ class Controller:
         treeview.set_loaded(False)
         self.populate_model()
 
-    def update_server_status(self) -> None:
-        # TODO: emit signal on statusbar only if page changed
+    def get_player_count(self) -> str:
         treeview = self.get_active_treeview()
-        context = str(treeview.enum)
+        context = treeview.get_enum()
         model = treeview.get_model()
         status = format_player_count(model)
+        return status
 
-        self.set_statusbar_placeholder(status)
-        self.set_statusbar(status, context)
-        #if len(model) >= 1:
-        #    self.mediator.statusbar.spinner.start()
-
-    def start_spinner(self) -> None:
-        # TODO: use signal instead
-        self.mediator.statusbar.start_spinner()
-
-    def notify_statusbar_of_notebook_change(self) -> None:
-        enum = self.mediator.notebook.get_page_by_enum()
-        self.mediator.statusbar.emit("notebook_page_changed", enum)
-
-    def notify_statusbar(self) -> None:
-        tv = self.get_active_treeview()
-        enum = tv.get_enum()
-        self.mediator.statusbar.emit("server_page_changed", enum)
+    def get_statusbar(self) -> None:
+        return self.mediator.statusbar
 
     def populate_model(self) -> None:
         treeview = self.get_active_treeview()
@@ -748,14 +735,13 @@ class Controller:
         self.mediator.right_panel.focus_button_box()
 
     def present_servers(self) -> None:
-        # TODO: abstract
-        self.update_server_status()
+        treeview = self.get_active_treeview()
+        context = treeview.get_enum()
+
+        self.mediator.statusbar.emit("server_page_changed", context)
         # TODO: signal for crumbs
         crumbs = self.mediator.servers.get_cached_label()
         self.set_crumbs(crumbs)
-
-        tree = self.get_active_treeview()
-        tree.emit("on_distcalc_started")
 
     def toggle_check(self, event: Gdk.EventKey) -> None | Literal[False]:
         mappings = {

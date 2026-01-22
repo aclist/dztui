@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+
 from math import radians, cos, sin, asin, sqrt
 from typing import TYPE_CHECKING
 

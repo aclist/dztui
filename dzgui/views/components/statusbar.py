@@ -19,6 +19,8 @@ class Statusbar(Gtk.Grid):
         "server_page_changed": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
         "notebook_page_changed": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
         "notebook_page_returned": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
+        "distcalc_ended": (GObject.SignalFlags.RUN_FIRST, None, (object, str)),
+        "server_row_changed": (GObject.SignalFlags.RUN_FIRST, None, ()),
     }
 
     def __init__(self, controller: "Controller") -> None:
@@ -29,7 +31,7 @@ class Statusbar(Gtk.Grid):
 
         help_text = strings.statusbar_helptext
 
-        self.context: int
+        self.playercount = ""
         self.statusbar = Gtk.Statusbar()
 
         self.spinner = Gtk.Spinner()
@@ -49,9 +51,11 @@ class Statusbar(Gtk.Grid):
         self.set_text(help_text, "Help")
         self.players = ""
 
+        self.connect("server_row_changed", self._on_server_row_changed)
         self.connect("server_page_changed", self._on_server_page_changed)
         self.connect("notebook_page_changed", self._on_notebook_page_changed)
         self.connect("notebook_page_returned", self._on_notebook_page_returned)
+        self.connect("distcalc_ended", self._on_distcalc_ended)
 
     def _on_notebook_page_changed(
         self, statusbar: Self, context: "NotebookPage"
@@ -67,21 +71,39 @@ class Statusbar(Gtk.Grid):
                 bar = self.controller.format_mod_statusbar()
             case NotebookPage.HELP:
                 bar = self.controller.get_help_text()
+            case NotebookPage.SERVERS:
+                pass
+
         self.set_by_context(context, bar)
 
     def _on_notebook_page_returned(
-        self, statusbar: Self, prior_context: "NotebookPage"
+        self, statusbar: Self, prior_context: NotebookPage
     ) -> None:
         self.pop(prior_context)
 
-    def _on_server_page_changed(self, statusbar: Self, context: "ServerTab") -> None:
-        self.pop(context)
-
-    def start_spinner(self) -> None:
+    def _on_server_row_changed(self, statusbar: Self) -> None:
         self.spinner.start()
 
-    def stop_spinner(self) -> None:
+    def _on_distcalc_ended(
+        self,
+        statusbar: Self,
+        dist: Union[str, None],
+        context: Union["ServerTab", NotebookPage],
+    ) -> None:
         self.spinner.stop()
+        if dist is None:
+            self.set_by_context(context, self.playercount)
+        else:
+            pretty = f"{self.playercount} | Distance: {dist}"
+            self.set_by_context(context, pretty)
+
+    def _on_server_page_changed(self, statusbar: Self, context: "ServerTab") -> None:
+        c = self.controller.get_player_count()
+        self.playercount = c
+
+        self.set_by_context(context, c)
+        tree = self.controller.get_active_treeview()
+        tree.emit("on_distcalc_started")
 
     def pop(self, context: Union["ServerTab", "NotebookPage"]) -> None:
         cid = self.statusbar.get_context_id(str(context))

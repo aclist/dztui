@@ -213,19 +213,19 @@ class ServerTreeView(TreeView):
             self.current_proc.terminate()
 
     def _on_distcalc_started(self, treeview: Self):
+        bar = self.controller.get_statusbar()
+
         record = self.get_record()
         if record is None:
             return
 
+        bar.emit("server_row_changed")
         cache = self.controller.get_dist_cache()
 
         if record.ip in cache:
             haversine = cache[record.ip]
-            self.controller.set_statusbar_dist(haversine, None)
+            self.controller.set_statusbar_dist(haversine, self.get_enum())
             return
-
-        if len(self.get_model()) > 1:
-            self.controller.start_spinner()
 
         self.current_proc = CalcDist(
             record.ip, self.get_enum(), self.queue, self.controller
@@ -233,7 +233,6 @@ class ServerTreeView(TreeView):
         self.current_proc.start()
 
     def _check_result_queue(self) -> Literal[True]:
-        # TODO: trigger signal when changing page contexts
         # TODO: delegate to controller
         latest_result = None
         while not self.queue.empty():
