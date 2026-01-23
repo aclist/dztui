@@ -300,22 +300,20 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
     def _on_page_changed(
         self, notebook: "Notebook", page: Gtk.Widget, page_num: int
     ) -> None:
-        enum = self.get_page_by_enum()
+        return
+        # enum = self.get_page_by_enum()
         # TODO: crumbs signal
-        if enum is not None:
-            crumbs = enum.dict["crumbs"]
-            MainController.set_crumbs(crumbs)
+        # if enum is not None:
+        #     crumbs = enum.dict["crumbs"]
+        #     MainController.set_crumbs(crumbs)
 
-        if self.is_return is True:
-            MainController.mediator.statusbar.emit(
-                "notebook_page_returned", self.prior_page
-            )
-        else:
-            MainController.mediator.statusbar.emit("notebook_page_changed", enum)
-
-        self.is_return = False
-        #if enum is NotebookPage.SERVERS:
-        #    MainController.present_servers()
+        # if self.is_return is True:
+        #     MainController.mediator.statusbar.emit(
+        #         "notebook_page_returned", self.prior_page
+        #     )
+        # else:
+        #     MainController.mediator.statusbar.emit("notebook_page_changed", enum)
+        # self.is_return = False
 
 
 class Grid(Gtk.Grid):
@@ -331,17 +329,21 @@ class Grid(Gtk.Grid):
 
         self.statusbar = Statusbar(MainController)
         self.right_panel = RightPanel(MainController)
-        self.breadcrumbs = Gtk.Label(halign=Gtk.Align.START)
-        self.set_breadcrumbs(strings.label_main_menu)
+        # self.breadcrumbs = Gtk.Label(halign=Gtk.Align.START)
+        # self.set_breadcrumbs(strings.label_main_menu)
 
-        self.bu = Gtk.Button(label="Shrink to fit", halign=Gtk.Align.END)
-        self.crumb_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        self.crumb_box.add(self.breadcrumbs)
-        self.crumb_box.add(self.bu)
-        self.bu.connect("clicked", self._shrink)
+        # self.bu = Gtk.Button(label="Shrink to fit", halign=Gtk.Align.END)
+        # self.bu.connect("clicked", self._shrink)
+
+        # self.crumb_box.add(self.bu)
 
         self.notebook = Notebook()
         self.conpan = ConnectPanel(MainController)
+        from dzgui.views.components.crumbs import Breadcrumbs
+
+        self.breadcrumbs = Breadcrumbs(MainController)
+        self.crumb_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self.crumb_box.add(self.breadcrumbs)
 
         self.attach(self.notebook, 0, 0, MAX_COLS, SINGLE_ROW)
 

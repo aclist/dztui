@@ -2,6 +2,7 @@ import a2s
 import requests
 import shutil
 import subprocess
+from warnings import deprecated
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -13,6 +14,7 @@ from dzgui.const.endpoints import COORDS_API, IP_ECHO
 
 if TYPE_CHECKING:
     from pathlib import Path
+
 
 @dataclass
 class Coords:
@@ -51,11 +53,11 @@ def get_coords(ips: "Path", ip: str) -> Coords:
 
     prefix = f"^{split[0]}.{split[1]}."
 
-    proc = subprocess.run(
-        ["/usr/bin/grep", "-E", prefix, ips],
-        capture_output=True,
-        text=True
-    )
+    if shutil.which("rg") is not None:
+        args = ["/usr/bin/rg", prefix, ips]
+    else:
+        args = ["/usr/bin/grep", "-E", prefix, ips]
+    proc = subprocess.run(args, capture_output=True, text=True)
 
     if proc.returncode != 0:
         raise GeolocationError("Failed to split records")
@@ -80,9 +82,9 @@ def get_coords(ips: "Path", ip: str) -> Coords:
             return Coords(float(fields[-2]), float(fields[-1]))
     raise GeolocationError("No matching records found")
 
+
 def get_local_ip() -> str:
     ip = ""
-    # TODO: use shlex
     if shutil.which("dig") is not None:
         proc = subprocess.run(
             [
@@ -90,10 +92,10 @@ def get_local_ip() -> str:
                 "-4",
                 "+short",
                 "myip.opendns.com",
-                "@resolver1.opendns.com"
+                "@resolver1.opendns.com",
             ],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         if proc.returncode == 0:
@@ -110,7 +112,7 @@ def resolve_ip(address: Record) -> Record:
     """
     Multiple game modes may be hosted on the same IP and query port,
     but resolve to different game ports. The canonical record must
-    contain the real game port. This is merely used when saving a 
+    contain the real game port. This is merely used when saving a
     record as a UUID.
     """
     res = a2s.info((address.ip, address.qport))
@@ -121,17 +123,13 @@ def resolve_ip(address: Record) -> Record:
 def is_valid_port(port: str) -> bool:
     if len(port) < 1:
         return True
-    if (
-        not port.isdigit()
-        or int(port) == 0
-        or int(port[0]) == 0
-        or int(port) > 65535
-    ):
+    if not port.isdigit() or int(port) == 0 or int(port[0]) == 0 or int(port) > 65535:
         return True
     return False
 
-# TODO: deprecated
-#def get_local_coords(ip: str):
-#    url = COORDS_API + "/" + ip
-#    #local res=$(curl -Ls "$url" | jq -r '"\(.lat)\n\(.lon)"')
-#    return url
+
+@deprecated("use ips.csv")
+def get_local_coords(ip: str):
+    url = COORDS_API + "/" + ip
+    # local res=$(curl -Ls "$url" | jq -r '"\(.lat)\n\(.lon)"')
+    return url

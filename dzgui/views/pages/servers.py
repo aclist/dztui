@@ -21,7 +21,6 @@ class ServerNotebook(Gtk.ScrolledWindow):
     def __init__(self, controller: "Controller"):
         super().__init__()
 
-        self.tab_cache = ""
         self.controller = controller
         self.controller.register_widget("servers", self)
         self.notebook = Gtk.Notebook(show_tabs=True)
@@ -56,9 +55,6 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
 
-        # TODO: strings
-        self.set_crumbs("Server browser")
-
     def _on_map(self, widget: Self) -> None:
         self.controller.toggle_server_panels(True)
 
@@ -77,10 +73,10 @@ class ServerNotebook(Gtk.ScrolledWindow):
                 return
         self.get_active_treeview().grab_focus()
 
-    def set_crumbs(self, text: str) -> None:
-        string = f"Servers > {text}"
-        self.controller.set_crumbs(string)
-        self.set_cached_label(string)
+    def get_current_tab_text(self) -> None:
+        ind = self.notebook.get_current_page()
+        child = self.notebook.get_nth_page(ind)
+        return self.notebook.get_tab_label_text(child)
 
     def _on_page_changed(
         self, notebook: Gtk.Notebook, child: Gtk.Widget, index: int
@@ -88,10 +84,6 @@ class ServerNotebook(Gtk.ScrolledWindow):
         if self.controller.loaded is False:
             return
 
-        # TODO :signals
-        # emit signal to crumbs
-        # emit signal to statusbar
-        # TODO: abstract
         label = self.notebook.get_tab_label_text(child)
         if label is None:
             return
@@ -99,16 +91,7 @@ class ServerNotebook(Gtk.ScrolledWindow):
         # TODO: strings
         text = label.strip("*")
         self.notebook.set_tab_label_text(child, text)
-        self.set_crumbs(text)
-
-        #self.controller.present_servers()
         self.controller.populate_model()
-
-    def set_cached_label(self, label: str) -> None:
-        self.tab_cache = label
-
-    def get_cached_label(self) -> str:
-        return self.tab_cache
 
     def get_active_treeview(self) -> ServerTreeView:
         index = self.notebook.get_current_page()

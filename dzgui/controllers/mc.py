@@ -81,11 +81,9 @@ class AppNavigation:
     filters: "FilterPanel"
 
 
-class Controller:
+class Controller(GObject.GObject):
     def __init__(self) -> None:
         self.dist_cache: dict[str, "Haversine", "ServerTab"] = {}
-        # TODO: store in crumbs class
-        self.crumbs_cache = ""
         self.mediator = AppNavigation()
         self.prefs: UserPrefs
 
@@ -99,13 +97,6 @@ class Controller:
             setattr(self.mediator, attr, widget)
         except AttributeError:
             logger.critical(f"{attr} is not a valid AppNavigation attribute.")
-
-    # TODO: relegate to crumbs class
-    def set_crumbs(self, text: str) -> None:
-        self.mediator.grid.set_breadcrumbs(text)
-
-    def get_crumbs(self) -> str:
-        return self.mediator.grid.get_breadcrumbs()
 
     def get_help_store(self) -> Gtk.ListStore:
         return self.model_man.get_help_store()
@@ -363,16 +354,8 @@ class Controller:
             case ButtonType.MODS:
                 # TODO: reload using refresh button, rather than on demand
                 self.load_mods()
-            case ButtonType.HELP:
-                pass
-            case ButtonType.SERVERS:
-                # TODO: drop after fixing crumbs signal
-                self.mediator.notebook.set_page_by_enum(button.opens)
-                return
 
         self.mediator.notebook.set_page_by_enum(button.opens)
-        # TODO: set crumbs by signal
-        self.set_crumbs(button.get_label())
 
     def get_help_row(self) -> str:
         tv = self.mediator.menu
@@ -696,12 +679,6 @@ class Controller:
 
     def propagate_column_width(self, col: Gtk.TreeViewColumn) -> None:
         GLib.idle_add(self.mediator.servers.update_tab_widths, col)
-
-    def set_crumbs_cache(self, text: str) -> None:
-        self.crumbs_cache = text
-
-    def get_crumbs_cache(self) -> str:
-        return self.crumbs_cache
 
     def refresh_tree(self) -> None:
         treeview = self.get_active_treeview()

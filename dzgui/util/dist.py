@@ -67,13 +67,14 @@ class CalcDist(multiprocessing.Process):
         self.result_queue.put([self.addr, dist, self.enum])
 
     def compare(self, remote: str) -> int | None:
+        # TODO: cache this
         prefs = self.controller.get_prefs()
         local = prefs.coords
         if local is None:
             return None
         try:
             remote = get_coords(prefs.paths.ips, remote)
-        except GeolocationError:
+        except Exception:
             return None
 
         # TODO: handle failed remote dist
