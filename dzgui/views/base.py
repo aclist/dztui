@@ -14,6 +14,7 @@ from dzgui.util.format import embolden
 # TODO: import notebook only and add components there?
 from dzgui.views.pages.changelog import Changelog
 from dzgui.views.components.connect_panel import ConnectPanel
+from dzgui.views.components.crumbs import Breadcrumbs
 from dzgui.views.pages.devs import Developers
 from dzgui.views.pages.help import Help
 from dzgui.views.pages.keys import Keybindings
@@ -185,8 +186,6 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
         super().__init__(show_tabs=False)
 
         self.prior_page: NotebookPage
-        self.prior_status: str
-        self.is_return = False
 
         MainController.register_widget("notebook", self)
 
@@ -254,7 +253,6 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
             self.set_page_by_enum(self.prior_page)
             self.settings.unblock_text_entry()
             return
-        self.is_return = True
         self.set_page_by_enum(self.prior_page)
 
     def get_page_by_enum(self) -> NotebookPage | None:
@@ -268,7 +266,6 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
         if cur_page == NotebookPage.KEYS:
             self.return_prior()
         else:
-            # self.prior_status = MainController.get_statusbar()
             self.set_page_by_enum(NotebookPage.KEYS)
 
     def focus_current(self) -> None:
@@ -300,20 +297,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
     def _on_page_changed(
         self, notebook: "Notebook", page: Gtk.Widget, page_num: int
     ) -> None:
-        return
-        # enum = self.get_page_by_enum()
-        # TODO: crumbs signal
-        # if enum is not None:
-        #     crumbs = enum.dict["crumbs"]
-        #     MainController.set_crumbs(crumbs)
-
-        # if self.is_return is True:
-        #     MainController.mediator.statusbar.emit(
-        #         "notebook_page_returned", self.prior_page
-        #     )
-        # else:
-        #     MainController.mediator.statusbar.emit("notebook_page_changed", enum)
-        # self.is_return = False
+        pass
 
 
 class Grid(Gtk.Grid):
@@ -329,17 +313,13 @@ class Grid(Gtk.Grid):
 
         self.statusbar = Statusbar(MainController)
         self.right_panel = RightPanel(MainController)
-        # self.breadcrumbs = Gtk.Label(halign=Gtk.Align.START)
-        # self.set_breadcrumbs(strings.label_main_menu)
 
         # self.bu = Gtk.Button(label="Shrink to fit", halign=Gtk.Align.END)
         # self.bu.connect("clicked", self._shrink)
-
         # self.crumb_box.add(self.bu)
 
         self.notebook = Notebook()
         self.conpan = ConnectPanel(MainController)
-        from dzgui.views.components.crumbs import Breadcrumbs
 
         self.breadcrumbs = Breadcrumbs(MainController)
         self.crumb_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -382,14 +362,6 @@ class Grid(Gtk.Grid):
 
     def toggle_refresh_button(self, state: bool) -> None:
         self.right_panel.refresh_button.set_visible(state)
-
-    # TODO: make this method internal to Statusbar
-    def get_breadcrumbs(self) -> str:
-        return self.breadcrumbs.get_text()
-
-    def set_breadcrumbs(self, text: str) -> None:
-        crumbs = embolden(text)
-        self.breadcrumbs.set_markup(crumbs)
 
 
 class App(Gtk.Application):
