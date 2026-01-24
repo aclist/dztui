@@ -46,16 +46,22 @@ class FilteredModelManager:
         self.ping_cache: dict[str, int] = {}
 
         self.model = self.new_model_from_class(ServerColumns)
+        self.real_model = self.new_model_from_class(ServerColumns)
 
         self.control_model = None
         self.filtered = None
         self.success = True
 
     def append_row(self, row: list) -> None:
-        self.model.append(row)
+        self.real_model.append(row)
+        # NOTE: append null rows to thin client
+        self.model.append()
 
     def clear_model(self) -> None:
         self.model.clear()
+
+    def get_real_model(self) -> ListStore:
+        return self.real_model
 
     def get_model(self) -> ListStore:
         return self.model

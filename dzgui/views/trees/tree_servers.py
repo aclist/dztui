@@ -1,6 +1,6 @@
 import logging
 import multiprocessing
-from typing import Self
+from typing import Any, Self
 
 from dzgui.const.enum import ContextMenu, ContextMenuGroup, FilterMode, ServerTab
 from dzgui.api.servers import Record
@@ -76,6 +76,7 @@ class ServerTreeView(TreeView):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
+            column.set_cell_data_func(renderer, self._lazy_load, func_data=i)
             column.set_resizable(True)
             column.set_sort_column_id(i)
 
@@ -335,6 +336,8 @@ class ServerTreeView(TreeView):
         print(self.get_value_at_index(0))
 
     def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
+        # TODO: lazy load
+        # https://stackoverflow.com/questions/3164262/lazy-loaded-list-view-in-gtk
         self.terminate_process()
         self.emit("distcalc_started")
 
@@ -348,6 +351,7 @@ class ServerTreeView(TreeView):
         select = self.get_selection()
         sels = select.get_selected_rows()
         (model, pathlist) = sels
+        # TODO: clean up per lazy load logic
         if len(pathlist) < 1:
             return None
         path = pathlist[0]
@@ -355,6 +359,8 @@ class ServerTreeView(TreeView):
         if not model:
             return None
         addr = model[path][7]
+        if addr is None:
+            return
         qport = model[path][8]
         ip = addr.split(":")[0]
         gameport = int(addr.split(":")[1])
@@ -365,3 +371,23 @@ class ServerTreeView(TreeView):
 
     def set_loaded(self, status: bool) -> None:
         self.loaded = status
+
+    def _lazy_load(
+        self,
+        column: Gtk.TreeViewColumn,
+        cell: Gtk.CellRendererText,
+        model: Gtk.TreeModel,
+        it: Gtk.TreeIter,
+        col_index: int,
+    ) -> Any:
+        # TODO: initially load empty rows
+        # TODO: if cell is in visible range
+        path = model.get_path(it)
+        row_index = path.get_indices()[0]
+        start, end = self.get_visible_range()
+        if row_index >= start[0] <= end[0]:
+            real_model = self.filter_man.get_real_model()
+            value = real_model[row_index][col_index]
+            cell.set_property("text", str(value))
+        else:
+            return

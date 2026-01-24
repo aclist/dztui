@@ -124,7 +124,7 @@ def parse_json(json: list) -> list:
             view = strings.filter_3pp
 
         if "external" in r:
-            provider = strings.filter_unoffiical
+            provider = strings.filter_unofficial
         else:
             provider = strings.filter_official
 
@@ -396,16 +396,16 @@ def query_api(key: str, appid: int, param: str) -> Res:
         "limit": LIMIT,
         "key": key,
     }
-
     try:
-        res = requests.get(STEAM_SERVERS, params=payload, timeout=REQUEST_TIMEOUT)
+        res = requests.get(STEAM_SERVERS, params=payload, timeout=5)
         res.raise_for_status()
         parsed = True
+        status = 200
         data = res.json()
     except Exception:
-        status = res.status_code
         parsed = False
         data = None
+        status = 403
     finally:
         return Res(status, parsed, data)
 

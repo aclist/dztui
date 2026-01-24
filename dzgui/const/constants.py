@@ -4,7 +4,7 @@ UDP_PORT = 27016
 VM_FILE = "/proc/sys/vm/max_map_count"
 MIN_COUNT = 1048576
 
-REQUEST_TIMEOUT = 1
+REQUEST_TIMEOUT = 5
 
 APPNAME_DAYZ = "DayZ"
 APPNAME_DAYZ_EXP = "DayZ Experimental"

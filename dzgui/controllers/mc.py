@@ -4,10 +4,13 @@ import threading
 import traceback
 from warnings import deprecated
 
+from concurrent.futures import wait
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Callable, Literal, TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
+import dzgui.api.servers as Servers
 import dzgui.util._json as JSON  # noqa
 from dzgui.views.dialogs.generic import ExceptionDialog
 
@@ -353,6 +356,42 @@ class Controller(GObject.GObject):
 
         self.mediator.notebook.set_page_by_enum(button.opens)
 
+    def _dump_api(self):
+        key = self.query_config(Preferences.STEAM)
+        job = Servers.query_api
+        params = Servers.params
+        serv = []
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(job, key, APPID_DAYZ, param)
+                for param in params
+            ]
+            wait(futures)
+            for future in futures:
+                res = future.result()
+                if res.status != 200 or not res.parsed:
+                    # ModelManager.set_store(None)
+                    # ModelManager.set_success(False)
+                    # GLib.idle_add(self._filter_cleanup)
+                    print("status error")
+                    return
+                j = res.json
+                serv += j["response"]["servers"]
+
+        res = Servers.query_api(key, APPID_DAYZ_EXP, "")
+        if res.status == 200 and res.parsed is True:
+            j = res.json
+            serv += j["response"]["servers"]
+
+        parsed = Servers.parse_json(serv)
+        self.data = parsed
+        self.get_func_data()
+        self.destroy_on_idle()
+        # try:
+        # except Exception as e:
+        #     print(e)
+        # return parsed
+
     def get_help_row(self) -> str:
         tv = self.mediator.menu
         model = self.get_help_store()
@@ -538,20 +577,6 @@ class Controller(GObject.GObject):
         self.data = (
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "172.111.51.156:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
         )
         # TODO: refer to prior implementation--should need to load data into model while in thread
         self.get_func_data()
@@ -561,6 +586,16 @@ class Controller(GObject.GObject):
         import time
         time.sleep(1)
         self.data = (
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "172.111.51.156:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
         )
         # TODO: refer to prior implementation--should need to load data into model while in thread
@@ -572,8 +607,11 @@ class Controller(GObject.GObject):
             # NOTE: do not insert model until main thread is idle
             # TODO: grab from model manager and insert entire model
             # TODO: do not start refresh button count until load finished
+            # TODO: append rows into filtered model
+            # when complete, destroy dialog and set model
             for row in data:
                 manager.append_row(row)
+            treeview.set_model(manager.get_model())
             treeview.set_loaded(True)
             self.mediator.statusbar.emit("server_page_changed", context)
             treeview.grab_focus()
@@ -699,6 +737,7 @@ class Controller(GObject.GObject):
             return
         manager = treeview.get_filter_man()
         # TODO: this may lag?
+        treeview.set_model(None)
         manager.clear_model()
         self.set_callback(None, None)
         self.call_on_thread(func)
