@@ -1,13 +1,11 @@
 import logging
-from typing import Any, TYPE_CHECKING
+from typing import Any, Self, TYPE_CHECKING
 
 from dzgui.util import strings, localize
 from dzgui.views.trees.tree_base import TreeView
 from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.views.mixins.mods_mixin import ModsMixin
-from dzgui.const.enum import (
-    ContextMenuGroup,
-)
+from dzgui.const.enum import ContextMenuGroup
 
 import gi
 
@@ -54,8 +52,12 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
         self.connect("generic_treesel_changed", self._parent_selection_changed)
         self.connect("button-press-event", self._on_mods_button_press)
         self.connect("key-press-event", self._on_mods_keypress)
+        self.connect("map", self._on_map)
 
-        # self.s = self.get_selection().get_selected_rows()
+    def _on_map(self, tree: Self) -> None:
+        # TODO: placeholder logic
+        # identify root cause of row unfocus on init
+        self.set_cursor(0)
 
     def _on_mods_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
         # TODO: multiselect
