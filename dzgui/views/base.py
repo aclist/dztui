@@ -5,7 +5,7 @@ import warnings
 from typing import TYPE_CHECKING, Literal
 
 from dzgui.const.enum import NotebookPage
-from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, STEAM_TRAY_MONO
+from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, STEAM_ICON
 from dzgui.controllers.mc import Controller
 from dzgui.util import css, strings
 
@@ -400,6 +400,6 @@ MainController = Controller()
 
 theme = Gtk.IconTheme.get_default()
 icons = theme.list_icons(None)
-if STEAM_TRAY_MONO not in icons:
+if STEAM_ICON not in icons:
     logger.warn(strings.steam_icon_missing)
     warnings.warn(strings.steam_icon_missing, stacklevel=2)
