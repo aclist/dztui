@@ -19,7 +19,7 @@ from dzgui.api.mods import (
     _hash,
     remove_stale_signatures,
 )
-from dzgui.const.enum import Preferences, NotebookPage, ButtonType, ContextMenu, RowType
+from dzgui.const.enum import Preferences, NotebookPage, ButtonType, ContextMenu
 
 from dzgui.const.constants import (
     APPID_DAYZ,

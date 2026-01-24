@@ -35,7 +35,7 @@ def get_config(path: Path) -> dict:
 def get_favorites(path: Path) -> list[str]:
     try:
         conf = get_config(path)
-    except Exception as e:
+    except Exception:
         pass
     return conf["ip_list"]
 
@@ -54,7 +54,7 @@ def enum_to_key(enum: Preferences) -> str:
 def get_client_index(client: str) -> int:
     if client == STEAM_CMD:
         return 0
-    elif client == FLATPAK_RUN_CMD:
+    if client == FLATPAK_RUN_CMD:
         return 1
-    else:
+    if client == FLATPAK_SANDBOX:
         return 2

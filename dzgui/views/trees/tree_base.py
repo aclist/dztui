@@ -1,6 +1,6 @@
 import logging
 
-from typing import Callable, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from dzgui.const.constants import SEPARATOR
 from dzgui.util.keys import is_navkey
@@ -51,15 +51,6 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         self, path: Gtk.TreePath, column: Gtk.TreeViewColumn
     ) -> None:
         pass
-
-    # @deprecated("signals are localized now")
-    # def signal_emission(func: Callable) -> Callable:
-    #     def wrapper(self, *args, **kwargs):
-    #         self.controller.block_signals()
-    #         func(self, *args, **kwargs)
-    #         self.controller.unblock_signals()
-    #
-    #     return wrapper
 
     def _separate(self, model: Gtk.ListStore, iter_: Gtk.TreeIter) -> bool:
         if model[iter_][0] == SEPARATOR:

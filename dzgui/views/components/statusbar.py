@@ -1,4 +1,3 @@
-from warnings import deprecated
 from typing import Self, Union, TYPE_CHECKING
 
 from dzgui.const.enum import NotebookPage, ServerTab
