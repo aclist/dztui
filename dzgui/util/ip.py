@@ -69,6 +69,8 @@ def get_coords(ips: "Path", ip: str) -> Coords:
         upper = fields[1]
 
         upper_digits = ip2list(upper)
+        if ip == upper:
+            return Coords(float(fields[-2]), float(fields[-1]))
 
         if split[2] > upper_digits[2]:
             continue
@@ -76,7 +78,6 @@ def get_coords(ips: "Path", ip: str) -> Coords:
         if split[2] == upper_digits[2]:
             if split[3] > upper_digits[3]:
                 continue
-            # TODO: handle last digit equals
 
         if split[2] <= upper_digits[2]:
             return Coords(float(fields[-2]), float(fields[-1]))
