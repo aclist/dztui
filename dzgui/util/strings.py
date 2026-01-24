@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from dzgui.const.constants import SYSTEM_LOG
 
+
 def build_missing(build: str) -> str:
     msg = (
         f"This server is running {build}. You can install "
@@ -19,6 +20,7 @@ def build_path_invalid(build: str) -> str:
         "restart Steam to allow these changes to synchronize, then try again."
     )
     return msg
+
 
 # General
 dialog_header = "DZGUI - Dialog"
@@ -93,19 +95,22 @@ something_wrong = "Something went wrong. See the detailed error below."
 steam_key_missing = "No Steam API key is set."
 malformed_mods = "Found mods on system, but was unable to parse results."
 steam_missing = "Local Steam installation is not set, possibly malformed config file."
-build_corrupted = "Steam settings or DayZ installation may be corrupted. Try restarting Steam."
+build_corrupted = (
+    "Steam settings or DayZ installation may be corrupted. Try restarting Steam."
+)
 api_warn_msg = """No servers returned. Possible causes:
 no servers in favorites/history, local network issue, or API key on cooldown.
 Return to the main menu, wait 30s, and try again.
 If this issue persists, your API key may be defunct.
 """
 server_timeout = "Timed out when querying server, check IP or try again later"
-server_error = "Error while contacting server, possibly timed out. Please wait and try again."
-server_protected =  (
+server_error = (
+    "Error while contacting server, possibly timed out. Please wait and try again."
+)
+server_protected = (
     "This server is password-protected and you will be "
     "prompted when connecting. Do you want to proceed?"
 )
-
 
 
 # KeybindingsDialog
@@ -155,13 +160,9 @@ label_main_menu = "Main menu"
 # buttons
 ping_servers = "Ping servers"
 debug_mode = "Debug mode"
-debug_tooltip = (
-    "Used to perform a dry run without\n"
-    "actually connecting to a server"
-)
+debug_tooltip = "Used to perform a dry run without\n" "actually connecting to a server"
 ping_tooltip = (
-    "Refresh the ping for visible servers.\n"
-    "Available once per unique filter context"
+    "Refresh the ping for visible servers.\n" "Available once per unique filter context"
 )
 
 # statusbar_helptext = "Select a row to see its detailed description"
@@ -235,11 +236,13 @@ class Dialog:
     working: str
     updating_mods: str
 
+
 @dataclass(slots=True, frozen=True)
 class Init:
     is_steam_running: str
     is_dayz_running: str
     requires_steam: str
+
 
 @dataclass(slots=True, frozen=True)
 class Button:
@@ -254,6 +257,7 @@ class Button:
     exit_label: str
     exit_tooltip: str
 
+
 @dataclass(slots=True, frozen=True)
 class Crumbs:
     changelog: str
@@ -266,11 +270,13 @@ class Crumbs:
     thanks: str
     developers: str
 
+
 @dataclass(slots=True, frozen=True)
 class Thanks:
     header: str
     description: str
     users: list[str]
+
 
 @dataclass(slots=True, frozen=True)
 class Options:
@@ -310,42 +316,43 @@ class Options:
     testing: str
     manual_sub_msg: str
 
+
 init = Init(
-    is_steam_running = "Is Steam running? DZGUI must be run on top of Steam.",
-    is_dayz_running = "Is DayZ already running? DZGUI cannot launch DayZ if another process is using it.",
-    requires_steam = "DZGUI requires that Steam or Flatpak Steam be installed on the system.",
+    is_steam_running="Is Steam running? DZGUI must be run on top of Steam.",
+    is_dayz_running="Is DayZ already running? DZGUI cannot launch DayZ if another process is using it.",
+    requires_steam="DZGUI requires that Steam or Flatpak Steam be installed on the system.",
 )
 
 mod_panel = ModPanelStrings(
-    header = "Mod actions",
-    unhighlight_stale = "Unhighlight stale",
-    unhighlight_stale_tooltip = "Clears highlight from stale mods",
-    highlight_stale = "Highlight stale",
-    highlight_stale_tooltip = (
+    header="Mod actions",
+    unhighlight_stale="Unhighlight stale",
+    unhighlight_stale_tooltip="Clears highlight from stale mods",
+    highlight_stale="Highlight stale",
+    highlight_stale_tooltip=(
         "Shows locally-installed mods which are not used by any server "
         "in your Saved Servers"
     ),
-    delete_selected = "Delete selected",
-    delete_selected_tooltip = "Deletes selected mods from the system",
-    unselect_all = "Unselect all",
-    unselect_all_tooltip = "Bulk unselects all mods",
-    select_all = "Select all",
-    select_all_tooltip = "Bulk selects all mods",
-    bulk_select = "Bulk selects all currently highlighted mods",
-    clear_highlights = "Clears highlights and reverts the table to a default state",
-    select_stale = "Select stale",
-    select_stale_tooltip = "Only selects highlighted stale mods",
+    delete_selected="Delete selected",
+    delete_selected_tooltip="Deletes selected mods from the system",
+    unselect_all="Unselect all",
+    unselect_all_tooltip="Bulk unselects all mods",
+    select_all="Select all",
+    select_all_tooltip="Bulk selects all mods",
+    bulk_select="Bulk selects all currently highlighted mods",
+    clear_highlights="Clears highlights and reverts the table to a default state",
+    select_stale="Select stale",
+    select_stale_tooltip="Only selects highlighted stale mods",
 )
 
 
 thanks = Thanks(
-    header = "# Special thanks",
-    description = (
+    header="# Special thanks",
+    description=(
         "This page recognizes beta testers, collaborators, code "
         "contributors, and sponsors of the project in alphabetical order.\n"
         "If you wish to be removed from this list, please submit a ticket."
-        ),
-    users = [
+    ),
+    users=[
         "bongjutsu",
         "Deku",
         "dj3hac",
@@ -383,29 +390,28 @@ options = Options(
     manual_dl="Manual",
     auto_dl="Auto",
     update="Update",
-    install_mode = "Mod install mode",
-    force_update = "Force update local mods",
-    dl_eventbox = (
-        "Manual: prompt to subscribe to mods in Steam. "
-        "Auto: unmanned downloads."
+    install_mode="Mod install mode",
+    force_update="Force update local mods",
+    dl_eventbox=(
+        "Manual: prompt to subscribe to mods in Steam. " "Auto: unmanned downloads."
     ),
-    force_eventbox = "Synchronize all local mods. Automatic mode must be enabled.",
-    self_update = (
+    force_eventbox="Synchronize all local mods. Automatic mode must be enabled.",
+    self_update=(
         "Stable: only contains stable features. "
         "Testing: pre-release beta, contains new features."
     ),
-    no_self_update = (
+    no_self_update=(
         "In-app updates are disabled when DZGUI is "
         "installed globally (e.g., via package manager)."
     ),
-    api_keys = "API Keys",
-    prefs = "Preferences",
-    mods = "Mods",
-    version = "Version",
-    branch = "DZGUI branch",
-    stable = "Stable",
-    testing = "Testing",
-manual_sub_msg = """When switching from MANUAL to AUTO mod install mode,
+    api_keys="API Keys",
+    prefs="Preferences",
+    mods="Mods",
+    version="Version",
+    branch="DZGUI branch",
+    stable="Stable",
+    testing="Testing",
+    manual_sub_msg="""When switching from MANUAL to AUTO mod install mode,
 DZGUI will manage mod installation and deletion for you.
 To prevent conflicts with Steam Workshop subscriptions and old mods from being downloaded
 when Steam updates, you should unsubscribe from any existing Workshop mods you manually subscribed to.
@@ -415,14 +421,14 @@ on the right-hand side.
 )
 
 dialog = Dialog(
-    querying = "Querying server",
-    fetching = "Fetching server metadata",
-    filtering = "Filtering servers",
-    refreshing = "Refreshing player count",
-    details = "Fetching details",
-    modlist = "Fetching modlist",
-    working = "Working",
-    updating_mods = "Updating mods",
+    querying="Querying server",
+    fetching="Fetching server metadata",
+    filtering="Filtering servers",
+    refreshing="Refreshing player count",
+    details="Fetching details",
+    modlist="Fetching modlist",
+    working="Working",
+    updating_mods="Updating mods",
 )
 
 buttons = Button(
@@ -454,12 +460,14 @@ checkmark = "✓"
 no_mods = "No local mods found."
 no_servers = "No server metadata to list."
 
+
 @dataclass(slots=True, frozen=True)
 class Flags:
     description: str
     version: str
     uninstall: str
     developers: str
+
 
 flags = Flags(
     description="DayZ server browser and mod manager",
@@ -468,17 +476,21 @@ flags = Flags(
     developers="Enables developer debugging features",
 )
 
+
 @dataclass(slots=True, frozen=True)
 class FilePicker:
     title: str
     placeholder: str
 
+
 picker = FilePicker(
-    title = "Save diagnostic log to file",
-    placeholder = SYSTEM_LOG,
+    title="Save diagnostic log to file",
+    placeholder=SYSTEM_LOG,
 )
 
-api_error = "API key validation error or timeout. See 'Help > Show debug log' for details."
+api_error = (
+    "API key validation error or timeout. See 'Help > Show debug log' for details."
+)
 
 
 @dataclass(slots=True, frozen=True)
@@ -488,12 +500,14 @@ class DevelopersPage:
     prefs_label: str
     columns: list[str]
 
+
 developers = DevelopersPage(
     header="Developers",
     paths_label="Resolved XDG paths",
     prefs_label="Boot preferences",
-    columns=["Key", "Value"]
+    columns=["Key", "Value"],
 )
+
 
 @dataclass(slots=True, frozen=True)
 class ServerLabels:
@@ -502,12 +516,14 @@ class ServerLabels:
     recent: str
     lan: str
 
+
 server_labels = ServerLabels(
     browser="Server Browser",
     saved="Saved Servers",
     recent="Recent",
     lan="LAN",
 )
+
 
 @dataclass(slots=True, frozen=True)
 class ConnectPanel:
@@ -518,6 +534,7 @@ class ConnectPanel:
     entry_tooltip: str
     add_tooltip: str
     connect_tooltip: str
+
 
 connect_panel = ConnectPanel(
     connect="Connect",
@@ -532,15 +549,18 @@ connect_panel = ConnectPanel(
     connect_tooltip="Connect to this server",
 )
 
+
 @dataclass(slots=True, frozen=True)
 class FavPanel:
     heading: str
     no_fav: str
 
+
 fav_panel = FavPanel(
     heading="Favorite server",
     no_fav="None set. Right click a server and select 'Set favorite' to set.",
 )
+
 
 @dataclass(slots=True, frozen=True)
 class LanPanel:
@@ -552,6 +572,7 @@ class LanPanel:
     entry_tooltip: str
     scan_tooltip: str
 
+
 lan_panel = LanPanel(
     heading="LAN query port",
     default_button="Default port (27016)",
@@ -559,11 +580,12 @@ lan_panel = LanPanel(
     scan_button="Scan",
     placeholder="Enter the query port (1-65535)",
     entry_tooltip="Specify the port to search for DayZ servers on the local network",
-    scan_tooltip="Scan for servers"
+    scan_tooltip="Scan for servers",
 )
 
 distance_suffix = "Distance: calculating..."
 dialog_error = "ERROR"
+
 
 @dataclass(slots=True, frozen=True)
 class AtomicButton:
@@ -573,6 +595,7 @@ class AtomicButton:
     keys: str
     keys_tooltip: str
 
+
 atomic_buttons = AtomicButton(
     refresh="Refresh",
     refresh_tooltip="Refresh server data",
@@ -580,3 +603,5 @@ atomic_buttons = AtomicButton(
     keys="Keys",
     keys_tooltip="Toggles the keybindings dialog",
 )
+
+steam_icon_missing="Steam icon not found in IconTheme"

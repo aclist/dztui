@@ -5,10 +5,9 @@ import warnings
 from typing import TYPE_CHECKING, Literal
 
 from dzgui.const.enum import NotebookPage
-from dzgui.const.constants import APP_NAME, APP_NAME_LOWER
+from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, STEAM_TRAY_MONO
 from dzgui.controllers.mc import Controller
 from dzgui.util import css, strings
-from dzgui.util.format import embolden
 
 # NOTEBOOK ITEMS
 # TODO: import notebook only and add components there?
@@ -399,8 +398,8 @@ class App(Gtk.Application):
 
 MainController = Controller()
 
-# TODO: icon sanity check, log result
-# theme = Gtk.IconTheme.get_default()
-# icons = theme.list_icons(None)
-# print("steam_tray_mono" in icons)
-# FIXME:
+theme = Gtk.IconTheme.get_default()
+icons = theme.list_icons(None)
+if STEAM_TRAY_MONO not in icons:
+    logger.warn(strings.steam_icon_missing)
+    warnings.warn(strings.steam_icon_missing, stacklevel=2)

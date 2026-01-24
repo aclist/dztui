@@ -467,7 +467,7 @@ class Controller(GObject.GObject):
             # NOTE: manipulates mod store
             case ContextMenu.DELETE_MOD:
                 self.delete_single_mod(path)
-                # TODO: hook treeview changed signal
+                # TODO: hook treeview changed signal automatically
                 # Gtk.TreeModel, row-inserted/row-deleted
                 self.update_mod_statusbar()
                 remove_stale_signatures(
@@ -539,7 +539,6 @@ class Controller(GObject.GObject):
         import time
 
         time.sleep(1)
-        # TODO: use model managers, etc.
         self.data = (
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "172.111.51.156:2302", 0, 0, "a", False],
@@ -564,9 +563,7 @@ class Controller(GObject.GObject):
 
     def dump_test_2(self) -> None:
         import time
-
         time.sleep(1)
-        # TODO: use model managers, etc.
         self.data = (
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
         )
@@ -582,6 +579,7 @@ class Controller(GObject.GObject):
             for row in data:
                 manager.append_row(row)
             treeview.set_loaded(True)
+            # TODO: emit custom "servers finished loading" signal
             self.mediator.statusbar.emit("server_page_changed", context)
             treeview.grab_focus()
 
