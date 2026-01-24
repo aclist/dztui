@@ -1,7 +1,7 @@
 from warnings import deprecated
 from typing import Self, Union, TYPE_CHECKING
 
-from dzgui.const.enum import NotebookPage, RowType
+from dzgui.const.enum import NotebookPage, ServerTab
 
 import gi
 
@@ -11,17 +11,11 @@ from gi.repository import Gtk, GObject  # noqa E402
 if TYPE_CHECKING:
     from dzgui.const.enum import ServerTab
     from dzgui.controllers.mc import Controller
+    from dzgui.views.trees.tree_base import TreeView
+    from dzgui.views.base import Notebook
 
 
 class Statusbar(Gtk.Grid):
-    __gsignals__ = {
-        "server_page_changed": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
-        "notebook_page_changed": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
-        "notebook_page_returned": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
-        "distcalc_ended": (GObject.SignalFlags.RUN_FIRST, None, (object, str)),
-        "server_row_changed": (GObject.SignalFlags.RUN_FIRST, None, ()),
-    }
-
     def __init__(self, controller: "Controller") -> None:
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
 
@@ -46,37 +40,58 @@ class Statusbar(Gtk.Grid):
 
         self.players = ""
 
+        controller.mediator.menu.connect(
+            "generic_treesel_changed", self._help_row_changed
+        )
+        controller.mediator.notebook.connect_after(
+            "switch-page", self._on_notebook_page_changed
+        )
         self.connect("server_row_changed", self._on_server_row_changed)
         self.connect("server_page_changed", self._on_server_page_changed)
-        self.connect("notebook_page_changed", self._on_notebook_page_changed)
-        self.connect("notebook_page_returned", self._on_notebook_page_returned)
         self.connect("distcalc_ended", self._on_distcalc_ended)
 
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
+    def server_page_changed(self, tab: ServerTab) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def server_row_changed(self) -> None:
+        pass
+
+    @GObject.Signal(
+        flags=GObject.SignalFlags.RUN_LAST,
+        arg_types=(
+            object,
+            object,
+        ),
+    )
+    def distcalc_ended(
+        self, dist: Union[str, None], context: Union["ServerTab", NotebookPage]
+    ) -> None:
+        pass
+
     def _on_notebook_page_changed(
-        self, statusbar: Self, context: "NotebookPage"
+        self, notebook: "Notebook", child: Gtk.Widget, index: int
     ) -> None:
         if self.controller.loaded is False:
             return
 
-        status = context.dict["statusbar"]
-        bar = ""
-        if status is False:
-            self.set_by_context(context, "")
+        enum = notebook.get_page_by_enum()
+        show_statusbar = enum.dict["statusbar"]
+        if show_statusbar is False:
+            self.set_by_context(enum, "")
             return
 
-        match context:
+        match enum:
             case NotebookPage.MODS:
                 bar = self.controller.format_mod_statusbar()
             case NotebookPage.HELP:
                 bar = self.controller.get_help_row()
             case NotebookPage.SERVERS:
-                # TODO:
-                from dzgui.const.enum import ServerTab
-
                 self.emit("server_page_changed", ServerTab.BROWSER)
                 return
 
-        self.set_by_context(context, bar)
+        self.set_by_context(enum, bar)
 
     def _on_notebook_page_returned(
         self, statusbar: Self, prior_context: NotebookPage
@@ -96,8 +111,11 @@ class Statusbar(Gtk.Grid):
         if dist is None:
             self.set_by_context(context, self.playercount)
         else:
-            pretty = f"{self.playercount} | Distance: {dist}"
+            pretty = self.append_distance(dist)
             self.set_by_context(context, pretty)
+
+    def append_distance(self, dist: str) -> str:
+        return f"{self.playercount} | Distance: {dist}"
 
     def _on_server_page_changed(self, statusbar: Self, context: "ServerTab") -> None:
         count = self.controller.get_player_count()
@@ -134,16 +152,9 @@ class Statusbar(Gtk.Grid):
         self.statusbar.push(meta, string)
         self.set_cache(string)
 
-    @deprecated("use set_by_context()")
-    def refresh(self, row: "RowType") -> None:
-        # FIXME: brittle
-        if row is None:
-            formatted = ""
-        else:
-            formatted = self.format_metadata(row)
-        self.set_text(formatted, "Help")
-
-    @deprecated("use controller")
-    def format_metadata(self, row: "RowType") -> str:
-        prefix = row.dict["tooltip"]
-        return prefix
+    def _help_row_changed(self, tree: "TreeView", sel: Gtk.TreeSelection) -> None:
+        row = tree.get_value_at_index(1)
+        if self.controller.loaded is False:
+            return
+        tooltip = row.dict["tooltip"]
+        self.set_by_context(NotebookPage.HELP, tooltip)

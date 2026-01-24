@@ -7,6 +7,7 @@ from dzgui.util.keys import is_navkey
 from dzgui.views.mixins.cursor_mixin import CursorMixin
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
@@ -16,8 +17,11 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.const.enum import ContextMenuGroup
 
+
 class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
-    def __init__(self, controller: "Controller", menu: "ContextMenuGroup" = None) -> None:
+    def __init__(
+        self, controller: "Controller", menu: "ContextMenuGroup" = None
+    ) -> None:
         super().__init__(
             enable_search=False,
             search_column=-1,
@@ -32,7 +36,6 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         self.selected_row = self.get_selection()
         self.selected_row.set_mode(Gtk.SelectionMode.SINGLE)
         self.selected_row.connect("changed", self._on_tree_selection_changed)
-
         self.connect("row-activated", self._on_row_activated)
         self.connect("key-press-event", self._on_keypress)
         self.connect("key-release-event", self._on_key_release)
@@ -41,22 +44,22 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
     def generic_treesel_changed(self, selection: Gtk.TreeSelection) -> None:
         pass
 
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST,
-        arg_types=(Gtk.TreePath, Gtk.TreeViewColumn)
+    @GObject.Signal(
+        flags=GObject.SignalFlags.RUN_LAST, arg_types=(Gtk.TreePath, Gtk.TreeViewColumn)
     )
-    def generic_row_activated(self,
-        path: Gtk.TreePath,
-        column: Gtk.TreeViewColumn
+    def generic_row_activated(
+        self, path: Gtk.TreePath, column: Gtk.TreeViewColumn
     ) -> None:
         pass
 
-    def signal_emission(func: Callable) -> Callable:
-        def wrapper(self, *args, **kwargs):
-            self.controller.block_signals()
-            func(self, *args, **kwargs)
-            self.controller.unblock_signals()
-
-        return wrapper
+    # @deprecated("signals are localized now")
+    # def signal_emission(func: Callable) -> Callable:
+    #     def wrapper(self, *args, **kwargs):
+    #         self.controller.block_signals()
+    #         func(self, *args, **kwargs)
+    #         self.controller.unblock_signals()
+    #
+    #     return wrapper
 
     def _separate(self, model: Gtk.ListStore, iter_: Gtk.TreeIter) -> bool:
         if model[iter_][0] == SEPARATOR:
@@ -83,9 +86,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         model, rows = sel.get_selected_rows()
         return [model[row] for row in rows]
 
-    def _on_keypress(
-        self, treeview: Gtk.TreeView, event: Gdk.EventKey
-    ) -> None:
+    def _on_keypress(self, treeview: Gtk.TreeView, event: Gdk.EventKey) -> None:
 
         if is_navkey(event.keyval):
             # TODO: if model is None
@@ -101,14 +102,13 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
             self._vim_nav(event)
         return
 
-    def _on_key_release(
-        self, treeview: Gtk.TreeView, event: Gdk.EventKey
-    ) -> None:
+    def _on_key_release(self, treeview: Gtk.TreeView, event: Gdk.EventKey) -> None:
         # TODO: explain this better
         """
         Suppresses spamming on keydown
         """
-        #if event.keyval is Gdk.KEY_space:
+        # TODO: multisel
+        # if event.keyval is Gdk.KEY_space:
         #    it = self.get_focused_row_iter()
         #    self.get_selection().select_iter(it)
         #    return True
@@ -169,7 +169,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         path = pathlist[0]
         return path
 
-    @signal_emission
+    # @signal_emission
     def _on_row_activated(
         self,
         treeview: Gtk.TreeView,

@@ -227,7 +227,7 @@ class Controller(GObject.GObject):
         c = self.mediator.statusbar.statusbar.get_context_id(context)
         self.mediator.statusbar.statusbar.pop(c)
 
-    # TODO: use set_by_context()
+    @deprecated("use set_by_context")
     def set_statusbar(self, text: str, context: str) -> int:
         msg_id = self.mediator.statusbar.set_text(text, context)
         return msg_id
@@ -319,12 +319,8 @@ class Controller(GObject.GObject):
         notebook = self.mediator.grid.notebook
         notebook.focus_current()
 
-    def set_statusbar_by_row(self, row: "RowType") -> None:
-        self.mediator.statusbar.refresh(row)
-
     def toggle_server_panels(self, state: bool) -> None:
-        # TODO: this is going to be signal dependent now
-        # cf. map/unmap
+        # TODO: this is going to be signal dependent now, cf. map/unmap
         #self.mediator.grid.emit("toggle panels", state)
         self.mediator.grid.toggle_filter_panel(state)
         self.mediator.grid.toggle_connect_panel(state)
@@ -579,7 +575,6 @@ class Controller(GObject.GObject):
             for row in data:
                 manager.append_row(row)
             treeview.set_loaded(True)
-            # TODO: emit custom "servers finished loading" signal
             self.mediator.statusbar.emit("server_page_changed", context)
             treeview.grab_focus()
 

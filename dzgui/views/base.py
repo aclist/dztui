@@ -310,15 +310,15 @@ class Grid(Gtk.Grid):
 
         MainController.register_widget("grid", self)
 
-        self.statusbar = Statusbar(MainController)
-        self.right_panel = RightPanel(MainController)
-
         # self.bu = Gtk.Button(label="Shrink to fit", halign=Gtk.Align.END)
         # self.bu.connect("clicked", self._shrink)
         # self.crumb_box.add(self.bu)
 
         self.notebook = Notebook()
         self.conpan = ConnectPanel(MainController)
+
+        self.statusbar = Statusbar(MainController)
+        self.right_panel = RightPanel(MainController)
 
         self.breadcrumbs = Breadcrumbs(MainController)
         self.crumb_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)

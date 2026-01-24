@@ -34,8 +34,6 @@ class EnumeratedMenuItem(Gtk.MenuItem):
 
 
 class ServerTreeView(TreeView):
-    __gsignals__ = {"distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())}
-
     def __init__(
         self, controller: "Controller", enum: ServerTab, menu: ContextMenuGroup
     ) -> None:
@@ -114,6 +112,10 @@ class ServerTreeView(TreeView):
         self.connect("unmap", self._on_unmap)
 
         GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_FIRST, arg_types=())
+    def distcalc_started(self) -> None:
+        pass
 
     def filter(self, mode: FilterMode, label: str) -> None:
         print("TOGGLE:", mode)

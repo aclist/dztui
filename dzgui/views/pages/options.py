@@ -28,14 +28,16 @@ from dzgui.const.constants import (
     STEAM_CMD,
     VIEW_CONCEAL,
     VIEW_REVEAL,
-    )
+)
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk  # noqa
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+
 
 class Options(Gtk.Box):
     def __init__(self, controller: "Controller"):
@@ -115,8 +117,8 @@ class Options(Gtk.Box):
         # NOTE: sensitivity state is updated after config file is loaded
         self.force_button.set_sensitive(False)
 
-        eb = InfoEventBox(strings.options.dl_eventbox, self)
-        eb2 = InfoEventBox(strings.options.force_eventbox, self)
+        eb = InfoEventBox(strings.options.dl_eventbox, controller)
+        eb2 = InfoEventBox(strings.options.force_eventbox, controller)
 
         mod_rows = [
             [LeftLabel(strings.options.install_mode), self.mod_install_toggle, eb],
@@ -131,7 +133,7 @@ class Options(Gtk.Box):
         self.branch_combo.append_text(strings.options.testing)
         self.branch_combo.set_active(0)
         self.branch_combo.connect("changed", self._on_branch_changed)
-        self.branch_eb = InfoEventBox("", self)
+        self.branch_eb = InfoEventBox("", controller)
 
         version_rows = [
             [LeftLabel(APPNAME_DAYZ), self.dayz_version_label],
@@ -149,7 +151,7 @@ class Options(Gtk.Box):
             margin_top=5,
             margin_bottom=10,
             homogeneous=True,
-            spacing=10
+            spacing=10,
         )
         api_links_box.add(self.steam)
         api_links_box.add(self.bm)
@@ -167,15 +169,13 @@ class Options(Gtk.Box):
             hexpand=True,
         )
 
-        developers=Gtk.Button(label="Developers", halign=Gtk.Align.START)
+        developers = Gtk.Button(label="Developers", halign=Gtk.Align.START)
         developers.connect("clicked", self._on_developers_clicked)
 
         prefs = self.controller.get_prefs()
         is_developer = prefs.is_developer
         if is_developer:
-            grid.attach(
-                developers, 1, 0, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT
-            )
+            grid.attach(developers, 1, 0, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
 
         for frame in [
             self.make_frame(api_box, strings.options.api_keys),
@@ -183,9 +183,7 @@ class Options(Gtk.Box):
             self.make_frame(mods_grid, strings.options.mods),
             self.make_frame(version_grid, strings.options.version),
         ]:
-            grid.attach(
-                frame, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT
-            )
+            grid.attach(frame, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
             row += 1
 
         self.scrollable = Gtk.ScrolledWindow(vexpand=True)
@@ -221,13 +219,11 @@ class Options(Gtk.Box):
         entry.connect("insert-text", self._on_text_typed, context, button)
         entry.connect("activate", self._on_field_activated, context, button)
         entry.get_property("buffer").connect(
-                "deleted-text", self._on_text_deleted, context, button
+            "deleted-text", self._on_text_deleted, context, button
         )
 
         if private:
-            entry.set_icon_from_icon_name(
-                Gtk.EntryIconPosition.SECONDARY, VIEW_REVEAL
-            )
+            entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, VIEW_REVEAL)
             entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
             entry.connect("icon-release", self._on_icon_release)
             entry.set_visibility(False)
@@ -244,7 +240,7 @@ class Options(Gtk.Box):
         return box
 
     def _on_field_activated(
-            self, entry: Gtk.Entry, context: Preferences, button: Gtk.Button
+        self, entry: Gtk.Entry, context: Preferences, button: Gtk.Button
     ) -> None:
         text = entry.get_text()
         if not self._is_valid_text(text, context):
@@ -265,9 +261,7 @@ class Options(Gtk.Box):
         for record in rows:
             col = 1
             for el in record:
-                grid.attach(
-                    el, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT
-                )
+                grid.attach(el, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
                 col += 1
             row += 1
         return grid
@@ -299,9 +293,9 @@ class Options(Gtk.Box):
     def _on_force_update_clicked(self, button: Gtk.Button) -> None:
         # TODO: unimplemented
         print("UNIMPLEMENTED")
-        #wait_msg = strings.dialog.updating_mods
-        #show_wait_dialog = True
-        #call_on_thread(show_wait_dialog, cmd, wait_msg, "")
+        # wait_msg = strings.dialog.updating_mods
+        # show_wait_dialog = True
+        # call_on_thread(show_wait_dialog, cmd, wait_msg, "")
 
     def _on_client_changed(self, combo: Gtk.ComboBoxText) -> None:
         # TODO: use two columns or constants here, not strings
@@ -320,14 +314,12 @@ class Options(Gtk.Box):
         print("UNIMPLEMENTED")
         print(branch)
         ## TODO: needs to trigger download process
-        #self.controller.toggle_branch(branch)
-        #branch = combo.get_active_text().lower()
-        #self.controller.update_config("branch", branch)
-        #scripts/update
+        # self.controller.toggle_branch(branch)
+        # branch = combo.get_active_text().lower()
+        # self.controller.update_config("branch", branch)
+        # scripts/update
 
-    def _on_radio_toggled(
-        self, button: Gtk.RadioButton, context: Preferences
-    ) -> None:
+    def _on_radio_toggled(self, button: Gtk.RadioButton, context: Preferences) -> None:
         try:
             self.controller.toggle_config(context)
         except Exception:
@@ -342,11 +334,10 @@ class Options(Gtk.Box):
                     self.controller,
                     strings.options.manual_sub_msg,
                     strings.self_workshop,
-                    self.uid
+                    self.uid,
                 )
             else:
                 self.force_button.set_sensitive(False)
-
 
     def _is_valid_text(self, text: str, context: Preferences) -> bool:
         if text.isspace():
@@ -458,7 +449,7 @@ class Options(Gtk.Box):
         for el, conf_state in [
             (self.mod_install_toggle, install),
             (self.fullscreen_toggle, config["fullscreen"]),
-            (self.distance_toggle, config["use_miles"])
+            (self.distance_toggle, config["use_miles"]),
         ]:
             el.get_children()[conf_state].set_active(True)
         self._suppress_toggles(False)
@@ -473,18 +464,14 @@ class Options(Gtk.Box):
                 field[1].get_children()[1].set_sensitive(False)
 
         try:
-            pe_file_path = PeFile.get_pefile_path(
-                steam_path, APPID_DAYZ
-            )
+            pe_file_path = PeFile.get_pefile_path(steam_path, APPID_DAYZ)
             vers = PeFile.get_dayz_version(pe_file_path)
             dayz_version = PeFile.dayz_version_to_str(vers)
         except Exception:
             dayz_version = strings.null
 
         try:
-            exp_file_path = PeFile.get_pefile_path(
-                steam_path, APPID_DAYZ_EXP
-            )
+            exp_file_path = PeFile.get_pefile_path(steam_path, APPID_DAYZ_EXP)
             vers = PeFile.get_dayz_version(exp_file_path)
             dayz_exp_version = PeFile.dayz_version_to_str(vers)
         except Exception:
@@ -497,13 +484,16 @@ class Options(Gtk.Box):
         active_combo = query.get_client_index(config["client"])
         self.client_combo.set_active(active_combo)
 
-
         active_combo = 1 if config["branch"] == BETA_REPO else 0
 
-        self.controller.suppress_signal(self, self.branch_combo, "_on_branch_changed", True)
+        self.controller.suppress_signal(
+            self, self.branch_combo, "_on_branch_changed", True
+        )
         self.branch_combo.set_active(active_combo)
         self.branch_combo.set_sensitive(prefs.allow_updates)
-        self.controller.suppress_signal(self, self.branch_combo, "_on_branch_changed", False)
+        self.controller.suppress_signal(
+            self, self.branch_combo, "_on_branch_changed", False
+        )
 
         if prefs.allow_updates is True:
             msg = strings.options.self_update
@@ -517,7 +507,9 @@ class Options(Gtk.Box):
             self.fullscreen_toggle,
             self.distance_toggle,
         ]:
-            self.controller.suppress_signal(self, toggle.get_children()[0], "_on_radio_toggled", state)
+            self.controller.suppress_signal(
+                self, toggle.get_children()[0], "_on_radio_toggled", state
+            )
 
     def _on_icon_release(
         self,

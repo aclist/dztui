@@ -5,11 +5,13 @@ from dzgui.util.css import add_class, remove_class
 from dzgui.util.strings import connect_panel, lan_panel
 
 import gi
+
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GObject # noqa E402
+from gi.repository import Gtk, Gdk, GObject  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+
 
 def validate_port(text: str) -> bool:
     if text.isdigit():
@@ -21,6 +23,7 @@ def validate_port(text: str) -> bool:
     else:
         return False
 
+
 def validate_ip_or_id(text: str) -> bool:
     try:
         validate_ip(text)
@@ -31,15 +34,13 @@ def validate_ip_or_id(text: str) -> bool:
         else:
             return False
 
+
 class ValidatedEntry(Gtk.Entry):
-    __gsignals__ = {
-        "string_validated": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
-    }
     def __init__(self, controller: "Controller", func: Callable) -> None:
         super().__init__(
             hexpand=True,
             placeholder_text=connect_panel.placeholder,
-            tooltip_text=connect_panel.entry_tooltip
+            tooltip_text=connect_panel.entry_tooltip,
         )
 
         self.func: Callable
@@ -49,6 +50,10 @@ class ValidatedEntry(Gtk.Entry):
         self.classname = "invalid-entry"
         self.connect("key-press-event", self._on_entry_keypress)
         self.connect("changed", self._on_text_changed)
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(bool,))
+    def string_validated(self, valid: bool) -> None:
+        pass
 
     def mark_valid(self) -> None:
         self.emit("string_validated", True)
@@ -66,7 +71,9 @@ class ValidatedEntry(Gtk.Entry):
         self.func = func
 
     def insert_icon(self) -> None:
-        self.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, "edit-clear-symbolic")
+        self.set_icon_from_icon_name(
+            Gtk.EntryIconPosition.SECONDARY, "edit-clear-symbolic"
+        )
         self.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
         self.connect("icon-release", self._on_icon_release)
 
@@ -98,7 +105,6 @@ class ValidatedEntry(Gtk.Entry):
         entry.set_text("")
         self.remove_icon()
 
-
     def _on_entry_keypress(self, entry: Gtk.Entry, event: Gdk.EventKey) -> None:
         if event.keyval == Gdk.KEY_Escape:
             # NOTE: unselect text
@@ -111,6 +117,7 @@ class IpEntry(ValidatedEntry):
         super().__init__(controller, func=validate_ip_or_id)
         self.set_placeholder_text(connect_panel.placeholder)
         self.set_tooltip_text(connect_panel.entry_tooltip)
+
 
 class PortEntry(ValidatedEntry):
     def __init__(self, controller: "Controller") -> None:

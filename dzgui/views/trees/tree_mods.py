@@ -55,16 +55,16 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
         self.connect("button-press-event", self._on_mods_button_press)
         self.connect("key-press-event", self._on_mods_keypress)
 
-        self.s = self.get_selection().get_selected_rows()
+        # self.s = self.get_selection().get_selected_rows()
 
     def _on_mods_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
+        # TODO: multiselect
         # if event.keyval is Gdk.KEY_space:
         #    it = self.get_focused_row_iter()
         #    self.get_selection().select_iter(it)
         #    path = self.get_focused_row_path()
         #    self.set_cursor(path)
         #    return False
-        # TODO: parse keys
         self.present_menu(widget, event)
 
     def _on_mods_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:

@@ -41,7 +41,6 @@ class MenuTreeView(TreeView):
 
         self.set_row_separator_func(self._separate)
         self.connect("generic_row_activated", self._parent_row_activated)
-        self.connect("generic_treesel_changed", self._parent_selection_changed)
 
     def _parent_row_activated(
         self, tree: TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn
@@ -69,13 +68,3 @@ class MenuTreeView(TreeView):
         if row_type in docs:
             # FIXME: prior method is returning a str, not enum
             open_link_by_rowtype(row_type)
-
-    def _parent_selection_changed(
-        self, base_class: TreeView, sel: Gtk.TreeSelection
-    ) -> None:
-        row = self.get_value_at_index(1)
-        if row == "":
-            return
-        if self.controller.loaded is False:
-            return
-        self.controller.set_statusbar_by_row(row)
