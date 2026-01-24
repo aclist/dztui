@@ -104,6 +104,8 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         #    self.get_selection().select_iter(it)
         #    return True
 
+        if self.get_model() is None:
+            return
         if len(self.get_model()) < 2:
             return
 

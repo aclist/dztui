@@ -34,9 +34,8 @@ class ServerNotebook(Gtk.ScrolledWindow):
         )
         self.lan = ServerTreeView(controller, ServerTab.LAN, ContextMenuGroup.SCAN_LAN)
 
-        # self.browser.set_query_func(self.controller.dump_test_2)
         self.lan.set_query_func(self.controller.dump_test_2)
-        self.browser.set_query_func(self.controller._dump_api)
+        self.browser.set_query_func(self.controller.dump_api)
 
         tabs = [
             (self.browser, server_labels.browser),
@@ -92,6 +91,7 @@ class ServerNotebook(Gtk.ScrolledWindow):
         # TODO: strings
         text = label.strip("*")
         self.notebook.set_tab_label_text(child, text)
+        # NOTE: spawns a thread
         self.controller.populate_model()
 
     def get_active_treeview(self) -> ServerTreeView:

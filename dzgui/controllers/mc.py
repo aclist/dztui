@@ -12,7 +12,7 @@ from typing import Any, Callable, Literal, TYPE_CHECKING
 import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers
 import dzgui.util._json as JSON  # noqa
-from dzgui.views.dialogs.generic import ExceptionDialog
+from dzgui.views.dialogs.generic import ExceptionDialog, WaitDialog
 
 from dzgui.api.probe import test_steam_api, test_bm_api
 from dzgui.api.mods import (
@@ -182,6 +182,10 @@ class Controller(GObject.GObject):
     def toggle_debug_mode(self) -> None:
         self.toggle_config(Preferences.DEBUG)
 
+    def get_active_context(self) -> NotebookPage:
+        tv = self.get_active_treeview()
+        return tv.get_enum()
+
     def get_active_treeview(self) -> "ServerTreeView":
         return self.mediator.notebook.servers.get_active_treeview()
 
@@ -236,11 +240,10 @@ class Controller(GObject.GObject):
         return msg_id
 
     def set_statusbar_dist(self, haversine: "Haversine", enum: "ServerTab") -> None:
-        tv = self.get_active_treeview()
-        context = tv.get_enum()
+        context = self.get_active_context()
         page = self.mediator.notebook.get_page_by_enum()
         """
-        NOTE: prevents race condition when notebook page changed,
+        NOTE: prevents race condition when server tab changed,
         but allows caching the distance in the background
         """
         if page != NotebookPage.SERVERS:
@@ -288,8 +291,6 @@ class Controller(GObject.GObject):
             # NOTE: holds color column
             mod.append(None)
             model.append(mod)
-
-        # self.update_mod_statusbar()
 
     def toggle_config(self, context: Preferences) -> None:
         config = self.prefs.paths.config
@@ -356,7 +357,7 @@ class Controller(GObject.GObject):
 
         self.mediator.notebook.set_page_by_enum(button.opens)
 
-    def _dump_api(self):
+    def dump_api(self):
         key = self.query_config(Preferences.STEAM)
         job = Servers.query_api
         params = Servers.params
@@ -370,10 +371,7 @@ class Controller(GObject.GObject):
             for future in futures:
                 res = future.result()
                 if res.status != 200 or not res.parsed:
-                    # ModelManager.set_store(None)
-                    # ModelManager.set_success(False)
-                    # GLib.idle_add(self._filter_cleanup)
-                    print("status error")
+                    self.push_data(None)
                     return
                 j = res.json
                 serv += j["response"]["servers"]
@@ -383,14 +381,9 @@ class Controller(GObject.GObject):
             j = res.json
             serv += j["response"]["servers"]
 
+        # TODO: ping column pass
         parsed = Servers.parse_json(serv)
-        self.data = parsed
-        self.get_func_data()
-        self.destroy_on_idle()
-        # try:
-        # except Exception as e:
-        #     print(e)
-        # return parsed
+        self.push_data(parsed)
 
     def get_help_row(self) -> str:
         tv = self.mediator.menu
@@ -574,18 +567,16 @@ class Controller(GObject.GObject):
         import time
 
         time.sleep(1)
-        self.data = (
+        data = (
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "172.111.51.156:2302", 0, 0, "a", False],
         )
-        # TODO: refer to prior implementation--should need to load data into model while in thread
-        self.get_func_data()
-        self.destroy_on_idle()
+        self.push_data(data)
 
     def dump_test_2(self) -> None:
         import time
         time.sleep(1)
-        self.data = (
+        data = (
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "172.111.51.156:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
@@ -598,37 +589,34 @@ class Controller(GObject.GObject):
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
         )
-        # TODO: refer to prior implementation--should need to load data into model while in thread
-        self.get_func_data()
-        self.destroy_on_idle()
+        self.push_data(data)
 
-    def get_func_data(self) -> None:
-        def test():
-            # NOTE: do not insert model until main thread is idle
-            # TODO: grab from model manager and insert entire model
-            # TODO: do not start refresh button count until load finished
-            # TODO: append rows into filtered model
-            # when complete, destroy dialog and set model
-            for row in data:
-                manager.append_row(row)
-            treeview.set_model(manager.get_model())
-            treeview.set_loaded(True)
+    def push_data(self, data: tuple) -> None:
+        def cleanup():
+            # TODO: rename signal
             self.mediator.statusbar.emit("server_page_changed", context)
+            # TODO: may be superfluous
             treeview.grab_focus()
+            self.destroy_on_idle()
 
         treeview = self.get_active_treeview()
-        context = treeview.get_enum()
+        context = self.get_active_context()
 
-        manager = treeview.get_filter_man()
-        data = self.data
-        GLib.idle_add(test)
+        if data is None:
+            insert = None
+        else:
+            manager = treeview.get_filter_man()
+            for row in data:
+                manager.append_row(row)
+            insert = manager.get_model()
+        treeview.set_model(insert)
+        treeview.set_loaded(True)
+        GLib.idle_add(cleanup)
 
     def highlight_stale(self) -> None:
         self.call_on_thread(self.colorize_mods)
 
     def call_on_thread(self, func: Callable, *args) -> None:
-        from dzgui.views.dialogs.generic import WaitDialog
-
         self.wait_dialog = WaitDialog(self, strings.dialog.fetching)
         self.wait_dialog.show_all()
         thread = threading.Thread(target=func, args=args)
@@ -650,6 +638,8 @@ class Controller(GObject.GObject):
     def destroy_on_idle(self) -> None:
         self.wait_dialog.destroy()
         func = self.get_callback()
+        self.mediator.window.set_sensitive(True)
+        # TODO: spawn error dialog if API crawl failed
         if func is not None:
             args = self.get_callback_args()
             GLib.idle_add(func, *args)
@@ -735,13 +725,11 @@ class Controller(GObject.GObject):
         if func is None:
             self.mediator.statusbar.emit("server_page_changed", treeview.get_enum())
             return
-        manager = treeview.get_filter_man()
-        # TODO: this may lag?
         treeview.set_model(None)
+        manager = treeview.get_filter_man()
         manager.clear_model()
         self.set_callback(None, None)
         self.call_on_thread(func)
-
 
     def focus_button_box(self) -> None:
         self.mediator.right_panel.focus_button_box()
@@ -791,5 +779,5 @@ class Controller(GObject.GObject):
     def get_map(self) -> str:
         self.mediator.filters.get_selected_map()
 
-    def get_prio_map(self) -> str:
+    def get_prior_map(self) -> str:
         self.mediator.filters.get_prior_map()

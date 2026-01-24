@@ -53,9 +53,9 @@ class FilteredModelManager:
         self.success = True
 
     def append_row(self, row: list) -> None:
-        self.real_model.append(row)
+        # self.real_model.append(row)
         # NOTE: append null rows to thin client
-        self.model.append()
+        self.model.append(row)
 
     def clear_model(self) -> None:
         self.model.clear()
