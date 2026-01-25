@@ -1,17 +1,19 @@
 import logging
 from typing import Literal
 
-import gi  # noqa E402
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, Pango, GLib
-
 from dzgui.const.enum import FilterMode
 from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
 from dzgui.util import strings
 from dzgui.util.margins import set_surrounding_margins
 from dzgui.views.components.labels import BoldLabel
 
+import gi
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk, Pango, GLib  # noqa E402
+
 logger = logging.getLogger(__name__)
+
 
 class FilterPanel(Gtk.Box):
     def __init__(self, controller):
@@ -41,7 +43,7 @@ class FilterPanel(Gtk.Box):
         self.maps_hr = []
 
         self.enabled_filters = dict(self.default_filters)
-        self.keyword_filter: str
+        self.keyword_filter = ""
         self.selected_map: str = strings.all_maps
         self.prior_map: str = strings.all_maps
 
@@ -79,9 +81,7 @@ class FilterPanel(Gtk.Box):
         self.keyword_entry = Gtk.Entry()
         self.keyword_entry.set_placeholder_text("Filter by keyword")
         self.keyword_entry.connect("activate", self._on_keyword_enter)
-        self.keyword_entry.connect(
-            "key-press-event", self._on_keyword_keypress
-        )
+        self.keyword_entry.connect("key-press-event", self._on_keyword_keypress)
 
         completion = Gtk.EntryCompletion(inline_completion=True)
         completion.set_text_column(0)
@@ -142,9 +142,7 @@ class FilterPanel(Gtk.Box):
             state = self.default_filters[label]
             check.set_active(state)
 
-    def _on_map_entry_keypress(
-        self, entry: Gtk.Entry, event: Gdk.EventKey
-    ) -> None:
+    def _on_map_entry_keypress(self, entry: Gtk.Entry, event: Gdk.EventKey) -> None:
         match event.keyval:
             case Gdk.KEY_Return:
                 text = entry.get_text()
@@ -189,9 +187,7 @@ class FilterPanel(Gtk.Box):
         view.grab_focus()
         return False
 
-    def _on_keyword_keypress(
-        self, entry: Gtk.Entry, event: Gdk.EventKey
-    ) -> bool:
+    def _on_keyword_keypress(self, entry: Gtk.Entry, event: Gdk.EventKey) -> bool:
         match event.keyval:
             case Gdk.KEY_Up:
                 return True
@@ -202,9 +198,7 @@ class FilterPanel(Gtk.Box):
                 return True
         return False
 
-    def _on_combo_keypress(
-        self, combo: Gtk.ComboBox, event: Gdk.EventKey
-    ) -> bool:
+    def _on_combo_keypress(self, combo: Gtk.ComboBox, event: Gdk.EventKey) -> bool:
         match event.keyval:
             case Gdk.KEY_Down:
                 self.maps_combo.popup()

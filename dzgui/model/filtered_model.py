@@ -42,29 +42,25 @@ class FilteredModelManager:
     """
 
     def __init__(self, controller: "Controller") -> None:
-        self.filter_cache: tuple
+        self.controller = controller
+
+        self.filter_cache = {}
         self.ping_cache: dict[str, int] = {}
 
-        self.model = self.new_model_from_class(ServerColumns)
-        self.real_model = self.new_model_from_class(ServerColumns)
+        self.ephemeral_model = self.new_model_from_class(ServerColumns)
 
         self.control_model = None
         self.filtered = None
         self.success = True
 
     def append_row(self, row: list) -> None:
-        # self.real_model.append(row)
-        # NOTE: append null rows to thin client
-        self.model.append(row)
+        self.ephemeral_model.append(row)
 
     def clear_model(self) -> None:
-        self.model.clear()
-
-    def get_real_model(self) -> ListStore:
-        return self.real_model
+        self.ephemeral_model.clear()
 
     def get_model(self) -> ListStore:
-        return self.model
+        return self.ephemeral_model
 
     def new_model_from_class(self, cls: type) -> ListStore:
         store = ListStore(*[ftype for field, ftype in cls.__annotations__.items()])
@@ -79,7 +75,7 @@ class FilteredModelManager:
 
         if filters in self.filter_cache:
             cache = self.filter_cache[filters]
-            self.set_store(cache[0])
+            self.set_model(cache[0])
             self.set_filtered(cache[1])
             GLib.idle_add(
                 self.controller.mediator.get_active_treeview()._filter_cleanup
@@ -123,8 +119,7 @@ class FilteredModelManager:
             clone = None
 
         self.set_cache(filters, clone, rows)
-        self.set_store(clone)
-        GLib.idle_add(self.controller.mediator.get_active_treeview()._filter_cleanup)
+        self.set_model(clone)
 
     def sort_rows(self, rows: list) -> list:
         rows.sort(key=lambda x: re.sub(r"[^A-Za-z0-9]+", "", x[0].lower()))
@@ -261,13 +256,16 @@ class FilteredModelManager:
     def get_filtered(self) -> list:
         return self.filtered
 
-    def set_store(self, model: ListStore | None) -> None:
-        self.store = model
-
-    def get_store(self) -> ListStore | None:
-        return self.store
+    def set_model(self, model: ListStore | None) -> None:
+        """
+        ListStore representation of the model
+        """
+        self.ephemeral_model = model
 
     def set_control(self, rows: list) -> None:
+        """
+        Raw representation of the model, no transformations
+        """
         self.control_model = rows
 
     def set_success(self, result: bool) -> None:

@@ -22,7 +22,7 @@ from dzgui.api.mods import (
     _hash,
     remove_stale_signatures,
 )
-from dzgui.const.enum import Preferences, NotebookPage, ButtonType, ContextMenu
+from dzgui.const.enum import FilterMode, Preferences, NotebookPage, ButtonType, ContextMenu
 
 from dzgui.const.constants import (
     APPID_DAYZ,
@@ -615,9 +615,12 @@ class Controller(GObject.GObject):
             insert = None
         else:
             manager = treeview.get_filter_man()
-            for row in data:
-                manager.append_row(row)
+            manager.set_control(data)
+            manager.filter(FilterMode.INITIAL)
+            #for row in data:
+            #    manager.append_row(row)
             insert = manager.get_model()
+            print(insert)
         treeview.set_model(insert)
         treeview.set_loaded(True)
         GLib.idle_add(cleanup)
@@ -740,12 +743,12 @@ class Controller(GObject.GObject):
         if func is None:
             self.mediator.statusbar.emit("server_page_changed", treeview.get_enum())
             return
+        # TODO: on legacy version, model clearing happens in thread
         treeview.set_model(None)
         manager = treeview.get_filter_man()
-        manager.clear_model()
+        # manager.clear_model()
         self.set_callback(None, None)
         self.thread_data_func(func)
-        #self.call_on_thread(func)
 
     def focus_button_box(self) -> None:
         self.mediator.right_panel.focus_button_box()
@@ -787,13 +790,13 @@ class Controller(GObject.GObject):
 
     # TODO: use model manager, map and keyword caches
     def get_filters(self) -> list:
-        self.mediator.filters.get_filters()
+        return self.mediator.filters.get_filters()
 
     def get_keyword(self) -> str:
-        self.mediator.filters.get_keyword_filter()
+        return self.mediator.filters.get_keyword_filter()
 
     def get_map(self) -> str:
-        self.mediator.filters.get_selected_map()
+        return self.mediator.filters.get_selected_map()
 
     def get_prior_map(self) -> str:
-        self.mediator.filters.get_prior_map()
+        return self.mediator.filters.get_prior_map()

@@ -35,7 +35,7 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.lan = ServerTreeView(controller, ServerTab.LAN, ContextMenuGroup.SCAN_LAN)
 
         self.lan.set_query_func(self.controller.dump_test_2)
-        self.browser.set_query_func(self.controller.dump_test_2)
+        self.browser.set_query_func(self.controller.dump_api)
 
         tabs = [
             (self.browser, server_labels.browser),
