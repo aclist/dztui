@@ -77,9 +77,9 @@ class FilteredModelManager:
             cache = self.filter_cache[filters]
             self.set_model(cache[0])
             self.set_filtered(cache[1])
-            GLib.idle_add(
-                self.controller.mediator.get_active_treeview()._filter_cleanup
-            )
+            # GLib.idle_add(
+            #     self.controller.mediator.get_active_treeview()._filter_cleanup
+            # )
             return
 
         match mode:
@@ -139,8 +139,7 @@ class FilteredModelManager:
         Multi-filtration for any context starts by narrowing by map
         """
         rows = self.filtered
-        panel = self.controller.get_map()
-        sel_map = panel.get_selected_map()
+        sel_map = self.controller.get_map()
 
         if sel_map == "All maps":
             return rows

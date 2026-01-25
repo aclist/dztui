@@ -392,7 +392,7 @@ class Controller(GObject.GObject):
 
         # TODO: ping column pass
         parsed = Servers.parse_json(serv)
-        self.push_data(parsed)
+        self.push_data(parsed, FilterMode.INITIAL)
 
     def get_help_row(self) -> str:
         tv = self.mediator.menu
@@ -600,7 +600,7 @@ class Controller(GObject.GObject):
         )
         self.push_data(data)
 
-    def push_data(self, data: tuple) -> None:
+    def push_data(self, data: tuple, mode: FilterMode) -> None:
         def cleanup():
             # TODO: rename signal
             self.mediator.statusbar.emit("server_page_changed", context)
@@ -615,12 +615,11 @@ class Controller(GObject.GObject):
             insert = None
         else:
             manager = treeview.get_filter_man()
-            manager.set_control(data)
-            manager.filter(FilterMode.INITIAL)
-            #for row in data:
-            #    manager.append_row(row)
+            # TODO: consolidate into filter manager
+            if mode == FilterMode.INITIAL:
+                manager.set_control(data)
+            manager.filter(mode)
             insert = manager.get_model()
-            print(insert)
         treeview.set_model(insert)
         treeview.set_loaded(True)
         GLib.idle_add(cleanup)
@@ -634,6 +633,26 @@ class Controller(GObject.GObject):
     #     self.wait_dialog.show_all()
     #     thread = threading.Thread(target=func, args=args)
     #     thread.start()
+
+    #def filter_cleanup(self) -> None:
+    #    tv = self.get_active_treeview()
+    #    m = tv.filter_man.get_model()
+    #    # TODO: model should not be getting updated in this thread
+    #    # delegate to self.push_data()
+    #    # keeping in mind that server refresh button has to wipe control model
+    #    tv.set_model(m)
+
+    #@call_on_thread
+    #def filter_threaded(self, mode: FilterMode, label: str) -> None:
+    #    tv = self.get_active_treeview()
+    #    tv.filter_man.filter(mode, label)
+    #    self.set_callback(self.filter_cleanup)
+    #    self.destroy_on_idle()
+
+    #def filter_model(self, mode: FilterMode, label: str) -> None:
+    #    tv = self.get_active_treeview()
+    #    tv.set_model(None)
+    #    self.filter_threaded(mode, label)
 
     def get_callback(self) -> Callable | None:
         return self.callback["func"]
@@ -733,6 +752,21 @@ class Controller(GObject.GObject):
     def thread_data_func(self, func: Callable) -> None:
         func()
 
+    @call_on_thread
+    def filter_threaded(self, mode: FilterMode, label: str) -> None:
+        print(mode)
+        tv = self.get_active_treeview()
+        tv.filter_man.filter(mode, label)
+        self.push_data("", mode)
+
+    def refilter_model(self, mode: FilterMode, label: str) -> None:
+        print(mode)
+        tv = self.get_active_treeview()
+        tv.set_model(None)
+        self.set_callback(None, None)
+        self.filter_threaded(mode, label)
+
+
     def populate_model(self) -> None:
         treeview = self.get_active_treeview()
         if treeview.get_loaded() is True:
@@ -745,7 +779,7 @@ class Controller(GObject.GObject):
             return
         # TODO: on legacy version, model clearing happens in thread
         treeview.set_model(None)
-        manager = treeview.get_filter_man()
+        # manager = treeview.get_filter_man()
         # manager.clear_model()
         self.set_callback(None, None)
         self.thread_data_func(func)

@@ -246,7 +246,7 @@ class FilterPanel(Gtk.Box):
         check.set_active(not state)
 
     def _on_check_toggled(self, button: Gtk.CheckButton) -> None:
-        treeview = self.controller.get_active_treeview()
+        # treeview = self.controller.get_active_treeview()
         label = button.get_label()
         state = button.get_active()
         logger.info(f"User toggled button '{label}' to {state}")
@@ -256,7 +256,7 @@ class FilterPanel(Gtk.Box):
             mode = FilterMode.TOGGLE_OFF
 
         self.enabled_filters[label] = state
-        treeview.filter(mode, label)
+        self.controller.refilter_model(mode, label)
 
     def _on_map_changed(self, combo: Gtk.ComboBox) -> None:
         treeview = self.controller.get_active_treeview()

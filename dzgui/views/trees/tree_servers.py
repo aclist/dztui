@@ -116,10 +116,6 @@ class ServerTreeView(TreeView):
     def distcalc_started(self) -> None:
         pass
 
-    def filter(self, mode: FilterMode, label: str) -> None:
-        print("TOGGLE:", mode)
-        print("LABEL: ", label)
-
     def get_filter_man(self) -> FilteredModelManager:
         return self.filter_man
 
