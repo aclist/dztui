@@ -115,7 +115,7 @@ class FilteredModelManager:
                     row[9] = self.ping_cache[row[7]]
 
         if len(rows) > 0:
-            clone = self.new_model()
+            clone = self.new_model_from_class(ServerColumns)
             rows = self.sort_rows(rows)
             for row in rows:
                 clone.append(row)
@@ -243,7 +243,7 @@ class FilteredModelManager:
             if row[7] == addr and row[8] == qport:
                 self.control_model.remove(row)
 
-        self.wipe_cache()
+        # self.wipe_cache()
         filters = self.controller.get_filters()
         refiltered = self.filter_toggle_on(filters)
         self.set_filtered(refiltered)
@@ -276,10 +276,10 @@ class FilteredModelManager:
     def get_success(self) -> bool:
         return self.success
 
-    def wipe_cache(self, full=False) -> None:
-        self.success = True
-        self.filtered = None
-        self.filter_cache = {}
-        self.ping_cache = {}
-        if full:
-            self.control_model = None
+    # def wipe_cache(self, full=False) -> None:
+    #     self.success = True
+    #     self.filtered = None
+    #     self.filter_cache = {}
+    #     self.ping_cache = {}
+    #     if full:
+    #         self.control_model = None

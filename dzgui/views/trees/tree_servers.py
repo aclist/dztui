@@ -378,7 +378,8 @@ class ServerTreeView(TreeView):
     ) -> Any:
         """
         Lazy load contents from model manager into visible CellRenderers on demand
-        N.B., all row data will be stringified
+        N.B., all row data types will be stringified and must be fetched
+        from separate model manager, not internally from TreeView
         cf. Gtk.TreeViewColumn.set_cell_data_func()
         """
         path = model.get_path(it)
@@ -391,5 +392,3 @@ class ServerTreeView(TreeView):
             real_model = self.filter_man.get_real_model()
             value = real_model[row_index][col_index]
             cell.set_property("text", str(value))
-        else:
-            return

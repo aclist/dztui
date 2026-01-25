@@ -95,6 +95,15 @@ class Controller(GObject.GObject):
         # NOTE: suppress requests until entire UI is loaded
         self.loaded = False
 
+    def call_on_thread(func: Callable) -> Callable:
+        def wrapper(*args, **kwargs):
+            self = args[0]
+            self.wait_dialog = WaitDialog(self, strings.dialog.fetching)
+            self.wait_dialog.show_all()
+            thread = threading.Thread(target=func, args=args)
+            thread.start()
+        return wrapper
+
     def register_widget(self, attr: str, widget: Gtk.Widget) -> None:
         try:
             setattr(self.mediator, attr, widget)
@@ -613,14 +622,15 @@ class Controller(GObject.GObject):
         treeview.set_loaded(True)
         GLib.idle_add(cleanup)
 
+    @call_on_thread
     def highlight_stale(self) -> None:
-        self.call_on_thread(self.colorize_mods)
+        self.colorize_mods()
 
-    def call_on_thread(self, func: Callable, *args) -> None:
-        self.wait_dialog = WaitDialog(self, strings.dialog.fetching)
-        self.wait_dialog.show_all()
-        thread = threading.Thread(target=func, args=args)
-        thread.start()
+    # def call_on_thread(self, func: Callable, *args) -> None:
+    #     self.wait_dialog = WaitDialog(self, strings.dialog.fetching)
+    #     self.wait_dialog.show_all()
+    #     thread = threading.Thread(target=func, args=args)
+    #     thread.start()
 
     def get_callback(self) -> Callable | None:
         return self.callback["func"]
@@ -670,8 +680,9 @@ class Controller(GObject.GObject):
             dialog = ExceptionDialog(self, strings.api_error)
             dialog.run()
 
+    @call_on_thread
     def update_api_key(self, text: str, key: Preferences) -> None:
-        self.call_on_thread(self.test_api_response, text, key)
+        self.test_api_response(text, key)
 
     def set_resolution(self, window: "OuterWindow") -> None:
         if self.prefs.is_game_mode:
@@ -715,6 +726,10 @@ class Controller(GObject.GObject):
     def get_statusbar(self) -> None:
         return self.mediator.statusbar
 
+    @call_on_thread
+    def thread_data_func(self, func: Callable) -> None:
+        func()
+
     def populate_model(self) -> None:
         treeview = self.get_active_treeview()
         if treeview.get_loaded() is True:
@@ -729,7 +744,8 @@ class Controller(GObject.GObject):
         manager = treeview.get_filter_man()
         manager.clear_model()
         self.set_callback(None, None)
-        self.call_on_thread(func)
+        self.thread_data_func(func)
+        #self.call_on_thread(func)
 
     def focus_button_box(self) -> None:
         self.mediator.right_panel.focus_button_box()

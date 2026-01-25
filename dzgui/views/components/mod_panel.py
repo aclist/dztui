@@ -6,11 +6,13 @@ from dzgui.util.strings import mod_panel
 from dzgui.views.components.labels import BoldLabel
 
 import gi
+
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk # noqa E402
+from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+
 
 class EnumeratedModButton(Gtk.Button):
     def __init__(self, enum: ModButton) -> None:
@@ -61,7 +63,7 @@ class ModSelectionPanel(Gtk.Box):
         self.swap_sensitive(True)
 
     def swap_sensitive(self, state: bool) -> None:
-        for child in self.extra_panel.get_children():
+        for child in self.stale_panel.get_children():
             child.set_sensitive(state)
         for child in self.main_panel.get_children():
             if child.enum == ModButton.HIGHLIGHT_STALE:
@@ -84,4 +86,3 @@ class ModSelectionPanel(Gtk.Box):
                 self.swap_sensitive(False)
             case ModButton.SELECT_STALE:
                 self.controller.select_colorized()
-
