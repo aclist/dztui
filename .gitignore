@@ -1,1 +1,4 @@
 tags
+__pycache__
+pre-commit
+tests/
