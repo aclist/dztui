@@ -381,7 +381,7 @@ class Controller(GObject.GObject):
                 res = future.result()
                 if res.status != 200 or not res.parsed:
                     # TODO: pop warning dialog
-                    self.push_data(None)
+                    self.push_data(None, FilterMode.INITIAL)
                     return
                 j = res.json
                 serv += j["response"]["servers"]
@@ -609,22 +609,22 @@ class Controller(GObject.GObject):
         # TODO: may be superfluous
         treeview.grab_focus()
         self.destroy_on_idle()
+        if len(treeview.filter_man.get_model()) == 0:
+            # TODO: different dialogs for server tab contexts
+            # TODO: if history/favorites is empty, don't even trigger a call
+            # TODO: add proper string for this dialog
+            dialog = ExceptionDialog(self, "API TIMEOUT")
+            dialog.run()
 
     def push_data(self, data: tuple, mode: FilterMode) -> None:
-        #def cleanup():
-        #    # TODO: rename signal
-        #    self.mediator.statusbar.emit("server_page_changed", context)
-        #    # TODO: may be superfluous
-        #    treeview.grab_focus()
-        #    self.destroy_on_idle()
 
         treeview = self.get_active_treeview()
         context = self.get_active_context()
+        manager = treeview.get_filter_man()
 
         if data is None:
             insert = None
         else:
-            manager = treeview.get_filter_man()
             # TODO: consolidate into filter manager
             if mode == FilterMode.INITIAL:
                 manager.set_control(data)
@@ -638,32 +638,6 @@ class Controller(GObject.GObject):
     @call_on_thread
     def highlight_stale(self) -> None:
         self.colorize_mods()
-
-    # def call_on_thread(self, func: Callable, *args) -> None:
-    #     self.wait_dialog = WaitDialog(self, strings.dialog.fetching)
-    #     self.wait_dialog.show_all()
-    #     thread = threading.Thread(target=func, args=args)
-    #     thread.start()
-
-    #def filter_cleanup(self) -> None:
-    #    tv = self.get_active_treeview()
-    #    m = tv.filter_man.get_model()
-    #    # TODO: model should not be getting updated in this thread
-    #    # delegate to self.push_data()
-    #    # keeping in mind that server refresh button has to wipe control model
-    #    tv.set_model(m)
-
-    #@call_on_thread
-    #def filter_threaded(self, mode: FilterMode, label: str) -> None:
-    #    tv = self.get_active_treeview()
-    #    tv.filter_man.filter(mode, label)
-    #    self.set_callback(self.filter_cleanup)
-    #    self.destroy_on_idle()
-
-    #def filter_model(self, mode: FilterMode, label: str) -> None:
-    #    tv = self.get_active_treeview()
-    #    tv.set_model(None)
-    #    self.filter_threaded(mode, label)
 
     def get_callback(self) -> Callable | None:
         return self.callback["func"]

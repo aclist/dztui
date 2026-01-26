@@ -397,7 +397,11 @@ def query_api(key: str, appid: int, param: str) -> Res:
         "key": key,
     }
     try:
-        res = requests.get(STEAM_SERVERS, params=payload, timeout=5)
+        """
+        NOTE: the global default timeout is None;
+        using a low timeout (~5s) sometimes fails
+        """
+        res = requests.get(STEAM_SERVERS, params=payload, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         parsed = True
         status = 200

@@ -1,5 +1,5 @@
 import textwrap
-from typing import Any, Literal, Self, TYPE_CHECKING
+from typing import Literal, Self, TYPE_CHECKING
 
 from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL
 from dzgui.const.enum import Popup, ButtonType, NotebookPage
@@ -7,6 +7,7 @@ from dzgui.util import strings
 from dzgui.views.components.buttons import ClipboardButton
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 
@@ -29,12 +30,13 @@ if TYPE_CHECKING:
 
 
 class GenericDialog(Gtk.MessageDialog):
-    def __init__(self,
+    def __init__(
+        self,
         controller: "Controller",
         text: str,
         mtype: Gtk.MessageType,
         buttons: Gtk.ButtonsType,
-        secondary: str
+        secondary: str,
     ) -> None:
         super().__init__(
             transient_for=controller.mediator.window,
@@ -101,10 +103,10 @@ class WaitDialog(GenericDialog):
 
         spinner.start()
         # FIXME: center on parent window
-        #self.show_all()
+        # self.show_all()
 
     def _on_dialog_delete(
-            self, response_id: Gtk.ResponseType, event: Gdk.Event
+        self, response_id: Gtk.ResponseType, event: Gdk.Event
     ) -> Literal[True]:
         """
         Prevent manual dialog destruction
@@ -143,6 +145,7 @@ class ExceptionDialog(GenericDialog):
             dialog = ExceptionDialog(Controller, trace)
             dialog.run()
     """
+
     def __init__(self, controller: "Controller", trace: str):
         super().__init__(
             controller=controller,
@@ -154,15 +157,11 @@ class ExceptionDialog(GenericDialog):
 
         # NOTE: box expands to end of content area
         scrollable = Gtk.ScrolledWindow(
-            propagate_natural_height=True,
-            max_content_height=500
+            propagate_natural_height=True, max_content_height=500
         )
         box = Gtk.Box(hexpand=True, vexpand=True, orientation=Gtk.Orientation.VERTICAL)
         textview = Gtk.TextView(
-            wrap_mode=Gtk.WrapMode.WORD,
-            editable=False,
-            left_margin=10,
-            right_margin=10
+            wrap_mode=Gtk.WrapMode.WORD, editable=False, left_margin=10, right_margin=10
         )
         textview.set_buffer(Gtk.TextBuffer(text=trace))
         box.pack_start(textview, EXPAND, FILL, 10)
@@ -176,16 +175,18 @@ class ExceptionDialog(GenericDialog):
         copy_button = ClipboardButton(controller, trace)
         self.add_action_widget(copy_button, Gtk.ResponseType.NONE)
         self.add_button("OK", Gtk.ResponseType.OK)
-        action_area = self.get_action_area()
-        self.show_all()
 
+        self.show_all()
+        self.action_area.get_children()[1].grab_focus()
         self.connect("response", self._on_response)
 
-    def _on_response(self, dialog: Self, response: Gtk.ResponseType) -> None:
+    def _on_response(
+        self, dialog: Self, response: Gtk.ResponseType
+    ) -> None | Literal[True]:
         match response:
             case Gtk.ResponseType.OK:
                 self.destroy()
             case Gtk.ResponseType.NONE:
-                return True  # type: ignore
+                return True
             case Gtk.ResponseType.DELETE_EVENT:
                 self.destroy()

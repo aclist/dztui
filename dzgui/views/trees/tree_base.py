@@ -80,8 +80,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
     def _on_keypress(self, treeview: Gtk.TreeView, event: Gdk.EventKey) -> None:
 
         if is_navkey(event.keyval):
-            # TODO: if model is None
-            if len(self.get_model()) < 2:
+            if self.get_model() is None:
                 return
             if self.sel_blocked is False:
                 self.controller.suppress_signal(
@@ -108,7 +107,6 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
             return
         if len(self.get_model()) < 2:
             return
-
         if is_navkey(event.keyval):
             if self.sel_blocked is True:
                 self.controller.suppress_signal(

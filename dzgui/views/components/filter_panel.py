@@ -79,6 +79,7 @@ class FilterPanel(Gtk.Box):
         self.filters_label = BoldLabel("Filters")
 
         self.keyword_entry = Gtk.Entry()
+        # TODO :strings
         self.keyword_entry.set_placeholder_text("Filter by keyword")
         self.keyword_entry.connect("activate", self._on_keyword_enter)
         self.keyword_entry.connect("key-press-event", self._on_keyword_keypress)
