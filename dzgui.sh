@@ -2,7 +2,7 @@
 set -o pipefail
 
 src_path="$(readlink -e "$0")"
-version=6.0.2-beta.2
+version=6.0.2-beta.3
 
 #CONSTANTS
 aid=221100
@@ -386,7 +386,7 @@ prompt_dl(){
 	Your branch: $branch
 	Your version: $version
 	Upstream version: $upstream
-	
+
 	Version updates introduce important bug fixes and are encouraged. Attempt to download the latest version?
 	EOF
     }
@@ -626,12 +626,12 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="69e83db00cbc7674e241565c88aed83d"
+        ["funcs"]="9c790def4f70b6d1b0ed604a2b87b0dc"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
         ["ui.py"]="d09b9d8bed3854efd51377289786c5ac"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
-        ["pefile.py"]="21531f2c0d9dfa5f110cf6779f9d22c0"
+        ["pefile.py"]="b452974a84bff1d821872fcebf59e380"
     )
     local author="aclist"
     local repo="dztui"

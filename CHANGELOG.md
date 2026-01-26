@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.2-beta.3] 2026-01-26
+## Fixed
+- Raise error correctly from module
+
 ## [6.0.2-beta.2] 2026-01-18
 ## Fixed
 - Helpers not being downloaded (uncommented boilerplate)
@@ -589,7 +593,7 @@ As part of this change, version 4.0.0 introduces the ability to connect to or ad
 
 If you encounter any problems with this new release or with the migration of configs, please do not hesitate to submit a bug report.
 
-Attention Fedora 38 users: problems with upstream GNOME packages causing crashes have been reported to GNOME development and a fix has been issued. You have the choice of compiling the zenity package 
+Attention Fedora 38 users: problems with upstream GNOME packages causing crashes have been reported to GNOME development and a fix has been issued. You have the choice of compiling the zenity package
 from source or waiting until the latest version is merged into Fedora's package manager.
 
 ### Added
@@ -614,7 +618,7 @@ from source or waiting until the latest version is merged into Fedora's package 
 - Store complete IP:Port instead of server IDs
 - Make Battlemetrics API key optional: this is only used for the 'Connect by ID' and 'Add server by ID' methods and is not required. If you prefer, you can simply connect/add by IP.
 - Prevent the application from launching in Game Mode on Steam Deck: Steam Deck's kiosk mode has problems sending keyboard input to third party applications. To prevent unintended usage, DZGUI now warns the user to launch the app in Desktop Mode if they attempt to use it from Game Mode. Adding DZGUI as a Non-Steam Game does work on desktop PCs, but is not recommended due to the way Steam handles subshells. For best results, launch DZGUI directly via the script/applications menu (PC) or via the desktop icon (Steam Deck).
-- Omit null servers from list: servers that time out or send an empty response are now omitted entirely from the My Servers list, as they will not return meaningful metadata unless they are online.  
+- Omit null servers from list: servers that time out or send an empty response are now omitted entirely from the My Servers list, as they will not return meaningful metadata unless they are online.
   The My Servers list thus shows online and accessible servers
 
 ## [3.3.0] 2023-05-16
@@ -633,7 +637,7 @@ from source or waiting until the latest version is merged into Fedora's package 
 - First-time setup: sudo escalation when checking system map count for the first time
 
 ### Fixed
-- Steam Deck: non-ASCII delimiter causing setup menu to despawn on some devices 
+- Steam Deck: non-ASCII delimiter causing setup menu to despawn on some devices
 - Don't add items in My Servers multiple times to array when the list of favorites is paginated
 - Trigger progress dialogs sooner and in sequence to reduce appearance of visual lag
 - First-time setup: break out of dialogs correctly when user backs out
