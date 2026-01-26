@@ -77,9 +77,6 @@ class FilteredModelManager:
             cache = self.filter_cache[filters]
             self.set_model(cache[0])
             self.set_filtered(cache[1])
-            # GLib.idle_add(
-            #     self.controller.mediator.get_active_treeview()._filter_cleanup
-            # )
             return
 
         match mode:
@@ -242,7 +239,6 @@ class FilteredModelManager:
         refiltered = self.filter_toggle_on(filters)
         self.set_filtered(refiltered)
         self.set_success(True)
-        GLib.idle_add(self.controller.mediator.get_active_treeview()._filter_cleanup)
 
     def convert_model_to_list(self, model: ListStore) -> list:
         return [[el for el in row] for row in model]

@@ -228,8 +228,7 @@ class FilterPanel(Gtk.Box):
             return
         logger.info(f"User filtered by keyword '{keyword}'")
         self.keyword_filter = keyword
-        treeview = self.controller.get_active_treeview()
-        treeview.filter(FilterMode.KEYWORD, keyword)
+        self.controller.refilter_model(FilterMode.KEYWORD, keyword)
 
     def _on_button_release(self, window, button) -> Literal[True]:
         return True

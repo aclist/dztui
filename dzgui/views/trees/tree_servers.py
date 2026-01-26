@@ -385,6 +385,7 @@ class ServerTreeView(TreeView):
         except Exception:
             return
         if row_index >= start[0] <= end[0]:
-            real_model = self.filter_man.get_real_model()
+            # NOTE: fetch raw data rows
+            real_model = self.filter_man.get_control()
             value = real_model[row_index][col_index]
             cell.set_property("text", str(value))

@@ -64,7 +64,7 @@ build-backend = "setuptools.build_meta"
 [tool.ruff]
 line-length = 88
 indent-width = 4
-extend-exclude = ["tree_servers.py", "tree_server_mods.py", "dialogs", "right_panel.py", "filter_panel.py", "base.py", "*lib/a2s", "dist.py"]
+extend-exclude = ["tree_server_mods.py", "dialogs", "*lib/a2s"]
 lint.unfixable = ["F401"]
 
 [tool.ruff.format]

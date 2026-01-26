@@ -380,6 +380,7 @@ class Controller(GObject.GObject):
             for future in futures:
                 res = future.result()
                 if res.status != 200 or not res.parsed:
+                    # TODO: pop warning dialog
                     self.push_data(None)
                     return
                 j = res.json
@@ -600,13 +601,22 @@ class Controller(GObject.GObject):
         )
         self.push_data(data)
 
+    def cleanup(self):
+        treeview = self.get_active_treeview()
+        context = self.get_active_context()
+        # TODO: rename signal
+        self.mediator.statusbar.emit("server_page_changed", context)
+        # TODO: may be superfluous
+        treeview.grab_focus()
+        self.destroy_on_idle()
+
     def push_data(self, data: tuple, mode: FilterMode) -> None:
-        def cleanup():
-            # TODO: rename signal
-            self.mediator.statusbar.emit("server_page_changed", context)
-            # TODO: may be superfluous
-            treeview.grab_focus()
-            self.destroy_on_idle()
+        #def cleanup():
+        #    # TODO: rename signal
+        #    self.mediator.statusbar.emit("server_page_changed", context)
+        #    # TODO: may be superfluous
+        #    treeview.grab_focus()
+        #    self.destroy_on_idle()
 
         treeview = self.get_active_treeview()
         context = self.get_active_context()
@@ -618,11 +628,12 @@ class Controller(GObject.GObject):
             # TODO: consolidate into filter manager
             if mode == FilterMode.INITIAL:
                 manager.set_control(data)
+                # TODO: init maps here
             manager.filter(mode)
             insert = manager.get_model()
         treeview.set_model(insert)
         treeview.set_loaded(True)
-        GLib.idle_add(cleanup)
+        GLib.idle_add(self.cleanup)
 
     @call_on_thread
     def highlight_stale(self) -> None:
@@ -754,18 +765,18 @@ class Controller(GObject.GObject):
 
     @call_on_thread
     def filter_threaded(self, mode: FilterMode, label: str) -> None:
-        print(mode)
         tv = self.get_active_treeview()
         tv.filter_man.filter(mode, label)
         self.push_data("", mode)
 
     def refilter_model(self, mode: FilterMode, label: str) -> None:
-        print(mode)
         tv = self.get_active_treeview()
+        # TODO: shouldn't empty model be None?
+        if len(tv.get_model()) == 0:
+            return
         tv.set_model(None)
         self.set_callback(None, None)
         self.filter_threaded(mode, label)
-
 
     def populate_model(self) -> None:
         treeview = self.get_active_treeview()
@@ -823,6 +834,7 @@ class Controller(GObject.GObject):
         self.mediator.grid.conpan.set_visible(state)
 
     # TODO: use model manager, map and keyword caches
+    # TODO: model cache that hooks checkbox signal
     def get_filters(self) -> list:
         return self.mediator.filters.get_filters()
 
