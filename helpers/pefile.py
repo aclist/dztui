@@ -295,7 +295,7 @@ def get_dayz_version(file: Path) -> DayZVersion | Exception:
     try:
         version = get_version(file)
     except Exception as e:
-        return e
+        raise e
     patch = str(version.build) + str(version.revision)
     dz_vers = DayZVersion(version.major, version.minor, int(patch))
     return dz_vers
