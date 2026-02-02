@@ -3,7 +3,7 @@ import multiprocessing
 from typing import Any, Self
 from warnings import deprecated
 
-from dzgui.const.enum import ContextMenu, ContextMenuGroup, FilterMode, ServerTab
+from dzgui.const.enum import ContextMenu, ContextMenuGroup, ServerTab
 from dzgui.api.servers import Record
 from dzgui.model.filtered_model import FilteredModelManager
 from dzgui.util.dist import CalcDist
@@ -203,13 +203,14 @@ class ServerTreeView(TreeView):
             self.current_proc.terminate()
 
     def _on_distcalc_started(self, treeview: Self):
-        bar = self.controller.get_statusbar()
+        # bar = self.controller.get_statusbar()
 
         record = self.get_record()
         if record is None:
             return
 
-        bar.emit("server_row_changed")
+        self.emitter.emit("distcalc_started")
+        # bar.emit("server_row_changed")
         cache = self.controller.get_dist_cache()
 
         if record.ip in cache:
@@ -297,7 +298,7 @@ class ServerTreeView(TreeView):
         except AttributeError:
             pass
 
-        mod_context_items = [ContextMenu.OPEN_WORKSHOP, ContextMenu.DELETE_MOD]
+        # mod_context_items = [ContextMenu.OPEN_WORKSHOP, ContextMenu.DELETE_MOD]
 
         # TODO: dynamic menu entries
         # for row in items:

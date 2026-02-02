@@ -4,7 +4,6 @@ import struct
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from shlex import shlex
 from typing import BinaryIO, Union
 
 from packaging.version import Version
@@ -73,7 +72,7 @@ class PackedData:
     def unpack(cls, data: BinaryIO):
         r = []
         for key, value in cls.__annotations__.items():
-            if value == str:
+            if type(value) is str:
                 f = data.read(8).rstrip(b"\x00\x00").decode()
             else:
                 fmt = endian + (value.fmt)
@@ -269,6 +268,7 @@ class AppNotInstalledError(Exception):
 
 class AppMovedError(Exception):
     """VDF points to a nonexistent location on disk"""
+
     pass
 
 
@@ -372,10 +372,7 @@ def get_version(file: Path) -> FileVersion:
                     shift = entry.data_or_subdir & ~(1 << 31)
                     seek_to_hex(hex(offset + shift), f)
                     table = RESOURCE_DIRECTORY_TABLE.unpack(f)
-                    total = (
-                        table.number_of_name_entries
-                        + table.number_of_id_entries
-                    )
+                    total = table.number_of_name_entries + table.number_of_id_entries
                     for entry in range(total):
                         entry = RESOURCE_DIRECTORY_ENTRY.unpack(f)
                 break
@@ -422,6 +419,7 @@ def get_pefile_path(steam_path: Path, appid: int) -> Path:
     app_path = get_app_path(steam_path / LIBRARYFOLDERS_PATH, appid)
     pe_path = app_path / f"steamapps/common/{name}/{binary}"
     return pe_path
+
 
 def get_app_path(folders_path: Path, appid: int) -> Path:
     app_path = None

@@ -20,6 +20,7 @@ class Statusbar(Gtk.Grid):
 
         self.controller = controller
         self.controller.register_widget("statusbar", self)
+        self.emitter = controller.get_emitter()
 
         self.playercount = ""
         self.statusbar = Gtk.Statusbar()
@@ -45,17 +46,15 @@ class Statusbar(Gtk.Grid):
         controller.mediator.notebook.connect_after(
             "switch-page", self._on_notebook_page_changed
         )
-        self.connect("server_row_changed", self._on_server_row_changed)
-        self.connect("server_page_changed", self._on_server_page_changed)
+        self.emitter.connect("distcalc_started", self._on_distcalc_started)
+        # TODO:
         self.connect("distcalc_ended", self._on_distcalc_ended)
+
+        self.connect("server_page_changed", self._on_server_page_changed)
 
     # TODO: move to emitter
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
     def server_page_changed(self, tab: ServerTab) -> None:
-        pass
-
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
-    def server_row_changed(self) -> None:
         pass
 
     @GObject.Signal(
@@ -123,6 +122,7 @@ class Statusbar(Gtk.Grid):
 
         self.set_by_context(context, count)
         tree = self.controller.get_active_treeview()
+        # TODO: emit page change signal on emitter, treeview catches signal and calls distcalc
         tree.emit("distcalc_started")
 
     def pop(self, context: Union["ServerTab", "NotebookPage"]) -> None:

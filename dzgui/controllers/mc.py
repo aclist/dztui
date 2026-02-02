@@ -7,7 +7,7 @@ from warnings import deprecated
 from concurrent.futures import wait
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, Callable, Literal, TYPE_CHECKING
+from typing import Any, Callable, Literal, Union, TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers
@@ -110,6 +110,14 @@ class Emitter(GObject.GObject):
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def request_button_box_focus(self) -> None:
         """User invoked right movement keybinding from ServerTreeView"""
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def distcalc_started(self) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object, object,))
+    def distcalc_ended(self, dist: Union[str, None], context: Union["ServerTab", NotebookPage]) -> None:
         pass
 
 
@@ -400,7 +408,7 @@ class Controller(GObject.GObject):
 
         self.mediator.notebook.set_page_by_enum(button.opens)
 
-    def dump_api(self):
+    def dump_api(self) -> None:
         key = self.query_config(Preferences.STEAM)
         job = Servers.query_api
         params = Servers.params
@@ -646,7 +654,7 @@ class Controller(GObject.GObject):
         )
         self.push_data(data)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         treeview = self.get_active_treeview()
         context = self.get_active_context()
         # TODO: rename signal
@@ -664,7 +672,7 @@ class Controller(GObject.GObject):
     def push_data(self, data: tuple, mode: FilterMode) -> None:
 
         treeview = self.get_active_treeview()
-        context = self.get_active_context()
+        # context = self.get_active_context()
         manager = treeview.get_filter_man()
 
         if data is None:

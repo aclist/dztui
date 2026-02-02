@@ -11,12 +11,14 @@ from dzgui.util.bash import concat_bash_args
 logger = logging.getLogger(__name__)
 
 
-def query_defunct():
+def query_defunct() -> None:
     pass
+
+
 # TODO: unimplemented
-#cf.
+# cf.
 #!/usr/bin/env bash
-#query_defunct(){
+# query_defunct(){
 #    readarray -t modlist <<< "$@"
 #    local max=${#modlist[@]}
 #    concat(){
@@ -41,15 +43,16 @@ def query_defunct():
 #    | select(.filename|contains("screenshot")|not)
 #    | "\(.file_size) \(.publishedfileid)"')
 #    <<< "$result" awk '{print $2}'
-#}
+# }
 #
-#query_defunct "3576065083"
+# query_defunct "3576065083"
 
 
 def concat_mods(mods: list[str]) -> str:
     for mod in mods:
         mods[mod] = "@" + mod
     return ";".join(mods)
+
 
 # TEST: set config to name=user, use official server and no mods,
 # ensure that formatted string is identical to fixture
@@ -58,13 +61,13 @@ def connect(addr: str, appid: int, name: str, mods: list) -> None:
     # TODO: concat_mods(mods):
     # @<mod>;@<mod>;
     params = [
-            f"-connect={addr}",
-            "-nolauncher",
-            "-nosplash",
-            "-skipintro",
-            f"-name={name}",
-            f"-mod={concat}"
-            ]
+        f"-connect={addr}",
+        "-nolauncher",
+        "-nosplash",
+        "-skipintro",
+        f"-name={name}",
+        f"-mod={concat}",
+    ]
     # TODO: get steam launch command from configs
     # args = concat_bash_args()
     #
@@ -130,8 +133,8 @@ def gen_shortcut() -> None:
     show user account name, select outer steam id
     steam/userdata/<steamid_32>/config/shortcuts.vdf
     """
-    #STEAMID_MAGIC = 76561197960265728
+    # STEAMID_MAGIC = 76561197960265728
     # STEAMID_64 - STEAMID_MAGIC = STEAMID32
     # or get right-most 32 bits
-    #STEAMID_64 & 0xFFFFFFFF
+    # STEAMID_64 & 0xFFFFFFFF
     pass

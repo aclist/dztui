@@ -1,19 +1,19 @@
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from dzgui.views.components.buttonbox import ButtonBox
 from dzgui.views.components.filter_panel import FilterPanel
 from dzgui.views.components.mod_panel import ModSelectionPanel
 from dzgui.views.components.buttons import RefreshButton, KeysButton
 from dzgui.const.constants import NO_EXPAND, NO_FILL, FILL, NO_PADDING
-from dzgui.util.strings import atomic_buttons
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
-    from GLib import SOURCE_REMOVE
+
 
 class RightPanel(Gtk.Box):
     def __init__(self, controller: "Controller"):
@@ -21,8 +21,8 @@ class RightPanel(Gtk.Box):
 
         self.controller = controller
         self.controller.register_widget("right_panel", self)
-        self.emitter = controller.get_emitter()
 
+        emitter = controller.get_emitter()
         emitter.connect("request_button_box_focus", self.focus_button_box)
 
         self.button_vbox = ButtonBox(controller)
@@ -41,13 +41,13 @@ class RightPanel(Gtk.Box):
     def reinit_maps(self, rows: list) -> None:
         self.controller.reinit_map_store()
         # TODO: communicate with controller
-        #self.controller.clear_map_store()
-        #map_store.append(["All maps"])
+        # self.controller.clear_map_store()
+        # map_store.append(["All maps"])
         self.selected = "All maps"
         self.filters_vbox.set_unique_maps(rows)
 
     # TODO: reference
-    #def _on_ping_clicked(self, button: Gtk.Button) -> None:
+    # def _on_ping_clicked(self, button: Gtk.Button) -> None:
     #    block_signals()
     #    def _update_pings():
     #        # TODO

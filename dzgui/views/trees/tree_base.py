@@ -1,6 +1,6 @@
 import logging
 
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from dzgui.const.constants import SEPARATOR
 from dzgui.util.keys import is_navkey
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
     def __init__(
-        self, controller: "Controller", menu: "ContextMenuGroup" = None
+        self, controller: "Controller", menu: Optional["ContextMenuGroup"] = None
     ) -> None:
         super().__init__(
             enable_search=False,
@@ -147,7 +147,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         name = self.get_value_at_index(0)
         return name
 
-    def select_first_row(self):
+    def select_first_row(self) -> None:
         sel = self.get_selection()
         self._on_tree_selection_changed(sel)
 

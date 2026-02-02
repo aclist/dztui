@@ -1,5 +1,5 @@
 import logging
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
 
 from dzgui.const.enum import FilterMode
 from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
@@ -14,9 +14,12 @@ from gi.repository import Gtk, Gdk, Pango, GLib  # noqa E402
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from dzgui.controllers.mc import Controller
+
 
 class FilterPanel(Gtk.Box):
-    def __init__(self, controller):
+    def __init__(self, controller: "Controller") -> None:
         super().__init__(spacing=6, vexpand=False)
 
         self.default_filters = {
@@ -85,8 +88,12 @@ class FilterPanel(Gtk.Box):
         self.keyword_entry.connect("activate", self._on_keyword_enter)
         self.keyword_entry.connect("key-press-event", self._on_keyword_keypress)
 
-        self.emitter.connect("request_keyword_focus", lambda _: self.keyword_entry.grab_focus())
-        self.emitter.connect("request_maps_focus", lambda _: self.maps_entry.grab_focus())
+        self.emitter.connect(
+            "request_keyword_focus", lambda _: self.keyword_entry.grab_focus()
+        )
+        self.emitter.connect(
+            "request_maps_focus", lambda _: self.maps_entry.grab_focus()
+        )
 
         completion = Gtk.EntryCompletion(inline_completion=True)
         completion.set_text_column(0)
