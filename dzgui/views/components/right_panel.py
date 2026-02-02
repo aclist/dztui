@@ -21,6 +21,9 @@ class RightPanel(Gtk.Box):
 
         self.controller = controller
         self.controller.register_widget("right_panel", self)
+        self.emitter = controller.get_emitter()
+
+        emitter.connect("request_button_box_focus", self.focus_button_box)
 
         self.button_vbox = ButtonBox(controller)
         self.filters_vbox = FilterPanel(controller)

@@ -87,24 +87,29 @@ class Emitter(GObject.GObject):
     def __init__(self) -> None:
         super().__init__()
 
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
-    def widget_changed(self, widget: GObject) -> None:
-        pass
-
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def request_keyword_focus(self) -> None:
+        """User invoked Ctrl-f keybinding from ServerTreeView"""
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def request_maps_focus(self) -> None:
+        """User invoked Ctrl-m keybinding from ServerTreeView"""
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def request_ip_entry_focus(self) -> None:
+        """User invoked Ctrl-i keybinding from ServerTreeView"""
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def request_lan_entry_focus(self) -> None:
+        """User invoked Ctrl-p keybinding from ServerTreeView"""
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def request_button_box_focus(self) -> None:
+        """User invoked right movement keybinding from ServerTreeView"""
         pass
 
 
@@ -120,15 +125,9 @@ class Controller(GObject.GObject):
         self.loaded = False
 
         self.emitter = Emitter()
-        self.emitter.connect("widget_changed", self.test_emitter)
 
     def get_emitter(self) -> Emitter:
         return self.emitter
-
-    def test_emitter(self, widget: GObject, emitter: Emitter) -> None:
-        print(type(widget))
-        print(type(signal))
-        print(f"caught signal from widget: {widget}")
 
     def call_on_thread(func: Callable) -> Callable:
         def wrapper(*args, **kwargs):
@@ -800,7 +799,7 @@ class Controller(GObject.GObject):
 
     def populate_model(self) -> None:
         treeview = self.get_active_treeview()
-        if treeview.get_loaded() is True:
+        if treeview.is_loaded() is True:
             self.mediator.statusbar.emit("server_page_changed", treeview.get_enum())
             return
 

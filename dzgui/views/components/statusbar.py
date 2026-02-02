@@ -49,6 +49,7 @@ class Statusbar(Gtk.Grid):
         self.connect("server_page_changed", self._on_server_page_changed)
         self.connect("distcalc_ended", self._on_distcalc_ended)
 
+    # TODO: move to emitter
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
     def server_page_changed(self, tab: ServerTab) -> None:
         pass

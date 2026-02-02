@@ -254,17 +254,16 @@ class ServerTreeView(TreeView):
                 case Gdk.KEY_m:
                     self.emitter.emit("request_maps_focus")
                 case Gdk.KEY_i:
-                    # TODO:
                     self.emitter.emit("request_ip_entry_focus")
                 case Gdk.KEY_p:
                     if self.enum is ServerTab.LAN:
-                        self.emitter.emit("request_lan_entry_focus")
+                        self.emitter.emit("request_lan_entry_focus", self.enum)
                 case Gdk.KEY_c:
                     print("UNIMPLEMENTED: copy to clipboard")
         else:
             match event.keyval:
                 case Gdk.KEY_l | Gdk.KEY_Right:
-                    self.controller.mediator.right_panel.focus_button_box()
+                    self.emitter.emit("request_button_box_focus")
                 case _:
                     self.controller.toggle_check(event)
 
@@ -359,7 +358,7 @@ class ServerTreeView(TreeView):
         gameport = int(addr.split(":")[1])
         return Record(ip, gameport, qport)
 
-    def get_loaded(self) -> bool:
+    def is_loaded(self) -> bool:
         return self.loaded
 
     def set_loaded(self, status: bool) -> None:
