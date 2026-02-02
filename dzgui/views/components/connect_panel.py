@@ -20,6 +20,9 @@ class LanPanel(Gtk.Frame):
         super().__init__(margin_top=10, margin_bottom=5)
 
         # TODO: hide lan panel on other tabs
+        self.controller = controller
+        self.emitter = controller.get_emitter()
+
         label = BoldLabel(lan_panel.heading)
         self.set_label_widget(label)
 
@@ -30,6 +33,7 @@ class LanPanel(Gtk.Frame):
         self.scan = Gtk.Button(label=lan_panel.scan_button)
 
         self.entry.connect("string_validated", self._on_port_validated)
+        self.emitter.connect("request_lan_entry_focus", lambda _: self.entry.grab_focus())
         radio1.connect("toggled", self._on_radio_toggled)
 
         self.grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
@@ -91,6 +95,7 @@ class AddPanel(Gtk.Frame):
         super().__init__(margin_top=10, margin_bottom=5)
 
         self.controller = controller
+        self.emitter = controller.get_emitter()
         self.classname = "invalid-entry"
 
         label = BoldLabel("Connect")
@@ -103,6 +108,7 @@ class AddPanel(Gtk.Frame):
 
         self.entry = IpEntry(controller)
         self.entry.connect("string_validated", self._on_ip_validated)
+        self.emitter.connect("request_ip_entry_focus", lambda _: self.entry.grab_focus())
 
         self.grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
         self.grid.attach(self.entry, 0, 0, COLS, ROWS)

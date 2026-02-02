@@ -41,6 +41,7 @@ class ServerTreeView(TreeView):
         QUEUE_CHECK_DELAY = 200
 
         self.controller = controller
+        self.emitter = controller.get_emitter()
         self.enum = enum
 
         self.loaded = False
@@ -146,6 +147,7 @@ class ServerTreeView(TreeView):
 
     def _on_map(self, a) -> None:
         if self.get_enum() is ServerTab.LAN:
+            # TODO: use emitter here
             self.controller.mediator.grid.conpan.lan.set_visible(True)
 
     def _on_unmap(self, a) -> None:
@@ -248,17 +250,17 @@ class ServerTreeView(TreeView):
                 case Gdk.KEY_r:
                     self.refresh_player_count()
                 case Gdk.KEY_f:
-                    self.controller.mediator.filters.keyword_entry.grab_focus()
+                    self.emitter.emit("request_keyword_focus")
                 case Gdk.KEY_m:
-                    self.controller.mediator.filters.maps_entry.grab_focus()
+                    self.emitter.emit("request_maps_focus")
                 case Gdk.KEY_i:
                     # TODO:
-                    self.controller.mediator.grid.conpan.add_panel.entry.grab_focus()
+                    self.emitter.emit("request_ip_entry_focus")
                 case Gdk.KEY_p:
                     if self.enum is ServerTab.LAN:
-                        self.controller.mediator.grid.conpan.lan.entry.grab_focus()
+                        self.emitter.emit("request_lan_entry_focus")
                 case Gdk.KEY_c:
-                    print("copy to clipboard")
+                    print("UNIMPLEMENTED: copy to clipboard")
         else:
             match event.keyval:
                 case Gdk.KEY_l | Gdk.KEY_Right:

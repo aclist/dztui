@@ -36,6 +36,7 @@ class FilterPanel(Gtk.Box):
 
         self.controller = controller
         self.controller.register_widget("filters", self)
+        self.emitter = self.controller.get_emitter()
 
         map_store = self.controller.get_map_store()
 
@@ -83,6 +84,9 @@ class FilterPanel(Gtk.Box):
         self.keyword_entry.set_placeholder_text("Filter by keyword")
         self.keyword_entry.connect("activate", self._on_keyword_enter)
         self.keyword_entry.connect("key-press-event", self._on_keyword_keypress)
+
+        self.emitter.connect("request_keyword_focus", lambda _: self.keyword_entry.grab_focus())
+        self.emitter.connect("request_maps_focus", lambda _: self.maps_entry.grab_focus())
 
         completion = Gtk.EntryCompletion(inline_completion=True)
         completion.set_text_column(0)

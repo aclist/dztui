@@ -47,6 +47,8 @@ class ValidatedEntry(Gtk.Entry):
         self.set_validation_func(func)
         self.controller = controller
 
+        self.emitter = self.controller.get_emitter()
+
         self.classname = "invalid-entry"
         self.connect("key-press-event", self._on_entry_keypress)
         self.connect("changed", self._on_text_changed)
@@ -57,6 +59,7 @@ class ValidatedEntry(Gtk.Entry):
 
     def mark_valid(self) -> None:
         self.emit("string_validated", True)
+        self.emitter.emit("widget_changed", self)
         remove_class(self, self.classname)
 
     def mark_invalid(self) -> None:

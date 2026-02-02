@@ -83,6 +83,30 @@ class AppNavigation:
     logtreeview: "LogTreeView"
     filters: "FilterPanel"
 
+class Emitter(GObject.GObject):
+    def __init__(self) -> None:
+        super().__init__()
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
+    def widget_changed(self, widget: GObject) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def request_keyword_focus(self) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def request_maps_focus(self) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def request_ip_entry_focus(self) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def request_lan_entry_focus(self) -> None:
+        pass
+
 
 class Controller(GObject.GObject):
     def __init__(self) -> None:
@@ -94,6 +118,17 @@ class Controller(GObject.GObject):
 
         # NOTE: suppress requests until entire UI is loaded
         self.loaded = False
+
+        self.emitter = Emitter()
+        self.emitter.connect("widget_changed", self.test_emitter)
+
+    def get_emitter(self) -> Emitter:
+        return self.emitter
+
+    def test_emitter(self, widget: GObject, emitter: Emitter) -> None:
+        print(type(widget))
+        print(type(signal))
+        print(f"caught signal from widget: {widget}")
 
     def call_on_thread(func: Callable) -> Callable:
         def wrapper(*args, **kwargs):
@@ -393,7 +428,18 @@ class Controller(GObject.GObject):
 
         # TODO: ping column pass
         parsed = Servers.parse_json(serv)
+        self.mediator.filters.set_unique_maps(parsed)
         self.push_data(parsed, FilterMode.INITIAL)
+
+    #def set_unique_maps(self, records: list) -> None:
+    #    if len(records) < 1:
+    #        return
+    #    u_maps = set([row[1] for row in records])
+    #    u_maps = sorted(u_maps)
+    #    for m in u_maps:
+    #        print(m)
+    #        #map_store.append([m])
+    #        #self.maps_hr.append(m)
 
     def get_help_row(self) -> str:
         tv = self.mediator.menu
