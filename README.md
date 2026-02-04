@@ -18,11 +18,11 @@ Refer to the documentation for installation and setup instructions:
 - [GitHub](https://aclist.github.io/dzgui/index.html)
 - [Mirror (Codeberg)](https://aclist.codeberg.page)
 
-
 ![A screenshot of DZGUI](/images/example.png)
 
 ## Attribution
 
 Geolocation records from [DB-IP](https://db-ip.com) under [CC 4.0 license](https://creativecommons.org/licenses/by/4.0/)
 
-# TODO: mention a2s/dayzquery
+# TODO: mention third party libraries
+# TODO: mention 'pre-commit install' command
