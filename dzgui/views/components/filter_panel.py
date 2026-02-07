@@ -253,7 +253,9 @@ class FilterPanel(Gtk.Box):
     def set_active_combo(self, row: int) -> None:
         self.maps_combo.set_active(row)
 
-    def toggle_check_by_key(self, emitter: "Emitter", keyval: int) -> None | Literal[False]:
+    def toggle_check_by_key(
+        self, emitter: "Emitter", keyval: int
+    ) -> None | Literal[False]:
         mappings = {
             Gdk.KEY_1: 0,
             Gdk.KEY_2: 1,
@@ -292,7 +294,6 @@ class FilterPanel(Gtk.Box):
         self.controller.refilter_model(mode, label)
 
     def _on_map_changed(self, combo: Gtk.ComboBox) -> None:
-        treeview = self.controller.get_active_treeview()
         old_sel = self.selected_map
         model = combo.get_model()
         tree_iter = combo.get_active_iter()
@@ -307,4 +308,4 @@ class FilterPanel(Gtk.Box):
         self.prior_map = self.selected_map
         self.selected_map = selection
         self.maps_entry.set_text(selection)
-        treeview.filter(FilterMode.MAP)
+        self.controller.refilter_model(FilterMode.MAP)

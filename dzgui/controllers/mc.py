@@ -270,7 +270,7 @@ class Controller(GObject.GObject):
         if haversine is None:
             dist = "Unknown"
         else:
-            # FIXME: always opens file; cache distance pref
+            # FIXME: always opens file; cache distance pref at boot and when it changes
             if self.query_config(Preferences.DIST) is True:
                 raw = round(haversine.as_miles())
                 separated = number(raw)
@@ -357,7 +357,7 @@ class Controller(GObject.GObject):
                 except Exception:
                     return
             case ButtonType.MODS:
-                # TODO: reload using refresh button, rather than on demand
+                # TODO: reload using refresh button, rather than on demand?
                 self.load_mods()
 
         self.mediator.notebook.set_page_by_enum(button.opens)
@@ -376,9 +376,7 @@ class Controller(GObject.GObject):
             for future in futures:
                 res = future.result()
                 if res.status != 200 or not res.parsed:
-                    # NOTE: this is happening in a thread, need to exit first
-                    # TODO: set internal state and pass failure flag
-                    # TODO: pop warning dialog
+                    # TODO: pop warning dialog, create enum around various failure states
                     print("failed to parse/timeout error")
                     self.push_data(None, success=False)
                     return
@@ -447,15 +445,6 @@ class Controller(GObject.GObject):
     def copy_ip(self, path: Gtk.TreePath) -> None:
         treeview = self.get_active_treeview()
         record = treeview.get_record()
-        # TODO: maybe delegate to filter man
-        #addr = self.get_col_value_by_path_index(path, 7)
-        #if addr is None:
-        #    return
-        #qport = self.get_col_value_by_path_index(path, 8)
-        ## TODO: abstract get record function
-        #ip = addr.split(":")[0]
-        #gameport = int(addr.split(":")[1])
-        #record = Servers.Record(ip, gameport, qport)
         self.copy_clipboard(f"{record.ip}:{record.qport}")
 
     def copy_clipboard(self, text: str) -> None:
@@ -635,29 +624,24 @@ class Controller(GObject.GObject):
         # TODO: if success failed, throw popup
         treeview = self.get_active_treeview()
         context = self.get_active_context()
-        # TODO: rename signal
         self.emitter.emit("servers_loaded", context)
+
         treeview.grab_focus()
         self.destroy_on_idle()
-        if treeview.get_filter_man().get_model() is None:
-            # FIXME: this may not indicate failure, just empty results
-            # TODO: different dialogs for server tab contexts
+        if self.success is False:
+            dialog = ExceptionDialog(self, "API TIMEOUT")
+            dialog.run()
+        #if treeview.get_filter_man().get_model() is None:
+            # TODO: different dialogs for server tab contexts, e.g. lan timeout
             # TODO: if history/favorites is empty, don't even trigger a call
-            # TODO: add proper string for this dialog
-            # TODO: this is a placeholder string
-            # TODO: only pop this is success was failure
-            if self.success is False:
-                dialog = ExceptionDialog(self, "API TIMEOUT")
-                dialog.run()
 
     def push_data(self, data: tuple, mode: Optional[FilterMode], success: bool) -> None:
 
         treeview = self.get_active_treeview()
-        # context = self.get_active_context()
         manager = treeview.get_filter_man()
+
         # TODO:
         self.success = success
-
         if success:
             if data is None:
                 insert = None
@@ -667,7 +651,6 @@ class Controller(GObject.GObject):
                     manager.set_control(data)
                     # TODO: init maps here
                 manager.filter(mode)
-                # FIXME: inserting none may cause problems if this was a simple refresh action
                 insert = manager.get_model()
             treeview.set_model(insert)
         treeview.set_loaded(True)
@@ -780,14 +763,15 @@ class Controller(GObject.GObject):
     def filter_threaded(self, mode: FilterMode, label: str) -> None:
         tv = self.get_active_treeview()
         tv.filter_man.filter(mode, label)
-        self.push_data("", mode)
+        self.push_data("", mode, success=True)
 
-    def refilter_model(self, mode: FilterMode, label: str) -> None:
+    # FIXME: optional label/map/keyword parameter
+    def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
         tv = self.get_active_treeview()
-        # TODO: shouldn't empty model be None?
         if tv.get_model() is None:
             return
         tv.set_model(None)
+        # TODO: deprecated in this context?
         self.set_callback(None, None)
         self.filter_threaded(mode, label)
 
@@ -802,6 +786,7 @@ class Controller(GObject.GObject):
             self.emitter.emit("servers_loaded", treeview.get_enum())
             return
         # TODO: on legacy version, model clearing happens in thread
+        # (compare)
         treeview.set_model(None)
         # manager = treeview.get_filter_man()
         # manager.clear_model()
