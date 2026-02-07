@@ -42,6 +42,10 @@ class Emitter(GObject.GObject):
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(int,))
     def check_button_pressed(self, keyval: int) -> None:
         """User toggled filter panel check button via keyboard"""
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(bool,))
+    def server_page_toggled(self, keyval: int) -> None:
+        """Triggered on map/unmap signal from NotebookPage.SERVERS. Shows/hides grid panels."""
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())

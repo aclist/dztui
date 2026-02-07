@@ -23,6 +23,7 @@ class Mods(Gtk.ScrolledWindow):
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
 
+    # TODO: use emitter
     def _on_unmap(self, widget: Self) -> None:
         self.controller.toggle_mod_panel(False)
 

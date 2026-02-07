@@ -22,7 +22,9 @@ class ContextMixin(TreeView):
         if self.is_selection_empty():
             return
 
-        if event.type is Gdk.EventType.BUTTON_PRESS and event.button == 3:
+        if event.type is Gdk.EventType.BUTTON_PRESS:
+            if event.button != 3:
+                return
             try:
                 pathinfo = self.get_path_at_pos(int(event.x), int(event.y))
                 if pathinfo is None:

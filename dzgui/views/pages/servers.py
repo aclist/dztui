@@ -22,6 +22,8 @@ class ServerNotebook(Gtk.ScrolledWindow):
         super().__init__()
 
         self.controller = controller
+        self.emitter = self.controller.get_emitter()
+
         self.controller.register_widget("servers", self)
         self.notebook = Gtk.Notebook(show_tabs=True)
 
@@ -56,10 +58,10 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.connect("unmap", self._on_unmap)
 
     def _on_map(self, widget: Self) -> None:
-        self.controller.toggle_server_panels(True)
+        self.emitter.emit("server_page_toggled", True)
 
     def _on_unmap(self, widget: Self) -> None:
-        self.controller.toggle_server_panels(False)
+        self.emitter.emit("server_page_toggled", False)
 
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
         match event.keyval:

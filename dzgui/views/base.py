@@ -4,16 +4,18 @@ import warnings
 
 from typing import TYPE_CHECKING, Literal
 
-from dzgui.const.enum import NotebookPage
+# TODO: import notebook only and add components there?
 from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, STEAM_ICON
+from dzgui.const.enum import NotebookPage
+from dzgui.controllers.emitter import Emitter
 from dzgui.controllers.mc import Controller
 from dzgui.util import css, strings
-
-# NOTEBOOK ITEMS
-# TODO: import notebook only and add components there?
-from dzgui.views.pages.changelog import Changelog
 from dzgui.views.components.connect_panel import ConnectPanel
 from dzgui.views.components.crumbs import Breadcrumbs
+from dzgui.views.components.right_panel import RightPanel
+from dzgui.views.components.statusbar import Statusbar
+from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
+from dzgui.views.pages.changelog import Changelog
 from dzgui.views.pages.devs import Developers
 from dzgui.views.pages.help import Help
 from dzgui.views.pages.keys import Keybindings
@@ -22,10 +24,6 @@ from dzgui.views.pages.mods import Mods
 from dzgui.views.pages.options import Options
 from dzgui.views.pages.servers import ServerNotebook
 from dzgui.views.pages.thanks import Thanks
-
-from dzgui.views.components.statusbar import Statusbar
-from dzgui.views.components.right_panel import RightPanel
-from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
 
 if TYPE_CHECKING:
     from dzgui.config.userprefs import UserPrefs
@@ -309,6 +307,8 @@ class Grid(Gtk.Grid):
         # self.bu.connect("clicked", self._shrink)
         # self.crumb_box.add(self.bu)
 
+        self.emitter = MainController.get_emitter()
+
         self.notebook = Notebook()
         self.conpan = ConnectPanel(MainController)
 
@@ -344,17 +344,15 @@ class Grid(Gtk.Grid):
 
         self.show_all()
 
+        self.emitter.connect("server_page_toggled", self.toggle_filter_panels)
+
     def _shrink(self, button: Gtk.Button) -> None:
         tv = MainController.get_active_treeview()
         tv.shrink_to_fit()
 
-    def toggle_filter_panel(self, state: bool) -> None:
+    def toggle_filter_panels(self, emitter: "Emitter", state: bool) -> None:
         self.right_panel.filters_vbox.set_visible(state)
-
-    def toggle_connect_panel(self, state: bool) -> None:
         self.conpan.set_visible(state)
-
-    def toggle_refresh_button(self, state: bool) -> None:
         self.right_panel.refresh_button.set_visible(state)
 
 

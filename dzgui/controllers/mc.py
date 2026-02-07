@@ -336,13 +336,6 @@ class Controller(GObject.GObject):
         notebook = self.mediator.grid.notebook
         notebook.focus_current()
 
-    def toggle_server_panels(self, state: bool) -> None:
-        # TODO: this is going to be signal dependent now, cf. map/unmap
-        #self.mediator.grid.emit("toggle panels", state)
-        self.mediator.grid.toggle_filter_panel(state)
-        self.mediator.grid.toggle_connect_panel(state)
-        self.mediator.grid.toggle_refresh_button(state)
-
     def toggle_mod_panel(self, state: bool) -> None:
         self.mediator.grid.right_panel.sel_panel.set_visible(state)
 
@@ -434,18 +427,33 @@ class Controller(GObject.GObject):
         text = "\n".join(final)
         return text
 
-    def copy_ip(self, path: Gtk.TreePath) -> None:
+    def get_col_value_by_path_index(self, path: Gtk.TreePath, index: int) -> Any:
         treeview = self.get_active_treeview()
         model = treeview.get_model()
-        if not model:
+        if model is None:
             return None
-        addr = model[path][7]
-        if addr is None:
+        value = model[path][index]
+        return value
+
+    def copy_name(self, path: Gtk.TreePath) -> None:
+        # TODO: column values are deterministic, perhaps use a col name to index map
+        name = self.get_col_value_by_path_index(path, 0)
+        if name is None:
             return
-        qport = model[path][8]
-        ip = addr.split(":")[0]
-        gameport = int(addr.split(":")[1])
-        record = Servers.Record(ip, gameport, qport)
+        self.copy_clipboard(name)
+
+    def copy_ip(self, path: Gtk.TreePath) -> None:
+        treeview = self.get_active_treeview()
+        record = treeview.get_record()
+        # TODO: maybe delegate to filter man
+        #addr = self.get_col_value_by_path_index(path, 7)
+        #if addr is None:
+        #    return
+        #qport = self.get_col_value_by_path_index(path, 8)
+        ## TODO: abstract get record function
+        #ip = addr.split(":")[0]
+        #gameport = int(addr.split(":")[1])
+        #record = Servers.Record(ip, gameport, qport)
         self.copy_clipboard(f"{record.ip}:{record.qport}")
 
     def copy_clipboard(self, text: str) -> None:
@@ -520,7 +528,6 @@ class Controller(GObject.GObject):
                 self.copy_ip(path)
             case ContextMenu.COPY_NAME:
                 self.copy_name(path)
-                pass
             case ContextMenu.REFRESH_PLAYERS:
                 pass
             case ContextMenu.REMOVE_HISTORY:
@@ -535,8 +542,9 @@ class Controller(GObject.GObject):
             # NOTE: manipulates mod store
             case ContextMenu.DELETE_MOD:
                 self.delete_single_mod(path)
-                # TODO: hook treeview changed signal automatically
+                # TODO: connect to emitter automatically
                 # Gtk.TreeModel, row-inserted/row-deleted
+                # updates statusbar
                 self.update_mod_statusbar()
                 remove_stale_signatures(
                     self.prefs.paths.config, self.prefs.paths.version
