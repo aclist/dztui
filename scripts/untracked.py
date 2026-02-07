@@ -12,5 +12,8 @@ with open(".gitignore", "r") as f:
 untracked = [os.path.basename(line.rstrip()) for line in result.stdout]
 for file in untracked:
     if not any(file in item for item in ignored):
-        print(f"File '{file}' is untracked")
-        sys.exit(1)
+        res = input(f"File '{file}' is untracked. Proceed anyway? [Y/n] ")
+        if res.lower() in ("", "y"):
+            sys.exit(0)
+        else:
+            sys.exit(1)
