@@ -30,11 +30,11 @@ extensions = [
     "sphinx.ext.githubpages"
 ]
 html_theme = "sphinx_rtd_theme"
-html_static_path = ['_static']
+#html_static_path = ['_static']
 html_show_sphinx = False
 html_show_copyright = False
 html_show_sourcelink = False
 
 today_fmt = "%Y-%m-%d"
-release = "5.8.x"
-version = "5.8.x"
+release = "6.x.x"
+version = "6.x.x"
