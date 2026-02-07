@@ -26,14 +26,14 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.controllers.emitter import Emitter
 
+QUEUE_CHECK_DELAY = 200
+
 
 class ServerTreeView(ContextMixin, TreeView):
     def __init__(
         self, controller: "Controller", enum: ServerTab, menu: ContextMenuGroup
     ) -> None:
         super().__init__(controller, menu=ContextMenuGroup.SERVER_BROWSER)
-
-        QUEUE_CHECK_DELAY = 200
 
         self.controller = controller
         self.emitter = controller.get_emitter()
@@ -48,6 +48,8 @@ class ServerTreeView(ContextMixin, TreeView):
 
         self.set_fixed_height_mode(True)
         self.set_headers_visible(True)
+
+        self.queue_id: int = 0
 
         self.current_proc = None
         self.queue = multiprocessing.Queue()
@@ -103,9 +105,14 @@ class ServerTreeView(ContextMixin, TreeView):
         self.connect("key-press-event", self.present_menu)
         self.connect("button-press-event", self.present_menu)
 
-        self.emitter.connect("statusbar_loaded", self._on_distcalc_started)
-        self.emitter.connect("distcalc_started", self._on_distcalc_started)
-        GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
+        # TODO: simplify this
+        self.emitter.connect("statusbar_loaded", self.start_distcalc)
+        # self.emitter.connect("distcalc_started", self._on_distcalc_started)
+
+    def start_timeout(self) -> None:
+        if self.queue_id:
+            GLib.Source.remove(self.queue_id)
+        self.queue_id = GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
 
     def get_filter_man(self) -> FilteredModelManager:
         return self.filter_man
@@ -163,9 +170,15 @@ class ServerTreeView(ContextMixin, TreeView):
         if self.current_proc and self.current_proc.is_alive():
             self.current_proc.terminate()
 
-    def _on_distcalc_started(self, emitter: "Emitter"):
+    from typing import Optional
+
+    def start_distcalc(self, emitter: Optional["Emitter"] = None):
+        self.terminate_process()
+        self.emitter.emit("distcalc_started")
         record = self.get_record()
         if record is None:
+            context = self.get_enum()
+            self.emitter.emit("distcalc_ended", None, context)
             return
 
         cache = self.controller.get_dist_cache()
@@ -250,13 +263,12 @@ class ServerTreeView(ContextMixin, TreeView):
     def _parent_row_activated(
         self, tree: TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn
     ) -> None:
-        # TODO: process server connection
-        # TODO: get record
         print(self.get_value_at_index(0))
 
     def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
-        self.terminate_process()
-        self.emitter.emit("distcalc_started")
+        if self.loaded is False:
+            return
+        self.start_distcalc()
 
     def get_record_string(self) -> str:
         addr = self.get_value_at_index(7)

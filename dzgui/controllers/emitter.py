@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 # TODO: rename signals to e.g. maps_keybinding_pressed
 
+
 class Emitter(GObject.GObject):
     def __init__(self) -> None:
         super().__init__()
@@ -56,10 +57,6 @@ class Emitter(GObject.GObject):
     def distcalc_started(self) -> None:
         pass
 
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
-    def servers_loaded(self, tag: "ServerTab") -> None:
-        pass
-
     @GObject.Signal(
         flags=GObject.SignalFlags.RUN_LAST,
         arg_types=(
@@ -71,3 +68,19 @@ class Emitter(GObject.GObject):
         self, dist: Union[str, None], context: Union["ServerTab", "NotebookPage"]
     ) -> None:
         pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
+    def servers_loaded(self, tag: "ServerTab") -> None:
+        pass
+
+    # @GObject.Signal(
+    #    flags=GObject.SignalFlags.RUN_LAST,
+    #    arg_types=(
+    #        object,
+    #        object,
+    #    ),
+    # )
+    # def distcalc_ended(
+    #    self, dist: Union[str, None], context: Union["ServerTab", "NotebookPage"]
+    # ) -> None:
+    #    pass

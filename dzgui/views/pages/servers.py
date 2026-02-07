@@ -59,6 +59,8 @@ class ServerNotebook(Gtk.ScrolledWindow):
 
     def _on_map(self, widget: Self) -> None:
         self.emitter.emit("server_page_toggled", True)
+        print("page changed, starting queue checker")
+        self.get_active_treeview().start_timeout()
 
     def _on_unmap(self, widget: Self) -> None:
         self.emitter.emit("server_page_toggled", False)

@@ -20,27 +20,27 @@ class ContextMixin(TreeView):
     ) -> None:
 
         if self.is_selection_empty():
-            return
+            return False
 
         if event.type is Gdk.EventType.BUTTON_PRESS:
             if event.button != 3:
-                return
+                return False
             try:
                 pathinfo = self.get_path_at_pos(int(event.x), int(event.y))
                 if pathinfo is None:
-                    return
+                    return True
                 (path, col, cellx, celly) = pathinfo
                 if path is None:
-                    return
+                    return True
                 self.set_cursor(path, col, False)
             except AttributeError:
                 pass
 
         if event.type is Gdk.EventType.KEY_PRESS:
             if event.state is not Gdk.ModifierType.CONTROL_MASK:
-                return
+                return False
             if event.keyval is not Gdk.KEY_l:
-                return
+                return False
 
         group = self.menu
         self.context_menu = Gtk.Menu()
@@ -83,30 +83,30 @@ class ContextMixin(TreeView):
             self.controller.menu_action(enum, path)
 
     def _on_key(self, menu: Gtk.Menu, event: Gdk.EventKey) -> bool | None:
-       if not is_navkey(event.keyval):
-           return False
-       menu = self.context_menu
-       sel = menu.get_selected_item()
-       children = menu.get_children()
-       for i, child in enumerate(children):
-           if sel is child:
-               ind = i
-               break
+        if not is_navkey(event.keyval):
+            return False
+        menu = self.context_menu
+        sel = menu.get_selected_item()
+        children = menu.get_children()
+        for i, child in enumerate(children):
+            if sel is child:
+                ind = i
+                break
 
-       match event.keyval:
-           case Gdk.KEY_j:
-               if ind == len(children) - 1:
-                   return True
-               menu.select_item(children[ind + 1])
-           case Gdk.KEY_k:
-               if ind - 1 < 0:
-                   return True
-               menu.select_item(children[ind - 1])
-           case Gdk.KEY_g:
-               menu.select_item(children[0])
-           case Gdk.KEY_G:
-               ind = len(children) - 1
-               menu.select_item(children[ind])
-           case _:
-               return False
-       return True
+        match event.keyval:
+            case Gdk.KEY_j:
+                if ind == len(children) - 1:
+                    return True
+                menu.select_item(children[ind + 1])
+            case Gdk.KEY_k:
+                if ind - 1 < 0:
+                    return True
+                menu.select_item(children[ind - 1])
+            case Gdk.KEY_g:
+                menu.select_item(children[0])
+            case Gdk.KEY_G:
+                ind = len(children) - 1
+                menu.select_item(children[ind])
+            case _:
+                return False
+        return True

@@ -253,16 +253,18 @@ class Controller(GObject.GObject):
 
     def set_statusbar_dist(self, haversine: "Haversine", enum: "ServerTab") -> None:
         context = self.get_active_context()
+        print(context)
         page = self.mediator.notebook.get_page_by_enum()
         """
         NOTE: prevents race condition when server tab changed,
         but allows caching the distance in the background
         """
         if page != NotebookPage.SERVERS:
-            self.mediator.statusbar.spinner.stop()
+            self.emitter.emit("distcalc_ended" , None, context)
+            #self.mediator.statusbar.spinner.stop()
             return
         if enum != context:
-            self.mediator.statusbar.emit("distcalc_ended", None, context)
+            self.emitter.emit("distcalc_ended" , None, context)
             return
 
         # NOTE: user may have changed km/mi toggle, so recalculate
@@ -280,7 +282,7 @@ class Controller(GObject.GObject):
                 separated = number(raw)
                 dist = str(separated) + " km"
 
-        self.mediator.statusbar.emit("distcalc_ended", dist, context)
+        self.emitter.emit("distcalc_ended", dist, context)
 
     def delete_multiple_mods(self) -> None:
         sel = self.mediator.modtreeview.get_selection()
@@ -781,13 +783,13 @@ class Controller(GObject.GObject):
             self.emitter.emit("servers_loaded", treeview.get_enum())
             return
 
+        treeview.set_model(None)
         func = treeview.get_query_func()
         if func is None:
             self.emitter.emit("servers_loaded", treeview.get_enum())
             return
         # TODO: on legacy version, model clearing happens in thread
         # (compare)
-        treeview.set_model(None)
         # manager = treeview.get_filter_man()
         # manager.clear_model()
         self.set_callback(None, None)

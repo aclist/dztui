@@ -1,5 +1,6 @@
 from typing import Optional, TYPE_CHECKING
 
+from dzgui.const.enum import ServerTab
 from dzgui.views.components.buttonbox import ButtonBox
 from dzgui.views.components.filter_panel import FilterPanel
 from dzgui.views.components.mod_panel import ModSelectionPanel
@@ -30,6 +31,7 @@ class RightPanel(Gtk.Box):
         self.filters_vbox = FilterPanel(controller)
         self.sel_panel = ModSelectionPanel(controller)
 
+        emitter.connect("servers_loaded", self.toggle_refresh_button)
         self.refresh_button = RefreshButton(controller)
         self.keys = KeysButton(controller)
 
@@ -37,6 +39,14 @@ class RightPanel(Gtk.Box):
             self.pack_start(el, NO_EXPAND, FILL, NO_PADDING)
 
         self.pack_start(self.sel_panel, NO_EXPAND, NO_FILL, NO_PADDING)
+
+    def toggle_refresh_button(self, emitter: "Emitter", context: "ServerTab") -> None:
+        # TODO: when a row is added, make sure "servers_loaded" signal is emitted
+        self.refresh_button.set_sensitive(True)
+        model = self.controller.get_active_treeview().get_model()
+        if model is None:
+            if context in (ServerTab.RECENT, ServerTab.SAVED):
+                self.refresh_button.set_sensitive(False)
 
     # TODO: move to filter panel
     def reinit_maps(self, rows: list) -> None:

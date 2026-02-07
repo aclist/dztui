@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Self, Union, TYPE_CHECKING
 
 from dzgui.const.enum import NotebookPage, ServerTab
@@ -47,23 +48,25 @@ class Statusbar(Gtk.Grid):
         controller.mediator.notebook.connect_after(
             "switch-page", self._on_notebook_page_changed
         )
+
         # TODO:
-        self.emitter.connect("distcalc_started", lambda _: self.spinner.start())
+        self.emitter.connect("distcalc_started", self._on_distcalc_started)
+        self.emitter.connect("distcalc_ended", self._on_distcalc_ended)
         self.emitter.connect("servers_loaded", self._on_servers_loaded)
 
-        self.connect("distcalc_ended", self._on_distcalc_ended)
+        # self.connect("distcalc_ended", self._on_distcalc_ended)
 
-    @GObject.Signal(
-        flags=GObject.SignalFlags.RUN_LAST,
-        arg_types=(
-            object,
-            object,
-        ),
-    )
-    def distcalc_ended(
-        self, dist: Union[str, None], context: Union["ServerTab", NotebookPage]
-    ) -> None:
-        pass
+    # @GObject.Signal(
+    #    flags=GObject.SignalFlags.RUN_LAST,
+    #    arg_types=(
+    #        object,
+    #        object,
+    #    ),
+    # )
+    # def distcalc_ended(
+    #    self, dist: Union[str, None], context: Union["ServerTab", NotebookPage]
+    # ) -> None:
+    #    pass
 
     def _on_notebook_page_changed(
         self, notebook: "Notebook", child: Gtk.Widget, index: int
@@ -105,6 +108,9 @@ class Statusbar(Gtk.Grid):
         self.pop(prior_context)
 
     def _on_server_row_changed(self, statusbar: Self) -> None:
+        self.spinner.start()
+
+    def _on_distcalc_started(self, e) -> None:
         self.spinner.start()
 
     def _on_distcalc_ended(
