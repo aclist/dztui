@@ -2,6 +2,7 @@ import logging
 import shutil
 import threading
 import traceback
+from typing import Optional
 from warnings import deprecated
 
 from concurrent.futures import wait
@@ -189,8 +190,6 @@ class Controller(GObject.GObject):
             widget.handler_block_by_func(func)
         else:
             widget.handler_unblock_by_func(func)
-        # TODO: deprecated?
-        # self.mediator.menu.sel_blocked = state
 
     def toggle_debug_mode(self) -> None:
         self.toggle_config(Preferences.DEBUG)
@@ -377,8 +376,11 @@ class Controller(GObject.GObject):
             for future in futures:
                 res = future.result()
                 if res.status != 200 or not res.parsed:
+                    # NOTE: this is happening in a thread, need to exit first
+                    # TODO: set internal state and pass failure flag
                     # TODO: pop warning dialog
-                    self.push_data(None, FilterMode.INITIAL)
+                    print("failed to parse/timeout error")
+                    self.push_data(None, success=False)
                     return
                 j = res.json
                 serv += j["response"]["servers"]
@@ -391,7 +393,7 @@ class Controller(GObject.GObject):
         # TODO: ping column pass
         parsed = Servers.parse_json(serv)
         self.mediator.filters.set_unique_maps(parsed)
-        self.push_data(parsed, FilterMode.INITIAL)
+        self.push_data(parsed, FilterMode.INITIAL, success=True)
 
     #def set_unique_maps(self, records: list) -> None:
     #    if len(records) < 1:
@@ -615,10 +617,10 @@ class Controller(GObject.GObject):
         import time
         time.sleep(1)
         data = (
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "172.111.51.156:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 1, 1, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "172.111.51.156:2302", 1, 1, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 1, 1, "a", False],
+            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 1, 1, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
@@ -627,39 +629,47 @@ class Controller(GObject.GObject):
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
             ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
         )
-        self.push_data(data)
+        self.push_data(data, FilterMode.INITIAL, success=True)
 
     def cleanup(self) -> None:
+        # TODO: if success failed, throw popup
         treeview = self.get_active_treeview()
         context = self.get_active_context()
         # TODO: rename signal
-        self.mediator.statusbar.emit("server_page_changed", context)
-        # TODO: may be superfluous
+        self.emitter.emit("servers_loaded", context)
         treeview.grab_focus()
         self.destroy_on_idle()
-        if len(treeview.filter_man.get_model()) == 0:
+        if treeview.get_filter_man().get_model() is None:
+            # FIXME: this may not indicate failure, just empty results
             # TODO: different dialogs for server tab contexts
             # TODO: if history/favorites is empty, don't even trigger a call
             # TODO: add proper string for this dialog
-            dialog = ExceptionDialog(self, "API TIMEOUT")
-            dialog.run()
+            # TODO: this is a placeholder string
+            # TODO: only pop this is success was failure
+            if self.success is False:
+                dialog = ExceptionDialog(self, "API TIMEOUT")
+                dialog.run()
 
-    def push_data(self, data: tuple, mode: FilterMode) -> None:
+    def push_data(self, data: tuple, mode: Optional[FilterMode], success: bool) -> None:
 
         treeview = self.get_active_treeview()
         # context = self.get_active_context()
         manager = treeview.get_filter_man()
+        # TODO:
+        self.success = success
 
-        if data is None:
-            insert = None
-        else:
-            # TODO: consolidate into filter manager
-            if mode == FilterMode.INITIAL:
-                manager.set_control(data)
-                # TODO: init maps here
-            manager.filter(mode)
-            insert = manager.get_model()
-        treeview.set_model(insert)
+        if success:
+            if data is None:
+                insert = None
+            else:
+                # TODO: consolidate into filter manager
+                if mode == FilterMode.INITIAL:
+                    manager.set_control(data)
+                    # TODO: init maps here
+                manager.filter(mode)
+                # FIXME: inserting none may cause problems if this was a simple refresh action
+                insert = manager.get_model()
+            treeview.set_model(insert)
         treeview.set_loaded(True)
         GLib.idle_add(self.cleanup)
 
@@ -775,7 +785,7 @@ class Controller(GObject.GObject):
     def refilter_model(self, mode: FilterMode, label: str) -> None:
         tv = self.get_active_treeview()
         # TODO: shouldn't empty model be None?
-        if len(tv.get_model()) == 0:
+        if tv.get_model() is None:
             return
         tv.set_model(None)
         self.set_callback(None, None)
@@ -784,12 +794,12 @@ class Controller(GObject.GObject):
     def populate_model(self) -> None:
         treeview = self.get_active_treeview()
         if treeview.is_loaded() is True:
-            self.mediator.statusbar.emit("server_page_changed", treeview.get_enum())
+            self.emitter.emit("servers_loaded", treeview.get_enum())
             return
 
         func = treeview.get_query_func()
         if func is None:
-            self.mediator.statusbar.emit("server_page_changed", treeview.get_enum())
+            self.emitter.emit("servers_loaded", treeview.get_enum())
             return
         # TODO: on legacy version, model clearing happens in thread
         treeview.set_model(None)
@@ -811,10 +821,6 @@ class Controller(GObject.GObject):
 
     def get_dist_cache(self) -> dict[str, "Haversine"]:
         return self.dist_cache
-
-    # TODO: deprecated in favor of map/unmap
-    def toggle_lan_panel(self, state: bool) -> None:
-        self.mediator.grid.conpan.set_visible(state)
 
     # TODO: use model manager, map and keyword caches
     # TODO: model cache that hooks checkbox signal

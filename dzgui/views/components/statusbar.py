@@ -49,14 +49,9 @@ class Statusbar(Gtk.Grid):
         )
         # TODO:
         self.emitter.connect("distcalc_started", lambda _: self.spinner.start())
+        self.emitter.connect("servers_loaded", self._on_servers_loaded)
+
         self.connect("distcalc_ended", self._on_distcalc_ended)
-
-        self.connect("server_page_changed", self._on_server_page_changed)
-
-    # TODO: move to emitter
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
-    def server_page_changed(self, tab: ServerTab) -> None:
-        pass
 
     @GObject.Signal(
         flags=GObject.SignalFlags.RUN_LAST,
@@ -97,7 +92,7 @@ class Statusbar(Gtk.Grid):
             case NotebookPage.HELP:
                 bar = self.controller.get_help_row()
             case NotebookPage.SERVERS:
-                self.emit("server_page_changed", ServerTab.BROWSER)
+                # self.emit("server_page_changed", ServerTab.BROWSER)
                 return
             case NotebookPage.KEYS:
                 bar = question_to_return
@@ -128,14 +123,12 @@ class Statusbar(Gtk.Grid):
     def append_distance(self, dist: str) -> str:
         return f"{self.playercount} | Distance: {dist}"
 
-    def _on_server_page_changed(self, statusbar: Self, context: "ServerTab") -> None:
+    def _on_servers_loaded(self, statusbar: Self, context: "ServerTab") -> None:
         count = self.controller.get_player_count()
         self.playercount = count
 
         self.set_by_context(context, count)
-        tree = self.controller.get_active_treeview()
-        # TODO: emit page change signal on emitter, treeview catches signal and calls distcalc directly
-        tree.emit("distcalc_started")
+        self.emitter.emit("statusbar_loaded")
 
     def pop(self, context: Union["ServerTab", "NotebookPage"]) -> None:
         cid = self.statusbar.get_context_id(str(context))

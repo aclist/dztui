@@ -32,7 +32,7 @@ from dzgui.util.symlink import rebuild_symlinks
 from dzgui.util.strings import init, flags
 
 from dzgui.views.base import App
-from dzgui.views.dialogs.early_alert import EarlyAlertDialog
+from dzgui.views.dialogs.early_alert import EarlyAlertDialog, EarlyIgnoreDialog
 
 logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description=flags.description)

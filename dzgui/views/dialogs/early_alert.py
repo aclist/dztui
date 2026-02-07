@@ -27,10 +27,24 @@ class EarlyAlertDialog(Gtk.MessageDialog):
 
         self.set_default_size(250, 100)
 
-        self.connect("response", self._on_response)
+        abort = self.get_widget_for_response(Gtk.ResponseType.OK)
+        abort.set_label("Exit")
 
+        self.connect("response", self._on_response)
         self.run()
         self.destroy()
 
     def _on_response(self, dialog: Self, response: Gtk.ResponseType) -> None:
-        sys.exit(1)
+        match response:
+            case Gtk.ResponseType.OK:
+                sys.exit(1)
+            case Gtk.ResponseType.CANCEL:
+                return
+
+class EarlyIgnoreDialog(EarlyAlertDialog):
+    def __init__(self, string: str) -> None:
+        super().__init__(string=string)
+
+        # TODO: reverse order
+        self.add_button("Ignore", Gtk.ResponseType.CANCEL)
+

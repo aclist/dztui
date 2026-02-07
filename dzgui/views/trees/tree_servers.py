@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
 
 
 class ServerTreeView(ContextMixin, TreeView):
@@ -93,7 +94,6 @@ class ServerTreeView(ContextMixin, TreeView):
             column.connect("notify::fixed-width", self._on_col_width_changed)
             self.append_column(column)
 
-        self.connect("distcalc_started", self._on_distcalc_started)
         self.connect("key-press-event", self._on_server_keypress)
         self.connect("generic_row_activated", self._parent_row_activated)
         self.connect("generic_treesel_changed", self._parent_selection_changed)
@@ -103,11 +103,9 @@ class ServerTreeView(ContextMixin, TreeView):
         self.connect("key-press-event", self.present_menu)
         self.connect("button-press-event", self.present_menu)
 
+        self.emitter.connect("statusbar_loaded", self._on_distcalc_started)
+        self.emitter.connect("distcalc_started", self._on_distcalc_started)
         GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
-
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_FIRST, arg_types=())
-    def distcalc_started(self) -> None:
-        pass
 
     def get_filter_man(self) -> FilteredModelManager:
         return self.filter_man
@@ -165,12 +163,11 @@ class ServerTreeView(ContextMixin, TreeView):
         if self.current_proc and self.current_proc.is_alive():
             self.current_proc.terminate()
 
-    def _on_distcalc_started(self, treeview: Self):
+    def _on_distcalc_started(self, emitter: "Emitter"):
         record = self.get_record()
         if record is None:
             return
 
-        self.emitter.emit("distcalc_started")
         cache = self.controller.get_dist_cache()
 
         if record.ip in cache:
@@ -259,7 +256,7 @@ class ServerTreeView(ContextMixin, TreeView):
 
     def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
         self.terminate_process()
-        self.emit("distcalc_started")
+        self.emitter.emit("distcalc_started")
 
     def get_record_string(self) -> str:
         addr = self.get_value_at_index(7)

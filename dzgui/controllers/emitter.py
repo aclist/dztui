@@ -49,7 +49,15 @@ class Emitter(GObject.GObject):
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def statusbar_loaded(self) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def distcalc_started(self) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
+    def servers_loaded(self, tag: "ServerTab") -> None:
         pass
 
     @GObject.Signal(

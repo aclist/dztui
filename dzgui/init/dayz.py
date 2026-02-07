@@ -12,6 +12,7 @@ import dzgui.api.pefile as PeFile
 
 logger = logging.getLogger(__name__)
 
+
 def is_dayz_installed(config: Path) -> None:
     try:
         path = lookup(config, Preferences.DEFAULT)

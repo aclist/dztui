@@ -62,6 +62,7 @@ class GenericDialog(Gtk.MessageDialog):
 
     def _on_response(self, dialog: Self, response: Gtk.ResponseType) -> None:
         self.destroy()
+        return response
 
 
 class ConfirmationDialog(GenericDialog):
@@ -74,6 +75,19 @@ class ConfirmationDialog(GenericDialog):
             secondary=secondary,
         )
 
+class IgnoreDialog(GenericDialog):
+    def __init__(self, controller: "Controller", secondary: str):
+        super().__init__(
+            controller=controller,
+            text=strings.confirm,
+            mtype=Gtk.MessageType.QUESTION,
+            buttons=Gtk.ButtonsType.OK_CANCEL,
+            secondary=secondary,
+        )
+        cancel = self.get_widget_for_response(Gtk.ResponseType.CANCEL)
+        cancel.set_label("Ignore")
+
+
 
 class NotifyDialog(GenericDialog):
     def __init__(self, controller: "Controller", secondary: str):
@@ -81,7 +95,7 @@ class NotifyDialog(GenericDialog):
             controller=controller,
             text=strings.notice,
             mtype=Gtk.MessageType.INFO,
-            buttons=Gtk.ButtonsType.OK,
+            buttons=Gtk.ButtonsType.OK_CANCEL,
             secondary=secondary,
         )
 
