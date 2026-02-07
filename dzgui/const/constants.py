@@ -58,3 +58,4 @@ LEGACY_IPS_PATH = ".local/share/dzgui/helpers/ips.csv"
 
 DEBUG_LOG = f"{APP_NAME}_DEBUG.LOG"
 SYSTEM_LOG = f"{APP_NAME}_SYSTEM.LOG"
+CHANGELOG_PATH = "data/CHANGELOG.md"

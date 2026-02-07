@@ -254,7 +254,6 @@ class Record:
     qport: int
 
 
-# TODO: refactor this
 def get_prereqs(ip: str, qport: int) -> Prereqs:
     try:
         info = a2s.info((ip, qport))

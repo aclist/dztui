@@ -203,14 +203,11 @@ class ServerTreeView(TreeView):
             self.current_proc.terminate()
 
     def _on_distcalc_started(self, treeview: Self):
-        # bar = self.controller.get_statusbar()
-
         record = self.get_record()
         if record is None:
             return
 
         self.emitter.emit("distcalc_started")
-        # bar.emit("server_row_changed")
         cache = self.controller.get_dist_cache()
 
         if record.ip in cache:
@@ -242,8 +239,6 @@ class ServerTreeView(TreeView):
     def _on_server_keypress(
         self, treeview: Gtk.TreeView, event: Gdk.EventKey
     ) -> bool | None:
-        # TODO: use mixins
-        # CONTROL_MASK + KEY_l
         if event.state is Gdk.ModifierType.CONTROL_MASK:
             match event.keyval:
                 case Gdk.KEY_l:
@@ -266,7 +261,7 @@ class ServerTreeView(TreeView):
                 case Gdk.KEY_l | Gdk.KEY_Right:
                     self.emitter.emit("request_button_box_focus")
                 case _:
-                    self.controller.toggle_check(event)
+                    self.emitter.emit("check_button_pressed", event.keyval)
 
     def set_context_menu(self, items: ContextMenuGroup) -> None:
         # TODO: if debug is on, add raw command copy to context menu
@@ -286,7 +281,6 @@ class ServerTreeView(TreeView):
         # TODO: use ContextMixin
         if event.type is Gdk.EventType.BUTTON_RELEASE and event.button != 3:
             return
-
         try:
             pathinfo = self.get_path_at_pos(int(event.x), int(event.y))
             if pathinfo is None:

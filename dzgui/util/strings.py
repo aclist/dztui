@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-
 from dzgui.const.constants import SYSTEM_LOG
 
 
@@ -605,3 +604,7 @@ atomic_buttons = AtomicButton(
 )
 
 steam_icon_missing="Steam icon not found in IconTheme"
+
+missing_changelog = "Error: failed to read changelog"
+esc_to_return = "Press ESC to return"
+question_to_return = "Press ? to return"

@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
 
 
 class FilterPanel(Gtk.Box):
@@ -94,6 +95,7 @@ class FilterPanel(Gtk.Box):
         self.emitter.connect(
             "request_maps_focus", lambda _: self.maps_entry.grab_focus()
         )
+        self.emitter.connect("check_button_pressed", self.toggle_check_by_key)
 
         completion = Gtk.EntryCompletion(inline_completion=True)
         completion.set_text_column(0)
@@ -250,6 +252,26 @@ class FilterPanel(Gtk.Box):
 
     def set_active_combo(self, row: int) -> None:
         self.maps_combo.set_active(row)
+
+    def toggle_check_by_key(self, emitter: "Emitter", keyval: int) -> None | Literal[False]:
+        mappings = {
+            Gdk.KEY_1: 0,
+            Gdk.KEY_2: 1,
+            Gdk.KEY_3: 2,
+            Gdk.KEY_4: 3,
+            Gdk.KEY_5: 4,
+            Gdk.KEY_6: 5,
+            Gdk.KEY_7: 6,
+            Gdk.KEY_8: 7,
+            Gdk.KEY_9: 8,
+            Gdk.KEY_0: 9,
+            Gdk.KEY_minus: 10,
+            Gdk.KEY_backslash: 11,
+        }
+        if keyval not in mappings:
+            return False
+        index = mappings[keyval]
+        self.toggle_check(index)
 
     def toggle_check(self, digit: int) -> None:
         check = self.checks[digit]

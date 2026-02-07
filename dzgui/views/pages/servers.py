@@ -71,6 +71,9 @@ class ServerNotebook(Gtk.ScrolledWindow):
                 self.notebook.prev_page()
             case _:
                 return
+        self.grab_content_area()
+
+    def grab_content_area(self) -> None:
         self.get_active_treeview().grab_focus()
 
     def get_current_tab_text(self) -> None:

@@ -2,8 +2,10 @@ from dzgui.const.enum import VAdjustment
 from dzgui.const.constants import SCROLL_INCREMENT
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk  # noqa
+
 
 class ScrollableMixin:
     def _on_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
@@ -16,6 +18,8 @@ class ScrollableMixin:
                 self._set_adjustment(VAdjustment.TOP)
             case Gdk.KEY_G:
                 self._set_adjustment(VAdjustment.BOTTOM)
+            case Gdk.KEY_l | Gdk.KEY_Right:
+                self.controller.get_emitter().emit("request_button_box_focus")
 
     def _set_adjustment(self, adjustment: VAdjustment) -> None:
         vadj = self.get_vadjustment()
@@ -29,4 +33,3 @@ class ScrollableMixin:
             case VAdjustment.DOWN:
                 adj = vadj.get_value() + SCROLL_INCREMENT
         vadj.set_value(adj)
-

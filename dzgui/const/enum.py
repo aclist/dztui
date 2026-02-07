@@ -110,14 +110,14 @@ class Preferences(EnumWithAttrs):
 
 
 class NotebookPage(EnumWithAttrs):
-    CHANGELOG = {"crumbs": strings.crumbs.changelog, "statusbar": False}
-    KEYS = {"crumbs": strings.crumbs.keys, "statusbar": False}
-    LOG = {"crumbs": strings.crumbs.log, "statusbar": False}
+    CHANGELOG = {"crumbs": strings.crumbs.changelog, "statusbar": True}
+    KEYS = {"crumbs": strings.crumbs.keys, "statusbar": True}
+    LOG = {"crumbs": strings.crumbs.log, "statusbar": True}
     HELP = {"crumbs": strings.crumbs._help, "statusbar": True}
     MODS = {"crumbs": strings.crumbs.mods, "statusbar": True}
     OPTIONS = {"crumbs": strings.crumbs.options, "statusbar": False}
     SERVERS = {"crumbs": strings.crumbs.servers, "statusbar": True}
-    THANKS = {"crumbs": strings.crumbs.thanks, "statusbar": False}
+    THANKS = {"crumbs": strings.crumbs.thanks, "statusbar": True}
     DEVELOPERS = {"crumbs": strings.crumbs.developers, "statusbar": False}
 
 

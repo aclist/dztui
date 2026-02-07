@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from dzgui.views.components.buttonbox import ButtonBox
 from dzgui.views.components.filter_panel import FilterPanel
@@ -13,6 +13,7 @@ from gi.repository import Gtk, GLib  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
 
 
 class RightPanel(Gtk.Box):
@@ -78,5 +79,5 @@ class RightPanel(Gtk.Box):
     #    thread = threading.Thread(target=_update_pings, args=())
     #    thread.start()
 
-    def focus_button_box(self) -> None:
+    def focus_button_box(self, emitter: Optional["Emitter"] = None) -> None:
         self.button_vbox.buttons[0].grab_focus()

@@ -32,6 +32,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         self.controller = controller
         self.sel_blocked = False
         self.set_row_separator_func(self._separate)
+        self.emitter = self.controller.get_emitter()
 
         self.selected_row = self.get_selection()
         self.selected_row.set_mode(Gtk.SelectionMode.SINGLE)

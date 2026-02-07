@@ -191,13 +191,13 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
         self.help = Help(MainController)
         self.clog = Changelog(MainController)
 
-        self.keys = Keybindings()
+        self.keys = Keybindings(MainController)
         self.settings = Options(MainController)
 
         self.servers = ServerNotebook(MainController)
         self.mods = Mods(MainController)
 
-        self.thanks = Thanks()
+        self.thanks = Thanks(MainController)
         self.log = Log(MainController)
         self.developers = Developers(MainController)
 
@@ -272,12 +272,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
         if widget is None:
             return
 
-        if widget is self.servers:
-            MainController.grab_active_treeview()
-            return
-
-        w = widget.get_children()[0]
-        w.grab_focus()
+        widget.grab_content_area()
 
     def get_page(self) -> Gtk.Widget | None:
         ind = self.get_current_page()

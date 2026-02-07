@@ -1,6 +1,7 @@
 from typing import Self, Union, TYPE_CHECKING
 
 from dzgui.const.enum import NotebookPage, ServerTab
+from dzgui.util.strings import esc_to_return, question_to_return
 
 import gi
 
@@ -46,8 +47,8 @@ class Statusbar(Gtk.Grid):
         controller.mediator.notebook.connect_after(
             "switch-page", self._on_notebook_page_changed
         )
-        self.emitter.connect("distcalc_started", self._on_distcalc_started)
         # TODO:
+        self.emitter.connect("distcalc_started", lambda _: self.spinner.start())
         self.connect("distcalc_ended", self._on_distcalc_ended)
 
         self.connect("server_page_changed", self._on_server_page_changed)
@@ -77,8 +78,17 @@ class Statusbar(Gtk.Grid):
 
         enum = notebook.get_page_by_enum()
         show_statusbar = enum.dict["statusbar"]
+
         if show_statusbar is False:
             self.set_by_context(enum, "")
+            return
+
+        if enum in (
+            NotebookPage.THANKS,
+            NotebookPage.CHANGELOG,
+            NotebookPage.LOG,
+        ):
+            self.set_by_context(enum, esc_to_return)
             return
 
         match enum:
@@ -89,6 +99,8 @@ class Statusbar(Gtk.Grid):
             case NotebookPage.SERVERS:
                 self.emit("server_page_changed", ServerTab.BROWSER)
                 return
+            case NotebookPage.KEYS:
+                bar = question_to_return
 
         self.set_by_context(enum, bar)
 
@@ -122,7 +134,7 @@ class Statusbar(Gtk.Grid):
 
         self.set_by_context(context, count)
         tree = self.controller.get_active_treeview()
-        # TODO: emit page change signal on emitter, treeview catches signal and calls distcalc
+        # TODO: emit page change signal on emitter, treeview catches signal and calls distcalc directly
         tree.emit("distcalc_started")
 
     def pop(self, context: Union["ServerTab", "NotebookPage"]) -> None:

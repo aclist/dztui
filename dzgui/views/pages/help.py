@@ -18,7 +18,11 @@ class Help(Gtk.ScrolledWindow):
 
         self.controller = controller
 
-        self.treeview.focus_first_row()
+        # FIXME: remember focused row
+        #self.treeview.focus_first_row()
 
     def get_treeview(self) -> MenuTreeView:
         return self.treeview
+
+    def grab_content_area(self) -> None:
+        self.treeview.grab_focus()

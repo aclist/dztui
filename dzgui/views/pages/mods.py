@@ -28,3 +28,6 @@ class Mods(Gtk.ScrolledWindow):
 
     def _on_map(self, widget: Self) -> None:
         self.controller.toggle_mod_panel(True)
+
+    def grab_content_area(self) -> None:
+        self.tree.grab_focus()

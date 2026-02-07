@@ -12,7 +12,6 @@ from typing import Any, Callable, Literal, Union, TYPE_CHECKING
 import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers
 import dzgui.util._json as JSON  # noqa
-from dzgui.views.dialogs.generic import ExceptionDialog, WaitDialog
 
 from dzgui.api.probe import test_steam_api, test_bm_api
 from dzgui.api.mods import (
@@ -35,6 +34,7 @@ from dzgui.const.constants import (
 from dzgui.config import update
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
+from dzgui.controllers.emitter import Emitter
 from dzgui.model.misc_model import ModelManager
 from dzgui.util import strings
 from dzgui.util.diag import write_diagnostic
@@ -43,7 +43,7 @@ from dzgui.util.localize import number
 from dzgui.util.open_links import open_workshop_page, open_user_workshop
 from dzgui.util.format import format_mods, format_player_count
 from dzgui.util.redact import redact_log
-
+from dzgui.views.dialogs.generic import ExceptionDialog, WaitDialog
 from dzgui.views.dialogs.filepicker import FilePicker
 
 import gi
@@ -83,43 +83,6 @@ class AppNavigation:
     logtreeview: "LogTreeView"
     filters: "FilterPanel"
 
-class Emitter(GObject.GObject):
-    def __init__(self) -> None:
-        super().__init__()
-
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
-    def request_keyword_focus(self) -> None:
-        """User invoked Ctrl-f keybinding from ServerTreeView"""
-        pass
-
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
-    def request_maps_focus(self) -> None:
-        """User invoked Ctrl-m keybinding from ServerTreeView"""
-        pass
-
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
-    def request_ip_entry_focus(self) -> None:
-        """User invoked Ctrl-i keybinding from ServerTreeView"""
-        pass
-
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
-    def request_lan_entry_focus(self) -> None:
-        """User invoked Ctrl-p keybinding from ServerTreeView"""
-        pass
-
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
-    def request_button_box_focus(self) -> None:
-        """User invoked right movement keybinding from ServerTreeView"""
-        pass
-
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
-    def distcalc_started(self) -> None:
-        pass
-
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object, object,))
-    def distcalc_ended(self, dist: Union[str, None], context: Union["ServerTab", NotebookPage]) -> None:
-        pass
-
 
 class Controller(GObject.GObject):
     def __init__(self) -> None:
@@ -128,11 +91,11 @@ class Controller(GObject.GObject):
         self.prefs: UserPrefs
 
         self.model_man = ModelManager()
+        self.emitter = Emitter()
 
         # NOTE: suppress requests until entire UI is loaded
         self.loaded = False
 
-        self.emitter = Emitter()
 
     def get_emitter(self) -> Emitter:
         return self.emitter
@@ -169,8 +132,7 @@ class Controller(GObject.GObject):
 
     def terminate_process(self) -> None:
         # TODO: only used by server table multiprocessing queue
-        tv = self.get_active_treeview()
-        tv.terminate_process()
+        self.get_active_treeview().terminate_process()
 
     def get_prefs(self) -> UserPrefs:
         return self.prefs
@@ -626,16 +588,6 @@ class Controller(GObject.GObject):
     def unselect_all_mods(self) -> None:
         self.mediator.modtreeview.get_selection().unselect_all()
 
-    def dump_test_1(self) -> None:
-        import time
-
-        time.sleep(1)
-        data = (
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "172.111.51.156:2302", 0, 0, "a", False],
-        )
-        self.push_data(data)
-
     def dump_test_2(self) -> None:
         import time
         time.sleep(1)
@@ -741,6 +693,7 @@ class Controller(GObject.GObject):
             dialog.run()
 
     @call_on_thread
+    # FIXME: entire process is behind thread, including destroy_on_idle()
     def update_api_key(self, text: str, key: Preferences) -> None:
         self.test_api_response(text, key)
 
@@ -824,26 +777,6 @@ class Controller(GObject.GObject):
 
     def focus_button_box(self) -> None:
         self.mediator.right_panel.focus_button_box()
-
-    def toggle_check(self, event: Gdk.EventKey) -> None | Literal[False]:
-        mappings = {
-            Gdk.KEY_1: 0,
-            Gdk.KEY_2: 1,
-            Gdk.KEY_3: 2,
-            Gdk.KEY_4: 3,
-            Gdk.KEY_5: 4,
-            Gdk.KEY_6: 5,
-            Gdk.KEY_7: 6,
-            Gdk.KEY_8: 7,
-            Gdk.KEY_9: 8,
-            Gdk.KEY_0: 9,
-            Gdk.KEY_minus: 10,
-            Gdk.KEY_backslash: 11,
-        }
-        if event.keyval not in mappings:
-            return False
-        index = mappings[event.keyval]
-        self.mediator.filters.toggle_check(index)
 
     def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
         fav = str(self.query_config(Preferences.FAV_LBL))

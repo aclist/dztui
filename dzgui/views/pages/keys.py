@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
 from dzgui.util.strings import navigation, servers, vim, key_header, key_contexts
 from dzgui.util.css import add_class
@@ -6,15 +8,18 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk # noqa E402
 
+if TYPE_CHECKING:
+    from dzgui.controllers.mc import Controller
 
 class Keybindings(ScrollableMixin, Gtk.ScrolledWindow):
     """
     Notebook page holding a prearranged grid
     of keybindings and their descriptions
     """
-    def __init__(self) -> None:
+    def __init__(self, controller: "Controller") -> None:
         super().__init__()
 
+        self.controller = controller
         self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
         label = Gtk.Label(label=key_header)
@@ -101,3 +106,6 @@ class Keybindings(ScrollableMixin, Gtk.ScrolledWindow):
         grid.attach_next_to(separator, sidebar, Gtk.PositionType.RIGHT, w, h)
         grid.attach_next_to(keys_box, separator, Gtk.PositionType.RIGHT, w, h)
         return grid
+    
+    def grab_content_area(self) -> None:
+        self.box.grab_focus()

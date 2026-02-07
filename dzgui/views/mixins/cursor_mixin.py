@@ -2,6 +2,7 @@ from dzgui.const.enum import CursorPosition
 from dzgui.const.constants import SEPARATOR
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 
@@ -20,7 +21,7 @@ class CursorMixin:
             case Gdk.KEY_l | Gdk.KEY_Right:
                 if event.state is Gdk.ModifierType.CONTROL_MASK:
                     return
-                self.controller.mediator.right_panel.focus_button_box()
+                self.emitter.emit("request_button_box_focus")
             case _:
                 return False
 

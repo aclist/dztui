@@ -524,3 +524,6 @@ class Options(Gtk.Box):
             icon, state = VIEW_CONCEAL, True
         widget.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, icon)
         widget.set_visibility(state)
+
+    def grab_content_area(self) -> None:
+        return
