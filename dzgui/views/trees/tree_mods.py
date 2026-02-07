@@ -50,28 +50,28 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
 
         self.connect("generic_row_activated", self._on_mod_row_activated)
         self.connect("generic_treesel_changed", self._parent_selection_changed)
-        self.connect("button-press-event", self._on_mods_button_press)
-        self.connect("key-press-event", self._on_mods_keypress)
+        self.connect("button-press-event", self.present_menu)
+        self.connect("key-press-event", self.present_menu)
         self.connect("map", self._on_map)
 
     def _on_map(self, tree: Self) -> None:
-        # TODO: placeholder logic
+        # FIXME: placeholder logic
         # identify root cause of row unfocus on init
         self.set_cursor(0)
 
-    def _on_mods_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
-        # TODO: multiselect
-        # if event.keyval is Gdk.KEY_space:
-        #    it = self.get_focused_row_iter()
-        #    self.get_selection().select_iter(it)
-        #    path = self.get_focused_row_path()
-        #    self.set_cursor(path)
-        #    return False
-        self.present_menu(widget, event)
+   # def _on_mods_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
+   #     # TODO: multiselect
+   #     # if event.keyval is Gdk.KEY_space:
+   #     #    it = self.get_focused_row_iter()
+   #     #    self.get_selection().select_iter(it)
+   #     #    path = self.get_focused_row_path()
+   #     #    self.set_cursor(path)
+   #     #    return False
+   #     self.present_menu(widget, event)
 
-    def _on_mods_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
-        if event.button == 3:
-            self.present_menu(widget, event)
+   # def _on_mods_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
+   #     if event.button == 3:
+   #         self.present_menu(widget, event)
 
     def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
         pass

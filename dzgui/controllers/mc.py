@@ -434,6 +434,20 @@ class Controller(GObject.GObject):
         text = "\n".join(final)
         return text
 
+    def copy_ip(self, path: Gtk.TreePath) -> None:
+        treeview = self.get_active_treeview()
+        model = treeview.get_model()
+        if not model:
+            return None
+        addr = model[path][7]
+        if addr is None:
+            return
+        qport = model[path][8]
+        ip = addr.split(":")[0]
+        gameport = int(addr.split(":")[1])
+        record = Servers.Record(ip, gameport, qport)
+        self.copy_clipboard(f"{record.ip}:{record.qport}")
+
     def copy_clipboard(self, text: str) -> None:
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
         self.clipboard.set_text(text, -1)
@@ -503,8 +517,9 @@ class Controller(GObject.GObject):
             case ContextMenu.ADD_NOTE:
                 pass
             case ContextMenu.COPY_CLIPBOARD:
-                pass
+                self.copy_ip(path)
             case ContextMenu.COPY_NAME:
+                self.copy_name(path)
                 pass
             case ContextMenu.REFRESH_PLAYERS:
                 pass

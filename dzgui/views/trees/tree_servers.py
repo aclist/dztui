@@ -3,11 +3,11 @@ import multiprocessing
 from typing import Any, Self
 from warnings import deprecated
 
-from dzgui.const.enum import ContextMenu, ContextMenuGroup, ServerTab
+from dzgui.views.mixins.context_mixin import ContextMixin
+from dzgui.const.enum import ContextMenuGroup, ServerTab
 from dzgui.api.servers import Record
 from dzgui.model.filtered_model import FilteredModelManager
 from dzgui.util.dist import CalcDist
-from dzgui.util.keys import is_navkey
 from dzgui.util import strings
 from typing import Callable, Literal, TYPE_CHECKING
 
@@ -26,17 +26,11 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
 
-class EnumeratedMenuItem(Gtk.MenuItem):
-    def __init__(self, enum: ContextMenu):
-        super().__init__(label=enum.dict["label"])
-        self.enum = enum
-
-
-class ServerTreeView(TreeView):
+class ServerTreeView(ContextMixin, TreeView):
     def __init__(
         self, controller: "Controller", enum: ServerTab, menu: ContextMenuGroup
     ) -> None:
-        super().__init__(controller)
+        super().__init__(controller, menu=ContextMenuGroup.SERVER_BROWSER)
 
         QUEUE_CHECK_DELAY = 200
 
@@ -51,10 +45,6 @@ class ServerTreeView(TreeView):
         model = self.filter_man.get_model()
         self.set_model(model)
 
-        self.menu = Gtk.Menu()
-        self.menu.connect("key-press-event", self._on_key)
-
-        self.set_context_menu(menu)
         self.set_fixed_height_mode(True)
         self.set_headers_visible(True)
 
@@ -104,12 +94,14 @@ class ServerTreeView(TreeView):
             self.append_column(column)
 
         self.connect("distcalc_started", self._on_distcalc_started)
-        self.connect("button-release-event", self._on_server_button_release)
         self.connect("key-press-event", self._on_server_keypress)
         self.connect("generic_row_activated", self._parent_row_activated)
         self.connect("generic_treesel_changed", self._parent_selection_changed)
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
+
+        self.connect("key-press-event", self.present_menu)
+        self.connect("button-press-event", self.present_menu)
 
         GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
 
@@ -153,35 +145,6 @@ class ServerTreeView(TreeView):
     def _on_unmap(self, a) -> None:
         if self.get_enum() is ServerTab.LAN:
             self.controller.mediator.grid.conpan.lan.set_visible(False)
-
-    def _on_key(self, menu: Gtk.Menu, event: Gdk.EventKey) -> bool | None:
-        # TODO: abstract as navigable context menu
-        if not is_navkey(event.keyval):
-            return False
-        sel = menu.get_selected_item()
-        children = menu.get_children()
-        for i, child in enumerate(children):
-            if sel is child:
-                ind = i
-                break
-
-        match event.keyval:
-            case Gdk.KEY_j:
-                if ind == len(children) - 1:
-                    return True
-                menu.select_item(children[ind + 1])
-            case Gdk.KEY_k:
-                if ind - 1 < 0:
-                    return True
-                menu.select_item(children[ind - 1])
-            case Gdk.KEY_g:
-                menu.select_item(children[0])
-            case Gdk.KEY_G:
-                ind = len(children) - 1
-                menu.select_item(children[ind])
-            case _:
-                return False
-        return True
 
     def set_query_func(self, func: Callable) -> None:
         self.query_func = func
@@ -241,8 +204,6 @@ class ServerTreeView(TreeView):
     ) -> bool | None:
         if event.state is Gdk.ModifierType.CONTROL_MASK:
             match event.keyval:
-                case Gdk.KEY_l:
-                    self._on_server_button_release(self, event)
                 case Gdk.KEY_r:
                     self.refresh_player_count()
                 case Gdk.KEY_f:
@@ -255,7 +216,8 @@ class ServerTreeView(TreeView):
                     if self.enum is ServerTab.LAN:
                         self.emitter.emit("request_lan_entry_focus", self.enum)
                 case Gdk.KEY_c:
-                    print("UNIMPLEMENTED: copy to clipboard")
+                    record = self.get_record()
+                    self.controller.copy_ip(record)
         else:
             match event.keyval:
                 case Gdk.KEY_l | Gdk.KEY_Right:
@@ -263,37 +225,7 @@ class ServerTreeView(TreeView):
                 case _:
                     self.emitter.emit("check_button_pressed", event.keyval)
 
-    def set_context_menu(self, items: ContextMenuGroup) -> None:
-        # TODO: if debug is on, add raw command copy to context menu
-        for item in items.value:
-            menu_item = EnumeratedMenuItem(item)
-            menu_item.connect("activate", self._on_menu_click)
-            self.menu.append(menu_item)
-        self.menu.show_all()
-
-    def _on_menu_click(self, item) -> None:
-        print(f"UNIMPLEMENTED: {item.enum}")
-        pass
-
-    def _on_server_button_release(
-        self, widget: Gtk.Widget, event: Gdk.EventButton
-    ) -> None:
-        # TODO: use ContextMixin
-        if event.type is Gdk.EventType.BUTTON_RELEASE and event.button != 3:
-            return
-        try:
-            pathinfo = self.get_path_at_pos(int(event.x), int(event.y))
-            if pathinfo is None:
-                return
-            (path, col, cellx, celly) = pathinfo
-            if path is None:
-                return
-            self.set_cursor(path, col, False)
-        except AttributeError:
-            pass
-
         # mod_context_items = [ContextMenu.OPEN_WORKSHOP, ContextMenu.DELETE_MOD]
-
         # TODO: dynamic menu entries
         # for row in items:
         #    if row == ContextMenu.ADD_SERVER:
@@ -310,13 +242,13 @@ class ServerTreeView(TreeView):
         #        if self.get_record_string() in notes_cache:
         #            item.set_label(strings.edit_note)
 
-        if event.type is Gdk.EventType.KEY_PRESS and event.keyval is Gdk.KEY_l:
-            if self.is_selection_empty():
-                return
-            self.menu.popup_at_widget(widget, Gdk.Gravity.CENTER, Gdk.Gravity.WEST)
-        else:
-            self.menu.popup_at_pointer(event)
-        self.menu.select_first(False)
+        # if event.type is Gdk.EventType.KEY_PRESS and event.keyval is Gdk.KEY_l:
+        #     if self.is_selection_empty():
+        #         return
+        #     self.menu.popup_at_widget(widget, Gdk.Gravity.CENTER, Gdk.Gravity.WEST)
+        # else:
+        #     self.menu.popup_at_pointer(event)
+        # self.menu.select_first(False)
 
     def _parent_row_activated(
         self, tree: TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn
