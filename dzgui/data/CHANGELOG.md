@@ -29,6 +29,9 @@
 - Bold labels inside frames
 - Unsticky keys when clicking sidebar
 
+## Fixed
+- Longstanding issue with left clicks not registering as tree selection changes after spamming keyboard input
+
 ## Unreleased
 - Setup wizard
 - Copy favorite server IP to clipboard
