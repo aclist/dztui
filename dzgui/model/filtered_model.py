@@ -263,6 +263,9 @@ class FilteredModelManager:
         """
         self.control_model = rows
 
+    def get_control(self) -> list:
+        return self.control_model
+
     def set_success(self, result: bool) -> None:
         self.success = result
 

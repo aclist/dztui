@@ -1,6 +1,7 @@
 import logging
 import multiprocessing
-from typing import Any, Self
+import threading
+from typing import Any
 from warnings import deprecated
 
 from dzgui.views.mixins.context_mixin import ContextMixin
@@ -71,6 +72,8 @@ class ServerTreeView(ContextMixin, TreeView):
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             column.set_resizable(True)
             column.set_sort_column_id(i)
+            if column_title == "Ping":
+                column.set_cell_data_func(renderer, self._get_ping)
 
             if valid_json:
                 try:
@@ -108,6 +111,39 @@ class ServerTreeView(ContextMixin, TreeView):
         # TODO: simplify this
         self.emitter.connect("statusbar_loaded", self.start_distcalc)
         # self.emitter.connect("distcalc_started", self._on_distcalc_started)
+
+    def _get_ping(
+        self,
+        column: Gtk.TreeViewColumn,
+        cell: Gtk.CellRendererText,
+        model: Gtk.TreeModel,
+        it: Gtk.TreeIter,
+        data: Any,
+    ):
+        def ping(model, it, ip: str):
+            # TODO: use a2s to ping server
+            # a2s.info -> "ping" key
+            # Servers.ping() -> this accepts a whole row
+            # try, if failure just abort
+            self.res = ip.replace(":", "%")
+            num = 11111
+            GLib.idle_add(lambda: model.set(it, 9, num))
+
+        addr = model.get_value(it, 7).split(":")[0]
+        qport = model.get_value(it, 8)
+        ip = f"{addr}:{qport}"
+
+        thread = threading.Thread(
+            daemon=True,
+            target=ping,
+            args=(
+                model,
+                it,
+                ip,
+            ),
+        )
+        thread.start()
+        pass
 
     def start_timeout(self) -> None:
         if self.queue_id:

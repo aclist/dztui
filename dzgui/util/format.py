@@ -4,8 +4,9 @@ from dzgui.util.localize import number
 from dzgui.util.strings import no_mods, no_servers, distance_suffix
 
 import gi
+
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk # noqa E402
+from gi.repository import Gtk  # noqa E402
 
 
 def format_pango(text: str) -> str:
@@ -50,7 +51,7 @@ def format_mods(size: int, mods: int) -> str:
     return f"Found {mods:n} {plural} taking up {l_size} MiB. {suffix}"
 
 
-def format_player_count(model: Gtk.TreeModel | None) -> str:
+def format_player_count(model: Gtk.TreeModel | None, control: list) -> str:
     players = 0
     hits: int
     status: str
@@ -62,10 +63,9 @@ def format_player_count(model: Gtk.TreeModel | None) -> str:
             players += row[4]
     players_pretty = pluralize("players", players)
     hits_pretty = pluralize("matches", hits)
-    suffix = distance_suffix
-    status = f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
+    control_total = len(control)
+    status = f"Showing {hits:n}/{control_total:n} {hits_pretty} with {players:n} {players_pretty}"
     return status
-    return f"{status} | {suffix}"
 
 
 def embolden(text: str) -> str:

@@ -38,6 +38,9 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         self.selected_row.set_mode(Gtk.SelectionMode.SINGLE)
         self.selected_row.connect("changed", self._on_tree_selection_changed)
         self.connect("row-activated", self._on_row_activated)
+
+        self.connect("button-press-event", lambda x, y: print(self.sel_blocked))
+
         self.connect("key-press-event", self._on_keypress)
         self.connect("key-release-event", self._on_key_release)
 
@@ -84,6 +87,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
             if self.get_model() is None:
                 return
             if self.sel_blocked is False:
+                self.sel_blocked = True
                 self.controller.suppress_signal(
                     self,
                     self.selected_row,
@@ -110,9 +114,10 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
             return
         if is_navkey(event.keyval):
             if self.sel_blocked is True:
+                self.sel_blocked = False
                 self.controller.suppress_signal(
-                    self.controller.mediator.treeview,
-                    self.controller.mediator.treeview.selected_row,
+                    self,
+                    self.selected_row,
                     "_on_tree_selection_changed",
                     False,
                 )
@@ -120,6 +125,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
             self._on_tree_selection_changed(selection)
 
     def _on_tree_selection_changed(self, selection: Gtk.TreeSelection) -> None:
+        print("selection changed")
         self.emit("generic_treesel_changed", selection)
 
     def toggle_selection(self, state: bool) -> None:

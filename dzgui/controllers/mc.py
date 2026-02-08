@@ -380,7 +380,7 @@ class Controller(GObject.GObject):
                 if res.status != 200 or not res.parsed:
                     # TODO: pop warning dialog, create enum around various failure states
                     print("failed to parse/timeout error")
-                    self.push_data(None, success=False)
+                    self.push_data(None, FilterMode.INITIAL, success=False)
                     return
                 j = res.json
                 serv += j["response"]["servers"]
@@ -654,6 +654,7 @@ class Controller(GObject.GObject):
                     # TODO: init maps here
                 manager.filter(mode)
                 insert = manager.get_model()
+            # TODO: should list store be set outside of this thread?
             treeview.set_model(insert)
         treeview.set_loaded(True)
         GLib.idle_add(self.cleanup)
@@ -751,7 +752,8 @@ class Controller(GObject.GObject):
     def get_player_count(self) -> str:
         treeview = self.get_active_treeview()
         model = treeview.get_model()
-        count = format_player_count(model)
+        control_model = treeview.filter_man.get_control()
+        count = format_player_count(model, control_model)
         return count
 
     def get_statusbar(self) -> None:
