@@ -5,6 +5,7 @@ from dzgui.const.enum import NotebookPage
 from dzgui.util.css import add_class
 from dzgui.util.strings import developers
 from dzgui.views.components.labels import BoldLabel
+from dzgui.views.trees.tree_base import TreeView
 
 import gi  # noqa E402
 gi.require_version("Gtk", "3.0")
@@ -61,7 +62,6 @@ class Developers(Gtk.ScrolledWindow):
         self.controller.open_page(NotebookPage.OPTIONS)
 
     def _make_tree(self, prefs: Union["Xdg", "UserPrefs"]) -> Gtk.TreeView:
-        from dzgui.views.trees.tree_base import TreeView
         view = TreeView(self.controller)
         renderer = Gtk.CellRendererText()
         for i, col in enumerate(developers.columns):

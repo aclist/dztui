@@ -2,7 +2,7 @@ import logging
 from typing import Literal, TYPE_CHECKING
 
 from dzgui.const.enum import FilterMode
-from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
+from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING, SEARCH_ICON
 from dzgui.util import strings
 from dzgui.util.margins import set_surrounding_margins
 from dzgui.views.components.labels import BoldLabel
@@ -42,7 +42,7 @@ class FilterPanel(Gtk.Box):
         self.controller.register_widget("filters", self)
         self.emitter = self.controller.get_emitter()
 
-        map_store = self.controller.get_map_store()
+        self.map_store = self.controller.get_map_store()
 
         self.checks = []
         self.maps_hr = []
@@ -86,8 +86,13 @@ class FilterPanel(Gtk.Box):
         self.keyword_entry = Gtk.Entry()
         # TODO :strings
         self.keyword_entry.set_placeholder_text("Filter by keyword")
-        self.keyword_entry.connect("activate", self._on_keyword_enter)
+        self.keyword_entry.connect("activate", self._on_keyword_activated)
         self.keyword_entry.connect("key-press-event", self._on_keyword_keypress)
+        self.keyword_entry.set_icon_from_icon_name(
+            Gtk.EntryIconPosition.SECONDARY, SEARCH_ICON
+        )
+        self.keyword_entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, False)
+        # entry.connect("icon-release", self._on_icon_release)
 
         self.emitter.connect(
             "request_keyword_focus", lambda _: self.keyword_entry.grab_focus()
@@ -103,7 +108,7 @@ class FilterPanel(Gtk.Box):
         completion.connect("match_selected", self._on_completer_match)
 
         renderer_text = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
-        self.maps_combo = Gtk.ComboBox.new_with_model_and_entry(map_store)
+        self.maps_combo = Gtk.ComboBox.new_with_model_and_entry(self.map_store)
         self.maps_combo.set_entry_text_column(0)
 
         self.maps_entry = self.maps_combo.get_child()
@@ -166,7 +171,7 @@ class FilterPanel(Gtk.Box):
                 If entry is exact match for value in liststore,
                 trigger map change function
                 """
-                for i in enumerate(map_store):  # type: ignore
+                for i in enumerate(self.map_store):  # type: ignore
                     if text == i[1][0]:
                         self.maps_combo.set_active(i[0])
                         self._on_map_changed(self.maps_combo)
@@ -174,7 +179,7 @@ class FilterPanel(Gtk.Box):
                 GLib.idle_add(self.restore_focus_to_treeview)
                 """
                 This is a workaround for widget.grab_remove()
-                Sets cursor position to SOL when unfocusing
+                Sets cursor position to start of line when unfocusing
                 """
                 text = self.maps_entry.get_text()
                 self.maps_entry.set_position(len(text))
@@ -192,9 +197,8 @@ class FilterPanel(Gtk.Box):
     def _on_map_completion(self, entry, editable):
         text = entry.get_text()
         completion = entry.get_completion()
-        map_store = self.controller.get_map_store()
         if len(text) >= completion.get_minimum_key_length():
-            completion.set_model(map_store)
+            completion.set_model(self.map_store)
 
     def restore_focus_to_treeview(self) -> Literal[False]:
         view = self.controller.get_active_treeview()
@@ -232,7 +236,7 @@ class FilterPanel(Gtk.Box):
     def get_keyword_filter(self) -> str:
         return self.keyword_filter
 
-    def _on_keyword_enter(self, entry: Gtk.Entry) -> None:
+    def _on_keyword_activated(self, entry: Gtk.Entry) -> None:
         # TODO:
         self.controller.mediator.window.set_keep_below(False)
         keyword = entry.get_text().lower()

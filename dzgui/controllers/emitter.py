@@ -15,6 +15,7 @@ class Emitter(GObject.GObject):
     def __init__(self) -> None:
         super().__init__()
 
+    # TODO: rename request verbs
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def request_keyword_focus(self) -> None:
         """User invoked Ctrl-f keybinding from ServerTreeView"""
@@ -55,6 +56,14 @@ class Emitter(GObject.GObject):
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def distcalc_started(self) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(bool,))
+    def mod_page_toggled(self, state: bool) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(bool,))
+    def lan_tab_toggled(self, state: bool) -> None:
         pass
 
     @GObject.Signal(

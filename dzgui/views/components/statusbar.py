@@ -49,24 +49,9 @@ class Statusbar(Gtk.Grid):
             "switch-page", self._on_notebook_page_changed
         )
 
-        # TODO:
         self.emitter.connect("distcalc_started", self._on_distcalc_started)
         self.emitter.connect("distcalc_ended", self._on_distcalc_ended)
         self.emitter.connect("servers_loaded", self._on_servers_loaded)
-
-        # self.connect("distcalc_ended", self._on_distcalc_ended)
-
-    # @GObject.Signal(
-    #    flags=GObject.SignalFlags.RUN_LAST,
-    #    arg_types=(
-    #        object,
-    #        object,
-    #    ),
-    # )
-    # def distcalc_ended(
-    #    self, dist: Union[str, None], context: Union["ServerTab", NotebookPage]
-    # ) -> None:
-    #    pass
 
     def _on_notebook_page_changed(
         self, notebook: "Notebook", child: Gtk.Widget, index: int
@@ -95,7 +80,8 @@ class Statusbar(Gtk.Grid):
             case NotebookPage.HELP:
                 bar = self.controller.get_help_row()
             case NotebookPage.SERVERS:
-                # self.emit("server_page_changed", ServerTab.BROWSER)
+                context = self.controller.get_active_context()
+                self.emitter.emit("servers_loaded", context)
                 return
             case NotebookPage.KEYS:
                 bar = question_to_return

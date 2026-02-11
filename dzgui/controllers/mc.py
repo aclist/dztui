@@ -104,7 +104,7 @@ class Controller(GObject.GObject):
     def call_on_thread(func: Callable) -> Callable:
         def wrapper(*args, **kwargs):
             self = args[0]
-            self.wait_dialog = WaitDialog(self, strings.dialog.fetching)
+            self.wait_dialog = WaitDialog(self, strings.dialog.filtering)
             self.wait_dialog.show_all()
             thread = threading.Thread(target=func, args=args)
             thread.start()
@@ -253,7 +253,6 @@ class Controller(GObject.GObject):
 
     def set_statusbar_dist(self, haversine: "Haversine", enum: "ServerTab") -> None:
         context = self.get_active_context()
-        print(context)
         page = self.mediator.notebook.get_page_by_enum()
         """
         NOTE: prevents race condition when server tab changed,
@@ -261,7 +260,6 @@ class Controller(GObject.GObject):
         """
         if page != NotebookPage.SERVERS:
             self.emitter.emit("distcalc_ended" , None, context)
-            #self.mediator.statusbar.spinner.stop()
             return
         if enum != context:
             self.emitter.emit("distcalc_ended" , None, context)
@@ -272,8 +270,7 @@ class Controller(GObject.GObject):
         if haversine is None:
             dist = "Unknown"
         else:
-            # FIXME: always opens file; cache distance pref at boot and when it changes
-            if self.query_config(Preferences.DIST) is True:
+            if self.prefs.use_miles:
                 raw = round(haversine.as_miles())
                 separated = number(raw)
                 dist = str(separated) + " mi"
@@ -310,6 +307,9 @@ class Controller(GObject.GObject):
         config = self.prefs.paths.config
         try:
             update.toggle_config(config, context)
+            # NOTE: 'use_miles' key is updated dynamically for statusbar unit
+            if context == Preferences.DIST:
+                self.prefs.use_miles = not self.prefs.use_miles
         except Exception as e:
             logger.critical(e)
             trace = traceback.format_exc()
@@ -336,9 +336,6 @@ class Controller(GObject.GObject):
     def focus_notebook(self) -> None:
         notebook = self.mediator.grid.notebook
         notebook.focus_current()
-
-    def toggle_mod_panel(self, state: bool) -> None:
-        self.mediator.grid.right_panel.sel_panel.set_visible(state)
 
     def show_developers_page(self) -> None:
         self.open_page(NotebookPage.DEVELOPERS)
@@ -631,11 +628,10 @@ class Controller(GObject.GObject):
         treeview.grab_focus()
         self.destroy_on_idle()
         if self.success is False:
+            # TODO: different dialogs for server tab contexts, e.g. lan timeout
+            # TODO: if history/favorites is empty, don't even trigger a call to dump data
             dialog = ExceptionDialog(self, "API TIMEOUT")
             dialog.run()
-        #if treeview.get_filter_man().get_model() is None:
-            # TODO: different dialogs for server tab contexts, e.g. lan timeout
-            # TODO: if history/favorites is empty, don't even trigger a call
 
     def push_data(self, data: tuple, mode: Optional[FilterMode], success: bool) -> None:
 
@@ -772,7 +768,7 @@ class Controller(GObject.GObject):
     # FIXME: optional label/map/keyword parameter
     def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
         tv = self.get_active_treeview()
-        if tv.get_model() is None:
+        if tv.filter_man.get_control() is None:
             return
         tv.set_model(None)
         # TODO: deprecated in this context?

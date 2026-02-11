@@ -1,7 +1,7 @@
 import logging
 import multiprocessing
 import threading
-from typing import Any
+from typing import Any, Optional
 from warnings import deprecated
 
 from dzgui.views.mixins.context_mixin import ContextMixin
@@ -50,7 +50,8 @@ class ServerTreeView(ContextMixin, TreeView):
         self.set_fixed_height_mode(True)
         self.set_headers_visible(True)
 
-        self.queue_id: int = 0
+        self.queue_id: int
+        self.handler_id: int
 
         self.current_proc = None
         self.queue = multiprocessing.Queue()
@@ -108,10 +109,6 @@ class ServerTreeView(ContextMixin, TreeView):
         self.connect("key-press-event", self.present_menu)
         self.connect("button-press-event", self.present_menu)
 
-        # TODO: simplify this
-        self.emitter.connect("statusbar_loaded", self.start_distcalc)
-        # self.emitter.connect("distcalc_started", self._on_distcalc_started)
-
     def _get_ping(
         self,
         column: Gtk.TreeViewColumn,
@@ -146,8 +143,6 @@ class ServerTreeView(ContextMixin, TreeView):
         pass
 
     def start_timeout(self) -> None:
-        if self.queue_id:
-            GLib.Source.remove(self.queue_id)
         self.queue_id = GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
 
     def get_filter_man(self) -> FilteredModelManager:
@@ -180,12 +175,19 @@ class ServerTreeView(ContextMixin, TreeView):
 
     def _on_map(self, a) -> None:
         if self.get_enum() is ServerTab.LAN:
-            # TODO: use emitter here
-            self.controller.mediator.grid.conpan.lan.set_visible(True)
+            self.emitter.emit("lan_tab_toggled", True)
+
+        # FIXME: only if the tab is active
+        self.handler_id = self.emitter.connect("statusbar_loaded", self.start_distcalc)
+        self.start_timeout()
+        self.start_distcalc()
 
     def _on_unmap(self, a) -> None:
+        # NOTE: remove queue checker for this tab
+        GLib.Source.remove(self.queue_id)
+        self.emitter.disconnect(self.handler_id)
         if self.get_enum() is ServerTab.LAN:
-            self.controller.mediator.grid.conpan.lan.set_visible(False)
+            self.emitter.emit("lan_tab_toggled", False)
 
     def set_query_func(self, func: Callable) -> None:
         self.query_func = func
@@ -205,8 +207,6 @@ class ServerTreeView(ContextMixin, TreeView):
     def terminate_process(self) -> None:
         if self.current_proc and self.current_proc.is_alive():
             self.current_proc.terminate()
-
-    from typing import Optional
 
     def start_distcalc(self, emitter: Optional["Emitter"] = None):
         self.terminate_process()
@@ -230,7 +230,6 @@ class ServerTreeView(ContextMixin, TreeView):
         self.current_proc.start()
 
     def _check_result_queue(self) -> Literal[True]:
-        # TODO: delegate to controller
         latest_result = None
         while not self.queue.empty():
             latest_result = self.queue.get()
@@ -242,6 +241,7 @@ class ServerTreeView(ContextMixin, TreeView):
             haversine = latest_result[1]
             if addr not in cache:
                 cache[addr] = haversine
+            # TODO: should be emitting a statusbar signal here instead?
             self.controller.set_statusbar_dist(haversine, self.get_enum())
         return True
 
@@ -251,6 +251,7 @@ class ServerTreeView(ContextMixin, TreeView):
         if event.state is Gdk.ModifierType.CONTROL_MASK:
             match event.keyval:
                 case Gdk.KEY_r:
+                    # TODO: unimplemented
                     self.refresh_player_count()
                 case Gdk.KEY_f:
                     self.emitter.emit("request_keyword_focus")
@@ -260,7 +261,7 @@ class ServerTreeView(ContextMixin, TreeView):
                     self.emitter.emit("request_ip_entry_focus")
                 case Gdk.KEY_p:
                     if self.enum is ServerTab.LAN:
-                        self.emitter.emit("request_lan_entry_focus", self.enum)
+                        self.emitter.emit("request_lan_entry_focus")
                 case Gdk.KEY_c:
                     record = self.get_record()
                     self.controller.copy_ip(record)

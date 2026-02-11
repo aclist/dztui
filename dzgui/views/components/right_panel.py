@@ -29,6 +29,7 @@ class RightPanel(Gtk.Box):
 
         self.button_vbox = ButtonBox(controller)
         self.filters_vbox = FilterPanel(controller)
+
         self.sel_panel = ModSelectionPanel(controller)
 
         emitter.connect("servers_loaded", self.toggle_refresh_button)

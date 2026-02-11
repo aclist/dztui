@@ -2,7 +2,9 @@ from dataclasses import dataclass
 from dzgui.config.xdg import Xdg
 from dzgui.util.ip import Coords
 
-@dataclass(slots=True, frozen=True)
+
+# NOTE: mutable dataclass, 'use_miles' key changes on demand
+@dataclass(slots=True)
 class UserPrefs:
     is_steam_deck: bool
     is_game_mode: bool
@@ -11,3 +13,4 @@ class UserPrefs:
     version: str
     allow_updates: bool
     paths: Xdg
+    use_miles: bool

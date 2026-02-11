@@ -15,6 +15,7 @@ class Mods(Gtk.ScrolledWindow):
         super().__init__()
 
         self.controller = controller
+        self.emitter = controller.get_emitter()
         self.tree = ModTreeView(controller)
 
         self.add(self.tree)
@@ -23,12 +24,11 @@ class Mods(Gtk.ScrolledWindow):
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
 
-    # TODO: use emitter
     def _on_unmap(self, widget: Self) -> None:
-        self.controller.toggle_mod_panel(False)
+        self.emitter.emit("mod_page_toggled", False)
 
     def _on_map(self, widget: Self) -> None:
-        self.controller.toggle_mod_panel(True)
+        self.emitter.emit("mod_page_toggled", True)
 
     def grab_content_area(self) -> None:
         self.tree.grab_focus()

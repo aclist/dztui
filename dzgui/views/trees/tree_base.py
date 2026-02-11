@@ -125,7 +125,6 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
             self._on_tree_selection_changed(selection)
 
     def _on_tree_selection_changed(self, selection: Gtk.TreeSelection) -> None:
-        print("selection changed")
         self.emit("generic_treesel_changed", selection)
 
     def toggle_selection(self, state: bool) -> None:

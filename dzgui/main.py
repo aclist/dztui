@@ -7,7 +7,9 @@ import warnings
 from typing import TYPE_CHECKING
 
 from dzgui.api.mods import remove_stale_signatures
+from dzgui.const.enum import Preferences
 from dzgui.config.ipdb import get_ipdb
+from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.config.xdg import get_xdg_paths, parse_filepaths
 from dzgui.const.update import ALLOW_UPDATES
@@ -126,6 +128,7 @@ def main() -> None:
     # TODO: handle IP DB failure and use coords fallback
     get_ipdb(XDG.ips)
     local_coords = get_local_coords(XDG.ips)
+    use_miles = lookup(XDG.config, Preferences.DIST)
 
     prefs = UserPrefs(
         _is_steam_deck,
@@ -135,6 +138,7 @@ def main() -> None:
         version,
         allow,
         XDG,
+        use_miles,
     )
     print("All OK. Loading UI...")
     App(prefs)

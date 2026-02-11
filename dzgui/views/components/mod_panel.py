@@ -11,7 +11,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
-    from dzgui.controllers.mc import Controller
+    from dzgui.controllers.mc import Controller, Emitter
 
 
 class EnumeratedModButton(Gtk.Button):
@@ -28,6 +28,8 @@ class ModSelectionPanel(Gtk.Box):
         super().__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL, margin_top=15)
 
         self.controller = controller
+        emitter = controller.get_emitter()
+        emitter.connect("mod_page_toggled", self._on_mod_page_toggled)
 
         header = BoldLabel(mod_panel.header)
 
@@ -57,6 +59,9 @@ class ModSelectionPanel(Gtk.Box):
 
         for el in header, self.main_panel, self.stale_panel:
             self.pack_start(el, NO_EXPAND, FILL, NO_PADDING)
+
+    def _on_mod_page_toggled(self, emitter: "Emitter", state: bool) -> None:
+        self.set_visible(state)
 
     def after_colorize(self) -> None:
         self.controller.unselect_all_mods()
