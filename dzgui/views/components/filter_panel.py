@@ -127,13 +127,18 @@ class FilterPanel(Gtk.Box):
             self.pack_start(el, NO_EXPAND, NO_FILL, NO_PADDING)
 
     def set_unique_maps(self, maps: list) -> None:
+        if maps is None:
+            return
         if len(maps) < 1:
             return
         u_maps = set([row[1] for row in maps])
         u_maps = sorted(u_maps)
+        self.controller.append_map([strings.all_maps])
+        self.selected_map = strings.all_maps
         for m in u_maps:
             self.controller.append_map([m])
             self.maps_hr.append(m)
+        self.maps_combo.set_active(0)
 
     def get_filters(self) -> tuple:
         filters = []
@@ -144,16 +149,17 @@ class FilterPanel(Gtk.Box):
                 filters.append(k)
         return tuple(filters)
 
-    def reinit_panel(self) -> None:
-        self.keyword_entry.set_text("")
-        self.keyword_filter = ""
-        self.reinit_filters()
-        self.set_visible(False)
-        # TODO:
-        sel_panel = self.controller.mediator.grid.sel_panel
-        if sel_panel.is_visible():
-            sel_panel.set_visible(False)
+    # TODO: currently unused
+    # def reinit_panel(self) -> None:
+    #    self.keyword_entry.set_text("")
+    #    self.keyword_filter = ""
+    #    self.reinit_filters()
+    #    self.set_visible(False)
+    #    sel_panel = self.controller.mediator.grid.sel_panel
+    #    if sel_panel.is_visible():
+    #        sel_panel.set_visible(False)
 
+    # TODO: change filters on a per-tab basis
     def reinit_filters(self) -> None:
         self.enabled_filters = dict(self.default_filters)
         for check in self.checks:
@@ -162,6 +168,7 @@ class FilterPanel(Gtk.Box):
             check.set_active(state)
 
     def _on_map_entry_keypress(self, entry: Gtk.Entry, event: Gdk.EventKey) -> None:
+        # TODO: use activated() signal
         match event.keyval:
             case Gdk.KEY_Return:
                 text = entry.get_text()

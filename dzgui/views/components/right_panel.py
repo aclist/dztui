@@ -50,13 +50,13 @@ class RightPanel(Gtk.Box):
                 self.refresh_button.set_sensitive(False)
 
     # TODO: move to filter panel
-    def reinit_maps(self, rows: list) -> None:
-        self.controller.reinit_map_store()
-        # TODO: communicate with controller
-        # self.controller.clear_map_store()
-        # map_store.append(["All maps"])
-        self.selected = "All maps"
-        self.filters_vbox.set_unique_maps(rows)
+    # def reinit_maps(self, rows: list) -> None:
+    #     self.controller.reinit_map_store()
+    #     # TODO: communicate with controller
+    #     # self.controller.clear_map_store()
+    #     # map_store.append(["All maps"])
+    #     self.selected = "All maps"
+    #     self.filters_vbox.set_unique_maps(rows)
 
     # TODO: reference
     # def _on_ping_clicked(self, button: Gtk.Button) -> None:

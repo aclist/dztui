@@ -49,8 +49,8 @@ class FilteredModelManager:
 
         self.ephemeral_model = self.new_model_from_class(ServerColumns)
 
-        self.control_model = None
-        self.filtered = None
+        self.control_model: list = None
+        self.filtered: list = None
         self.success = True
 
     def append_row(self, row: list) -> None:
@@ -86,7 +86,7 @@ class FilteredModelManager:
             case FilterMode.MAP:
                 prior_map = self.controller.get_prior_map()
 
-                if prior_map == "All maps":
+                if prior_map == strings.all_maps:
                     rows = self.filter_map(filters)
                 else:
                     rows = self.filter_toggle_on(filters, *args)
@@ -138,7 +138,7 @@ class FilteredModelManager:
         rows = self.filtered
         sel_map = self.controller.get_map()
 
-        if sel_map == "All maps":
+        if sel_map == strings.all_maps:
             return rows
 
         rows = [row for row in rows if row[1] == sel_map]
@@ -234,7 +234,7 @@ class FilteredModelManager:
             if row[7] == addr and row[8] == qport:
                 self.control_model.remove(row)
 
-        # self.wipe_cache()
+        self.wipe_cache()
         filters = self.controller.get_filters()
         refiltered = self.filter_toggle_on(filters)
         self.set_filtered(refiltered)
@@ -272,10 +272,14 @@ class FilteredModelManager:
     def get_success(self) -> bool:
         return self.success
 
-    # def wipe_cache(self, full=False) -> None:
-    #     self.success = True
-    #     self.filtered = None
-    #     self.filter_cache = {}
-    #     self.ping_cache = {}
-    #     if full:
-    #         self.control_model = None
+    # NOTE: used when adding/removing rows in-situ in the ephemeral model
+    # and syncing changes to control model, but ignored for player count/ping updates
+    # cf. remove_from_history(), remove_server()
+    # NOTE: this can most likely be simplified for v7
+    def wipe_cache(self, full=False) -> None:
+        self.success = True
+        self.filtered = None
+        self.filter_cache = {}
+        self.ping_cache = {}
+        if full:
+            self.control_model = None

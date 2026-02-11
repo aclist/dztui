@@ -377,6 +377,7 @@ class Controller(GObject.GObject):
                 if res.status != 200 or not res.parsed:
                     # TODO: pop warning dialog, create enum around various failure states
                     print("failed to parse/timeout error")
+                    self.new_maps = None
                     self.push_data(None, FilterMode.INITIAL, success=False)
                     return
                 j = res.json
@@ -387,20 +388,11 @@ class Controller(GObject.GObject):
             j = res.json
             serv += j["response"]["servers"]
 
-        # TODO: ping column pass
+        # TODO: additional ping column pass, collated
         parsed = Servers.parse_json(serv)
-        self.mediator.filters.set_unique_maps(parsed)
+        self.first_iteration = True
+        self.new_maps = parsed
         self.push_data(parsed, FilterMode.INITIAL, success=True)
-
-    #def set_unique_maps(self, records: list) -> None:
-    #    if len(records) < 1:
-    #        return
-    #    u_maps = set([row[1] for row in records])
-    #    u_maps = sorted(u_maps)
-    #    for m in u_maps:
-    #        print(m)
-    #        #map_store.append([m])
-    #        #self.maps_hr.append(m)
 
     def get_help_row(self) -> str:
         tv = self.mediator.menu
@@ -620,8 +612,17 @@ class Controller(GObject.GObject):
         self.push_data(data, FilterMode.INITIAL, success=True)
 
     def cleanup(self) -> None:
-        # TODO: if success failed, throw popup
         treeview = self.get_active_treeview()
+
+        # TODO: signals or other approach to deferring model insertion
+        # after thread closes
+        # cf. servers_loaded signal
+        treeview.set_model(self.to_insert)
+        # CHORE: this is placeholder logic
+        if self.first_iteration:
+            self.mediator.filters.set_unique_maps(self.new_maps)
+            self.first_iteration = False
+
         context = self.get_active_context()
         self.emitter.emit("servers_loaded", context)
 
@@ -638,20 +639,21 @@ class Controller(GObject.GObject):
         treeview = self.get_active_treeview()
         manager = treeview.get_filter_man()
 
+        self.to_insert = None
+
         # TODO:
         self.success = success
         if success:
             if data is None:
-                insert = None
+                self.to_insert = None
             else:
                 # TODO: consolidate into filter manager
                 if mode == FilterMode.INITIAL:
                     manager.set_control(data)
-                    # TODO: init maps here
                 manager.filter(mode)
-                insert = manager.get_model()
+                self.to_insert = manager.get_model()
             # TODO: should list store be set outside of this thread?
-            treeview.set_model(insert)
+            # treeview.set_model(self.to_insert)
         treeview.set_loaded(True)
         GLib.idle_add(self.cleanup)
 
