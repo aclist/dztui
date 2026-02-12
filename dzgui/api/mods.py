@@ -22,6 +22,7 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class ModMeta:
     protocol: str
@@ -40,6 +41,7 @@ def get_local_mod_path(steam_path: Path) -> Path:
     p = PeFile.get_app_path(steam_path / LIBRARYFOLDERS_PATH, APPID_DAYZ)
     workshop_path = p / WORKSHOP_PATH
     return workshop_path
+
 
 def get_local_mods(workshop_path: Path) -> list[Path]:
     mods = [file for file in workshop_path.iterdir() if file.is_dir()]
@@ -148,6 +150,7 @@ def find_stale_mods(config: Path) -> list[int]:
     steam = lookup(config, Preferences.DEFAULT)
     steam_path = Path(steam)
 
+    # TODO: use concurrency
     local = get_local_mod_ids(steam_path)
     servers = lookup(config, Preferences.IP_LIST)
 

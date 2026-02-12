@@ -7,6 +7,7 @@ from warnings import deprecated
 
 from concurrent.futures import wait
 from concurrent.futures import ThreadPoolExecutor
+from functools import wraps
 from pathlib import Path
 from typing import Any, Callable, TYPE_CHECKING
 
@@ -101,15 +102,17 @@ class Controller(GObject.GObject):
     def get_emitter(self) -> Emitter:
         return self.emitter
 
-    def call_on_thread(func: Callable) -> Callable:
-        def wrapper(*args, **kwargs):
-            self = args[0]
-            # TODO: get dialog string from own attribute
-            self.wait_dialog = WaitDialog(self, strings.dialog.filtering)
-            self.wait_dialog.show_all()
-            thread = threading.Thread(target=func, args=args)
-            thread.start()
-        return wrapper
+    def call_on_thread(dialog_str: str) -> Callable:
+        def decorator(func: Callable) -> Callable:
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                self = args[0]
+                self.wait_dialog = WaitDialog(self, dialog_str)
+                self.wait_dialog.show_all()
+                thread = threading.Thread(target=func, args=args)
+                thread.start()
+            return wrapper
+        return decorator
 
     def register_widget(self, attr: str, widget: Gtk.Widget) -> None:
         try:
@@ -693,7 +696,7 @@ class Controller(GObject.GObject):
         treeview.set_loaded(True)
         GLib.idle_add(self.cleanup)
 
-    @call_on_thread
+    @call_on_thread(strings.dialog.working)
     def highlight_stale(self) -> None:
         self.colorize_mods()
 
@@ -746,7 +749,7 @@ class Controller(GObject.GObject):
             dialog = ExceptionDialog(self, strings.api_error)
             dialog.run()
 
-    @call_on_thread
+    @call_on_thread(strings.dialog.working)
     # FIXME: entire process is behind thread, including destroy_on_idle()
     def update_api_key(self, text: str, key: Preferences) -> None:
         self.test_api_response(text, key)
@@ -794,11 +797,11 @@ class Controller(GObject.GObject):
     def get_statusbar(self) -> None:
         return self.mediator.statusbar
 
-    @call_on_thread
+    @call_on_thread(strings.dialog.fetching)
     def run_query_func(self, func: Callable) -> None:
         func()
 
-    @call_on_thread
+    @call_on_thread(strings.dialog.filtering)
     def filter_threaded(self, mode: FilterMode, label: str) -> None:
         tv = self.get_active_treeview()
         tv.filter_man.filter(mode, label)
