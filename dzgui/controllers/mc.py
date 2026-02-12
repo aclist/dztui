@@ -104,6 +104,7 @@ class Controller(GObject.GObject):
     def call_on_thread(func: Callable) -> Callable:
         def wrapper(*args, **kwargs):
             self = args[0]
+            # TODO: get dialog string from own attribute
             self.wait_dialog = WaitDialog(self, strings.dialog.filtering)
             self.wait_dialog.show_all()
             thread = threading.Thread(target=func, args=args)
@@ -115,21 +116,6 @@ class Controller(GObject.GObject):
             setattr(self.mediator, attr, widget)
         except AttributeError:
             logger.critical(f"{attr} is not a valid AppNavigation attribute.")
-
-    def get_help_store(self) -> Gtk.ListStore:
-        return self.model_man.get_help_store()
-
-    def get_map_store(self) -> Gtk.ListStore:
-        return self.model_man.get_map_store()
-
-    def get_modlist_store(self) -> Gtk.ListStore:
-        return self.model_man.get_modlist_store()
-
-    def get_mod_store(self) -> Gtk.ListStore:
-        return self.model_man.get_mod_store()
-
-    def get_log_store(self) -> Gtk.ListStore:
-        return self.model_man.get_log_store()
 
     def terminate_process(self) -> None:
         # TODO: only used by server table multiprocessing queue
@@ -252,12 +238,12 @@ class Controller(GObject.GObject):
         return msg_id
 
     def set_statusbar_dist(self, haversine: "Haversine", enum: "ServerTab") -> None:
-        context = self.get_active_context()
-        page = self.mediator.notebook.get_page_by_enum()
         """
         NOTE: prevents race condition when server tab changed,
         but allows caching the distance in the background
         """
+        context = self.get_active_context()
+        page = self.mediator.notebook.get_page_by_enum()
         if page != NotebookPage.SERVERS:
             self.emitter.emit("distcalc_ended" , None, context)
             return
@@ -265,7 +251,6 @@ class Controller(GObject.GObject):
             self.emitter.emit("distcalc_ended" , None, context)
             return
 
-        # NOTE: user may have changed km/mi toggle, so recalculate
         dist: str
         if haversine is None:
             dist = "Unknown"
@@ -292,7 +277,7 @@ class Controller(GObject.GObject):
         self.update_mod_statusbar()
 
     def load_mods(self) -> None:
-        # TODO: threading
+        # TODO: threading; could get slow with 100s of mods
         model = self.model_man.get_mod_store()
         model.clear()
         path = self.query_config(Preferences.DEFAULT)
@@ -360,7 +345,6 @@ class Controller(GObject.GObject):
                 self.load_mods()
 
         self.open_page(button.opens)
-        #self.mediator.notebook.set_page_by_enum(button.opens)
 
     def dump_api(self) -> None:
         self.first_iteration = True
@@ -378,9 +362,9 @@ class Controller(GObject.GObject):
                 res = future.result()
                 if res.status != 200 or not res.parsed:
                     # TODO: pop warning dialog, create enum around various failure states
-                    print("failed to parse/timeout error")
+                    # TODO: if first iteration, disable map combo. otherwise, do nothing
                     self.new_maps = None
-                    self.push_data(None, FilterMode.INITIAL, success=False)
+                    self.push_data_failure() #None, FilterMode.INITIAL, success=False)
                     return
                 j = res.json
                 serv += j["response"]["servers"]
@@ -496,41 +480,36 @@ class Controller(GObject.GObject):
             total_size += mod[3]
         return total_mods, total_size
 
+    def set_fav(self) -> None:
+        treeview = self.get_active_treeview()
+        name = treeview.get_value_at_index(0)
+        record = treeview.get_record_string()
+
+        try:
+            self.update_config(Preferences.FAV_LBL, name)
+            self.update_config(Preferences.FAV_SRV, record)
+        except Exception:
+            # TODO: add a failure dialog here
+            return
+
+        simple_ip = treeview.get_simplified_ip()
+        self.emitter.emit("fav_server_changed", name, simple_ip)
+
     def menu_action(self, action: ContextMenu, path: Gtk.TreePath) -> None:
         match action:
-            # NOTE: manipulates server stores
-            # TODO: unimplemented
+            # NOTE: manipulates server stores and caches
+            # add to saved servers model verbatim and sort in place
+            # update tab with !
+            # update config file with IP
             case ContextMenu.ADD_SERVER:
                 pass
+            # spawn edit dialog and update cache, notes file
             case ContextMenu.ADD_NOTE:
                 pass
             case ContextMenu.COPY_CLIPBOARD:
                 self.copy_ip(path)
             case ContextMenu.COPY_NAME:
                 self.copy_name(path)
-            case ContextMenu.REFRESH_PLAYERS:
-                pass
-            case ContextMenu.REMOVE_HISTORY:
-                pass
-            case ContextMenu.REMOVE_SERVER:
-                pass
-            case ContextMenu.SET_FAV:
-                treeview = self.get_active_treeview()
-                name = treeview.get_value_at_index(0)
-                record = treeview.get_record_string()
-
-                self.update_config(Preferences.FAV_LBL, name)
-                self.update_config(Preferences.FAV_SRV, record)
-                # TODO: consider a failure dialog here
-
-                simple_ip = treeview.get_simplified_ip()
-                self.emitter.emit("fav_server_changed", name, simple_ip)
-            case ContextMenu.SHOW_DETAILS:
-                pass
-            case ContextMenu.SHOW_MODS:
-                pass
-
-            # NOTE: manipulates mod store
             case ContextMenu.DELETE_MOD:
                 self.delete_single_mod(path)
                 # TODO: connect to emitter automatically
@@ -540,9 +519,28 @@ class Controller(GObject.GObject):
                 remove_stale_signatures(
                     self.prefs.paths.config, self.prefs.paths.version
                 )
+            # call a2s on thread and update ephemeral model in situ
+            case ContextMenu.REFRESH_PLAYERS:
+                pass
+            # update history model, update tab label, pop off of queue, write new list into file
+            # see dq.py
+            case ContextMenu.REMOVE_HISTORY:
+                pass
+            # reverse of ADD_SERVER
+            case ContextMenu.REMOVE_SERVER:
+                pass
+            case ContextMenu.SET_FAV:
+                self.set_fav()
+
+            # NOTE: spawns dedicated dialogs
+            case ContextMenu.SHOW_DETAILS:
+                pass
+            case ContextMenu.SHOW_MODS:
+                pass
 
             case ContextMenu.OPEN_WORKSHOP:
                 self.open_mod_page(path)
+
 
     def toggle_mod_selection(self, state: bool) -> None:
         sel = self.mediator.modtreeview.get_selection()
@@ -556,7 +554,8 @@ class Controller(GObject.GObject):
         log = self.prefs.paths.debug
         store = self.model_man.get_log_store()
         store.clear()
-        # NOTE: this model is reloaded each time as log changes
+        # NOTE: this model is reloaded each time as log changes, rather than adding
+        # atomic events
         try:
             with open(log, "r") as f:
                 lines = [
@@ -620,15 +619,17 @@ class Controller(GObject.GObject):
         )
         self.push_data(data, FilterMode.INITIAL, success=True)
 
-    # TODO: eg cleanup on failure, cleanup on sucess
-    # separate methods
+    # TODO: eg dedicated cleanup on failure, cleanup on sucess
+    # these can pop their own predefined dialogs, much simpler
+
     def cleanup(self) -> None:
         treeview = self.get_active_treeview()
+        treeview.set_loaded(True)
+        treeview.set_model(self.to_insert)
 
         # TODO: signals or other approach to deferring map
         # model insertion after thread closes
         # cf. servers_loaded signal
-        treeview.set_model(self.to_insert)
 
         # CHORE: this is placeholder logic
         if self.first_iteration:
@@ -639,12 +640,37 @@ class Controller(GObject.GObject):
         self.emitter.emit("servers_loaded", context)
 
         treeview.grab_focus()
+        # TODO: chiefly responsible for removing spinner dialog
         self.destroy_on_idle()
-        if self.success is False:
-            # TODO: different dialogs for server tab contexts, e.g. lan timeout
-            # TODO: if history/favorites is empty, don't even trigger a call to dump data
-            dialog = ExceptionDialog(self, "API TIMEOUT")
-            dialog.run()
+        #if self.success is False:
+        #    # TODO: different dialogs for server tab contexts, e.g. lan timeout
+        #    # TODO: if history/favorites is empty, don't even trigger a call to dump data
+        #    dialog = ExceptionDialog(self, "API TIMEOUT")
+        #    dialog.run()
+
+    def cleanup_on_failure(self) -> None:
+        # TODO: what if refresh action occurred, and the old model is valid?
+        treeview = self.get_active_treeview()
+        treeview.set_model(None)
+        # TODO: disable map, keyword, and filter widgets if model is None?
+        # -> signal driven (servers_empty)
+        # would have to make those unsensitive when changing server tabs
+        # if model is not None when changing tab, emit other signal
+        self.mediator.filters.set_unique_maps(None)
+
+        context = self.get_active_context()
+        self.emitter.emit("servers_loaded", context)
+        treeview.grab_focus()
+        self.destroy_on_idle()
+        dialog = ExceptionDialog(self, "API TIMEOUT")
+        dialog.run()
+
+    def push_data_failure(self) -> None:
+        treeview = self.get_active_treeview()
+        treeview.set_loaded(True)
+        # TODO: wipe control model on failure or keep old results?
+        manager = treeview.get_filter_man()
+        GLib.idle_add(self.cleanup_on_failure)
 
     def push_data(self, data: tuple, mode: Optional[FilterMode], success: bool) -> None:
 
@@ -664,8 +690,6 @@ class Controller(GObject.GObject):
                     manager.set_control(data)
                 manager.filter(mode)
                 self.to_insert = manager.get_model()
-            # TODO: should list store be set outside of this thread?
-            # treeview.set_model(self.to_insert)
         treeview.set_loaded(True)
         GLib.idle_add(self.cleanup)
 
@@ -691,6 +715,7 @@ class Controller(GObject.GObject):
         func = self.get_callback()
         self.mediator.window.set_sensitive(True)
         # TODO: spawn error dialog if API crawl failed
+        # most likely going to drop this
         if func is not None:
             args = self.get_callback_args()
             GLib.idle_add(func, *args)
@@ -784,7 +809,6 @@ class Controller(GObject.GObject):
         tv = self.get_active_treeview()
         if tv.filter_man.get_control() is None:
             return
-        tv.set_model(None)
         # TODO: deprecated in this context?
         self.set_callback(None, None)
         self.filter_threaded(mode, label)
@@ -795,7 +819,8 @@ class Controller(GObject.GObject):
             self.emitter.emit("servers_loaded", treeview.get_enum())
             return
 
-        treeview.set_model(None)
+        # TODO: maybe set tree to none afterwards (swap models)
+        #treeview.set_model(None)
         func = treeview.get_query_func()
         if func is None:
             self.emitter.emit("servers_loaded", treeview.get_enum())
@@ -819,6 +844,21 @@ class Controller(GObject.GObject):
 
     # TODO: use model manager, map and keyword caches
     # TODO: model cache that hooks checkbox signal
+    def get_help_store(self) -> Gtk.ListStore:
+        return self.model_man.get_help_store()
+
+    def get_map_store(self) -> Gtk.ListStore:
+        return self.model_man.get_map_store()
+
+    def get_modlist_store(self) -> Gtk.ListStore:
+        return self.model_man.get_modlist_store()
+
+    def get_mod_store(self) -> Gtk.ListStore:
+        return self.model_man.get_mod_store()
+
+    def get_log_store(self) -> Gtk.ListStore:
+        return self.model_man.get_log_store()
+
     def get_filters(self) -> list:
         return self.mediator.filters.get_filters()
 
