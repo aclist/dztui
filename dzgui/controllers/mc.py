@@ -614,10 +614,11 @@ class Controller(GObject.GObject):
     def cleanup(self) -> None:
         treeview = self.get_active_treeview()
 
-        # TODO: signals or other approach to deferring model insertion
-        # after thread closes
+        # TODO: signals or other approach to deferring map
+        # model insertion after thread closes
         # cf. servers_loaded signal
         treeview.set_model(self.to_insert)
+
         # CHORE: this is placeholder logic
         if self.first_iteration:
             self.mediator.filters.set_unique_maps(self.new_maps)

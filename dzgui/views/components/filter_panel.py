@@ -91,8 +91,10 @@ class FilterPanel(Gtk.Box):
         self.keyword_entry.set_icon_from_icon_name(
             Gtk.EntryIconPosition.SECONDARY, SEARCH_ICON
         )
-        self.keyword_entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, False)
-        # entry.connect("icon-release", self._on_icon_release)
+        self.keyword_entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
+        self.keyword_entry.connect(
+            "icon-release", lambda *args: self.keyword_entry.activate()
+        )
 
         self.emitter.connect(
             "request_keyword_focus", lambda _: self.keyword_entry.grab_focus()
@@ -125,6 +127,12 @@ class FilterPanel(Gtk.Box):
 
         for el in self.filters_label, self.keyword_entry, self.maps_combo, button_grid:
             self.pack_start(el, NO_EXPAND, NO_FILL, NO_PADDING)
+
+    # def _on_icon_release(self, widget: Gtk.Entry, icon_pos: Gtk ^ a, b) -> None:
+    #    print(a)
+    #    print(b)
+    #    print(icon)
+    #    self.keyword_entry.activate()
 
     def set_unique_maps(self, maps: list) -> None:
         if maps is None:
