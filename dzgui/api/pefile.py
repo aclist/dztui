@@ -72,7 +72,7 @@ class PackedData:
     def unpack(cls, data: BinaryIO):
         r = []
         for key, value in cls.__annotations__.items():
-            if type(value) is str:
+            if value is str:
                 f = data.read(8).rstrip(b"\x00\x00").decode()
             else:
                 fmt = endian + (value.fmt)

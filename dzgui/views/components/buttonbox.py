@@ -1,4 +1,5 @@
 import logging
+from typing import TYPE_CHECKING
 
 from dzgui.const.enum import ButtonType
 from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
@@ -9,6 +10,9 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk  # noqa E402
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from dzgui.controllers.emitter import Emitter
 
 
 class ContextualButton(Gtk.Button):
@@ -34,6 +38,9 @@ class ButtonBox(Gtk.Box):
         )
 
         self.controller = controller
+        self.emitter = controller.get_emitter()
+        self.emitter.connect("request_button_box_focus", self._focus_first_button)
+
         self.buttons = list()
         self.connect("key-press-event", self._on_keypress)
         prefs = controller.get_prefs()
@@ -54,6 +61,9 @@ class ButtonBox(Gtk.Box):
             self.buttons.append(button)
             button.connect("clicked", self._on_selection_button_clicked)
             self.pack_start(button, NO_EXPAND, NO_FILL, NO_PADDING)
+
+    def _focus_first_button(self, emitter: "Emitter") -> None:
+        self.buttons[0].grab_focus()
 
     def _on_selection_button_clicked(self, button: Gtk.Button) -> None:
         self.controller.open_page_by_button(button)

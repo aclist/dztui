@@ -61,10 +61,10 @@ def format_player_count(model: Gtk.TreeModel | None, control: list) -> str:
         hits = len(model)
         for row in model:
             players += row[4]
-    players_pretty = pluralize("players", players)
-    hits_pretty = pluralize("matches", hits)
     control_total = len(control)
-    status = f"Showing {hits:n}/{control_total:n} {hits_pretty} with {players:n} {players_pretty}"
+    players_pretty = pluralize("players", players)
+    control_pretty = pluralize("matches", control_total)
+    status = f"Showing {hits:n}/{control_total:n} {control_pretty} with {players:n} {players_pretty}"
     return status
 
 

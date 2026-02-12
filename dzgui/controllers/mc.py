@@ -362,6 +362,7 @@ class Controller(GObject.GObject):
         self.mediator.notebook.set_page_by_enum(button.opens)
 
     def dump_api(self) -> None:
+        self.first_iteration = True
         key = self.query_config(Preferences.STEAM)
         job = Servers.query_api
         params = Servers.params
@@ -390,7 +391,6 @@ class Controller(GObject.GObject):
 
         # TODO: additional ping column pass, collated
         parsed = Servers.parse_json(serv)
-        self.first_iteration = True
         self.new_maps = parsed
         self.push_data(parsed, FilterMode.INITIAL, success=True)
 
@@ -794,9 +794,6 @@ class Controller(GObject.GObject):
         # manager.clear_model()
         self.set_callback(None, None)
         self.thread_data_func(func)
-
-    def focus_button_box(self) -> None:
-        self.mediator.right_panel.focus_button_box()
 
     def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
         fav = str(self.query_config(Preferences.FAV_LBL))

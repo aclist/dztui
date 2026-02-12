@@ -59,7 +59,6 @@ class ValidatedEntry(Gtk.Entry):
 
     def mark_valid(self) -> None:
         self.emit("string_validated", True)
-        self.emitter.emit("widget_changed", self)
         remove_class(self, self.classname)
 
     def mark_invalid(self) -> None:

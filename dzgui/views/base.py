@@ -231,7 +231,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
             case Gdk.KEY_Right | Gdk.KEY_l:
                 if event.state is Gdk.ModifierType.CONTROL_MASK:
                     return
-                MainController.focus_button_box()
+                MainController.get_emitter().emit("request_button_box_focus")
             case Gdk.KEY_question:
                 self.toggle_keybindings()
 

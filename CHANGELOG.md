@@ -31,6 +31,7 @@
 
 ## Fixed
 - Longstanding issue with left clicks not registering as tree selection changes after spamming keyboard input
+- Rare segfaults when changing maps (threading)
 
 ## Unreleased
 - Setup wizard

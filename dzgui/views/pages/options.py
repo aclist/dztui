@@ -311,8 +311,7 @@ class Options(Gtk.Box):
 
     def _on_branch_changed(self, combo: Gtk.ComboBoxText) -> None:
         branch = combo.get_active_text()
-        print("UNIMPLEMENTED")
-        print(branch)
+        print("UNIMPLEMENTED: ", branch)
         ## TODO: needs to trigger download process
         # self.controller.toggle_branch(branch)
         # branch = combo.get_active_text().lower()

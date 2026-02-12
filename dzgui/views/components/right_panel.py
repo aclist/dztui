@@ -25,14 +25,13 @@ class RightPanel(Gtk.Box):
         self.controller.register_widget("right_panel", self)
 
         emitter = controller.get_emitter()
-        emitter.connect("request_button_box_focus", self.focus_button_box)
+        emitter.connect("servers_loaded", self.toggle_refresh_button)
 
         self.button_vbox = ButtonBox(controller)
         self.filters_vbox = FilterPanel(controller)
 
         self.sel_panel = ModSelectionPanel(controller)
 
-        emitter.connect("servers_loaded", self.toggle_refresh_button)
         self.refresh_button = RefreshButton(controller)
         self.keys = KeysButton(controller)
 
@@ -42,21 +41,14 @@ class RightPanel(Gtk.Box):
         self.pack_start(self.sel_panel, NO_EXPAND, NO_FILL, NO_PADDING)
 
     def toggle_refresh_button(self, emitter: "Emitter", context: "ServerTab") -> None:
-        # TODO: when a row is added, make sure "servers_loaded" signal is emitted
+        # TODO: when a row is added to a previously empty table,
+        # make sure "servers_loaded" signal is emitted
         self.refresh_button.set_sensitive(True)
         model = self.controller.get_active_treeview().get_model()
+        # NOTE: if saved servers or history are empty, there is nothing to refresh
         if model is None:
             if context in (ServerTab.RECENT, ServerTab.SAVED):
                 self.refresh_button.set_sensitive(False)
-
-    # TODO: move to filter panel
-    # def reinit_maps(self, rows: list) -> None:
-    #     self.controller.reinit_map_store()
-    #     # TODO: communicate with controller
-    #     # self.controller.clear_map_store()
-    #     # map_store.append(["All maps"])
-    #     self.selected = "All maps"
-    #     self.filters_vbox.set_unique_maps(rows)
 
     # TODO: reference
     # def _on_ping_clicked(self, button: Gtk.Button) -> None:
@@ -89,6 +81,3 @@ class RightPanel(Gtk.Box):
     #    treeview.wait_dialog.show_all()
     #    thread = threading.Thread(target=_update_pings, args=())
     #    thread.start()
-
-    def focus_button_box(self, emitter: Optional["Emitter"] = None) -> None:
-        self.button_vbox.buttons[0].grab_focus()
