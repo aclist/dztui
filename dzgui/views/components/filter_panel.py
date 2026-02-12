@@ -149,7 +149,8 @@ class FilterPanel(Gtk.Box):
                 filters.append(k)
         return tuple(filters)
 
-    # TODO: currently unused
+    # TODO: should be used when switching ServerTab contexts
+    # use signals here
     # def reinit_panel(self) -> None:
     #    self.keyword_entry.set_text("")
     #    self.keyword_filter = ""

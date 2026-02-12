@@ -41,6 +41,10 @@ class Emitter(GObject.GObject):
         """User invoked right movement keybinding from ServerTreeView"""
         pass
 
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(str, str))
+    def fav_server_changed(self, name: str, addr: str) -> None:
+        """Change favorite server via context menu"""
+
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(int,))
     def check_button_pressed(self, keyval: int) -> None:
         """User toggled filter panel check button via keyboard"""

@@ -2,9 +2,11 @@ from dataclasses import dataclass
 from dzgui.const.enum import HELP_MENU_ROWS
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository.Gtk import ListStore  # noqa E402
-from gi.repository import GObject, GLib  # noqa E402
+from gi.repository import GLib, GObject, Gtk  # noqa E402
+
 
 @dataclass(slots=True, frozen=True)
 class ModCols:
@@ -40,6 +42,7 @@ class ModelManager:
     """
     Manager for miscellaneous ListStores
     """
+
     def __init__(self) -> None:
 
         self.map_store = ListStore(str)
@@ -77,3 +80,11 @@ class ModelManager:
 
     def append_map(self, row: list) -> None:
         self.map_store.append(row)
+
+    def get_mod_from_tree_path(
+        self, tree_path: Gtk.TreePath
+    ) -> tuple[str, Gtk.TreeIter]:
+        model = self.get_mod_store()
+        tree_iter = model.get_iter(tree_path)
+        mod = model.get(tree_iter, 2)[0]
+        return mod, tree_iter

@@ -268,6 +268,7 @@ class Crumbs:
     servers: str
     thanks: str
     developers: str
+    default: str
 
 
 @dataclass(slots=True, frozen=True)
@@ -453,6 +454,7 @@ crumbs = Crumbs(
     servers="Servers > Server browser",
     thanks="Help > Special thanks",
     developers="Options > Developers",
+    default="Servers > ",
 )
 
 checkmark = "✓"

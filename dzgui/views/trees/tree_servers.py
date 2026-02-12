@@ -307,13 +307,19 @@ class ServerTreeView(ContextMixin, TreeView):
             return
         self.start_distcalc()
 
+    def get_simplified_ip(self) -> str:
+        addr = self.get_value_at_index(7)
+        qport = self.get_value_at_index(8)
+        ip = addr.split(":")[0]
+        return f"{ip}:{qport}"
+
     def get_record_string(self) -> str:
         addr = self.get_value_at_index(7)
         qport = self.get_value_at_index(8)
         return f"{addr}:{qport}"
 
     def get_record(self) -> Record | None:
-        # TODO: delegate to controller
+        # TODO: use tree_base.get_selected_row()
         select = self.get_selection()
         sels = select.get_selected_rows()
         (model, pathlist) = sels

@@ -1,6 +1,7 @@
 import logging
 
 from typing import Optional, TYPE_CHECKING
+from warnings import deprecated
 
 from dzgui.const.constants import SEPARATOR
 from dzgui.util.keys import is_navkey
@@ -39,8 +40,6 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         self.selected_row.connect("changed", self._on_tree_selection_changed)
         self.connect("row-activated", self._on_row_activated)
 
-        self.connect("button-press-event", lambda x, y: print(self.sel_blocked))
-
         self.connect("key-press-event", self._on_keypress)
         self.connect("key-release-event", self._on_key_release)
 
@@ -56,12 +55,12 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
     ) -> None:
         pass
 
-    def _separate(self, model: Gtk.ListStore, iter_: Gtk.TreeIter) -> bool:
-        if model[iter_][0] == SEPARATOR:
+    def _separate(self, model: Gtk.ListStore, _iter: Gtk.TreeIter) -> bool:
+        if model[_iter][0] == SEPARATOR:
             return True
         return False
 
-    def get_current_iter(self) -> Gtk.TreeIter | None:
+    def get_current_iter(self) -> Optional[Gtk.TreeIter]:
         it = self.get_selection().get_selected()[1]
         return it
 
@@ -82,7 +81,6 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         return [model[row] for row in rows]
 
     def _on_keypress(self, treeview: Gtk.TreeView, event: Gdk.EventKey) -> None:
-
         if is_navkey(event.keyval):
             if self.get_model() is None:
                 return
@@ -98,9 +96,9 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         return
 
     def _on_key_release(self, treeview: Gtk.TreeView, event: Gdk.EventKey) -> None:
-        # TODO: explain this better
         """
         Suppresses spamming on keydown
+        TODO: explain this better
         """
         # TODO: multisel
         # if event.keyval is Gdk.KEY_space:
@@ -139,9 +137,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         self.set_cursor(0)
 
     def get_value_at_index(self, index: int) -> str:
-        select = self.get_selection()
-        sels = select.get_selected_rows()
-        (model, pathlist) = sels
+        (model, pathlist) = self.get_model_and_pathlist()
         if len(pathlist) < 1:
             return ""
         path = pathlist[0]
@@ -157,16 +153,20 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         sel = self.get_selection()
         self._on_tree_selection_changed(sel)
 
-    def get_mpath(self) -> Gtk.TreePath | None:
+    def get_model_and_pathlist(self) -> tuple:
         select = self.get_selection()
         sels = select.get_selected_rows()
         (model, pathlist) = sels
+        return (model, pathlist)
+
+    @deprecated("Currently unused")
+    def get_mpath(self) -> Optional[Gtk.TreePath]:
+        (model, pathlist) = self.get_model_and_pathlist()
         if len(pathlist) < 1:
             return None
         path = pathlist[0]
         return path
 
-    # @signal_emission
     def _on_row_activated(
         self,
         treeview: Gtk.TreeView,
@@ -176,15 +176,12 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         self.emit("generic_row_activated", path, col)
 
     def is_selection_empty(self) -> bool:
-        # TODO: reduce duplicated methods
-        sel = self.get_selection()
-        sels = sel.get_selected_rows()
-        (model, pathlist) = sels
+        (model, pathlist) = self.get_model_and_pathlist()
         if len(pathlist) < 1:
             return True
         return False
 
-    def get_selected_row(self) -> Gtk.TreeModelRow | None:
+    def get_selected_row(self) -> Optional[Gtk.TreeModelRow]:
         ind = self.get_selected_row_index()
         model = self.get_model()
         if model is None:

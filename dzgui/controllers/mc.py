@@ -359,7 +359,8 @@ class Controller(GObject.GObject):
                 # TODO: reload using refresh button, rather than on demand?
                 self.load_mods()
 
-        self.mediator.notebook.set_page_by_enum(button.opens)
+        self.open_page(button.opens)
+        #self.mediator.notebook.set_page_by_enum(button.opens)
 
     def dump_api(self) -> None:
         self.first_iteration = True
@@ -443,23 +444,22 @@ class Controller(GObject.GObject):
         self.clipboard.set_text(text, -1)
 
     def open_mod_page(self, path: Gtk.TreePath) -> None:
-        mod, it = self.get_mod_from_tree_path(path)
+        mod, it = self.model_man.get_mod_from_tree_path(path)
         cmd = self.query_config(Preferences.CLIENT)
         open_workshop_page(mod, cmd)
 
     # TODO: put in model manager (dedicated manager for mod store)
-    def get_mod_from_tree_path(
-        self, tree_path: Gtk.TreePath
-    ) -> tuple[str, Gtk.TreeIter]:
-        model = self.model_man.get_mod_store()
-        tree_iter = model.get_iter(tree_path)
-        mod = model.get(tree_iter, 2)[0]
-        return mod, tree_iter
+    #def get_mod_from_tree_path(
+    #    self, tree_path: Gtk.TreePath
+    #) -> tuple[str, Gtk.TreeIter]:
+    #    model = self.model_man.get_mod_store()
+    #    tree_iter = model.get_iter(tree_path)
+    #    mod = model.get(tree_iter, 2)[0]
+    #    return mod, tree_iter
 
     def delete_single_mod(self, tree_path: Gtk.TreePath) -> None:
         config = self.prefs.paths.config
-
-        mod, it = self.get_mod_from_tree_path(tree_path)
+        mod, it = self.model_man.get_mod_from_tree_path(tree_path)
 
         path = lookup(config, Preferences.DEFAULT)
         steam_path = Path(path)
@@ -502,8 +502,6 @@ class Controller(GObject.GObject):
             # TODO: unimplemented
             case ContextMenu.ADD_SERVER:
                 pass
-            case ContextMenu.ADD_FAV:
-                pass
             case ContextMenu.ADD_NOTE:
                 pass
             case ContextMenu.COPY_CLIPBOARD:
@@ -516,6 +514,17 @@ class Controller(GObject.GObject):
                 pass
             case ContextMenu.REMOVE_SERVER:
                 pass
+            case ContextMenu.SET_FAV:
+                treeview = self.get_active_treeview()
+                name = treeview.get_value_at_index(0)
+                record = treeview.get_record_string()
+
+                self.update_config(Preferences.FAV_LBL, name)
+                self.update_config(Preferences.FAV_SRV, record)
+                # TODO: consider a failure dialog here
+
+                simple_ip = treeview.get_simplified_ip()
+                self.emitter.emit("fav_server_changed", name, simple_ip)
             case ContextMenu.SHOW_DETAILS:
                 pass
             case ContextMenu.SHOW_MODS:
@@ -611,6 +620,8 @@ class Controller(GObject.GObject):
         )
         self.push_data(data, FilterMode.INITIAL, success=True)
 
+    # TODO: eg cleanup on failure, cleanup on sucess
+    # separate methods
     def cleanup(self) -> None:
         treeview = self.get_active_treeview()
 
@@ -759,7 +770,7 @@ class Controller(GObject.GObject):
         return self.mediator.statusbar
 
     @call_on_thread
-    def thread_data_func(self, func: Callable) -> None:
+    def run_query_func(self, func: Callable) -> None:
         func()
 
     @call_on_thread
@@ -789,12 +800,11 @@ class Controller(GObject.GObject):
         if func is None:
             self.emitter.emit("servers_loaded", treeview.get_enum())
             return
-        # TODO: on legacy version, model clearing happens in thread
-        # (compare)
+        # TODO:
         # manager = treeview.get_filter_man()
         # manager.clear_model()
         self.set_callback(None, None)
-        self.thread_data_func(func)
+        self.run_query_func(func)
 
     def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
         fav = str(self.query_config(Preferences.FAV_LBL))

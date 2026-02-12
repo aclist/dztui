@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from dzgui.const.enum import NotebookPage
-from dzgui.util.strings import label_main_menu
+from dzgui.util.strings import label_main_menu, crumbs
 from dzgui.util.format import embolden
 
 import gi
@@ -43,9 +43,8 @@ class Breadcrumbs(Gtk.Label):
             crumbs = enum.dict["crumbs"]
             self.set_crumbs(crumbs)
 
-    def set_server_crumbs(self, crumbs: str) -> None:
-        # TODO: strings
-        self.set_crumbs("Servers > " + crumbs)
+    def set_server_crumbs(self, suffix: str) -> None:
+        self.set_crumbs(crumbs.default + suffix)
 
     def set_crumbs(self, crumbs: str) -> None:
         text = embolden(crumbs)

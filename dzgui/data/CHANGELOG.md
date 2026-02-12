@@ -28,6 +28,7 @@
 - Boldface breadcrumbs
 - Bold labels inside frames
 - Unsticky keys when clicking sidebar
+- Copy IP copies IP:queryport only instead of IP:gameport:queryport, mimics syntax needed by add by ip method
 
 ## Fixed
 - Longstanding issue with left clicks not registering as tree selection changes after spamming keyboard input

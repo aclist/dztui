@@ -1,4 +1,4 @@
-from typing import Literal, Self, TYPE_CHECKING
+from typing import Callable, Literal, Self, TYPE_CHECKING
 
 from dzgui.util.strings import atomic_buttons, connect_panel
 from dzgui.const.constants import (
@@ -11,6 +11,7 @@ from dzgui.const.constants import (
 )
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib  # noqa E402
 
@@ -21,7 +22,8 @@ if TYPE_CHECKING:
 
 class Icon(Gtk.Image):
     def __init__(self, name: str, l_margin: int = 0) -> None:
-        super().__init__(icon_name=name,
+        super().__init__(
+            icon_name=name,
             icon_size=Gtk.IconSize.BUTTON,
             margin_start=l_margin,
             ypad=2,
@@ -30,9 +32,8 @@ class Icon(Gtk.Image):
 
 class LargeIcon(Gtk.Image):
     def __init__(self, name: str, l_margin: int = 5) -> None:
-        super().__init__(icon_name=name,
-            icon_size=Gtk.IconSize.LARGE_TOOLBAR,
-            margin_start=l_margin
+        super().__init__(
+            icon_name=name, icon_size=Gtk.IconSize.LARGE_TOOLBAR, margin_start=l_margin
         )
 
 
@@ -59,14 +60,15 @@ class LargeIconTextButton(IconButton):
 
 
 class ClipboardButton(IconTextButton):
-    def __init__(self, controller: "Controller", data: str) -> None:
+    def __init__(self, controller: "Controller", func: Callable) -> None:
         super().__init__(CLIPBOARD, atomic_buttons.copy)
         self.controller = controller
-        self.connect("clicked", self._on_button_clicked, data)
+        self.connect("clicked", self._on_button_clicked, func)
 
         self.set_tooltip_text("Copy IP to clipboard")
 
-    def _on_button_clicked(self, button: Self, data: str) -> None:
+    def _on_button_clicked(self, button: Self, func: Callable) -> None:
+        data = func()
         self.controller.copy_clipboard(data)
 
 

@@ -64,6 +64,8 @@ class ModSelectionPanel(Gtk.Box):
         self.set_visible(state)
 
     def after_colorize(self) -> None:
+        # TODO: split into signal that touches two widgets,
+        # modtreeview and this widget
         self.controller.unselect_all_mods()
         self.swap_sensitive(True)
 
@@ -77,6 +79,7 @@ class ModSelectionPanel(Gtk.Box):
     def _on_button_clicked(self, button: EnumeratedModButton) -> None:
         match button.enum:
             case ModButton.SELECT_ALL:
+                # TODO: signals
                 self.controller.toggle_mod_selection(True)
             case ModButton.UNSELECT_ALL:
                 self.controller.toggle_mod_selection(False)

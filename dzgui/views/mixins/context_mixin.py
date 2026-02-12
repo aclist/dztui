@@ -18,7 +18,8 @@ class ContextMixin(TreeView):
         widget: Gtk.Widget,
         event: Gdk.EventButton | Gdk.EventKey,
     ) -> None:
-
+        # FIXME: double click causes issue
+        # split into present by click and present by key
         if self.is_selection_empty():
             return False
 

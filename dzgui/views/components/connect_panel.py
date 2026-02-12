@@ -73,12 +73,14 @@ class FavPanel(Gtk.Frame):
         self.set_label_widget(label)
 
         self.controller = controller
+        emitter = self.controller.get_emitter()
+        emitter.connect("fav_server_changed", self._on_fav_server_changed)
 
         # TODO: improve upon this, cache fav ip when changed globally
-        user_fav, self.fav_ip = self.controller.get_favorite()
+        self.server_name, self.server_ip = self.controller.get_favorite()
         server_name = (
-            f"{user_fav} ({self.fav_ip})"
-            if user_fav is not None
+            f"{self.server_name} ({self.server_ip})"
+            if self.server_name is not None
             else connect_panel.no_fav
         )
         self.fav_label = Gtk.Label(
@@ -94,9 +96,8 @@ class FavPanel(Gtk.Frame):
         self.fav_button = SteamConnectButton()
         if server_name is None:
             self.fav_button.set_sensitive(False)
-        copy = ClipboardButton(self.controller, self.get_fav_ip())
+        copy = ClipboardButton(self.controller, self.get_fav_ip)
 
-        # FIXME: height of connect buttons is not equivalent
         grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
         grid.attach(scrollable_label, 0, 0, 3, ROWS)
         grid.attach_next_to(copy, scrollable_label, Gtk.PositionType.RIGHT, COLS, ROWS)
@@ -105,11 +106,16 @@ class FavPanel(Gtk.Frame):
         self.add(grid)
 
     def get_fav_ip(self) -> str:
-        return self.fav_ip
+        return self.server_ip
 
-    def set_fav_label(self, text: str) -> None:
-        # TODO: called by controller when changing fav
-        self.fav_label.set_text(text)
+    from dzgui.api.servers import Record
+
+    def _on_fav_server_changed(
+        self, emitter: "Emitter", name: str, record: str
+    ) -> None:
+        self.server_name = name
+        self.server_ip = record
+        self.fav_label.set_text(f"{name} ({record})")
 
 
 class AddPanel(Gtk.Frame):

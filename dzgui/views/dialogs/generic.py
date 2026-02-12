@@ -75,6 +75,7 @@ class ConfirmationDialog(GenericDialog):
             secondary=secondary,
         )
 
+
 class IgnoreDialog(GenericDialog):
     def __init__(self, controller: "Controller", secondary: str):
         super().__init__(
@@ -86,7 +87,6 @@ class IgnoreDialog(GenericDialog):
         )
         cancel = self.get_widget_for_response(Gtk.ResponseType.CANCEL)
         cancel.set_label("Ignore")
-
 
 
 class NotifyDialog(GenericDialog):
@@ -169,6 +169,7 @@ class ExceptionDialog(GenericDialog):
             secondary=strings.something_wrong,
         )
 
+        self.trace = trace
         # NOTE: box expands to end of content area
         scrollable = Gtk.ScrolledWindow(
             propagate_natural_height=True, max_content_height=500
@@ -177,7 +178,7 @@ class ExceptionDialog(GenericDialog):
         textview = Gtk.TextView(
             wrap_mode=Gtk.WrapMode.WORD, editable=False, left_margin=10, right_margin=10
         )
-        textview.set_buffer(Gtk.TextBuffer(text=trace))
+        textview.set_buffer(Gtk.TextBuffer(text=self.trace))
         box.pack_start(textview, EXPAND, FILL, 10)
         scrollable.add(box)
 
@@ -186,13 +187,16 @@ class ExceptionDialog(GenericDialog):
         # FIXME: padding around top of content area when traceback is long
         content.add(scrollable)
 
-        copy_button = ClipboardButton(controller, trace)
+        copy_button = ClipboardButton(controller, self.get_trace)
         self.add_action_widget(copy_button, Gtk.ResponseType.NONE)
         self.add_button("OK", Gtk.ResponseType.OK)
 
         self.show_all()
         self.action_area.get_children()[1].grab_focus()
         self.connect("response", self._on_response)
+
+    def get_trace(self) -> str:
+        return self.trace
 
     def _on_response(
         self, dialog: Self, response: Gtk.ResponseType

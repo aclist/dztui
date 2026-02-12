@@ -209,20 +209,20 @@ class RowType(EnumWithAttrs):
 
 # TODO: rename to ContextItem
 class ContextMenu(EnumWithAttrs):
-    ADD_SERVER = {"label": strings.add}
-    ADD_FAV = {"label": strings.add_fav}
-    REMOVE_SERVER = {"label": strings.remove}
-    COPY_NAME = {"label": strings.copy_name}
-    COPY_CLIPBOARD = {"label": strings.copy_ip}
     ADD_NOTE = {"label": strings.add_note}
-    SHOW_MODS = {"label": strings.show_mods}
-    SHOW_DETAILS = {"label": strings.show_details}
+    ADD_SERVER = {"label": strings.add}
+    CONNECT = {"label": strings.connect}
+    COPY_CLIPBOARD = {"label": strings.copy_ip}
+    COPY_LOG_CLIPBOARD = {"label": strings.copy_log}
+    COPY_NAME = {"label": strings.copy_name}
+    DELETE_MOD = {"label": strings.delete_mod}
+    OPEN_WORKSHOP = {"label": strings.open_workshop}
     REFRESH_PLAYERS = {"label": strings.refresh_players}
     REMOVE_HISTORY = {"label": strings.remove_history}
-    OPEN_WORKSHOP = {"label": strings.open_workshop}
-    DELETE_MOD = {"label": strings.delete_mod}
-    COPY_LOG_CLIPBOARD = {"label": strings.copy_log}
-    CONNECT = {"label": strings.connect}
+    REMOVE_SERVER = {"label": strings.remove}
+    SET_FAV = {"label": strings.add_fav}
+    SHOW_DETAILS = {"label": strings.show_details}
+    SHOW_MODS = {"label": strings.show_mods}
 
 
 class ContextMenuGroup(Enum):
@@ -235,7 +235,7 @@ class ContextMenuGroup(Enum):
     SERVER_BROWSER = (
         ContextMenu.CONNECT,
         ContextMenu.ADD_SERVER,
-        ContextMenu.ADD_FAV,
+        ContextMenu.SET_FAV,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
         ContextMenu.ADD_NOTE,
@@ -245,7 +245,7 @@ class ContextMenuGroup(Enum):
     )
     SCAN_LAN = (
         ContextMenu.CONNECT,
-        ContextMenu.ADD_FAV,
+        ContextMenu.SET_FAV,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
         ContextMenu.ADD_NOTE,
@@ -255,7 +255,7 @@ class ContextMenuGroup(Enum):
     )
     SAVED = (
         ContextMenu.CONNECT,
-        ContextMenu.ADD_FAV,
+        ContextMenu.SET_FAV,
         ContextMenu.REMOVE_SERVER,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
@@ -267,7 +267,7 @@ class ContextMenuGroup(Enum):
     RECENT = (
         ContextMenu.CONNECT,
         ContextMenu.ADD_SERVER,
-        ContextMenu.ADD_FAV,
+        ContextMenu.SET_FAV,
         ContextMenu.REMOVE_HISTORY,
         ContextMenu.COPY_NAME,
         ContextMenu.COPY_CLIPBOARD,
