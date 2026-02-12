@@ -1,7 +1,7 @@
 import re
 
 from dzgui.util.localize import number
-from dzgui.util.strings import no_mods, no_servers, distance_suffix
+from dzgui.util.strings import no_mods, no_servers
 
 import gi
 

@@ -389,8 +389,6 @@ def ping(iteration: int, row: list) -> Ping:
 
 
 def query_api(key: str, appid: int, param: str) -> Res:
-    import time
-
     LIMIT = 10000
     payload: dict[str, Union[int, str]] = {
         "filter": r"\appid" + rf"\{appid}" + param,

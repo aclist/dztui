@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from dzgui.const.enum import ServerTab
 from dzgui.views.components.buttonbox import ButtonBox
@@ -50,11 +50,10 @@ class RightPanel(Gtk.Box):
             if context in (ServerTab.RECENT, ServerTab.SAVED):
                 self.refresh_button.set_sensitive(False)
 
-    # TODO: reference
+    # TODO: reference for ping pass
     # def _on_ping_clicked(self, button: Gtk.Button) -> None:
     #    block_signals()
     #    def _update_pings():
-    #        # TODO
     #        rows = ModelManager.get_filtered()
     #        with ThreadPoolExecutor(100) as executor:
     #            futures = [
@@ -67,14 +66,10 @@ class RightPanel(Gtk.Box):
     #                path = Gtk.TreePath.new_from_indices([res.iteration])
     #                temp_model[path][9] = res.ping
     #                ModelManager.ping_cache[res.addr] = res.ping
-    #        # TODO: drop/rewrite
     #        treeview.set_model(temp_model)
     #        treeview.wait_dialog.destroy()
     #        treeview.grab_focus()
-
-    #        # TODO:
     #        unblock_signals()
-
     #    temp_model = self.AppNav.treeview.get_model()
     #    treeview.set_model(None)
     #    treeview.wait_dialog = GenericDialog("Pinging servers", Popup.WAIT)

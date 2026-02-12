@@ -183,7 +183,7 @@ class ServerTreeView(ContextMixin, TreeView):
         self.start_distcalc()
 
     def _on_unmap(self, a) -> None:
-        # NOTE: remove queue checker for this tab
+        # NOTE: removes queue checker for this tab
         GLib.Source.remove(self.queue_id)
         self.emitter.disconnect(self.handler_id)
         if self.get_enum() is ServerTab.LAN:

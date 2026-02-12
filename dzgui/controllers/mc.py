@@ -8,7 +8,7 @@ from warnings import deprecated
 from concurrent.futures import wait
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, Callable, Literal, Union, TYPE_CHECKING
+from typing import Any, Callable, TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers

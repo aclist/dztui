@@ -25,4 +25,3 @@ Refer to the documentation for installation and setup instructions:
 Geolocation records from [DB-IP](https://db-ip.com) under [CC 4.0 license](https://creativecommons.org/licenses/by/4.0/)
 
 # TODO: mention third party libraries
-# TODO: mention 'pre-commit install' command

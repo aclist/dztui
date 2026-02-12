@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from dzgui.const.constants import SYSTEM_LOG
 
+# TODO: move to util.format.py
+
 
 def build_missing(build: str) -> str:
     msg = (
@@ -605,7 +607,7 @@ atomic_buttons = AtomicButton(
     keys_tooltip="Toggles the keybindings dialog",
 )
 
-steam_icon_missing="Steam icon not found in IconTheme"
+steam_icon_missing = "Steam icon not found in IconTheme"
 
 missing_changelog = "Error: failed to read changelog"
 esc_to_return = "Press ESC to return"

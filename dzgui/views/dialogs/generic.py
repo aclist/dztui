@@ -116,8 +116,6 @@ class WaitDialog(GenericDialog):
         content.pack_end(spinner, NO_EXPAND, NO_FILL, 0)
 
         spinner.start()
-        # FIXME: center on parent window
-        # self.show_all()
 
     def _on_dialog_delete(
         self, response_id: Gtk.ResponseType, event: Gdk.Event
