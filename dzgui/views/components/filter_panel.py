@@ -2,7 +2,7 @@ import logging
 from typing import Literal, TYPE_CHECKING
 
 from dzgui.const.enum import FilterMode
-from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING, SEARCH_ICON
+from dzgui.const.constants import EXPAND, NO_EXPAND, NO_FILL, NO_PADDING, SEARCH_ICON
 from dzgui.util import strings
 from dzgui.util.margins import set_surrounding_margins
 from dzgui.views.components.labels import BoldLabel
@@ -119,20 +119,12 @@ class FilterPanel(Gtk.Box):
         self.maps_entry.connect("changed", self._on_map_completion, True)
         self.maps_entry.connect("key-press-event", self._on_map_entry_keypress)
 
-        # FIXME: only giving two params to pack_start
-        # cf. EXPAND, NO_EXPAND
-        self.maps_combo.pack_start(renderer_text, True)
+        self.maps_combo.pack_start(renderer_text, EXPAND)
         self.maps_combo.connect("changed", self._on_map_changed)
         self.maps_combo.connect("key-press-event", self._on_combo_keypress)
 
         for el in self.filters_label, self.keyword_entry, self.maps_combo, button_grid:
             self.pack_start(el, NO_EXPAND, NO_FILL, NO_PADDING)
-
-    # def _on_icon_release(self, widget: Gtk.Entry, icon_pos: Gtk ^ a, b) -> None:
-    #    print(a)
-    #    print(b)
-    #    print(icon)
-    #    self.keyword_entry.activate()
 
     def set_unique_maps(self, maps: list) -> None:
         if maps is None:
