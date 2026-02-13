@@ -24,6 +24,7 @@
 - Remember tree position in menus
 - Show hidden server count after filtering
 - Atomic map filters per server context
+- Use concurrency when checking stale mods (performance uplift)
 
 ## Changed
 - Reduce padding on keys button

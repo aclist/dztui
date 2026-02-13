@@ -596,6 +596,7 @@ class Controller(GObject.GObject):
             it = mod.iter
             path = model.get_path(it)
             # TODO: consider storing in ListStore as int
+            # TODO: clone existing model and set outside of thread
             if int(mod[2]) in stale:
                 model[path][4] = HEX_RED
 
@@ -731,7 +732,7 @@ class Controller(GObject.GObject):
         func = self.get_callback()
         self.mediator.window.set_sensitive(True)
         # TODO: spawn error dialog if API crawl failed
-        # most likely going to drop this
+        # most likely going to drop callback method
         if func is not None:
             args = self.get_callback_args()
             GLib.idle_add(func, *args)

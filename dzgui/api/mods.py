@@ -3,6 +3,8 @@ import hashlib
 import logging
 import shlex
 
+from concurrent.futures import wait
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -145,26 +147,30 @@ def remove_stale_signatures(config: Path, versions: Path) -> None:
         for line in lines:
             f.write(line)
 
-
 def find_stale_mods(config: Path) -> list[int]:
+    def push_record(rec: str) -> list:
+        add = rec.split(":")
+        ip = add[0]
+        qport = add[2]
+        return get_rules(ip, qport)
+
     steam = lookup(config, Preferences.DEFAULT)
     steam_path = Path(steam)
 
-    # TODO: use concurrency
     local = get_local_mod_ids(steam_path)
-    servers = lookup(config, Preferences.IP_LIST)
+    records = lookup(config, Preferences.IP_LIST)
 
-    all_mods = []
-    for server in servers:
-        split = server.split(":")
-        ip = split[0]
-        qport = split[2]
+    remote_mods = []
 
-        mods = get_rules(ip, qport)
-        all_mods += mods
+    with ThreadPoolExecutor() as executor:
+        futures = [
+            executor.submit(push_record, record)
+            for record in records
+        ]
+        wait(futures)
+        for future in futures:
+            res = future.result()
+            remote_mods += res
 
-    stale = []
-    for mod in local:
-        if mod not in all_mods:
-            stale.append(mod)
+    stale = [mod for mod in local if mod not in remote_mods]
     return stale
