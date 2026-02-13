@@ -1,6 +1,7 @@
 import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+from warnings import deprecated
 
 from dzgui.const.enum import FilterMode
 from dzgui.util import strings
@@ -209,6 +210,7 @@ class FilteredModelManager:
                 rows = [row for row in rows if row[0].isascii()]
             case strings.filter_lowpop:
                 rows = [row for row in rows if (row[4] / row[5] * 100) > 30]
+            # FIXME: can create logically opposed contexts like "official + modded"
             case strings.filter_modded:
                 rows = [row for row in rows if not row[11]]
         return rows
@@ -229,7 +231,7 @@ class FilteredModelManager:
     def resync_model(self, addr: str, qport: int) -> None:
         """
         Handle in-situ updates to model during
-        row deletion actions. Skipped for ephemeral
+        row deletion/insertion actions. Skipped for ephemeral
         actions like player count/ping updates
         """
         for row in self.control_model:
@@ -240,7 +242,7 @@ class FilteredModelManager:
         filters = self.controller.get_filters()
         refiltered = self.filter_toggle_on(filters)
         self.set_filtered(refiltered)
-        self.set_success(True)
+        #self.set_success(True)
 
     def convert_model_to_list(self, model: ListStore) -> list:
         return [[el for el in row] for row in model]
@@ -261,16 +263,18 @@ class FilteredModelManager:
 
     def set_control(self, rows: list) -> None:
         """
-        Raw representation of the model, no transformations
+        Raw data model prior to filtration
         """
         self.control_model = rows
 
     def get_control(self) -> list:
         return self.control_model
 
+    @deprecated("Legacy code")
     def set_success(self, result: bool) -> None:
         self.success = result
 
+    @deprecated("Legacy code")
     def get_success(self) -> bool:
         return self.success
 
@@ -279,7 +283,7 @@ class FilteredModelManager:
     # cf. remove_from_history(), remove_server()
     # NOTE: this can most likely be simplified for v7
     def wipe_cache(self, full=False) -> None:
-        self.success = True
+        self.set_success(True)
         self.filtered = None
         self.filter_cache = {}
         self.ping_cache = {}
