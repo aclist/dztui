@@ -417,7 +417,7 @@ options = Options(
 DZGUI will manage mod installation and deletion for you.
 To prevent conflicts with Steam Workshop subscriptions and old mods from being downloaded
 when Steam updates, you should unsubscribe from any existing Workshop mods you manually subscribed to.
-Open your Profile > Workshop Items and select 'Unsubscribe from all'
+Open your Profile, then 'Workshop Items' and select 'Unsubscribe from all'
 on the right-hand side.
 """,
 )

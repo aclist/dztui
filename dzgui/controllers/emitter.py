@@ -83,6 +83,10 @@ class Emitter(GObject.GObject):
     ) -> None:
         pass
 
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(str,bool,))
+    def check_toggled(self, label: str, state: bool) -> None:
+        pass
+
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
     def servers_loaded(self, tag: "ServerTab") -> None:
         pass

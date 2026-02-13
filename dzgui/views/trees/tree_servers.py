@@ -116,6 +116,7 @@ class ServerTreeView(ContextMixin, TreeView):
         self.emitter.connect("servers_loaded", self._on_servers_loaded)
 
     def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
+        # FIXME: gets called on every tab, should be localized only to that context
         state = self.controller.has_server_model()
         self.set_headers_clickable(state)
 

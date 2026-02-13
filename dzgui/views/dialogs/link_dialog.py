@@ -4,6 +4,7 @@ from typing import Self, TYPE_CHECKING
 from dzgui.const.enum import Popup, Preferences
 from dzgui.const.constants import NO_EXPAND, NO_FILL
 from dzgui.util.open_links import open_user_workshop
+from dzgui.util.strings import notice
 from dzgui.views.dialogs.generic import GenericDialog
 from dzgui.views.components.buttons import SteamTextButton, WebButton
 
@@ -18,9 +19,9 @@ if TYPE_CHECKING:
 
 class WorkshopLinkDialog(GenericDialog):
     def __init__(self, controller: "Controller", text: str, button_label: str, uid: str):
-        super().__init__(controller, text, Popup.NOTIFY)
-
-        text = textwrap.dedent(text)
+        text = textwrap.dedent(text).replace("\n", " ")
+        super().__init__(controller, text=notice, mtype=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, secondary=text)
+        self.controller = controller
         self.dialogBox = self.get_content_area()
         self.set_default_response(Gtk.ResponseType.OK)
         self.set_size_request(500, 0)

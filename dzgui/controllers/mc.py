@@ -23,7 +23,13 @@ from dzgui.api.mods import (
     _hash,
     remove_stale_signatures,
 )
-from dzgui.const.enum import FilterMode, Preferences, NotebookPage, ButtonType, ContextMenu
+from dzgui.const.enum import (
+    FilterMode,
+    Preferences,
+    NotebookPage,
+    ButtonType,
+    ContextMenu,
+)
 
 from dzgui.const.constants import (
     APPID_DAYZ,
@@ -56,6 +62,7 @@ from gi.repository import Gtk, Gdk, GLib, GObject  # noqa E402
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from dzgui.model.map_model import MapManager
     from dzgui.const.enum import ServerTab
     from dzgui.util.dist import Haversine
     from dzgui.views.base import Notebook, Grid, OuterWindow
@@ -95,10 +102,10 @@ class Controller(GObject.GObject):
         self.model_man = ModelManager()
         self.emitter = Emitter()
         self.emitter.connect("map_selection_changed", self._on_map_selection_changed)
+        self.emitter.connect("check_toggled", self._on_check_toggled)
 
         # NOTE: suppress requests until entire UI is loaded
         self.loaded = False
-
 
     def get_emitter(self) -> Emitter:
         return self.emitter
@@ -112,7 +119,9 @@ class Controller(GObject.GObject):
                 self.wait_dialog.show_all()
                 thread = threading.Thread(target=func, args=args)
                 thread.start()
+
             return wrapper
+
         return decorator
 
     def register_widget(self, attr: str, widget: Gtk.Widget) -> None:
@@ -250,10 +259,10 @@ class Controller(GObject.GObject):
         context = self.get_active_context()
         page = self.mediator.notebook.get_page_by_enum()
         if page != NotebookPage.SERVERS:
-            self.emitter.emit("distcalc_ended" , None, context)
+            self.emitter.emit("distcalc_ended", None, context)
             return
         if enum != context:
-            self.emitter.emit("distcalc_ended" , None, context)
+            self.emitter.emit("distcalc_ended", None, context)
             return
 
         dist: str
@@ -357,10 +366,7 @@ class Controller(GObject.GObject):
         params = Servers.params
         serv = []
         with ThreadPoolExecutor() as executor:
-            futures = [
-                executor.submit(job, key, APPID_DAYZ, param)
-                for param in params
-            ]
+            futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
             wait(futures)
             for future in futures:
                 res = future.result()
@@ -368,7 +374,7 @@ class Controller(GObject.GObject):
                     # TODO: pop warning dialog, create enum around various failure states
                     # TODO: if first iteration, disable map combo. otherwise, do nothing
                     self.new_maps = None
-                    self.push_data_failure() #None, FilterMode.INITIAL, success=False)
+                    self.push_data_failure()  # None, FilterMode.INITIAL, success=False)
                     return
                 j = res.json
                 serv += j["response"]["servers"]
@@ -436,9 +442,9 @@ class Controller(GObject.GObject):
         open_workshop_page(mod, cmd)
 
     # TODO: put in model manager (dedicated manager for mod store)
-    #def get_mod_from_tree_path(
+    # def get_mod_from_tree_path(
     #    self, tree_path: Gtk.TreePath
-    #) -> tuple[str, Gtk.TreeIter]:
+    # ) -> tuple[str, Gtk.TreeIter]:
     #    model = self.model_man.get_mod_store()
     #    tree_iter = model.get_iter(tree_path)
     #    mod = model.get(tree_iter, 2)[0]
@@ -544,7 +550,6 @@ class Controller(GObject.GObject):
             case ContextMenu.OPEN_WORKSHOP:
                 self.open_mod_page(path)
 
-
     def toggle_mod_selection(self, state: bool) -> None:
         sel = self.mediator.modtreeview.get_selection()
         if state:
@@ -596,7 +601,7 @@ class Controller(GObject.GObject):
             it = mod.iter
             path = model.get_path(it)
             # TODO: consider storing in ListStore as int
-            # TODO: clone existing model and set outside of thread
+            # TODO: clone existing model and set outside of threai
             if int(mod[2]) in stale:
                 model[path][4] = HEX_RED
 
@@ -607,24 +612,171 @@ class Controller(GObject.GObject):
 
     def dump_test_2(self) -> None:
         import time
+
         time.sleep(1)
         data = (
-            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 1, 1, "a", False],
-            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "172.111.51.156:2302", 1, 1, "a", False],
-            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 1, 1, "a", False],
-            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 1, 1, "a", False],
-            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            [
+                "BAR",
+                "chernarusplus",
+                "a",
+                "a",
+                1,
+                1,
+                1,
+                "185.207.214.16:2302",
+                1,
+                1,
+                "a",
+                False,
+            ],
+            [
+                "BAR",
+                "chernarusplus",
+                "a",
+                "a",
+                1,
+                1,
+                1,
+                "172.111.51.156:2302",
+                1,
+                1,
+                "a",
+                False,
+            ],
+            [
+                "BAR",
+                "chernarusplus",
+                "a",
+                "a",
+                1,
+                1,
+                1,
+                "185.207.214.16:2302",
+                1,
+                1,
+                "a",
+                False,
+            ],
+            [
+                "BAR",
+                "chernarusplus",
+                "a",
+                "a",
+                1,
+                1,
+                1,
+                "185.207.214.16:2302",
+                1,
+                1,
+                "a",
+                False,
+            ],
+            [
+                "BAR",
+                "chernarusplus",
+                "a",
+                "a",
+                1,
+                1,
+                1,
+                "185.207.214.16:2302",
+                0,
+                0,
+                "a",
+                False,
+            ],
+            [
+                "BAR",
+                "chernarusplus",
+                "a",
+                "a",
+                1,
+                1,
+                1,
+                "185.207.214.16:2302",
+                0,
+                0,
+                "a",
+                False,
+            ],
+            [
+                "BAR",
+                "chernarusplus",
+                "a",
+                "a",
+                1,
+                1,
+                1,
+                "185.207.214.16:2302",
+                0,
+                0,
+                "a",
+                False,
+            ],
+            [
+                "BAR",
+                "chernarusplus",
+                "a",
+                "a",
+                1,
+                1,
+                1,
+                "185.207.214.16:2302",
+                0,
+                0,
+                "a",
+                False,
+            ],
+            [
+                "BAR",
+                "chernarusplus",
+                "a",
+                "a",
+                1,
+                1,
+                1,
+                "185.207.214.16:2302",
+                0,
+                0,
+                "a",
+                False,
+            ],
+            [
+                "BAR",
+                "chernarusplus",
+                "a",
+                "a",
+                1,
+                1,
+                1,
+                "185.207.214.16:2302",
+                0,
+                0,
+                "a",
+                False,
+            ],
+            [
+                "BAR",
+                "chernarusplus",
+                "a",
+                "a",
+                1,
+                1,
+                1,
+                "185.207.214.16:2302",
+                0,
+                0,
+                "a",
+                False,
+            ],
         )
         self.push_data(data, FilterMode.INITIAL, success=True)
 
     # TODO: eg dedicated cleanup on failure, cleanup on sucess
     # these can pop their own predefined dialogs, much simpler
+
+    def get_map_man(self) -> "MapManager":
+        return self.get_active_treeview().get_map_man()
 
     def cleanup(self) -> None:
         treeview = self.get_active_treeview()
@@ -636,7 +788,6 @@ class Controller(GObject.GObject):
         # model insertion after thread closes
         # cf. servers_loaded signal
 
-
         context = self.get_active_context()
         self.emitter.emit("servers_loaded", context)
 
@@ -647,10 +798,9 @@ class Controller(GObject.GObject):
             self.first_iteration = False
             self.new_maps = None
 
-
         treeview.grab_focus()
         self.destroy_on_idle()
-        #if self.success is False:
+        # if self.success is False:
         #    # TODO: different dialogs for server tab contexts, e.g. lan timeout
         #    # TODO: if history/favorites is empty, don't even trigger a call to dump data
         #    dialog = ExceptionDialog(self, "API TIMEOUT")
@@ -679,7 +829,7 @@ class Controller(GObject.GObject):
         treeview = self.get_active_treeview()
         treeview.set_loaded(True)
         # TODO: wipe control model on failure or keep old results?
-        manager = treeview.get_filter_man()
+        # manager = treeview.get_filter_man()
         GLib.idle_add(self.cleanup_on_failure)
 
     def push_data(self, data: tuple, mode: Optional[FilterMode], success: bool) -> None:
@@ -841,7 +991,7 @@ class Controller(GObject.GObject):
             return
 
         # TODO: maybe set tree to none afterwards (swap models)
-        #treeview.set_model(None)
+        # treeview.set_model(None)
         func = treeview.get_query_func()
         if func is None:
             self.emitter.emit("servers_loaded", treeview.get_enum())
@@ -887,23 +1037,33 @@ class Controller(GObject.GObject):
         return self.mediator.filters.get_keyword_filter()
 
     def get_map_store(self) -> Gtk.ListStore:
-        treeview = self.get_active_treeview()
-        map_man = treeview.get_map_man()
+        map_man = self.get_map_man()
         return map_man.get_map_store()
 
     def get_selected_map(self) -> str:
-        treeview = self.get_active_treeview()
-        map_man = treeview.get_map_man()
+        map_man = self.get_map_man()
         return map_man.get_selected_map()
 
+    def get_enabled_filters(self) -> dict:
+        map_man = self.get_map_man()
+        return map_man.get_filters()
+
     def get_prior_map(self) -> str:
-        treeview = self.get_active_treeview()
-        map_man = treeview.get_map_man()
+        map_man = self.get_map_man()
         return map_man.get_prior_map()
 
+    def _on_check_toggled(self, emitter: Emitter, label: str, state: bool) -> None:
+        map_man = self.get_map_man()
+        map_man.set_filter(label, state)
+
+        if state:
+            mode = FilterMode.TOGGLE_ON
+        else:
+            mode = FilterMode.TOGGLE_OFF
+        self.refilter_model(mode, label)
+
     def _on_map_selection_changed(self, emitter: Emitter, selection: str) -> None:
-        treeview = self.get_active_treeview()
-        map_man = treeview.get_map_man()
+        map_man = self.get_map_man()
         map_man.set_selected_map(selection)
         self.refilter_model(FilterMode.MAP)
 
