@@ -1,7 +1,5 @@
 ## Added
 - Add pyproject.toml file
-- requests, packaging.version, psutil
-- Lockfile
 - Changelog text wrapping and formatting
 - Decouple UI components into modules
 - Choose from kilometer or miles distance display
@@ -17,26 +15,31 @@
 - Integrate add/connect widgets into main menu
 - Favorite/connect/LAN panels integrated with server views
 - Colorized IP/ID validation
+- Copy favorite server IP to clipboard
+- Set favorite server from tables
+- Detailed/copyable trace in critical error dialogs
 - Visual icons
 - Integrated server notebook
-- Retain position on servers
 - Propagate width changes to all tables
 - Remember tree position in menus
+- Show hidden server count after filtering
+- Atomic map filters per server context
 
 ## Changed
 - Reduce padding on keys button
 - Boldface breadcrumbs
 - Bold labels inside frames
-- Unsticky keys when clicking sidebar
+- Sidebar buttos do not steal focus
 - Copy IP copies IP:queryport only instead of IP:gameport:queryport, mimics syntax needed by add by ip method
+- Load new model into view without flushing
 
 ## Fixed
 - Longstanding issue with left clicks not registering as tree selection changes after spamming keyboard input
 - Rare segfaults when changing maps (threading)
+- Moved dialogs out of threads
 
 ## Unreleased
 - Setup wizard
-- Copy favorite server IP to clipboard
-- Set favorite server from tables
-- Detailed/copyable trace in critical error dialogs
 - Local documentation
+- Offline mods
+- Move debug mode to developers only

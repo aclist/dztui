@@ -55,16 +55,18 @@ def format_player_count(model: Gtk.TreeModel | None, control: list) -> str:
     players = 0
     hits: int
     status: str
-    if model is None or len(model) == 0:
+    if model is None:
         return no_servers
     else:
         hits = len(model)
         for row in model:
             players += row[4]
     control_total = len(control)
+    hits_pretty = pluralize("matches", hits)
     players_pretty = pluralize("players", players)
-    control_pretty = pluralize("matches", control_total)
-    status = f"Showing {hits:n}/{control_total:n} {control_pretty} with {players:n} {players_pretty}"
+    hidden = control_total - hits
+    hidden_pretty = f" ({hidden:n} hidden)" if hidden > 0 else ""
+    status = f"Showing {hits:n} {hits_pretty}{hidden_pretty}, {players:n} {players_pretty}."
     return status
 
 

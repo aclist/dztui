@@ -7,6 +7,7 @@ from warnings import deprecated
 from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.const.enum import ContextMenuGroup, ServerTab
 from dzgui.api.servers import Record
+from dzgui.model.map_model import MapManager
 from dzgui.model.filtered_model import FilteredModelManager
 from dzgui.util.dist import CalcDist
 from dzgui.util import strings
@@ -46,6 +47,9 @@ class ServerTreeView(ContextMixin, TreeView):
         self.filter_man = FilteredModelManager(controller)
         model = self.filter_man.get_model()
         self.set_model(model)
+
+        # NOTE: each tab context has its own unique maps
+        self.map_man = MapManager()
 
         self.set_fixed_height_mode(True)
         self.set_headers_visible(True)
@@ -100,14 +104,26 @@ class ServerTreeView(ContextMixin, TreeView):
             column.connect("notify::fixed-width", self._on_col_width_changed)
             self.append_column(column)
 
-        self.connect("key-press-event", self._on_server_keypress)
+        self.connect("button-press-event", self.present_menu)
         self.connect("generic_row_activated", self._parent_row_activated)
         self.connect("generic_treesel_changed", self._parent_selection_changed)
+        self.connect("key-press-event", self._on_server_keypress)
+        self.connect("key-press-event", self.present_menu)
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
 
-        self.connect("key-press-event", self.present_menu)
-        self.connect("button-press-event", self.present_menu)
+        self.emitter.connect("servers_loaded_init", self._on_servers_loaded_init)
+        self.emitter.connect("servers_loaded", self._on_servers_loaded)
+
+    def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
+        state = self.controller.has_server_model()
+        self.set_headers_clickable(state)
+
+    def _on_servers_loaded_init(self, emitter: "Emitter") -> None:
+        if self.loaded is False:
+            return
+        store = self.map_man.get_map_store()
+        self.emitter.emit("load_maps", store)
 
     def _get_ping(
         self,
@@ -145,6 +161,9 @@ class ServerTreeView(ContextMixin, TreeView):
     def start_timeout(self) -> None:
         self.queue_id = GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
 
+    def get_map_man(self) -> MapManager:
+        return self.map_man
+
     def get_filter_man(self) -> FilteredModelManager:
         return self.filter_man
 
@@ -174,10 +193,13 @@ class ServerTreeView(ContextMixin, TreeView):
         return self.enum
 
     def _on_map(self, a) -> None:
+        # TODO: disable filter panel if current model is None
         if self.get_enum() is ServerTab.LAN:
             self.emitter.emit("lan_tab_toggled", True)
 
         # FIXME: only if the tab is active
+        store = self.map_man.get_map_store()
+        self.emitter.emit("load_maps", store)
         self.handler_id = self.emitter.connect("statusbar_loaded", self.start_distcalc)
         self.start_timeout()
         self.start_distcalc()

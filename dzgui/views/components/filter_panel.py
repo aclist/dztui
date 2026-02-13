@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.controllers.emitter import Emitter
+    from dzgui.const.enum import ServerTab
 
 
 class FilterPanel(Gtk.Box):
@@ -49,10 +50,10 @@ class FilterPanel(Gtk.Box):
 
         self.enabled_filters = dict(self.default_filters)
         self.keyword_filter = ""
-        self.selected_map: str = strings.all_maps
-        self.prior_map: str = strings.all_maps
+        #self.selected_map: str = strings.all_maps
+        #self.prior_map: str = strings.all_maps
 
-        button_grid = Gtk.Grid(
+        self.button_grid = Gtk.Grid(
             halign=Gtk.Align.CENTER, column_spacing=5, column_homogeneous=True
         )
         row = 1
@@ -70,7 +71,7 @@ class FilterPanel(Gtk.Box):
             if col > 3:
                 row += 1
                 col = 1
-            button_grid.attach(checkbox, col, row, 1, 1)
+            self.button_grid.attach(checkbox, col, row, 1, 1)
 
             checkbox.connect("toggled", self._on_check_toggled)
             self.checks.append(checkbox)
@@ -103,6 +104,8 @@ class FilterPanel(Gtk.Box):
             "request_maps_focus", lambda _: self.maps_entry.grab_focus()
         )
         self.emitter.connect("check_button_pressed", self.toggle_check_by_key)
+        self.emitter.connect("servers_loaded", self._on_servers_loaded)
+        self.emitter.connect("load_maps", self._on_maps_loaded)
 
         completion = Gtk.EntryCompletion(inline_completion=True)
         completion.set_text_column(0)
@@ -123,26 +126,22 @@ class FilterPanel(Gtk.Box):
         self.maps_combo.connect("changed", self._on_map_changed)
         self.maps_combo.connect("key-press-event", self._on_combo_keypress)
 
-        for el in self.filters_label, self.keyword_entry, self.maps_combo, button_grid:
+        for el in self.filters_label, self.keyword_entry, self.maps_combo, self.button_grid:
             self.pack_start(el, NO_EXPAND, NO_FILL, NO_PADDING)
 
-    def set_unique_maps(self, maps: list) -> None:
-        if maps is None:
-            return
-        if len(maps) < 1:
-            return
-        u_maps = set([row[1] for row in maps])
-        u_maps = sorted(u_maps)
-        self.controller.append_map([strings.all_maps])
-        self.selected_map = strings.all_maps
-        for m in u_maps:
-            self.controller.append_map([m])
-            self.maps_hr.append(m)
+    def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
+        state = self.controller.has_server_model()
+        for widget in (self.keyword_entry, self.maps_combo, self.button_grid):
+            widget.set_sensitive(state)
+
+    def _on_maps_loaded(self, emitter: "Emitter", store: Gtk.ListStore) -> None:
+        self.maps_combo.set_model(store)
         self.maps_combo.set_active(0)
 
     def get_filters(self) -> tuple:
+        selected = self.controller.get_selected_map()
         filters = []
-        filters.append(self.selected_map)
+        filters.append(selected)
         filters.append(self.keyword_filter)
         for k in self.enabled_filters:
             if not self.enabled_filters[k]:
@@ -205,8 +204,9 @@ class FilterPanel(Gtk.Box):
     def _on_map_completion(self, entry, editable):
         text = entry.get_text()
         completion = entry.get_completion()
+        store = self.controller.get_map_store()
         if len(text) >= completion.get_minimum_key_length():
-            completion.set_model(self.map_store)
+            completion.set_model(store)
 
     def restore_focus_to_treeview(self) -> Literal[False]:
         view = self.controller.get_active_treeview()
@@ -231,15 +231,6 @@ class FilterPanel(Gtk.Box):
                 return True
             case _:
                 return False
-
-    def set_prior_map(self, mapname: str) -> None:
-        self.prior_map = mapname
-
-    def get_prior_map(self) -> str:
-        return self.prior_map
-
-    def get_selected_map(self) -> str:
-        return self.selected_map
 
     def get_keyword_filter(self) -> str:
         return self.keyword_filter
@@ -293,7 +284,6 @@ class FilterPanel(Gtk.Box):
         check.set_active(not state)
 
     def _on_check_toggled(self, button: Gtk.CheckButton) -> None:
-        # treeview = self.controller.get_active_treeview()
         label = button.get_label()
         state = button.get_active()
         logger.info(f"User toggled button '{label}' to {state}")
@@ -306,7 +296,7 @@ class FilterPanel(Gtk.Box):
         self.controller.refilter_model(mode, label)
 
     def _on_map_changed(self, combo: Gtk.ComboBox) -> None:
-        old_sel = self.selected_map
+        old_sel = self.controller.get_selected_map()
         model = combo.get_model()
         tree_iter = combo.get_active_iter()
         if tree_iter is None:
@@ -317,7 +307,5 @@ class FilterPanel(Gtk.Box):
         if not selection:
             return
         logger.info(f"User selected map '{selection}'")
-        self.prior_map = self.selected_map
-        self.selected_map = selection
         self.maps_entry.set_text(selection)
-        self.controller.refilter_model(FilterMode.MAP)
+        self.emitter.emit("map_selection_changed", selection)

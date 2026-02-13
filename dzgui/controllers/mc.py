@@ -94,6 +94,7 @@ class Controller(GObject.GObject):
 
         self.model_man = ModelManager()
         self.emitter = Emitter()
+        self.emitter.connect("map_selection_changed", self._on_map_selection_changed)
 
         # NOTE: suppress requests until entire UI is loaded
         self.loaded = False
@@ -235,6 +236,7 @@ class Controller(GObject.GObject):
         c = self.mediator.statusbar.statusbar.get_context_id(context)
         self.mediator.statusbar.statusbar.pop(c)
 
+    # TODO:
     @deprecated("use set_by_context")
     def set_statusbar(self, text: str, context: str) -> int:
         msg_id = self.mediator.statusbar.set_text(text, context)
@@ -350,7 +352,6 @@ class Controller(GObject.GObject):
         self.open_page(button.opens)
 
     def dump_api(self) -> None:
-        self.first_iteration = True
         key = self.query_config(Preferences.STEAM)
         job = Servers.query_api
         params = Servers.params
@@ -379,7 +380,6 @@ class Controller(GObject.GObject):
 
         # TODO: additional ping column pass, collated
         parsed = Servers.parse_json(serv)
-        self.new_maps = parsed
         self.push_data(parsed, FilterMode.INITIAL, success=True)
 
     def get_help_row(self) -> str:
@@ -608,17 +608,17 @@ class Controller(GObject.GObject):
         import time
         time.sleep(1)
         data = (
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 1, 1, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "172.111.51.156:2302", 1, 1, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 1, 1, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 1, 1, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
-            ["BAR", "a", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 1, 1, "a", False],
+            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "172.111.51.156:2302", 1, 1, "a", False],
+            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 1, 1, "a", False],
+            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 1, 1, "a", False],
+            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
+            ["BAR", "chernarusplus", "a", "a", 1, 1, 1, "185.207.214.16:2302", 0, 0, "a", False],
         )
         self.push_data(data, FilterMode.INITIAL, success=True)
 
@@ -629,21 +629,25 @@ class Controller(GObject.GObject):
         treeview = self.get_active_treeview()
         treeview.set_loaded(True)
         treeview.set_model(self.to_insert)
+        map_man = treeview.get_map_man()
 
         # TODO: signals or other approach to deferring map
         # model insertion after thread closes
         # cf. servers_loaded signal
 
-        # CHORE: this is placeholder logic
-        if self.first_iteration:
-            self.mediator.filters.set_unique_maps(self.new_maps)
-            self.first_iteration = False
 
         context = self.get_active_context()
         self.emitter.emit("servers_loaded", context)
 
+        # CHORE: this is placeholder logic
+        if self.first_iteration:
+            map_man.set_unique_maps(self.new_maps)
+            self.emitter.emit("servers_loaded_init")
+            self.first_iteration = False
+            self.new_maps = None
+
+
         treeview.grab_focus()
-        # TODO: chiefly responsible for removing spinner dialog
         self.destroy_on_idle()
         #if self.success is False:
         #    # TODO: different dialogs for server tab contexts, e.g. lan timeout
@@ -655,13 +659,15 @@ class Controller(GObject.GObject):
         # TODO: what if refresh action occurred, and the old model is valid?
         treeview = self.get_active_treeview()
         treeview.set_model(None)
+        map_man = treeview.get_map_man()
         # TODO: disable map, keyword, and filter widgets if model is None?
         # -> signal driven (servers_empty)
         # would have to make those unsensitive when changing server tabs
         # if model is not None when changing tab, emit other signal
-        self.mediator.filters.set_unique_maps(None)
+        map_man.set_unique_maps(None)
 
         context = self.get_active_context()
+        # TODO: distinguish signals, e.g. "servers_failed_to_load"
         self.emitter.emit("servers_loaded", context)
         treeview.grab_focus()
         self.destroy_on_idle()
@@ -693,6 +699,10 @@ class Controller(GObject.GObject):
                     manager.set_control(data)
                 manager.filter(mode)
                 self.to_insert = manager.get_model()
+                # TODO: pre parse maps
+                u_maps = set([row[1] for row in data])
+                self.new_maps = sorted(u_maps)
+
         treeview.set_loaded(True)
         GLib.idle_add(self.cleanup)
 
@@ -714,6 +724,9 @@ class Controller(GObject.GObject):
         self.callback = {"func": callback, "args": args}
 
     def destroy_on_idle(self) -> None:
+        """
+        TODO: chiefly responsible for removing spinner dialog
+        """
         self.wait_dialog.destroy()
         func = self.get_callback()
         self.mediator.window.set_sensitive(True)
@@ -790,7 +803,8 @@ class Controller(GObject.GObject):
     def get_player_count(self) -> str:
         treeview = self.get_active_treeview()
         model = treeview.get_model()
-        control_model = treeview.filter_man.get_control()
+        filter_man = treeview.get_filter_man()
+        control_model = filter_man.get_control()
         count = format_player_count(model, control_model)
         return count
 
@@ -804,13 +818,16 @@ class Controller(GObject.GObject):
     @call_on_thread(strings.dialog.filtering)
     def filter_threaded(self, mode: FilterMode, label: str) -> None:
         tv = self.get_active_treeview()
-        tv.filter_man.filter(mode, label)
+        filter_man = tv.get_filter_man()
+        filter_man.filter(mode, label)
         self.push_data("", mode, success=True)
 
     # FIXME: optional label/map/keyword parameter
+    # FIXME: drop set_callback
     def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
         tv = self.get_active_treeview()
-        if tv.filter_man.get_control() is None:
+        filter_man = tv.get_filter_man()
+        if filter_man.get_control() is None:
             return
         # TODO: deprecated in this context?
         self.set_callback(None, None)
@@ -827,10 +844,12 @@ class Controller(GObject.GObject):
         func = treeview.get_query_func()
         if func is None:
             self.emitter.emit("servers_loaded", treeview.get_enum())
+            treeview.set_model(None)
             return
         # TODO:
         # manager = treeview.get_filter_man()
         # manager.clear_model()
+        self.first_iteration = True
         self.set_callback(None, None)
         self.run_query_func(func)
 
@@ -850,9 +869,6 @@ class Controller(GObject.GObject):
     def get_help_store(self) -> Gtk.ListStore:
         return self.model_man.get_help_store()
 
-    def get_map_store(self) -> Gtk.ListStore:
-        return self.model_man.get_map_store()
-
     def get_modlist_store(self) -> Gtk.ListStore:
         return self.model_man.get_modlist_store()
 
@@ -865,11 +881,31 @@ class Controller(GObject.GObject):
     def get_filters(self) -> list:
         return self.mediator.filters.get_filters()
 
+    # TODO: filterman calls back to here, gets convoluted
     def get_keyword(self) -> str:
         return self.mediator.filters.get_keyword_filter()
 
-    def get_map(self) -> str:
-        return self.mediator.filters.get_selected_map()
+    def get_map_store(self) -> Gtk.ListStore:
+        treeview = self.get_active_treeview()
+        map_man = treeview.get_map_man()
+        return map_man.get_map_store()
+
+    def get_selected_map(self) -> str:
+        treeview = self.get_active_treeview()
+        map_man = treeview.get_map_man()
+        return map_man.get_selected_map()
 
     def get_prior_map(self) -> str:
-        return self.mediator.filters.get_prior_map()
+        treeview = self.get_active_treeview()
+        map_man = treeview.get_map_man()
+        return map_man.get_prior_map()
+
+    def _on_map_selection_changed(self, emitter: Emitter, selection: str) -> None:
+        treeview = self.get_active_treeview()
+        map_man = treeview.get_map_man()
+        map_man.set_selected_map(selection)
+        self.refilter_model(FilterMode.MAP)
+
+    def has_server_model(self) -> bool:
+        treeview = self.get_active_treeview()
+        return treeview.get_model() is not None

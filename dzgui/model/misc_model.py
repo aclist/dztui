@@ -5,7 +5,7 @@ import gi
 
 gi.require_version("Gtk", "3.0")
 from gi.repository.Gtk import ListStore  # noqa E402
-from gi.repository import GLib, GObject, Gtk  # noqa E402
+from gi.repository import GObject, Gtk  # noqa E402
 
 
 @dataclass(slots=True, frozen=True)

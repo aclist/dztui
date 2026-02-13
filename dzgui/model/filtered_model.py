@@ -47,7 +47,8 @@ class FilteredModelManager:
         self.filter_cache = {}
         self.ping_cache: dict[str, int] = {}
 
-        self.ephemeral_model = self.new_model_from_class(ServerColumns)
+        self.ephemeral_model: ListStore = None
+        #= self.new_model_from_class(ServerColumns)
 
         self.control_model: list = None
         self.filtered: list = None
@@ -107,13 +108,14 @@ class FilteredModelManager:
                 if row[7] in self.ping_cache:
                     row[9] = self.ping_cache[row[7]]
 
+        clone = self.new_model_from_class(ServerColumns)
         if len(rows) > 0:
-            clone = self.new_model_from_class(ServerColumns)
             rows = self.sort_rows(rows)
             for row in rows:
                 clone.append(row)
-        else:
-            clone = None
+        #else:
+        #    print("nothing to filter, sending none")
+        #    clone = None
 
         self.set_cache(filters, clone, rows)
         self.set_model(clone)
@@ -136,7 +138,7 @@ class FilteredModelManager:
         Multi-filtration for any context starts by narrowing by map
         """
         rows = self.filtered
-        sel_map = self.controller.get_map()
+        sel_map = self.controller.get_selected_map()
 
         if sel_map == strings.all_maps:
             return rows

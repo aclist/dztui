@@ -112,7 +112,7 @@ class Statusbar(Gtk.Grid):
             self.set_by_context(context, pretty)
 
     def append_distance(self, dist: str) -> str:
-        return f"{self.playercount} | Distance: {dist}"
+        return f"{self.playercount} Distance: {dist}"
 
     def _on_servers_loaded(self, statusbar: Self, context: "ServerTab") -> None:
         count = self.controller.get_player_count()

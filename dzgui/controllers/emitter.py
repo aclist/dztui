@@ -3,6 +3,7 @@ from typing import Union, TYPE_CHECKING
 import gi
 
 gi.require_version("Gtk", "3.0")
+from gi.repository.Gtk import ListStore
 from gi.repository import Gdk, GObject  # noqa E402
 
 if TYPE_CHECKING:
@@ -86,14 +87,14 @@ class Emitter(GObject.GObject):
     def servers_loaded(self, tag: "ServerTab") -> None:
         pass
 
-    # @GObject.Signal(
-    #    flags=GObject.SignalFlags.RUN_LAST,
-    #    arg_types=(
-    #        object,
-    #        object,
-    #    ),
-    # )
-    # def distcalc_ended(
-    #    self, dist: Union[str, None], context: Union["ServerTab", "NotebookPage"]
-    # ) -> None:
-    #    pass
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def servers_loaded_init(self) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(str,))
+    def map_selection_changed(self, map: str) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
+    def load_maps(self, store: ListStore) -> None:
+        pass
