@@ -130,3 +130,7 @@ class Emitter(GObject.GObject):
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def api_change_failed(self) -> None:
         pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(str,))
+    def keyword_set(self, keyword: str) -> None:
+        pass

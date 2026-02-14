@@ -14,6 +14,7 @@ from gi.repository import GObject, GLib  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
 
 
 @dataclass(slots=True, frozen=True)
@@ -44,6 +45,8 @@ class FilteredModelManager:
 
     def __init__(self, controller: "Controller") -> None:
         self.controller = controller
+        self.emitter = controller.get_emitter()
+        self.emitter.connect("keyword_set", self._on_keyword_set)
 
         self.filter_cache = {}
         self.ping_cache: dict[str, int] = {}
@@ -54,6 +57,14 @@ class FilteredModelManager:
         self.control_model: list = None
         self.filtered: list = None
         self.success = True
+
+        self.keyword_filter = ""
+
+    def get_keyword_filter(self) -> str:
+        return self.keyword_filter
+
+    def _on_keyword_set(self, emitter: "Emitter", keyword: str) -> None:
+        self.keyword_filter = keyword
 
     def append_row(self, row: list) -> None:
         self.ephemeral_model.append(row)
@@ -120,6 +131,7 @@ class FilteredModelManager:
 
         self.set_cache(filters, clone, rows)
         self.set_model(clone)
+        return clone
 
     def sort_rows(self, rows: list) -> list:
         rows.sort(key=lambda x: re.sub(r"[^A-Za-z0-9]+", "", x[0].lower()))
@@ -148,7 +160,7 @@ class FilteredModelManager:
         return rows
 
     def filter_keyword(self, filters: tuple) -> list:
-        keyword = self.controller.get_keyword()
+        keyword = self.keyword_filter
         rows = self.filtered
 
         if keyword == "":

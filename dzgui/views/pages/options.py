@@ -283,7 +283,6 @@ class Options(Gtk.Box):
                 self.controller.update_config(enum, value)
             case Preferences.BM | Preferences.STEAM:
                 text = "".join(entry.get_text().split())
-                # self.controller.set_callback(self.restore_api_text, old_text, entry)
                 self.controller.update_api_key(text, enum)
 
     def _on_api_change_failed(self, emitter: "Emitter") -> None:
@@ -305,8 +304,6 @@ class Options(Gtk.Box):
         # TODO: unimplemented
         print("UNIMPLEMENTED")
         # wait_msg = strings.dialog.updating_mods
-        # show_wait_dialog = True
-        # call_on_thread(show_wait_dialog, cmd, wait_msg, "")
 
     def _on_client_changed(self, combo: Gtk.ComboBoxText) -> None:
         # TODO: use two columns or constants here, not strings

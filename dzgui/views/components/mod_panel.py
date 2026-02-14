@@ -67,12 +67,6 @@ class ModSelectionPanel(Gtk.Box):
     def _on_mod_page_toggled(self, emitter: "Emitter", state: bool) -> None:
         self.set_visible(state)
 
-    #def after_colorize(self) -> None:
-    #    # TODO: split into signal that touches two widgets,
-    #    # modtreeview and this widget
-    #    #self.controller.unselect_all_mods()
-    #    self.swap_sensitive(True)
-
     def swap_sensitive(self, state: bool) -> None:
         for child in self.stale_panel.get_children():
             if child.enum == ModButton.HIGHLIGHT_STALE:

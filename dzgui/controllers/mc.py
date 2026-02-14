@@ -6,7 +6,7 @@ import traceback
 from typing import Optional
 from warnings import deprecated
 
-from concurrent.futures import wait
+from concurrent.futures import wait, as_completed
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from pathlib import Path
@@ -131,7 +131,7 @@ class Controller(GObject.GObject):
                     GLib.idle_add(self._destroy_on_idle)
 
                 self = args[0]
-                self.wait_dialog = WaitDialog(self, dialog_str)
+                self.wait_dialog = WaitDialog(self, dialog_str, True)
                 self.wait_dialog.show_all()
                 thread = threading.Thread(target=callback)
                 thread.start()
@@ -388,25 +388,38 @@ class Controller(GObject.GObject):
         job = Servers.query_api
         params = Servers.params
         serv = []
+        i = 0
+        total = 10
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
-            wait(futures)
-            for future in futures:
-                res = future.result()
-                if res.status != 200 or not res.parsed:
-                    # TODO: pop warning dialog, create enum around various failure states
-                    # TODO: if first iteration, disable map combo. otherwise, do nothing
-                    self.new_maps = None
-                    self.push_data_failure()  # None, FilterMode.INITIAL, success=False)
-                    return
-                j = res.json
-                serv += j["response"]["servers"]
+            #wait(futures)
+            for future in as_completed(futures):
+                try:
+                    i += 1
+                    GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(i/total))
+                    res = future.result(timeout=3)
+                    if res.status != 200 or not res.parsed:
+                        # TODO: pop warning dialog, create enum around various failure states
+                        # set failure type here
+                        self.cleanup_func = CleanupFunc(self.cleanup_on_failure)
+                        return
+                    j = res.json
+                    serv += j["response"]["servers"]
+                except Exception as e:
+                    # TODO: save exception text
+                    print(e)
+                    self.cleanup_func = CleanupFunc(self.cleanup_on_failure)
+
 
         """
         TODO: e.g. class method like 'total'
+        total of 10 params for this call
+        @call_on_thread(msg, jobs=10)
+        if total > 1, pop progress bar
         GLib.idle_add(lambda: self.wait_dialog.format_secondary_text("Pass 2"))
-        GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(0.5)) subclass or wrap add fraction and increment, then
-        calculate off of total
+        GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(0.5))
+        subclass or wrap add fraction and increment, then calculate off of total
+        This next step is allowed to fail, since this metadata is incidental
         """
         res = Servers.query_api(key, APPID_DAYZ_EXP, "")
         if res.status == 200 and res.parsed is True:
@@ -416,11 +429,11 @@ class Controller(GObject.GObject):
         GLib.idle_add(
             lambda: self.wait_dialog.format_secondary_text("Unpacking servers")
         )
+        GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(10/total))
 
         # TODO: additional ping column pass, collated
-        # GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(0.75))
         parsed = Servers.parse_json(serv)
-        self.push_data(parsed, FilterMode.INITIAL, success=True)
+        self.push_data_success(parsed, FilterMode.INITIAL)
 
     def get_help_row(self) -> str:
         tv = self.mediator.menu
@@ -484,9 +497,22 @@ class Controller(GObject.GObject):
     #    mod = model.get(tree_iter, 2)[0]
     #    return mod, tree_iter
 
+    def get_mod_from_tree_path(
+        self, tree_path: Gtk.TreePath
+    ) -> tuple[str, Gtk.TreeIter]:
+        model = self.get_mod_store()
+        tree_iter = model.get_iter(tree_path)
+        mod = model.get(tree_iter, 2)[0]
+        return mod, tree_iter
+
+    def delete_single_mod_cleanup(self, _iter: Gtk.TreeIter) -> None:
+        self.get_mod_store().remove(_iter)
+
+    # TODO: strings
+    @call_on_thread("deleting mod")
     def delete_single_mod(self, tree_path: Gtk.TreePath) -> None:
         config = self.prefs.paths.config
-        mod, it = self.model_man.get_mod_from_tree_path(tree_path)
+        mod, _iter = self.get_mod_from_tree_path(tree_path)
 
         path = lookup(config, Preferences.DEFAULT)
         steam_path = Path(path)
@@ -507,8 +533,7 @@ class Controller(GObject.GObject):
         except PeFile.AppNotInstalledError:
             pass
 
-        model = self.get_mod_store()
-        model.remove(it)
+        self.cleanup_func = CleanupFunc(self.delete_single_mod_cleanup, _iter)
 
     def get_mod_store(self) -> Gtk.ListStore:
         return self.mediator.modtreeview.get_model()
@@ -551,29 +576,37 @@ class Controller(GObject.GObject):
             # update config file with IP
             case ContextMenu.ADD_SERVER:
                 pass
+
             # spawn edit dialog and update cache, notes file
             case ContextMenu.ADD_NOTE:
                 pass
+
             case ContextMenu.COPY_CLIPBOARD:
                 self.copy_ip(path)
+
             case ContextMenu.COPY_NAME:
                 self.copy_name(path)
+
             case ContextMenu.DELETE_MOD:
                 self.delete_single_mod(path)
                 # TODO: connect to emitter automatically
                 # Gtk.TreeModel, row-inserted/row-deleted
                 # updates statusbar
-                self.update_mod_statusbar()
+                # FIXME: signal should instead be emitted off of treeview when rows added/inserted
+                #self.update_mod_statusbar()
                 remove_stale_signatures(
                     self.prefs.paths.config, self.prefs.paths.version
                 )
+
             # call a2s on thread and update ephemeral model in situ
             case ContextMenu.REFRESH_PLAYERS:
                 pass
+
             # update history model, update tab label, pop off of queue, write new list into file
             # see dq.py
             case ContextMenu.REMOVE_HISTORY:
                 pass
+
             # reverse of ADD_SERVER
             case ContextMenu.REMOVE_SERVER:
                 pass
@@ -627,6 +660,7 @@ class Controller(GObject.GObject):
                 sel.select_path(path)
 
     # TODO: make as method of tree?
+    # FIXME: move cursor when finished
     def uncolorize_mods(self) -> None:
         model = self.get_mod_store()
         for mod in model:
@@ -794,15 +828,12 @@ class Controller(GObject.GObject):
                 False,
             ],
         )
-        self.push_data(data, FilterMode.INITIAL, success=True)
-
-    # TODO: eg dedicated cleanup on failure, cleanup on sucess
-    # these can pop their own predefined dialogs, much simpler
+        self.push_data_success(data, FilterMode.INITIAL)
 
     def get_map_man(self) -> "MapManager":
         return self.get_active_treeview().get_map_man()
 
-    def cleanup(self) -> None:
+    def cleanup_on_success(self) -> None:
         treeview = self.get_active_treeview()
         treeview.set_loaded(True)
         treeview.set_model(self.to_insert)
@@ -823,21 +854,15 @@ class Controller(GObject.GObject):
             self.new_maps = None
 
         treeview.grab_focus()
-        # if self.success is False:
-        #    # TODO: different dialogs for server tab contexts, e.g. lan timeout
-        #    # TODO: if history/favorites is empty, don't even trigger a call to dump data
-        #    dialog = ExceptionDialog(self, "API TIMEOUT")
-        #    dialog.run()
 
     def cleanup_on_failure(self) -> None:
         treeview = self.get_active_treeview()
         treeview.set_model(None)
+        treeview.set_loaded(True)
         map_man = treeview.get_map_man()
         # TODO: what if refresh action occurred, and the old model is still valid?
-        # TODO: disable map, keyword, and filter widgets if model is None?
+        # TODO: disable map, keyword, and filter widgets if model is None
         # -> signal driven (servers_empty)
-        # would have to make those unsensitive when changing server tabs
-        # if model is not None when changing tab, emit other signal
         map_man.set_unique_maps(None)
 
         context = self.get_active_context()
@@ -847,50 +872,49 @@ class Controller(GObject.GObject):
         dialog = ExceptionDialog(self, "API TIMEOUT")
         dialog.run()
 
-    def push_data_failure(self) -> None:
-        treeview = self.get_active_treeview()
-        treeview.set_loaded(True)
-        # TODO: wipe control model on failure or keep old results?
-        # manager = treeview.get_filter_man()
-        self.cleanup_func = CleanupFunc(self.cleanup_on_failure)
+    #def push_data_failure(self) -> None:
+    #    #treeview = self.get_active_treeview()
+    #    #treeview.set_loaded(True)
+    #    # TODO: wipe control model on failure or keep old results?
+    #    # manager = treeview.get_filter_man()
+    #    self.cleanup_func = CleanupFunc(self.cleanup_on_failure)
 
-    def push_data(self, data: tuple, mode: Optional[FilterMode], success: bool) -> None:
-
+    def push_data_success(self, data: tuple, mode: Optional[FilterMode]) -> None:
+        # FIXME: set outside of thread
         treeview = self.get_active_treeview()
         manager = treeview.get_filter_man()
 
         self.to_insert = None
 
-        # TODO: drop
-        self.success = success
-        if success:
-            if data is None:
-                self.to_insert = None
-            else:
-                # TODO: consolidate into filter manager
-                if mode == FilterMode.INITIAL:
-                    manager.set_control(data)
-                manager.filter(mode)
-                self.to_insert = manager.get_model()
-                # TODO: pre parse maps
-                u_maps = set([row[1] for row in data])
-                self.new_maps = sorted(u_maps)
+        if data is None:
+            self.to_insert = None
+        else:
+            # TODO: consolidate into filter manager
+            if mode == FilterMode.INITIAL:
+                manager.set_control(data)
+            manager.filter(mode)
+            self.to_insert = manager.get_model()
+            # TODO: pre parse maps
+            u_maps = set([row[1] for row in data])
+            self.new_maps = sorted(u_maps)
 
         treeview.set_loaded(True)
-        self.cleanup_func = CleanupFunc(self.cleanup)
+        self.cleanup_func = CleanupFunc(self.cleanup_on_success)
 
-    @call_on_thread(strings.dialog.working)
-    def highlight_stale(self) -> None:
+    def highlight_stale_cleanup(self, stale_mods: list) -> None:
         model = self.get_mod_store()
-        stale = find_stale_mods(self.prefs.paths.config)
         for mod in model:
             it = mod.iter
             path = model.get_path(it)
-            # TODO: consider storing in ListStore as int
-            # FIXME: deep copy existing model and set outside of thread
-            if int(mod[2]) in stale:
+            if int(mod[2]) in stale_mods:
                 model[path][4] = HEX_RED
-        self.cleanup_func = CleanupFunc(lambda: self.emitter.emit("mods_highlighted"))
+        self.emitter.emit("mods_highlighted")
+
+
+    @call_on_thread(strings.dialog.working)
+    def highlight_stale(self) -> None:
+        stale = find_stale_mods(self.prefs.paths.config)
+        self.cleanup_func = CleanupFunc(self.highlight_stale_cleanup, stale)
 
     def get_cleanup_func(self) -> CleanupFunc:
         return self.cleanup_func
@@ -923,8 +947,7 @@ class Controller(GObject.GObject):
         if res is True:
             self.update_config(key, text)
         else:
-            # FIXME: dialog spawning in thread
-            self.cleanup_func = CleanupFunc(self.emitter.emit("api_change_failed"))
+            self.cleanup_func = CleanupFunc(lambda: self.emitter.emit("api_change_failed"))
 
     def set_resolution(self, window: "OuterWindow") -> None:
         if self.prefs.is_game_mode:
@@ -976,13 +999,15 @@ class Controller(GObject.GObject):
 
     @call_on_thread(strings.dialog.filtering)
     def filter_threaded(self, mode: FilterMode, label: str) -> None:
+        # FIXME: call outside of thread
         tv = self.get_active_treeview()
         filter_man = tv.get_filter_man()
         filter_man.filter(mode, label)
-        self.push_data("", mode, success=True)
+        # TODO: why pushing empty data?
+        self.push_data_success("", mode)
 
-    # FIXME: optional label/map/keyword parameter
     # TODO: consolidate with method above
+    # TODO: call filter_man methods directly
     def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
         tv = self.get_active_treeview()
         filter_man = tv.get_filter_man()
@@ -1001,9 +1026,11 @@ class Controller(GObject.GObject):
             self.emitter.emit("servers_loaded", treeview.get_enum())
             treeview.set_model(None)
             return
+
         # TODO: clear ephemeral model if necessary
         # manager = treeview.get_filter_man()
         # manager.clear_model()
+
         self.first_iteration = True
         self.run_query_func(func)
 
@@ -1034,7 +1061,9 @@ class Controller(GObject.GObject):
 
     # TODO: filterman calls back to here, gets convoluted
     def get_keyword(self) -> str:
-        return self.mediator.filters.get_keyword_filter()
+        tv = self.get_active_treeview()
+        filter_man = tv.get_filter_man()
+        return filter_man.get_keyword_filter()
 
     def get_map_store(self) -> Gtk.ListStore:
         map_man = self.get_map_man()

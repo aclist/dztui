@@ -77,8 +77,8 @@ class ServerTreeView(ContextMixin, TreeView):
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             column.set_resizable(True)
             column.set_sort_column_id(i)
-            if column_title == "Ping":
-                column.set_cell_data_func(renderer, self._get_ping)
+            #if column_title == "Ping":
+            #    column.set_cell_data_func(renderer, self._get_ping)
 
             if valid_json:
                 try:

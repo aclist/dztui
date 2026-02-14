@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Self, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from dzgui.util import strings, localize
 from dzgui.views.trees.tree_base import TreeView

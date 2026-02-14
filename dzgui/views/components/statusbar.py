@@ -11,6 +11,7 @@ from gi.repository import Gtk, GObject  # noqa E402
 if TYPE_CHECKING:
     from dzgui.const.enum import ServerTab
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
     from dzgui.views.trees.tree_base import TreeView
     from dzgui.views.base import Notebook
 
@@ -79,19 +80,19 @@ class Statusbar(Gtk.Grid):
             return
 
         match enum:
-            case NotebookPage.MODS:
-                return
-                # FIXME: format on callback after mods load
-                #bar = self.controller.format_mod_statusbar()
             case NotebookPage.HELP:
                 bar = self.controller.get_help_row()
-            case NotebookPage.SERVERS:
-                context = self.controller.get_active_context()
-                # FIXME: may be superfluous
-                #self.emitter.emit("servers_loaded", context)
-                return
+            # TODO: drop
+            #case NotebookPage.MODS:
+            #    return
+            #case NotebookPage.SERVERS:
+            #    context = self.controller.get_active_context()
+            #    # self.emitter.emit("servers_loaded", context)
+            #    return
             case NotebookPage.KEYS:
                 bar = question_to_return
+            case _:
+                return
 
         self.set_by_context(enum, bar)
 

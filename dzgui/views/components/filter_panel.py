@@ -3,7 +3,6 @@ from typing import Literal, TYPE_CHECKING
 
 from dzgui.const.enum import FilterMode
 from dzgui.const.constants import EXPAND, NO_EXPAND, NO_FILL, NO_PADDING, SEARCH_ICON
-from dzgui.util import strings
 from dzgui.util.margins import set_surrounding_margins
 from dzgui.views.components.labels import BoldLabel
 
@@ -17,7 +16,6 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.controllers.emitter import Emitter
-    from dzgui.const.enum import ServerTab
 
 
 class ButtonGrid(Gtk.Grid):
@@ -84,17 +82,14 @@ class KeywordEntry(Gtk.Entry):
         # TODO :strings
         super().__init__(placeholder_text="Filter by keyword")
 
-        self.keyword_filter = ""
         self.controller = controller
+        self.emitter = controller.get_emitter()
         self.connect("activate", self._on_activated)
         self.connect("key-press-event", self._on_keypress)
         self.connect("icon-release", lambda *args: self.activate())
 
         self.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, SEARCH_ICON)
         self.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
-
-    def get_keyword(self) -> str:
-        return self.keyword_filter
 
     def _on_keypress(self, entry: Gtk.Entry, event: Gdk.EventKey) -> bool:
         match event.keyval:
@@ -110,35 +105,21 @@ class KeywordEntry(Gtk.Entry):
     def _on_activated(self, entry: Gtk.Entry) -> None:
         # TODO: investigate this method
         self.controller.mediator.window.set_keep_below(False)
+
         keyword = entry.get_text().lower()
-        if keyword == self.keyword_filter:
+        if keyword == self.controller.get_keyword():
             return
         if keyword.isspace():
             return
+
         logger.info(f"User filtered by keyword '{keyword}'")
-        self.keyword_filter = keyword
+        self.emitter.emit("keyword_set", keyword)
         self.controller.refilter_model(FilterMode.KEYWORD, keyword)
 
 
 class FilterPanel(Gtk.Box):
     def __init__(self, controller: "Controller") -> None:
         super().__init__(spacing=6, vexpand=False, orientation=Gtk.Orientation.VERTICAL)
-
-        # TODO: get these from metamanager
-        # self.default_filters = {
-        #    strings.filter_1pp: True,
-        #    strings.filter_day: True,
-        #    strings.filter_empty: False,
-        #    strings.filter_3pp: True,
-        #    strings.filter_night: True,
-        #    strings.filter_full: False,
-        #    strings.filter_lowpop: True,
-        #    strings.filter_nonascii: False,
-        #    strings.filter_duplicate: False,
-        #    strings.filter_official: True,
-        #    strings.filter_unofficial: True,
-        #    strings.filter_modded: True,
-        # }
 
         self.controller = controller
         self.controller.register_widget("filters", self)
@@ -225,14 +206,11 @@ class FilterPanel(Gtk.Box):
         enabled = self.controller.get_enabled_filters()
         filters = []
         filters.append(selected)
-        filters.append(self.get_keyword_filter())
+        filters.append(self.controller.get_keyword())
         for filt in enabled:
             if enabled[filt] is False:
                 filters.append(filt)
         return tuple(filters)
-
-    def get_keyword_filter(self) -> str:
-        return self.keyword_entry.get_keyword()
 
     # TODO: should be used when switching ServerTab contexts
     # use signals here
