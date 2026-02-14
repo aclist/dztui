@@ -379,12 +379,23 @@ class Controller(GObject.GObject):
                 j = res.json
                 serv += j["response"]["servers"]
 
+        """
+        TODO: e.g. class method like 'total'
+        GLib.idle_add(lambda: self.wait_dialog.format_secondary_text("Pass 2"))
+        GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(0.5)) subclass or wrap add fraction and increment, then
+        calculate off of total
+        """
         res = Servers.query_api(key, APPID_DAYZ_EXP, "")
         if res.status == 200 and res.parsed is True:
             j = res.json
             serv += j["response"]["servers"]
 
+        GLib.idle_add(
+            lambda: self.wait_dialog.format_secondary_text("Unpacking servers")
+        )
+
         # TODO: additional ping column pass, collated
+        # GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(0.75))
         parsed = Servers.parse_json(serv)
         self.push_data(parsed, FilterMode.INITIAL, success=True)
 
@@ -839,7 +850,7 @@ class Controller(GObject.GObject):
 
         self.to_insert = None
 
-        # TODO:
+        # TODO: drop
         self.success = success
         if success:
             if data is None:

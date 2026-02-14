@@ -25,7 +25,7 @@ class RightPanel(Gtk.Box):
         self.controller.register_widget("right_panel", self)
 
         emitter = controller.get_emitter()
-        emitter.connect("servers_loaded", self.toggle_refresh_button)
+        emitter.connect("servers_loaded", self._on_servers_loaded)
 
         self.button_vbox = ButtonBox(controller)
         self.filters_vbox = FilterPanel(controller)
@@ -40,15 +40,12 @@ class RightPanel(Gtk.Box):
 
         self.pack_start(self.sel_panel, NO_EXPAND, NO_FILL, NO_PADDING)
 
-    def toggle_refresh_button(self, emitter: "Emitter", context: "ServerTab") -> None:
-        # TODO: when a row is added to a previously empty table,
-        # make sure "servers_loaded" signal is emitted
-        self.refresh_button.set_sensitive(True)
-        model = self.controller.get_active_treeview().get_model()
-        # NOTE: if saved servers or history are empty, there is nothing to refresh
-        if model is None:
-            if context in (ServerTab.RECENT, ServerTab.SAVED):
-                self.refresh_button.set_sensitive(False)
+    def _on_servers_loaded(self, emitter: "Emitter", context: "ServerTab") -> None:
+        state = self.controller.has_server_model()
+        for widget in (self.refresh_button, self.filters_vbox):
+            widget.set_sensitive(state)
+        if context in (ServerTab.RECENT, ServerTab.SAVED):
+            self.refresh_button.set_sensitive(False)
 
     # TODO: reference for ping pass
     # def _on_ping_clicked(self, button: Gtk.Button) -> None:

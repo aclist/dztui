@@ -25,7 +25,6 @@ class LanPanel(Gtk.Frame):
     def __init__(self, controller: "Controller") -> None:
         super().__init__(margin_top=10, margin_bottom=5)
 
-        # TODO: hide lan panel on other tabs
         self.controller = controller
         self.emitter = controller.get_emitter()
 
@@ -56,9 +55,14 @@ class LanPanel(Gtk.Frame):
 
         self.add(self.grid)
 
+        self.entry.set_sensitive(False)
+
     def _on_radio_toggled(self, button: Gtk.RadioButton) -> None:
-        self.entry.set_sensitive(not button.get_active())
-        if len(self.entry.get_text()) < 1:
+        state = button.get_active()
+        self.entry.set_sensitive(not state)
+        if state:
+            self.scan.set_sensitive(True)
+        elif len(self.entry.get_text()) < 1:
             self.scan.set_sensitive(False)
 
     def _on_port_validated(self, entry: Gtk.Entry, state: bool) -> None:
@@ -76,7 +80,6 @@ class FavPanel(Gtk.Frame):
         emitter = self.controller.get_emitter()
         emitter.connect("fav_server_changed", self._on_fav_server_changed)
 
-        # TODO: improve upon this, cache fav ip when changed globally
         self.server_name, self.server_ip = self.controller.get_favorite()
         server_name = (
             f"{self.server_name} ({self.server_ip})"

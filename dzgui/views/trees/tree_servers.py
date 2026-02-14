@@ -117,7 +117,10 @@ class ServerTreeView(ContextMixin, TreeView):
 
     def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
         # FIXME: gets called on every tab, should be localized only to that context
+        # hook signal from main controller
         state = self.controller.has_server_model()
+        # NOTE: workaround for GTK bug where fullscreen causes headers to vanish when model is None
+        self.set_headers_visible(state)
         self.set_headers_clickable(state)
 
     def _on_servers_loaded_init(self, emitter: "Emitter") -> None:

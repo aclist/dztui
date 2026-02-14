@@ -71,10 +71,10 @@ class ModSelectionPanel(Gtk.Box):
 
     def swap_sensitive(self, state: bool) -> None:
         for child in self.stale_panel.get_children():
-            child.set_sensitive(state)
-        for child in self.main_panel.get_children():
             if child.enum == ModButton.HIGHLIGHT_STALE:
                 child.set_sensitive(not state)
+            else:
+                child.set_sensitive(state)
 
     def _on_button_clicked(self, button: EnumeratedModButton) -> None:
         match button.enum:

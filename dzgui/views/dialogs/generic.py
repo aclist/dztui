@@ -101,7 +101,9 @@ class NotifyDialog(GenericDialog):
 
 
 class WaitDialog(GenericDialog):
-    def __init__(self, controller: "Controller", secondary: str):
+    def __init__(
+        self, controller: "Controller", secondary: str, show_progress: bool = False
+    ):
         super().__init__(
             controller=controller,
             text=strings.wait,
@@ -113,9 +115,12 @@ class WaitDialog(GenericDialog):
         self.connect("delete-event", self._on_dialog_delete)
         content = self.get_content_area()
         spinner = Gtk.Spinner()
+        self.prog = Gtk.ProgressBar()
         content.pack_end(spinner, NO_EXPAND, NO_FILL, 0)
-
-        spinner.start()
+        if show_progress:
+            content.pack_end(self.prog, NO_EXPAND, NO_FILL, 0)
+        else:
+            spinner.start()
 
     def _on_dialog_delete(
         self, response_id: Gtk.ResponseType, event: Gdk.Event

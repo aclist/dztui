@@ -172,7 +172,7 @@ class FilterPanel(Gtk.Box):
             "request_maps_focus", lambda _: self.maps_entry.grab_focus()
         )
         self.emitter.connect("check_button_pressed", self.toggle_check_by_key)
-        self.emitter.connect("servers_loaded", self._on_servers_loaded)
+        # self.emitter.connect("servers_loaded", self._on_servers_loaded)
         self.emitter.connect("load_maps", self._on_maps_loaded)
 
         # TODO: break into MapsCombo class
@@ -213,11 +213,6 @@ class FilterPanel(Gtk.Box):
             if text == row[0]:
                 self.maps_combo.set_active(i)
                 self._on_map_changed(self.maps_combo)
-
-    def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
-        state = self.controller.has_server_model()
-        for widget in (self.keyword_entry, self.maps_combo, self.button_grid):
-            widget.set_sensitive(state)
 
     def _on_maps_loaded(self, emitter: "Emitter", store: Gtk.ListStore) -> None:
         self.maps_combo.set_model(store)
