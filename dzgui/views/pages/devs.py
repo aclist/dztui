@@ -8,6 +8,7 @@ from dzgui.views.components.labels import BoldLabel
 from dzgui.views.trees.tree_base import TreeView
 
 import gi  # noqa E402
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
@@ -16,20 +17,19 @@ if TYPE_CHECKING:
     from dzgui.config.userprefs import UserPrefs
     from dzgui.config.xdg import Xdg
 
+
 class Developers(Gtk.ScrolledWindow):
     """
     Shows TreeViews displaying contents of parsed XDG paths
     and user preferences
     """
+
     def __init__(self, controller: "Controller") -> None:
-        super().__init__(
-        )
+        super().__init__()
 
         self.controller = controller
         self.box = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-            margin_start=10,
-            margin_end=10
+            orientation=Gtk.Orientation.VERTICAL, margin_start=10, margin_end=10
         )
 
         heading = Gtk.Label(label=developers.header)
@@ -42,8 +42,9 @@ class Developers(Gtk.ScrolledWindow):
         paths_label = BoldLabel(developers.paths_label)
         prefs_label = BoldLabel(developers.prefs_label)
 
-        paths_tree = self._make_tree(self.controller.prefs.paths)
-        prefs_tree = self._make_tree(self.controller.prefs)
+        prefs = self.controller.get_prefs()
+        paths_tree = self._make_tree(prefs.paths)
+        prefs_tree = self._make_tree(prefs)
         trees_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
 
         path = Gtk.TreePath.new_from_indices([0])
@@ -72,9 +73,12 @@ class Developers(Gtk.ScrolledWindow):
         store = Gtk.ListStore(str, str)
         for field in fields(prefs):
             if field.name == "paths":
-                break
+                continue
             k, v = field.name, getattr(prefs, field.name)
             store.append((k, str(v)))
 
         view.set_model(store)
         return view
+
+    def grab_content_area(self) -> None:
+        return

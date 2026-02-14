@@ -262,7 +262,7 @@ class Controller(GObject.GObject):
         c = self.mediator.statusbar.statusbar.get_context_id(context)
         self.mediator.statusbar.statusbar.pop(c)
 
-    # TODO:
+    # TODO: refactor any modules using this
     @deprecated("use set_by_context")
     def set_statusbar(self, text: str, context: str) -> int:
         msg_id = self.mediator.statusbar.set_text(text, context)
@@ -297,7 +297,6 @@ class Controller(GObject.GObject):
 
         self.emitter.emit("distcalc_ended", dist, context)
 
-    # TODO: threading
     def delete_multiple_mods(self) -> None:
         sel = self.mediator.modtreeview.get_selection()
         model, pathlist = sel.get_selected_rows()
@@ -392,11 +391,11 @@ class Controller(GObject.GObject):
         total = 10
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
-            #wait(futures)
+            # wait(futures)
             for future in as_completed(futures):
                 try:
                     i += 1
-                    GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(i/total))
+                    GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(i / total))
                     res = future.result(timeout=3)
                     if res.status != 200 or not res.parsed:
                         # TODO: pop warning dialog, create enum around various failure states
@@ -409,7 +408,6 @@ class Controller(GObject.GObject):
                     # TODO: save exception text
                     print(e)
                     self.cleanup_func = CleanupFunc(self.cleanup_on_failure)
-
 
         """
         TODO: e.g. class method like 'total'
@@ -429,7 +427,7 @@ class Controller(GObject.GObject):
         GLib.idle_add(
             lambda: self.wait_dialog.format_secondary_text("Unpacking servers")
         )
-        GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(10/total))
+        GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(10 / total))
 
         # TODO: additional ping column pass, collated
         parsed = Servers.parse_json(serv)
@@ -507,6 +505,7 @@ class Controller(GObject.GObject):
 
     def delete_single_mod_cleanup(self, _iter: Gtk.TreeIter) -> None:
         self.get_mod_store().remove(_iter)
+        remove_stale_signatures(self.prefs.paths.config, self.prefs.paths.version)
 
     # TODO: strings
     @call_on_thread("deleting mod")
@@ -574,6 +573,7 @@ class Controller(GObject.GObject):
             # add to saved servers model verbatim and sort in place
             # update tab with !
             # update config file with IP
+            # TODO: needs threading
             case ContextMenu.ADD_SERVER:
                 pass
 
@@ -593,10 +593,7 @@ class Controller(GObject.GObject):
                 # Gtk.TreeModel, row-inserted/row-deleted
                 # updates statusbar
                 # FIXME: signal should instead be emitted off of treeview when rows added/inserted
-                #self.update_mod_statusbar()
-                remove_stale_signatures(
-                    self.prefs.paths.config, self.prefs.paths.version
-                )
+                # self.update_mod_statusbar()
 
             # call a2s on thread and update ephemeral model in situ
             case ContextMenu.REFRESH_PLAYERS:
@@ -610,12 +607,15 @@ class Controller(GObject.GObject):
             # reverse of ADD_SERVER
             case ContextMenu.REMOVE_SERVER:
                 pass
+
             case ContextMenu.SET_FAV:
                 self.set_fav()
 
             # NOTE: spawns dedicated dialogs
+            # TODO: needs threading
             case ContextMenu.SHOW_DETAILS:
                 pass
+            # TODO: needs threading
             case ContextMenu.SHOW_MODS:
                 pass
 
@@ -634,8 +634,7 @@ class Controller(GObject.GObject):
         log = self.prefs.paths.debug
         store = self.model_man.get_log_store()
         store.clear()
-        # NOTE: this model is reloaded each time as log changes, rather than adding
-        # atomic events
+        # NOTE: this model is reloaded each time as log changes
         try:
             with open(log, "r") as f:
                 lines = [
@@ -872,7 +871,7 @@ class Controller(GObject.GObject):
         dialog = ExceptionDialog(self, "API TIMEOUT")
         dialog.run()
 
-    #def push_data_failure(self) -> None:
+    # def push_data_failure(self) -> None:
     #    #treeview = self.get_active_treeview()
     #    #treeview.set_loaded(True)
     #    # TODO: wipe control model on failure or keep old results?
@@ -910,7 +909,6 @@ class Controller(GObject.GObject):
                 model[path][4] = HEX_RED
         self.emitter.emit("mods_highlighted")
 
-
     @call_on_thread(strings.dialog.working)
     def highlight_stale(self) -> None:
         stale = find_stale_mods(self.prefs.paths.config)
@@ -947,7 +945,9 @@ class Controller(GObject.GObject):
         if res is True:
             self.update_config(key, text)
         else:
-            self.cleanup_func = CleanupFunc(lambda: self.emitter.emit("api_change_failed"))
+            self.cleanup_func = CleanupFunc(
+                lambda: self.emitter.emit("api_change_failed")
+            )
 
     def set_resolution(self, window: "OuterWindow") -> None:
         if self.prefs.is_game_mode:
@@ -1016,6 +1016,7 @@ class Controller(GObject.GObject):
         self.filter_threaded(mode, label)
 
     def populate_model(self) -> None:
+        # NOTE: prepare GTK objects outside of thread
         treeview = self.get_active_treeview()
         if treeview.is_loaded() is True:
             self.emitter.emit("servers_loaded", treeview.get_enum())
@@ -1045,8 +1046,6 @@ class Controller(GObject.GObject):
     def get_dist_cache(self) -> dict[str, "Haversine"]:
         return self.dist_cache
 
-    # TODO: use model manager, map and keyword caches
-    # TODO: model cache that hooks checkbox signal
     def get_help_store(self) -> Gtk.ListStore:
         return self.model_man.get_help_store()
 
@@ -1091,6 +1090,7 @@ class Controller(GObject.GObject):
             mode = FilterMode.TOGGLE_OFF
         self.refilter_model(mode, label)
 
+    # TODO: map man should be consolidated into filter man
     def _on_map_selection_changed(self, emitter: Emitter, selection: str) -> None:
         map_man = self.get_map_man()
         map_man.set_selected_map(selection)

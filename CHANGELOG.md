@@ -44,3 +44,9 @@
 - Local documentation
 - Offline mods
 - Move debug mode to developers only
+
+## Devs
+- Show deprecation warnings
+- Options -> Dev page
+- Raw debug command
+- Moved debug log to this mode

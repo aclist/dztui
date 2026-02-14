@@ -52,7 +52,6 @@ class FilteredModelManager:
         self.ping_cache: dict[str, int] = {}
 
         self.ephemeral_model: ListStore = None
-        #= self.new_model_from_class(ServerColumns)
 
         self.control_model: list = None
         self.filtered: list = None
@@ -125,7 +124,7 @@ class FilteredModelManager:
             rows = self.sort_rows(rows)
             for row in rows:
                 clone.append(row)
-        #else:
+        # else:
         #    print("nothing to filter, sending none")
         #    clone = None
 
@@ -222,7 +221,6 @@ class FilteredModelManager:
                 rows = [row for row in rows if row[0].isascii()]
             case strings.filter_lowpop:
                 rows = [row for row in rows if (row[4] / row[5] * 100) > 30]
-            # FIXME: can create logically opposed contexts like "official + modded"
             case strings.filter_modded:
                 rows = [row for row in rows if not row[11]]
         return rows
@@ -254,7 +252,6 @@ class FilteredModelManager:
         filters = self.controller.get_filters()
         refiltered = self.filter_toggle_on(filters)
         self.set_filtered(refiltered)
-        #self.set_success(True)
 
     def convert_model_to_list(self, model: ListStore) -> list:
         return [[el for el in row] for row in model]

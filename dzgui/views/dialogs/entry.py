@@ -1,9 +1,11 @@
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
 from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
 from dzgui.const.enum import Popup
+
 
 class EntryDialog(GenericDialog):
     def __init__(self, text: str, mode: Popup, link: str, button_type=None):

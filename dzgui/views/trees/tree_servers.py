@@ -69,7 +69,14 @@ class ServerTreeView(ContextMixin, TreeView):
             logger.critical(e)
             valid_json = False
 
+        width_map = {
+            "Name": 800,
+            "Map": 300,
+            "IP": 240,
+        }
+
         # TODO: abstract
+        # FIXME: resize col width func causes snapping behavior
         browser_cols = strings.browser_cols
         for i, column_title in enumerate(browser_cols):
             renderer = Gtk.CellRendererText()
@@ -77,8 +84,6 @@ class ServerTreeView(ContextMixin, TreeView):
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             column.set_resizable(True)
             column.set_sort_column_id(i)
-            #if column_title == "Ping":
-            #    column.set_cell_data_func(renderer, self._get_ping)
 
             if valid_json:
                 try:
@@ -88,18 +93,20 @@ class ServerTreeView(ContextMixin, TreeView):
                 column.set_fixed_width(saved_size)
                 column.set_expand(True)
             else:
-                if column_title == "Name":
-                    column.set_fixed_width(800)
-                if column_title == "Map":
-                    column.set_fixed_width(300)
+                w = width_map[column_title]
+                column.set_fixed_width(w)
+                #if column_title == "Name":
+                #    column.set_fixed_width(800)
+                #if column_title == "Map":
+                #    column.set_fixed_width(300)
+
             # TODO: standardize widths based on column title and longest content
-            # TODO: resize col width func causes snapping behavior
-            if column_title == "Name":
-                column.set_fixed_width(500)
-            if column_title == "Map":
-                column.set_fixed_width(200)
-            if column_title == "IP":
-                column.set_fixed_width(240)
+            #if column_title == "Name":
+            #    column.set_fixed_width(500)
+            #if column_title == "Map":
+            #    column.set_fixed_width(200)
+            #if column_title == "IP":
+            #    column.set_fixed_width(240)
 
             column.connect("notify::fixed-width", self._on_col_width_changed)
             self.append_column(column)
@@ -129,38 +136,38 @@ class ServerTreeView(ContextMixin, TreeView):
         store = self.map_man.get_map_store()
         self.emitter.emit("load_maps", store)
 
-    def _get_ping(
-        self,
-        column: Gtk.TreeViewColumn,
-        cell: Gtk.CellRendererText,
-        model: Gtk.TreeModel,
-        it: Gtk.TreeIter,
-        data: Any,
-    ):
-        def ping(model, it, ip: str):
-            # TODO: use a2s to ping server
-            # a2s.info -> "ping" key
-            # Servers.ping() -> this accepts a whole row
-            # try, if failure just abort
-            self.res = ip.replace(":", "%")
-            num = 11111
-            GLib.idle_add(lambda: model.set(it, 9, num))
+    #def _get_ping(
+    #    self,
+    #    column: Gtk.TreeViewColumn,
+    #    cell: Gtk.CellRendererText,
+    #    model: Gtk.TreeModel,
+    #    it: Gtk.TreeIter,
+    #    data: Any,
+    #):
+    #    def ping(model, it, ip: str):
+    #        # TODO: use a2s to ping server
+    #        # a2s.info -> "ping" key
+    #        # Servers.ping() -> this accepts a whole row
+    #        # try, if failure just abort
+    #        self.res = ip.replace(":", "%")
+    #        num = 11111
+    #        GLib.idle_add(lambda: model.set(it, 9, num))
 
-        addr = model.get_value(it, 7).split(":")[0]
-        qport = model.get_value(it, 8)
-        ip = f"{addr}:{qport}"
+    #    addr = model.get_value(it, 7).split(":")[0]
+    #    qport = model.get_value(it, 8)
+    #    ip = f"{addr}:{qport}"
 
-        thread = threading.Thread(
-            daemon=True,
-            target=ping,
-            args=(
-                model,
-                it,
-                ip,
-            ),
-        )
-        thread.start()
-        pass
+    #    thread = threading.Thread(
+    #        daemon=True,
+    #        target=ping,
+    #        args=(
+    #            model,
+    #            it,
+    #            ip,
+    #        ),
+    #    )
+    #    thread.start()
+    #    pass
 
     def start_timeout(self) -> None:
         self.queue_id = GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
@@ -171,27 +178,27 @@ class ServerTreeView(ContextMixin, TreeView):
     def get_filter_man(self) -> FilteredModelManager:
         return self.filter_man
 
-    def shrink_to_fit(self) -> None:
-        cols = self.get_columns()
-        # TODO: run on only one treeview and propagate results
-        # TODO: does not shrink name, map, ip fields to fit
-        # TODO: col width changed signal is buggy on current treeview
-        for col in cols:
-            title = col.get_title()
-            if title == "Name":
-                continue
-            if title == "Map":
-                continue
-            if title == "IP":
-                continue
-            label = Gtk.Label(label=title)
-            pango = label.get_layout()
-            size = pango.get_pixel_size()
-            if size.width > 50:
-                width = size.width * 1.30
-            else:
-                width = size.width * 1.65
-            col.set_fixed_width(width)
+    #def shrink_to_fit(self) -> None:
+    #    cols = self.get_columns()
+    #    # TODO: run on only one treeview and propagate results
+    #    # TODO: does not shrink name, map, ip fields to fit
+    #    # TODO: col width changed signal is buggy on current treeview
+    #    for col in cols:
+    #        title = col.get_title()
+    #        if title == "Name":
+    #            continue
+    #        if title == "Map":
+    #            continue
+    #        if title == "IP":
+    #            continue
+    #        label = Gtk.Label(label=title)
+    #        pango = label.get_layout()
+    #        size = pango.get_pixel_size()
+    #        if size.width > 50:
+    #            width = size.width * 1.30
+    #        else:
+    #            width = size.width * 1.65
+    #        col.set_fixed_width(width)
 
     def get_enum(self) -> None:
         return self.enum
@@ -277,7 +284,7 @@ class ServerTreeView(ContextMixin, TreeView):
         if event.state is Gdk.ModifierType.CONTROL_MASK:
             match event.keyval:
                 case Gdk.KEY_r:
-                    # TODO: unimplemented
+                    # TODO: unimplemented, threading
                     self.refresh_player_count()
                 case Gdk.KEY_f:
                     self.emitter.emit("request_keyword_focus")
