@@ -83,7 +83,23 @@ class Emitter(GObject.GObject):
     ) -> None:
         pass
 
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(str,bool,))
+    @GObject.Signal(
+        flags=GObject.SignalFlags.RUN_LAST,
+        arg_types=(
+            str,
+            bool,
+        ),
+    )
+    def check_toggled(self, label: str, state: bool) -> None:
+        pass
+
+    @GObject.Signal(
+        flags=GObject.SignalFlags.RUN_LAST,
+        arg_types=(
+            str,
+            bool,
+        ),
+    )
     def check_toggled(self, label: str, state: bool) -> None:
         pass
 
@@ -101,4 +117,16 @@ class Emitter(GObject.GObject):
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
     def load_maps(self, store: ListStore) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def mod_page_loaded(self) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def mods_highlighted(self) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def api_change_failed(self) -> None:
         pass

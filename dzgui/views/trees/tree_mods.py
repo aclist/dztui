@@ -15,6 +15,7 @@ from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +24,14 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
     def __init__(self, controller: "Controller") -> None:
         super().__init__(controller, menu=ContextMenuGroup.MOD)
         self.controller = controller
+        emitter = self.controller.get_emitter()
+        emitter.connect("mod_page_loaded", self._on_mod_page_loaded)
+        emitter.connect("mods_highlighted", self._on_mods_highlighted)
 
         self.set_fixed_height_mode(True)
         self.set_headers_visible(True)
 
-        mod_store = self.controller.get_mod_store()
-        self.set_model(mod_store)
+        self.set_model(None)
 
         for i, column_title in enumerate(strings.mod_cols):
             renderer = Gtk.CellRendererText()
@@ -52,26 +55,27 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
         self.connect("generic_treesel_changed", self._parent_selection_changed)
         self.connect("button-press-event", self.present_menu)
         self.connect("key-press-event", self.present_menu)
-        self.connect("map", self._on_map)
 
-    def _on_map(self, tree: Self) -> None:
-        # FIXME: placeholder logic
-        # identify root cause of row unfocus on init
+    def _on_mods_highlighted(self, emitter: "Emitter") -> None:
+        self.get_selection().unselect_all()
+
+    # TODO: test loading with no mods
+    def _on_mod_page_loaded(self, emitter: "Emitter") -> None:
         self.set_cursor(0)
 
-   # def _on_mods_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
-   #     # TODO: multiselect
-   #     # if event.keyval is Gdk.KEY_space:
-   #     #    it = self.get_focused_row_iter()
-   #     #    self.get_selection().select_iter(it)
-   #     #    path = self.get_focused_row_path()
-   #     #    self.set_cursor(path)
-   #     #    return False
-   #     self.present_menu(widget, event)
+    # def _on_mods_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
+    #     # TODO: multiselect
+    #     # if event.keyval is Gdk.KEY_space:
+    #     #    it = self.get_focused_row_iter()
+    #     #    self.get_selection().select_iter(it)
+    #     #    path = self.get_focused_row_path()
+    #     #    self.set_cursor(path)
+    #     #    return False
+    #     self.present_menu(widget, event)
 
-   # def _on_mods_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
-   #     if event.button == 3:
-   #         self.present_menu(widget, event)
+    # def _on_mods_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
+    #     if event.button == 3:
+    #         self.present_menu(widget, event)
 
     def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
         pass

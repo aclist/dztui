@@ -51,6 +51,11 @@ class Statusbar(Gtk.Grid):
         self.emitter.connect("distcalc_started", self._on_distcalc_started)
         self.emitter.connect("distcalc_ended", self._on_distcalc_ended)
         self.emitter.connect("servers_loaded", self._on_servers_loaded)
+        self.emitter.connect("mod_page_loaded", self._on_mod_page_loaded)
+
+    def _on_mod_page_loaded(self, emitter: "Emitter") -> None:
+        msg = self.controller.format_mod_statusbar()
+        self.set_by_context(NotebookPage.MODS, msg)
 
     def _on_notebook_page_changed(
         self, notebook: "Notebook", child: Gtk.Widget, index: int
@@ -75,12 +80,15 @@ class Statusbar(Gtk.Grid):
 
         match enum:
             case NotebookPage.MODS:
-                bar = self.controller.format_mod_statusbar()
+                return
+                # FIXME: format on callback after mods load
+                #bar = self.controller.format_mod_statusbar()
             case NotebookPage.HELP:
                 bar = self.controller.get_help_row()
             case NotebookPage.SERVERS:
                 context = self.controller.get_active_context()
-                self.emitter.emit("servers_loaded", context)
+                # FIXME: may be superfluous
+                #self.emitter.emit("servers_loaded", context)
                 return
             case NotebookPage.KEYS:
                 bar = question_to_return

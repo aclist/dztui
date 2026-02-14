@@ -1,3 +1,4 @@
+import inspect
 import logging
 import shutil
 import threading
@@ -93,11 +94,22 @@ class AppNavigation:
     filters: "FilterPanel"
 
 
+class CleanupFunc:
+    def __init__(self, func: Callable, *args, **kwargs) -> None:
+        sig = inspect.signature(func)
+        self.func = func
+        self.bindings = sig.bind(*args, **kwargs)
+
+    def call(self) -> None:
+        self.func(*self.bindings.args, *self.bindings.kwargs)
+
+
 class Controller(GObject.GObject):
     def __init__(self) -> None:
         self.dist_cache: dict[str, "Haversine", "ServerTab"] = {}
         self.mediator = AppNavigation()
         self.prefs: UserPrefs
+        self.cleanup_func: CleanupFunc = None
 
         self.model_man = ModelManager()
         self.emitter = Emitter()
@@ -114,10 +126,14 @@ class Controller(GObject.GObject):
         def decorator(func: Callable) -> Callable:
             @wraps(func)
             def wrapper(*args, **kwargs):
+                def callback() -> None:
+                    func(*args, **kwargs)
+                    GLib.idle_add(self._destroy_on_idle)
+
                 self = args[0]
                 self.wait_dialog = WaitDialog(self, dialog_str)
                 self.wait_dialog.show_all()
-                thread = threading.Thread(target=func, args=args)
+                thread = threading.Thread(target=callback)
                 thread.start()
 
             return wrapper
@@ -156,6 +172,7 @@ class Controller(GObject.GObject):
     def unblock_signals(self) -> None:
         self.block_signals(False)
 
+    @deprecated("Currently unused")
     def block_signals(self, state: bool = True) -> None:
         self.suppress_signal(
             self.mediator.filters,
@@ -280,6 +297,7 @@ class Controller(GObject.GObject):
 
         self.emitter.emit("distcalc_ended", dist, context)
 
+    # TODO: threading
     def delete_multiple_mods(self) -> None:
         sel = self.mediator.modtreeview.get_selection()
         model, pathlist = sel.get_selected_rows()
@@ -290,10 +308,13 @@ class Controller(GObject.GObject):
         total_mods, total_size = self.calc_mod_size()
         self.update_mod_statusbar()
 
+    def load_mods_cleanup(self, model: Gtk.ListStore) -> None:
+        self.mediator.modtreeview.set_model(model)
+        self.emitter.emit("mod_page_loaded")
+
+    @call_on_thread(strings.dialog.modlist)
     def load_mods(self) -> None:
-        # TODO: threading; could get slow with 100s of mods
-        model = self.model_man.get_mod_store()
-        model.clear()
+        model = self.model_man.new_mod_store()
         path = self.query_config(Preferences.DEFAULT)
         mods = get_delimited_mods(Path(path))
 
@@ -301,6 +322,8 @@ class Controller(GObject.GObject):
             # NOTE: holds color column
             mod.append(None)
             model.append(mod)
+
+        self.cleanup_func = CleanupFunc(self.load_mods_cleanup, model)
 
     def toggle_config(self, context: Preferences) -> None:
         config = self.prefs.paths.config
@@ -484,8 +507,11 @@ class Controller(GObject.GObject):
         except PeFile.AppNotInstalledError:
             pass
 
-        model = self.model_man.get_mod_store()
+        model = self.get_mod_store()
         model.remove(it)
+
+    def get_mod_store(self) -> Gtk.ListStore:
+        return self.mediator.modtreeview.get_model()
 
     def format_mod_statusbar(self) -> None:
         total_mods, total_size = self.calc_mod_size()
@@ -493,7 +519,9 @@ class Controller(GObject.GObject):
         return msg
 
     def calc_mod_size(self) -> tuple[int, int]:
-        model = self.model_man.get_mod_store()
+        model = self.get_mod_store()
+        if model is None:
+            return 0, 0
         total_mods = len(model)
         total_size = 0
         for mod in model:
@@ -590,7 +618,7 @@ class Controller(GObject.GObject):
         self.open_page(NotebookPage.LOG)
 
     def select_colorized(self) -> None:
-        model = self.model_man.get_mod_store()
+        model = self.get_mod_store()
         sel = self.mediator.modtreeview.get_selection()
         for mod in model:
             it = mod.iter
@@ -598,28 +626,13 @@ class Controller(GObject.GObject):
             if mod[4] == HEX_RED:
                 sel.select_path(path)
 
+    # TODO: make as method of tree?
     def uncolorize_mods(self) -> None:
-        model = self.model_man.get_mod_store()
+        model = self.get_mod_store()
         for mod in model:
             it = mod.iter
             path = model.get_path(it)
             model[path][4] = None
-
-    def colorize_mods(self) -> None:
-        model = self.model_man.get_mod_store()
-        stale = find_stale_mods(self.prefs.paths.config)
-        for mod in model:
-            it = mod.iter
-            path = model.get_path(it)
-            # TODO: consider storing in ListStore as int
-            # TODO: clone existing model and set outside of threai
-            if int(mod[2]) in stale:
-                model[path][4] = HEX_RED
-
-        self.destroy_on_idle()
-
-    def unselect_all_mods(self) -> None:
-        self.mediator.modtreeview.get_selection().unselect_all()
 
     def dump_test_2(self) -> None:
         import time
@@ -810,7 +823,6 @@ class Controller(GObject.GObject):
             self.new_maps = None
 
         treeview.grab_focus()
-        self.destroy_on_idle()
         # if self.success is False:
         #    # TODO: different dialogs for server tab contexts, e.g. lan timeout
         #    # TODO: if history/favorites is empty, don't even trigger a call to dump data
@@ -818,10 +830,10 @@ class Controller(GObject.GObject):
         #    dialog.run()
 
     def cleanup_on_failure(self) -> None:
-        # TODO: what if refresh action occurred, and the old model is valid?
         treeview = self.get_active_treeview()
         treeview.set_model(None)
         map_man = treeview.get_map_man()
+        # TODO: what if refresh action occurred, and the old model is still valid?
         # TODO: disable map, keyword, and filter widgets if model is None?
         # -> signal driven (servers_empty)
         # would have to make those unsensitive when changing server tabs
@@ -832,7 +844,6 @@ class Controller(GObject.GObject):
         # TODO: distinguish signals, e.g. "servers_failed_to_load"
         self.emitter.emit("servers_loaded", context)
         treeview.grab_focus()
-        self.destroy_on_idle()
         dialog = ExceptionDialog(self, "API TIMEOUT")
         dialog.run()
 
@@ -841,7 +852,7 @@ class Controller(GObject.GObject):
         treeview.set_loaded(True)
         # TODO: wipe control model on failure or keep old results?
         # manager = treeview.get_filter_man()
-        GLib.idle_add(self.cleanup_on_failure)
+        self.cleanup_func = CleanupFunc(self.cleanup_on_failure)
 
     def push_data(self, data: tuple, mode: Optional[FilterMode], success: bool) -> None:
 
@@ -866,38 +877,31 @@ class Controller(GObject.GObject):
                 self.new_maps = sorted(u_maps)
 
         treeview.set_loaded(True)
-        GLib.idle_add(self.cleanup)
+        self.cleanup_func = CleanupFunc(self.cleanup)
 
     @call_on_thread(strings.dialog.working)
     def highlight_stale(self) -> None:
-        self.colorize_mods()
+        model = self.get_mod_store()
+        stale = find_stale_mods(self.prefs.paths.config)
+        for mod in model:
+            it = mod.iter
+            path = model.get_path(it)
+            # TODO: consider storing in ListStore as int
+            # FIXME: deep copy existing model and set outside of thread
+            if int(mod[2]) in stale:
+                model[path][4] = HEX_RED
+        self.cleanup_func = CleanupFunc(lambda: self.emitter.emit("mods_highlighted"))
 
-    def get_callback(self) -> Callable | None:
-        return self.callback["func"]
+    def get_cleanup_func(self) -> CleanupFunc:
+        return self.cleanup_func
 
-    def get_callback_args(self) -> Any:
-        return self.callback["args"]
-
-    def set_callback(self, callback: Callable | None, *args) -> None:
-        """
-        Lets calling widgets register a callback function
-        when spawning a threaded process
-        """
-        self.callback = {"func": callback, "args": args}
-
-    def destroy_on_idle(self) -> None:
-        """
-        TODO: chiefly responsible for removing spinner dialog
-        """
+    def _destroy_on_idle(self) -> None:
         self.wait_dialog.destroy()
-        func = self.get_callback()
-        self.mediator.window.set_sensitive(True)
-        # TODO: spawn error dialog if API crawl failed
-        # most likely going to drop callback method
+        func = self.get_cleanup_func()
         if func is not None:
-            args = self.get_callback_args()
-            GLib.idle_add(func, *args)
-            self.set_callback(None, None)
+            func.call()
+            self.cleanup_func = None
+        self.mediator.window.set_sensitive(True)
 
     def dump_diagnostics(self) -> None:
         picker = FilePicker(self.mediator.window)
@@ -909,7 +913,8 @@ class Controller(GObject.GObject):
                 dialog = ExceptionDialog(self, str(e))
                 dialog.run()
 
-    def test_api_response(self, text: str, key: Preferences) -> None:
+    @call_on_thread(strings.dialog.working)
+    def update_api_key(self, text: str, key: Preferences) -> None:
         if key is Preferences.STEAM:
             res = test_steam_api(text)
         else:
@@ -917,17 +922,9 @@ class Controller(GObject.GObject):
 
         if res is True:
             self.update_config(key, text)
-            self.set_callback(None, None)
-            self.destroy_on_idle()
         else:
-            self.destroy_on_idle()
-            dialog = ExceptionDialog(self, strings.api_error)
-            dialog.run()
-
-    @call_on_thread(strings.dialog.working)
-    # FIXME: entire process is behind thread, including destroy_on_idle()
-    def update_api_key(self, text: str, key: Preferences) -> None:
-        self.test_api_response(text, key)
+            # FIXME: dialog spawning in thread
+            self.cleanup_func = CleanupFunc(self.emitter.emit("api_change_failed"))
 
     def set_resolution(self, window: "OuterWindow") -> None:
         if self.prefs.is_game_mode:
@@ -985,14 +982,12 @@ class Controller(GObject.GObject):
         self.push_data("", mode, success=True)
 
     # FIXME: optional label/map/keyword parameter
-    # FIXME: drop set_callback
+    # TODO: consolidate with method above
     def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
         tv = self.get_active_treeview()
         filter_man = tv.get_filter_man()
         if filter_man.get_control() is None:
             return
-        # TODO: deprecated in this context?
-        self.set_callback(None, None)
         self.filter_threaded(mode, label)
 
     def populate_model(self) -> None:
@@ -1001,18 +996,15 @@ class Controller(GObject.GObject):
             self.emitter.emit("servers_loaded", treeview.get_enum())
             return
 
-        # TODO: maybe set tree to none afterwards (swap models)
-        # treeview.set_model(None)
         func = treeview.get_query_func()
         if func is None:
             self.emitter.emit("servers_loaded", treeview.get_enum())
             treeview.set_model(None)
             return
-        # TODO:
+        # TODO: clear ephemeral model if necessary
         # manager = treeview.get_filter_man()
         # manager.clear_model()
         self.first_iteration = True
-        self.set_callback(None, None)
         self.run_query_func(func)
 
     def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
@@ -1033,9 +1025,6 @@ class Controller(GObject.GObject):
 
     def get_modlist_store(self) -> Gtk.ListStore:
         return self.model_man.get_modlist_store()
-
-    def get_mod_store(self) -> Gtk.ListStore:
-        return self.model_man.get_mod_store()
 
     def get_log_store(self) -> Gtk.ListStore:
         return self.model_man.get_log_store()

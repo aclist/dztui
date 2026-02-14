@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class EnumeratedModButton(Gtk.Button):
     def __init__(self, enum: ModButton) -> None:
-        super().__init__(margin_start=10, margin_end=10)
+        super().__init__(margin_start=10, margin_end=10, focus_on_click=False)
 
         self.enum = enum
         self.set_label(enum.dict["label"])
@@ -30,6 +30,7 @@ class ModSelectionPanel(Gtk.Box):
         self.controller = controller
         emitter = controller.get_emitter()
         emitter.connect("mod_page_toggled", self._on_mod_page_toggled)
+        emitter.connect("mods_highlighted", self._on_mods_highlighted)
 
         header = BoldLabel(mod_panel.header)
 
@@ -60,14 +61,17 @@ class ModSelectionPanel(Gtk.Box):
         for el in header, self.main_panel, self.stale_panel:
             self.pack_start(el, NO_EXPAND, FILL, NO_PADDING)
 
+    def _on_mods_highlighted(self, emitter: "Emitter") -> None:
+        self.swap_sensitive(True)
+
     def _on_mod_page_toggled(self, emitter: "Emitter", state: bool) -> None:
         self.set_visible(state)
 
-    def after_colorize(self) -> None:
-        # TODO: split into signal that touches two widgets,
-        # modtreeview and this widget
-        self.controller.unselect_all_mods()
-        self.swap_sensitive(True)
+    #def after_colorize(self) -> None:
+    #    # TODO: split into signal that touches two widgets,
+    #    # modtreeview and this widget
+    #    #self.controller.unselect_all_mods()
+    #    self.swap_sensitive(True)
 
     def swap_sensitive(self, state: bool) -> None:
         for child in self.stale_panel.get_children():
@@ -79,15 +83,12 @@ class ModSelectionPanel(Gtk.Box):
     def _on_button_clicked(self, button: EnumeratedModButton) -> None:
         match button.enum:
             case ModButton.SELECT_ALL:
-                # TODO: signals
                 self.controller.toggle_mod_selection(True)
             case ModButton.UNSELECT_ALL:
                 self.controller.toggle_mod_selection(False)
             case ModButton.DELETE_SELECTED:
                 self.controller.delete_multiple_mods()
-
             case ModButton.HIGHLIGHT_STALE:
-                self.controller.set_callback(self.after_colorize)
                 self.controller.highlight_stale()
             case ModButton.UNHIGHLIGHT_STALE:
                 self.controller.uncolorize_mods()

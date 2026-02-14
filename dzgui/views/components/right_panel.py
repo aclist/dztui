@@ -44,6 +44,7 @@ class RightPanel(Gtk.Box):
         state = self.controller.has_server_model()
         for widget in (self.refresh_button, self.filters_vbox):
             widget.set_sensitive(state)
+        # FIXME: may wish to reload these in place to show new data
         if context in (ServerTab.RECENT, ServerTab.SAVED):
             self.refresh_button.set_sensitive(False)
 

@@ -37,6 +37,7 @@ from gi.repository import Gtk, Gdk  # noqa
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
 
 
 class Options(Gtk.Box):
@@ -48,6 +49,8 @@ class Options(Gtk.Box):
         )
 
         self.controller = controller
+        emitter = controller.get_emitter()
+        emitter.connect("api_change_failed", self._on_api_change_failed)
 
         self.DEFAULT_WIDTH = 1
         self.DEFAULT_HEIGHT = 1
@@ -270,6 +273,9 @@ class Options(Gtk.Box):
         self, button: Gtk.Button, entry: Gtk.Entry, enum: Preferences
     ) -> None:
         old_text = self.controller.query_config(enum)
+        self.old_text = old_text
+        self.old_entry = entry
+
         button.set_sensitive(False)
         match enum:
             case Preferences.NAME:
@@ -277,8 +283,13 @@ class Options(Gtk.Box):
                 self.controller.update_config(enum, value)
             case Preferences.BM | Preferences.STEAM:
                 text = "".join(entry.get_text().split())
-                self.controller.set_callback(self.restore_api_text, old_text, entry)
+                # self.controller.set_callback(self.restore_api_text, old_text, entry)
                 self.controller.update_api_key(text, enum)
+
+    def _on_api_change_failed(self, emitter: "Emitter") -> None:
+        self.old_entry.set_text(self.old_text)
+        dialog = ExceptionDialog(self.controller, strings.api_error)
+        dialog.run()
 
     def restore_api_text(self, text: str, entry: Gtk.Entry) -> None:
         entry.set_text(text)
