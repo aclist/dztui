@@ -1,7 +1,7 @@
 import logging
 import multiprocessing
 import threading
-from typing import Any, Optional
+from typing import Any, Optional, Self
 from warnings import deprecated
 
 from dzgui.views.mixins.context_mixin import ContextMixin
@@ -204,7 +204,7 @@ class ServerTreeView(ContextMixin, TreeView):
     def get_enum(self) -> None:
         return self.enum
 
-    def _on_map(self, a) -> None:
+    def _on_map(self, widget: Self) -> None:
         # TODO: disable filter panel if current model is None
         if self.get_enum() is ServerTab.LAN:
             self.emitter.emit("lan_tab_toggled", True)

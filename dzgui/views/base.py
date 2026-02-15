@@ -158,8 +158,12 @@ class OuterWindow(Gtk.Window):
         MainController.open_page(NotebookPage.SERVERS)
         MainController.mediator.grid.conpan.lan.set_visible(False)
         self.grid.right_panel.sel_panel.hide()
+
         # TODO: POC, trigger page change here
         MainController.loaded = True
+
+        if MainController.get_prefs().is_developer:
+            return
         MainController.populate_model()
 
     def _on_delete_event(self, window: "OuterWindow", event: Gdk.EventKey) -> None:

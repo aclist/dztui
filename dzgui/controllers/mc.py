@@ -469,15 +469,6 @@ class Controller(GObject.GObject):
         cmd = self.query_config(Preferences.CLIENT)
         open_workshop_page(mod, cmd)
 
-    # TODO: put in model manager (dedicated manager for mod store)
-    # def get_mod_from_tree_path(
-    #    self, tree_path: Gtk.TreePath
-    # ) -> tuple[str, Gtk.TreeIter]:
-    #    model = self.model_man.get_mod_store()
-    #    tree_iter = model.get_iter(tree_path)
-    #    mod = model.get(tree_iter, 2)[0]
-    #    return mod, tree_iter
-
     def get_mod_from_tree_path(
         self, tree_path: Gtk.TreePath
     ) -> tuple[str, Gtk.TreeIter]:
