@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 # https://bugzilla.gnome.org/show_bug.cgi?id=708676
 warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 
+
 # TODO: move to controller
 # kilometer cache; note, user may change measurement it partway through, flush cache
 # cache: dict[str, int] = {}

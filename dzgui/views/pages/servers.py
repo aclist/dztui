@@ -37,8 +37,9 @@ class ServerNotebook(Gtk.ScrolledWindow):
         )
         self.lan = ServerTreeView(controller, ServerTab.LAN, ContextMenuGroup.SCAN_LAN)
 
-        self.recent.set_query_func(StoredFunc(self.controller.dump_test_2))
-        # TODO: number of servers will not be known a priori until reading file during query phase
+        # TODO: number of jobs will not be known a priori unless files are read
+        self.recent.set_query_func(StoredFunc(self.controller.dump_history))
+        self.saved.set_query_func(StoredFunc(self.controller.dump_favorites))
         self.lan.set_query_func(StoredFunc(self.controller.dump_test_2))
         self.browser.set_query_func(StoredFunc(self.controller.dump_api), jobs=11)
 

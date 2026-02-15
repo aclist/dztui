@@ -384,6 +384,57 @@ class Controller(GObject.GObject):
 
         self.open_page(button.opens)
 
+    def dump_favorites(self) -> None:
+        # TODO: if list is empty, return failure
+        ips = self.query_config(Preferences.IP_LIST)
+        if len(ips) == 0:
+            # FIXME: this is not a failure, just a quiet exit with custom statusbar
+            # TODO: add custom statusbar parameter
+            self.cleanup_func = StoredFunc(self.cleanup_on_failure, False)
+            return
+        self.dump_ips(ips)
+
+    def dump_history(self) -> None:
+        history = self.prefs.paths.history
+        # TODO: customize statusbar to mention how records are added
+        try:
+            with open(history, "r") as f:
+                rows = [row.rstrip("\n") for row in f]
+        except OSError:
+            self.cleanup_func = StoredFunc(self.cleanup_on_failure, False)
+            return
+        if len(rows) == 0:
+            self.cleanup_func = StoredFunc(self.cleanup_on_failure, False)
+            return
+        self.dump_ips(rows)
+
+    def dump_ips(self, ips: list) -> None:
+        # NOTE: block malformed records (TODO: add github issue no.)
+        ips = [ip for ip in ips if len(ip.split(":")) == 3 and ip.split(":")[2] != "" ]
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(
+                    Servers.query_direct,
+                    ip.split(":")[0],
+                    int(ip.split(":")[2]),
+                )
+                for ip in ips
+            ]
+            # TODO: update dialog in main loop
+            #wait(futures)
+            serv = []
+            for future in as_completed(futures):
+                res = future.result()
+                # NOTE: discard failing entries
+                if res is None:
+                    continue
+                serv.append(res)
+                if len(serv) == 0:
+                    self.cleanup_func = StoredFunc(self.cleanup_on_failure)
+                    return
+            parsed = Servers.parse_json(serv)
+        self.push_data_success(parsed, FilterMode.INITIAL)
+
     def dump_api(self) -> None:
         key = self.query_config(Preferences.STEAM)
         job = Servers.query_api
@@ -405,6 +456,7 @@ class Controller(GObject.GObject):
                 except Exception as e:
                     logger.critical(e)
                     self.cleanup_func = StoredFunc(self.cleanup_on_failure)
+                    return
 
         # NOTE: This step is allowed to fail, since this metadata is incidental
         res = Servers.query_api(key, APPID_DAYZ_EXP, "")
@@ -693,7 +745,7 @@ class Controller(GObject.GObject):
 
         treeview.grab_focus()
 
-    def cleanup_on_failure(self) -> None:
+    def cleanup_on_failure(self, show_dialog=True) -> None:
         treeview = self.get_active_treeview()
         treeview.set_loaded(True)
         map_man = treeview.get_map_man()
@@ -713,11 +765,12 @@ class Controller(GObject.GObject):
         map_man.set_unique_maps(None)
         context = self.get_active_context()
 
-        # TODO: distinguish signals, e.g. "servers_failed_to_load"
-        # may trigger different behavior
+        # TODO: distinguish signals, e.g. "servers_failed_to_load", "servers_loaded_empty"
+        # customize statusbar accordingly
         self.emitter.emit("servers_loaded", context)
-        dialog = ExceptionDialog(self, strings.api_warn_msg)
-        dialog.run()
+        if show_dialog:
+            dialog = ExceptionDialog(self, strings.api_warn_msg)
+            dialog.run()
 
     def push_data_success(self, data: tuple, mode: Optional[FilterMode]) -> None:
         # FIXME: set outside of thread

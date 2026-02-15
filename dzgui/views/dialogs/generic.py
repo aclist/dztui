@@ -54,8 +54,8 @@ class GenericDialog(Gtk.MessageDialog):
         self.set_default_response(Gtk.ResponseType.OK)
         self.connect("response", self._on_response)
 
-        self.action_area.set_layout(Gtk.ButtonBoxStyle.CENTER)
-        self.action_area.set_margin_bottom(20)
+        self.get_action_area().set_layout(Gtk.ButtonBoxStyle.CENTER)
+        self.get_action_area().set_margin_bottom(20)
         self.outer = self.get_content_area()
         self.outer.set_margin_start(30)
         self.outer.set_margin_end(30)

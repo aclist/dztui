@@ -4,6 +4,7 @@ import threading
 from typing import Any, Optional, Self
 from warnings import deprecated
 
+
 from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.const.enum import ContextMenuGroup, ServerTab
 from dzgui.api.servers import Record
