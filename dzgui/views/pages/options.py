@@ -60,8 +60,8 @@ class Options(Gtk.Box):
         css.add_class(label, "page-heading")
         self.add(label)
 
-        self.steam_entry = None
-        self.bm_entry = None
+        self.steam_entry: Gtk.Entry = None
+        self.bm_entry: Gtk.Entry = None
 
         self.steam = WebButton(label=strings.options.steam_web)
         self.steam.connect("clicked", self._on_link_button_clicked, STEAM_API_SETUP)

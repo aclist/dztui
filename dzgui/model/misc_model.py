@@ -48,7 +48,7 @@ class ModelManager:
         self.map_store = ListStore(str)
         self.help_store = self.new_model_from_class(MenuCols)
         self.log_store = self.new_model_from_class(LogCols)
-        # FIXME: needs to be generated on demand
+        # FIXME: needs to be generated on demand for servers
         self.modlist_store = self.new_model_from_class(ServerModCols)
 
         for row in HELP_MENU_ROWS:

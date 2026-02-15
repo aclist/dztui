@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
 
-class Log(CursorMixin, HelpMenuMixin, Gtk.ScrolledWindow):
+class Log(CursorMixin, HelpMenuMixin, Gtk.ScrolledWindow):  # type: ignore
     def __init__(self, controller: "Controller") -> None:
         super().__init__()
         self.treeview = LogTreeView(controller)
@@ -26,6 +26,6 @@ class Log(CursorMixin, HelpMenuMixin, Gtk.ScrolledWindow):
 
     def get_treeview(self) -> LogTreeView:
         return self.treeview
-    
+
     def grab_content_area(self) -> None:
         self.treeview.grab_focus()

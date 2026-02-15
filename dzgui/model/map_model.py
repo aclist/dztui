@@ -16,7 +16,7 @@ class MapManager:
         self.prior_map: str
         self.selected_map = all_maps
 
-        # TODO: namespace
+        # TODO: namespace under strings.filters
         self.default_filters = {
             strings.filter_1pp: True,
             strings.filter_day: True,

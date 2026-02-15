@@ -1,5 +1,6 @@
 import datetime
 import re
+
 from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
 from warnings import deprecated
@@ -115,6 +116,7 @@ class FilteredModelManager:
             case FilterMode.TOGGLE_ON:
                 rows = self.filter_toggle_on(filters, *args)
 
+        # TODO: unimplemented
         # if mode is not FilterMode.INITIAL:
         #    for row in rows:
         #        if row[7] in self.ping_cache:
@@ -126,10 +128,6 @@ class FilteredModelManager:
             rows = self.sort_rows(rows)
             for row in rows:
                 clone.append(row)
-
-        # else:
-        #    print("nothing to filter, sending none")
-        #    clone = None
 
         self.set_cache(filters, clone, rows)
         self.set_model(clone)
@@ -206,13 +204,12 @@ class FilteredModelManager:
             case strings.filter_full:
                 rows = [row for row in rows if row[4] != row[5]]
             case strings.filter_duplicate:
-                seen = []
+                seen = set()
                 final = []
                 for row in rows:
-                    if row[0] in seen:
-                        continue
-                    seen.append(row[0])
-                    final.append(row)
+                    if row[0] not in seen:
+                        seen.add(row[0])
+                        final.append(row)
                 rows = final
             case strings.filter_day:
                 reg = r"([0][0-9]|[1][0-6])"

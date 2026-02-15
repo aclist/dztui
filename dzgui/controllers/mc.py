@@ -3,14 +3,13 @@ import logging
 import shutil
 import threading
 import traceback
-from typing import Optional
-from warnings import deprecated
 
 from concurrent.futures import wait, as_completed
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, Callable, Optional, TYPE_CHECKING
+from warnings import deprecated
 
 import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers
@@ -46,14 +45,14 @@ from dzgui.config.userprefs import UserPrefs
 from dzgui.controllers.emitter import Emitter
 from dzgui.model.misc_model import ModelManager
 from dzgui.util import strings
-from dzgui.util.diag import write_diagnostic
 from dzgui.util._json import read_json, write_json
+from dzgui.util.diag import write_diagnostic
+from dzgui.util.format import format_mods, format_player_count
 from dzgui.util.localize import number
 from dzgui.util.open_links import open_workshop_page, open_user_workshop
-from dzgui.util.format import format_mods, format_player_count
 from dzgui.util.redact import redact_log
-from dzgui.views.dialogs.generic import ExceptionDialog, WaitDialog
 from dzgui.views.dialogs.filepicker import FilePicker
+from dzgui.views.dialogs.generic import ExceptionDialog, WaitDialog
 
 import gi
 
@@ -63,8 +62,8 @@ from gi.repository import Gtk, Gdk, GLib, GObject  # noqa E402
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from dzgui.model.map_model import MapManager
     from dzgui.const.enum import ServerTab
+    from dzgui.model.map_model import MapManager
     from dzgui.util.dist import Haversine
     from dzgui.views.base import Notebook, Grid, OuterWindow
     from dzgui.views.components.buttonbox import ContextualButton
@@ -511,7 +510,7 @@ class Controller(GObject.GObject):
     def get_mod_store(self) -> Gtk.ListStore:
         return self.mediator.modtreeview.get_model()
 
-    def format_mod_statusbar(self) -> None:
+    def format_mod_statusbar(self) -> str:
         total_mods, total_size = self.calc_mod_size()
         msg = format_mods(total_size, total_mods)
         return msg
@@ -534,7 +533,8 @@ class Controller(GObject.GObject):
         try:
             self.update_config(Preferences.FAV_LBL, name)
             self.update_config(Preferences.FAV_SRV, record)
-        except Exception:
+        except Exception as e:
+            logger.critical(e)
             # TODO: add a failure dialog here
             return
 
@@ -642,9 +642,6 @@ class Controller(GObject.GObject):
         self.mediator.modtreeview.set_cursor(0)
 
     def dump_test_2(self) -> None:
-        import time
-
-        time.sleep(1)
         data = (
             [
                 "BAR",
@@ -660,146 +657,6 @@ class Controller(GObject.GObject):
                 "a",
                 False,
             ],
-            [
-                "BAR",
-                "chernarusplus",
-                "a",
-                "a",
-                1,
-                1,
-                1,
-                "172.111.51.156:2302",
-                1,
-                1,
-                "a",
-                False,
-            ],
-            [
-                "BAR",
-                "chernarusplus",
-                "a",
-                "a",
-                1,
-                1,
-                1,
-                "185.207.214.16:2302",
-                1,
-                1,
-                "a",
-                False,
-            ],
-            [
-                "BAR",
-                "chernarusplus",
-                "a",
-                "a",
-                1,
-                1,
-                1,
-                "185.207.214.16:2302",
-                1,
-                1,
-                "a",
-                False,
-            ],
-            [
-                "BAR",
-                "chernarusplus",
-                "a",
-                "a",
-                1,
-                1,
-                1,
-                "185.207.214.16:2302",
-                0,
-                0,
-                "a",
-                False,
-            ],
-            [
-                "BAR",
-                "chernarusplus",
-                "a",
-                "a",
-                1,
-                1,
-                1,
-                "185.207.214.16:2302",
-                0,
-                0,
-                "a",
-                False,
-            ],
-            [
-                "BAR",
-                "chernarusplus",
-                "a",
-                "a",
-                1,
-                1,
-                1,
-                "185.207.214.16:2302",
-                0,
-                0,
-                "a",
-                False,
-            ],
-            [
-                "BAR",
-                "chernarusplus",
-                "a",
-                "a",
-                1,
-                1,
-                1,
-                "185.207.214.16:2302",
-                0,
-                0,
-                "a",
-                False,
-            ],
-            [
-                "BAR",
-                "chernarusplus",
-                "a",
-                "a",
-                1,
-                1,
-                1,
-                "185.207.214.16:2302",
-                0,
-                0,
-                "a",
-                False,
-            ],
-            [
-                "BAR",
-                "chernarusplus",
-                "a",
-                "a",
-                1,
-                1,
-                1,
-                "185.207.214.16:2302",
-                0,
-                0,
-                "a",
-                False,
-            ],
-            [
-                "BAR",
-                "chernarusplus",
-                "a",
-                "a",
-                1,
-                1,
-                1,
-                "185.207.214.16:2302",
-                0,
-                0,
-                "a",
-                False,
-            ],
         )
         self.push_data_success(data, FilterMode.INITIAL)
 
@@ -812,6 +669,11 @@ class Controller(GObject.GObject):
         treeview.set_loaded(True)
 
         treeview.set_model(self.to_insert)
+        # TODO: this will allow history and saved tab to emit signals to statusbar
+        # CHORE: test if treeview's sort method inserts row at the correct index
+        # inserting a row serializes file on disk, updates control model for that tab, and
+        # reapplies filters to ephemeral model; since filters are applied, in-situ insertion might not be necessary
+        self.to_insert.connect("row-inserted", lambda: print("row inserted into model"))
         map_man = treeview.get_map_man()
 
         # TODO: signals or other approach to deferring map
@@ -861,8 +723,6 @@ class Controller(GObject.GObject):
         # FIXME: set outside of thread
         treeview = self.get_active_treeview()
         manager = treeview.get_filter_man()
-
-        self.to_insert = None
 
         if data is None:
             self.to_insert = None
@@ -991,7 +851,7 @@ class Controller(GObject.GObject):
     # TODO: call filter_man methods directly
     def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
         tv = self.get_active_treeview()
-        #tv.freeze_child_notify()
+        # tv.freeze_child_notify()
         filter_man = tv.get_filter_man()
         if filter_man.get_control() is None:
             return
@@ -1013,7 +873,7 @@ class Controller(GObject.GObject):
         # TODO: clear ephemeral model if necessary
         # manager = treeview.get_filter_man()
         # manager.clear_model()
-        #treeview.fancy_col.set_cell_data_func(treeview.fancy_rend, None)
+        # treeview.fancy_col.set_cell_data_func(treeview.fancy_rend, None)
 
         self.first_iteration = True
         self.pending_jobs = jobs
