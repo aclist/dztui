@@ -162,7 +162,7 @@ class OuterWindow(Gtk.Window):
         # TODO: POC, trigger page change here
         MainController.loaded = True
 
-        if MainController.get_prefs().is_developer:
+        if MainController.get_prefs().is_debug:
             return
         MainController.populate_model()
 

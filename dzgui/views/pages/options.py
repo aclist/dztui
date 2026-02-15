@@ -55,7 +55,6 @@ class Options(Gtk.Box):
         self.DEFAULT_WIDTH = 1
         self.DEFAULT_HEIGHT = 1
 
-        # TODO: strings
         label = Gtk.Label(label=strings.options.header)
         label.set_halign(Gtk.Align.CENTER)
         css.add_class(label, "page-heading")
@@ -176,8 +175,7 @@ class Options(Gtk.Box):
         developers.connect("clicked", self._on_developers_clicked)
 
         prefs = self.controller.get_prefs()
-        is_developer = prefs.is_developer
-        if is_developer:
+        if prefs.is_debug:
             grid.attach(developers, 1, 0, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
 
         for frame in [

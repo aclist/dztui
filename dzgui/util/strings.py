@@ -467,14 +467,14 @@ class Flags:
     description: str
     version: str
     uninstall: str
-    developers: str
+    debug: str
 
 
 flags = Flags(
     description="DayZ server browser and mod manager",
     version="Print version information",
     uninstall="Uninstall data files (use prior to 'pip uninstall')",
-    developers="Enables developer debugging features",
+    debug="Enables developer debugging features",
 )
 
 

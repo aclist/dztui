@@ -41,7 +41,7 @@ parser = argparse.ArgumentParser(description=flags.description)
 
 parser.add_argument("-v", "--version", action="store_true", help=flags.version)
 parser.add_argument("-u", "--uninstall", action="store_true", help=flags.uninstall)
-parser.add_argument("-d", "--developers", action="store_true", help=flags.developers)
+parser.add_argument("-d", "--debug", action="store_true", help=flags.debug)
 args = parser.parse_args()
 
 if TYPE_CHECKING:
@@ -73,7 +73,7 @@ def main() -> None:
         uninstall()
         sys.exit(0)
 
-    if args.developers is True:
+    if args.debug is True:
         warnings.filterwarnings("default", category=DeprecationWarning)
     version = get_version()
     set_locale()
@@ -133,7 +133,7 @@ def main() -> None:
     prefs = UserPrefs(
         _is_steam_deck,
         _is_game_mode,
-        args.developers,
+        args.debug,
         local_coords,
         version,
         allow,
