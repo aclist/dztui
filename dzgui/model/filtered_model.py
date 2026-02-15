@@ -122,12 +122,14 @@ class FilteredModelManager:
         #        if row[7] in self.ping_cache:
         #            row[9] = self.ping_cache[row[7]]
 
+        # NOTE: this ListStore manipulation must remain local to the thread
         clone = self.new_model_from_class(ServerColumns)
+        n_cols = clone.get_n_columns()
         if len(rows) > 0:
-            # TODO: considering exposing an option to not sort rows
             rows = self.sort_rows(rows)
-            for row in rows:
-                clone.append(row)
+            for i, row in enumerate(rows):
+                clone.insert_with_values(i, tuple(range(0, n_cols)), row)
+                #clone.append(row)
 
         self.set_cache(filters, clone, rows)
         self.set_model(clone)
