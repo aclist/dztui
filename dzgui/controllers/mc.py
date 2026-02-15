@@ -94,7 +94,7 @@ class AppNavigation:
     filters: "FilterPanel"
 
 
-class CleanupFunc:
+class StoredFunc:
     def __init__(self, func: Callable, *args, **kwargs) -> None:
         sig = inspect.signature(func)
         self.func = func
@@ -109,7 +109,7 @@ class Controller(GObject.GObject):
         self.dist_cache: dict[str, "Haversine", "ServerTab"] = {}
         self.mediator = AppNavigation()
         self.prefs: UserPrefs
-        self.cleanup_func: CleanupFunc = None
+        self.cleanup_func: StoredFunc = None
 
         self.model_man = ModelManager()
         self.emitter = Emitter()
@@ -325,7 +325,7 @@ class Controller(GObject.GObject):
             mod.append(None)
             model.append(mod)
 
-        self.cleanup_func = CleanupFunc(self.load_mods_cleanup, model)
+        self.cleanup_func = StoredFunc(self.load_mods_cleanup, model)
 
     def toggle_config(self, context: Preferences) -> None:
         config = self.prefs.paths.config
@@ -399,13 +399,13 @@ class Controller(GObject.GObject):
                     GLib.idle_add(lambda: self.wait_dialog.increment())
                     res = future.result(timeout=3)
                     if res.status != 200 or not res.parsed:
-                        self.cleanup_func = CleanupFunc(self.cleanup_on_failure)
+                        self.cleanup_func = StoredFunc(self.cleanup_on_failure)
                         return
                     j = res.json
                     serv += j["response"]["servers"]
                 except Exception as e:
                     logger.critical(e)
-                    self.cleanup_func = CleanupFunc(self.cleanup_on_failure)
+                    self.cleanup_func = StoredFunc(self.cleanup_on_failure)
 
         # NOTE: This step is allowed to fail, since this metadata is incidental
         res = Servers.query_api(key, APPID_DAYZ_EXP, "")
@@ -506,7 +506,7 @@ class Controller(GObject.GObject):
         except PeFile.AppNotInstalledError:
             pass
 
-        self.cleanup_func = CleanupFunc(self.delete_single_mod_cleanup, _iter)
+        self.cleanup_func = StoredFunc(self.delete_single_mod_cleanup, _iter)
 
     def get_mod_store(self) -> Gtk.ListStore:
         return self.mediator.modtreeview.get_model()
@@ -877,7 +877,7 @@ class Controller(GObject.GObject):
             self.new_maps = sorted(u_maps)
 
         treeview.set_loaded(True)
-        self.cleanup_func = CleanupFunc(self.cleanup_on_success)
+        self.cleanup_func = StoredFunc(self.cleanup_on_success)
 
     def highlight_stale_cleanup(self, stale_mods: list) -> None:
         """Manipulates attached ListStore in the main event loop"""
@@ -893,9 +893,9 @@ class Controller(GObject.GObject):
     def highlight_stale(self) -> None:
         # TODO: set progress bar for number of mods
         stale = find_stale_mods(self.prefs.paths.config)
-        self.cleanup_func = CleanupFunc(self.highlight_stale_cleanup, stale)
+        self.cleanup_func = StoredFunc(self.highlight_stale_cleanup, stale)
 
-    def get_cleanup_func(self) -> CleanupFunc:
+    def get_cleanup_func(self) -> StoredFunc:
         return self.cleanup_func
 
     def _destroy_on_idle(self) -> None:
@@ -926,7 +926,7 @@ class Controller(GObject.GObject):
         if res is True:
             self.update_config(key, text)
         else:
-            self.cleanup_func = CleanupFunc(
+            self.cleanup_func = StoredFunc(
                 lambda: self.emitter.emit("api_change_failed")
             )
 
@@ -975,9 +975,8 @@ class Controller(GObject.GObject):
         return self.mediator.statusbar
 
     @call_on_thread(strings.dialog.fetching)
-    def run_query_func(self, func: Callable) -> None:
-        # TODO: use CleanupFunc -> StoredFunc
-        func()
+    def run_query_func(self, func: StoredFunc) -> None:
+        func.call()
 
     @call_on_thread(strings.dialog.filtering)
     def filter_threaded(self, mode: FilterMode, label: str) -> None:

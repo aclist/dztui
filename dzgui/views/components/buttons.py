@@ -95,11 +95,13 @@ class RefreshButton(IconTextButton):
         self.connect("clicked", self._on_refresh_clicked)
 
     def _on_refresh_clicked(self, button: Self) -> None:
-        # TODO: get page enum
-        print(self.controller.mediator.notebook.get_page_by_enum())
-        # if .MODS, .LOG, .OPTIONS, reload in place
+        # TODO: get server tab enum
+        # if LAN tab, reload existing entries in place
         self.set_sensitive(False)
         self.show_time(True)
+        # FIXME: do this after threaded call fully finishes
+        # FIXME: other signals cause refresh button to become sensitive
+        # after model is loaded
         GLib.timeout_add_seconds(1, self.decrement)
         self.controller.refresh_tree()
 

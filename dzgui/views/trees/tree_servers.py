@@ -27,7 +27,7 @@ from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from dzgui.controllers.mc import Controller
+    from dzgui.controllers.mc import Controller, StoredFunc
     from dzgui.controllers.emitter import Emitter
 
 QUEUE_CHECK_DELAY = 200
@@ -100,14 +100,14 @@ class ServerTreeView(ContextMixin, TreeView):
             else:
                 w = width_map[column_title]
                 column.set_fixed_width(w)
-            #if column_title == "Ping":
-                #self.fancy_col = column
-                #self.fancy_rend = renderer
-                #column.set_cell_data_func(renderer, self._get_ping)
-                # if column_title == "Name":
-                #    column.set_fixed_width(800)
-                # if column_title == "Map":
-                #    column.set_fixed_width(300)
+            # if column_title == "Ping":
+            # self.fancy_col = column
+            # self.fancy_rend = renderer
+            # column.set_cell_data_func(renderer, self._get_ping)
+            # if column_title == "Name":
+            #    column.set_fixed_width(800)
+            # if column_title == "Map":
+            #    column.set_fixed_width(300)
 
             # TODO: standardize widths based on column title and longest content
             # if column_title == "Name":
@@ -129,15 +129,15 @@ class ServerTreeView(ContextMixin, TreeView):
         self.connect("unmap", self._on_unmap)
 
     def _get_ping(
-       self,
-       column: Gtk.TreeViewColumn,
-       cell: Gtk.CellRendererText,
-       model: Gtk.TreeModel,
-       it: Gtk.TreeIter,
-       data: Any,
+        self,
+        column: Gtk.TreeViewColumn,
+        cell: Gtk.CellRendererText,
+        model: Gtk.TreeModel,
+        it: Gtk.TreeIter,
+        data: Any,
     ):
         def ping_server(model, _iter, ip: str, qport: int, ping: int):
-            #res = Ping(0, model[_iter])
+            # res = Ping(0, model[_iter])
             res = Ping(0, ip, qport, ping)
             ping = res.ping
             print(res)
@@ -160,13 +160,7 @@ class ServerTreeView(ContextMixin, TreeView):
         thread = threading.Thread(
             daemon=True,
             target=ping_server,
-            args=(
-                model,
-                it,
-                ip,
-                qport,
-                ping
-            ),
+            args=(model, it, ip, qport, ping),
         )
         thread.start()
 
@@ -223,11 +217,12 @@ class ServerTreeView(ContextMixin, TreeView):
         if self.get_enum() is ServerTab.LAN:
             self.emitter.emit("lan_tab_toggled", False)
 
-    def set_query_func(self, func: Callable, jobs: int = 1) -> None:
+    def set_query_func(self, func: "StoredFunc", jobs: int = 1) -> None:
         self.query_func = func
         self.query_func_jobs = jobs
 
-    def get_query_func(self) -> Callable | None:
+    # TODO: possibly split this up
+    def get_query_func(self) -> tuple["StoredFunc", int]:
         return self.query_func, self.query_func_jobs
 
     def _on_col_width_changed(

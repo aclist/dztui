@@ -2,6 +2,7 @@ import logging
 
 from typing import Self, TYPE_CHECKING
 
+from dzgui.controllers.mc import StoredFunc
 from dzgui.const.enum import ContextMenuGroup, ServerTab
 from dzgui.views.trees.tree_servers import ServerTreeView
 from dzgui.util.strings import server_labels
@@ -36,10 +37,10 @@ class ServerNotebook(Gtk.ScrolledWindow):
         )
         self.lan = ServerTreeView(controller, ServerTab.LAN, ContextMenuGroup.SCAN_LAN)
 
-        self.recent.set_query_func(self.controller.dump_test_2)
+        self.recent.set_query_func(StoredFunc(self.controller.dump_test_2))
         # TODO: number of servers will not be known a priori until reading file during query phase
-        self.lan.set_query_func(self.controller.dump_test_2)
-        self.browser.set_query_func(self.controller.dump_api, jobs=11)
+        self.lan.set_query_func(StoredFunc(self.controller.dump_test_2))
+        self.browser.set_query_func(StoredFunc(self.controller.dump_api), jobs=11)
 
         tabs = [
             (self.browser, server_labels.browser),
