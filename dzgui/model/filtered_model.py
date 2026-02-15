@@ -1,6 +1,7 @@
+import datetime
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 from warnings import deprecated
 
 from dzgui.const.enum import FilterMode
@@ -114,16 +115,18 @@ class FilteredModelManager:
             case FilterMode.TOGGLE_ON:
                 rows = self.filter_toggle_on(filters, *args)
 
-        if mode is not FilterMode.INITIAL:
-            for row in rows:
-                if row[7] in self.ping_cache:
-                    row[9] = self.ping_cache[row[7]]
+        # if mode is not FilterMode.INITIAL:
+        #    for row in rows:
+        #        if row[7] in self.ping_cache:
+        #            row[9] = self.ping_cache[row[7]]
 
         clone = self.new_model_from_class(ServerColumns)
         if len(rows) > 0:
+            # TODO: considering exposing an option to not sort rows
             rows = self.sort_rows(rows)
             for row in rows:
                 clone.append(row)
+
         # else:
         #    print("nothing to filter, sending none")
         #    clone = None
@@ -256,7 +259,7 @@ class FilteredModelManager:
     def convert_model_to_list(self, model: ListStore) -> list:
         return [[el for el in row] for row in model]
 
-    def set_filtered(self, rows: list | None) -> None:
+    def set_filtered(self, rows: Optional[list]) -> None:
         if rows is None:
             rows = []
         self.filtered = rows

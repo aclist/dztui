@@ -31,11 +31,18 @@ class MapManager:
             strings.filter_unofficial: True,
             strings.filter_modded: True,
         }
+        self.active_map = 0
         self.filters: list
         self.enabled_filters = dict(self.default_filters)
 
     def reinit_filters(self) -> None:
         self.enabled_filters = dict(self.default_filters)
+
+    def get_active_map(self) -> int:
+        return self.active_map
+
+    def set_active_map(self, ind: int) -> None:
+        self.active_map = ind
 
     def get_default_filters(self) -> dict:
         """Deep copy of defaults"""

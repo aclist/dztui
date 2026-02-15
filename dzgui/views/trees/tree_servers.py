@@ -7,11 +7,13 @@ from warnings import deprecated
 from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.const.enum import ContextMenuGroup, ServerTab
 from dzgui.api.servers import Record
+from dzgui.api.servers import ping as Ping
 from dzgui.model.map_model import MapManager
 from dzgui.model.filtered_model import FilteredModelManager
 from dzgui.util.dist import CalcDist
 from dzgui.util import strings
 from typing import Callable, Literal, TYPE_CHECKING
+
 
 from dzgui.views.trees.tree_base import TreeView
 import dzgui.util._json as JSON  # noqa
@@ -56,6 +58,9 @@ class ServerTreeView(ContextMixin, TreeView):
 
         self.queue_id: int
         self.handler_id: int
+        self.query_func_jobs = 1
+
+        self.seen_cache = []
 
         self.current_proc = None
         self.queue = multiprocessing.Queue()
@@ -95,17 +100,21 @@ class ServerTreeView(ContextMixin, TreeView):
             else:
                 w = width_map[column_title]
                 column.set_fixed_width(w)
-                #if column_title == "Name":
+            #if column_title == "Ping":
+                #self.fancy_col = column
+                #self.fancy_rend = renderer
+                #column.set_cell_data_func(renderer, self._get_ping)
+                # if column_title == "Name":
                 #    column.set_fixed_width(800)
-                #if column_title == "Map":
+                # if column_title == "Map":
                 #    column.set_fixed_width(300)
 
             # TODO: standardize widths based on column title and longest content
-            #if column_title == "Name":
+            # if column_title == "Name":
             #    column.set_fixed_width(500)
-            #if column_title == "Map":
+            # if column_title == "Map":
             #    column.set_fixed_width(200)
-            #if column_title == "IP":
+            # if column_title == "IP":
             #    column.set_fixed_width(240)
 
             column.connect("notify::fixed-width", self._on_col_width_changed)
@@ -119,55 +128,47 @@ class ServerTreeView(ContextMixin, TreeView):
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
 
-        self.emitter.connect("servers_loaded_init", self._on_servers_loaded_init)
-        self.emitter.connect("servers_loaded", self._on_servers_loaded)
+    def _get_ping(
+       self,
+       column: Gtk.TreeViewColumn,
+       cell: Gtk.CellRendererText,
+       model: Gtk.TreeModel,
+       it: Gtk.TreeIter,
+       data: Any,
+    ):
+        def ping_server(model, _iter, ip: str, qport: int, ping: int):
+            #res = Ping(0, model[_iter])
+            res = Ping(0, ip, qport, ping)
+            ping = res.ping
+            print(res)
+            GLib.idle_add(lambda: model.set(_iter, ping_column, ping))
 
-    def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
-        # FIXME: gets called on every tab, should be localized only to that context
-        # hook signal from main controller
-        state = self.controller.has_server_model()
-        # NOTE: workaround for GTK bug where fullscreen causes headers to vanish when model is None
-        self.set_headers_visible(state)
-        self.set_headers_clickable(state)
+        addr_column = 7
+        qport_column = 8
+        ping_column = 9
+        # TODO: unpack model before entering thread
+        # test 40k servers with unpacked model
+        addr = model.get_value(it, addr_column).split(":")[0]
+        qport = model.get_value(it, qport_column)
+        ping = model.get_value(it, ping_column)
+        ip = f"{addr}:{qport}"
 
-    def _on_servers_loaded_init(self, emitter: "Emitter") -> None:
-        if self.loaded is False:
+        if ip in self.seen_cache:
             return
-        store = self.map_man.get_map_store()
-        self.emitter.emit("load_maps", store)
+        self.seen_cache.append(ip)
 
-    #def _get_ping(
-    #    self,
-    #    column: Gtk.TreeViewColumn,
-    #    cell: Gtk.CellRendererText,
-    #    model: Gtk.TreeModel,
-    #    it: Gtk.TreeIter,
-    #    data: Any,
-    #):
-    #    def ping(model, it, ip: str):
-    #        # TODO: use a2s to ping server
-    #        # a2s.info -> "ping" key
-    #        # Servers.ping() -> this accepts a whole row
-    #        # try, if failure just abort
-    #        self.res = ip.replace(":", "%")
-    #        num = 11111
-    #        GLib.idle_add(lambda: model.set(it, 9, num))
-
-    #    addr = model.get_value(it, 7).split(":")[0]
-    #    qport = model.get_value(it, 8)
-    #    ip = f"{addr}:{qport}"
-
-    #    thread = threading.Thread(
-    #        daemon=True,
-    #        target=ping,
-    #        args=(
-    #            model,
-    #            it,
-    #            ip,
-    #        ),
-    #    )
-    #    thread.start()
-    #    pass
+        thread = threading.Thread(
+            daemon=True,
+            target=ping_server,
+            args=(
+                model,
+                it,
+                ip,
+                qport,
+                ping
+            ),
+        )
+        thread.start()
 
     def start_timeout(self) -> None:
         self.queue_id = GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
@@ -178,7 +179,7 @@ class ServerTreeView(ContextMixin, TreeView):
     def get_filter_man(self) -> FilteredModelManager:
         return self.filter_man
 
-    #def shrink_to_fit(self) -> None:
+    # def shrink_to_fit(self) -> None:
     #    cols = self.get_columns()
     #    # TODO: run on only one treeview and propagate results
     #    # TODO: does not shrink name, map, ip fields to fit
@@ -208,8 +209,8 @@ class ServerTreeView(ContextMixin, TreeView):
         if self.get_enum() is ServerTab.LAN:
             self.emitter.emit("lan_tab_toggled", True)
 
-        # FIXME: only if the tab is active
         store = self.map_man.get_map_store()
+        # FIXME: if model is none, wipe maps
         self.emitter.emit("load_maps", store)
         self.handler_id = self.emitter.connect("statusbar_loaded", self.start_distcalc)
         self.start_timeout()
@@ -222,11 +223,12 @@ class ServerTreeView(ContextMixin, TreeView):
         if self.get_enum() is ServerTab.LAN:
             self.emitter.emit("lan_tab_toggled", False)
 
-    def set_query_func(self, func: Callable) -> None:
+    def set_query_func(self, func: Callable, jobs: int = 1) -> None:
         self.query_func = func
+        self.query_func_jobs = jobs
 
     def get_query_func(self) -> Callable | None:
-        return self.query_func
+        return self.query_func, self.query_func_jobs
 
     def _on_col_width_changed(
         self, col: Gtk.TreeViewColumn, width: GObject.ParamSpecInt

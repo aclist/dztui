@@ -361,14 +361,14 @@ def details(ip: str, qport: int) -> Details:
     return Details(rows, description, True)
 
 
-def ping(iteration: int, row: list) -> Ping:
-    addr = row[7]
-    qport = row[8]
+def ping(iteration: int, addr: list, qport: int, ping: int) -> Ping:
+    # addr = row[7]
+    # qport = row[8]
 
     res = None
 
-    if row[9] != 9999:
-        return Ping(addr, iteration, row[9])
+    if ping != 9999:
+        return Ping(addr, iteration, ping)
 
     try:
         ip = addr.split(":")[0]

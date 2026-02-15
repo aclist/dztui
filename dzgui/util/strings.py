@@ -99,10 +99,8 @@ steam_missing = "Local Steam installation is not set, possibly malformed config 
 build_corrupted = (
     "Steam settings or DayZ installation may be corrupted. Try restarting Steam."
 )
-api_warn_msg = """No servers returned. Possible causes:
-no servers in favorites/history, local network issue, or API key on cooldown.
-Return to the main menu, wait 30s, and try again.
-If this issue persists, your API key may be defunct.
+api_warn_msg = """No servers returned. Please wait and try again.
+If this issue persists, your API key may be defunct or your network is blocking requests.
 """
 server_timeout = "Timed out when querying server, check IP or try again later"
 server_error = (
@@ -167,7 +165,7 @@ ping_tooltip = (
 )
 
 # statusbar_helptext = "Select a row to see its detailed description"
-#statusbar_helptext = "No server metadata to list."
+# statusbar_helptext = "No server metadata to list."
 
 # use e.g. filters.1pp
 filter_1pp = "1PP"

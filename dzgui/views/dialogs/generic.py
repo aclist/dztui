@@ -101,9 +101,7 @@ class NotifyDialog(GenericDialog):
 
 
 class WaitDialog(GenericDialog):
-    def __init__(
-        self, controller: "Controller", secondary: str, show_progress: bool = False
-    ):
+    def __init__(self, controller: "Controller", secondary: str, jobs: int = 1):
         super().__init__(
             controller=controller,
             text=strings.wait,
@@ -112,15 +110,25 @@ class WaitDialog(GenericDialog):
             secondary=secondary,
         )
 
+        self.jobs = jobs
+        self.cur_job = 1
+
         self.connect("delete-event", self._on_dialog_delete)
         content = self.get_content_area()
         spinner = Gtk.Spinner()
         self.prog = Gtk.ProgressBar()
         content.pack_end(spinner, NO_EXPAND, NO_FILL, 0)
-        if show_progress:
+        if self.jobs > 1:
             content.pack_end(self.prog, NO_EXPAND, NO_FILL, 0)
         else:
             spinner.start()
+
+    def increment(self, msg: str = "") -> None:
+        if msg != "":
+            self.format_secondary_text(msg)
+        fraction = self.cur_job / self.jobs
+        self.prog.set_fraction(fraction)
+        self.cur_job += 1
 
     def _on_dialog_delete(
         self, response_id: Gtk.ResponseType, event: Gdk.Event

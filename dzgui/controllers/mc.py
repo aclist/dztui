@@ -115,9 +115,12 @@ class Controller(GObject.GObject):
         self.emitter = Emitter()
         self.emitter.connect("map_selection_changed", self._on_map_selection_changed)
         self.emitter.connect("check_toggled", self._on_check_toggled)
+        self.emitter.connect("servers_loaded", self._on_servers_loaded)
+        self.emitter.connect("servers_loaded_init", self._on_servers_loaded_init)
 
         # NOTE: suppress requests until entire UI is loaded
         self.loaded = False
+        self.pending_jobs = 1
 
     def get_emitter(self) -> Emitter:
         return self.emitter
@@ -131,7 +134,7 @@ class Controller(GObject.GObject):
                     GLib.idle_add(self._destroy_on_idle)
 
                 self = args[0]
-                self.wait_dialog = WaitDialog(self, dialog_str, True)
+                self.wait_dialog = WaitDialog(self, dialog_str, jobs=self.pending_jobs)
                 self.wait_dialog.show_all()
                 thread = threading.Thread(target=callback)
                 thread.start()
@@ -388,48 +391,29 @@ class Controller(GObject.GObject):
         params = Servers.params
         serv = []
         i = 0
-        total = 10
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
-            # wait(futures)
             for future in as_completed(futures):
                 try:
                     i += 1
-                    GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(i / total))
+                    GLib.idle_add(lambda: self.wait_dialog.increment())
                     res = future.result(timeout=3)
                     if res.status != 200 or not res.parsed:
-                        # TODO: pop warning dialog, create enum around various failure states
-                        # set failure type here
                         self.cleanup_func = CleanupFunc(self.cleanup_on_failure)
                         return
                     j = res.json
                     serv += j["response"]["servers"]
                 except Exception as e:
-                    # TODO: save exception text
-                    print(e)
+                    logger.critical(e)
                     self.cleanup_func = CleanupFunc(self.cleanup_on_failure)
 
-        """
-        TODO: e.g. class method like 'total'
-        total of 10 params for this call
-        @call_on_thread(msg, jobs=10)
-        if total > 1, pop progress bar
-        GLib.idle_add(lambda: self.wait_dialog.format_secondary_text("Pass 2"))
-        GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(0.5))
-        subclass or wrap add fraction and increment, then calculate off of total
-        This next step is allowed to fail, since this metadata is incidental
-        """
+        # NOTE: This step is allowed to fail, since this metadata is incidental
         res = Servers.query_api(key, APPID_DAYZ_EXP, "")
         if res.status == 200 and res.parsed is True:
             j = res.json
             serv += j["response"]["servers"]
 
-        GLib.idle_add(
-            lambda: self.wait_dialog.format_secondary_text("Unpacking servers")
-        )
-        GLib.idle_add(lambda: self.wait_dialog.prog.set_fraction(10 / total))
-
-        # TODO: additional ping column pass, collated
+        GLib.idle_add(lambda: self.wait_dialog.increment("Unpacking servers"))
         parsed = Servers.parse_json(serv)
         self.push_data_success(parsed, FilterMode.INITIAL)
 
@@ -466,7 +450,6 @@ class Controller(GObject.GObject):
         return value
 
     def copy_name(self, path: Gtk.TreePath) -> None:
-        # TODO: column values are deterministic, perhaps use a col name to index map
         name = self.get_col_value_by_path_index(path, 0)
         if name is None:
             return
@@ -659,13 +642,13 @@ class Controller(GObject.GObject):
                 sel.select_path(path)
 
     # TODO: make as method of tree?
-    # FIXME: move cursor when finished
     def uncolorize_mods(self) -> None:
         model = self.get_mod_store()
         for mod in model:
             it = mod.iter
             path = model.get_path(it)
             model[path][4] = None
+        self.mediator.modtreeview.set_cursor(0)
 
     def dump_test_2(self) -> None:
         import time
@@ -833,8 +816,10 @@ class Controller(GObject.GObject):
         return self.get_active_treeview().get_map_man()
 
     def cleanup_on_success(self) -> None:
+        self.pending_jobs = 1
         treeview = self.get_active_treeview()
         treeview.set_loaded(True)
+
         treeview.set_model(self.to_insert)
         map_man = treeview.get_map_man()
 
@@ -842,6 +827,7 @@ class Controller(GObject.GObject):
         # model insertion after thread closes
         # cf. servers_loaded signal
 
+        # TODO: servers_loaded vs servers_reloaded
         context = self.get_active_context()
         self.emitter.emit("servers_loaded", context)
 
@@ -856,27 +842,29 @@ class Controller(GObject.GObject):
 
     def cleanup_on_failure(self) -> None:
         treeview = self.get_active_treeview()
-        treeview.set_model(None)
         treeview.set_loaded(True)
         map_man = treeview.get_map_man()
-        # TODO: what if refresh action occurred, and the old model is still valid?
+
         # TODO: disable map, keyword, and filter widgets if model is None
         # -> signal driven (servers_empty)
-        map_man.set_unique_maps(None)
+        # TODO: what if refresh action occurred and failed, and the old model is still valid?
+        # skip the step below if refresh action failed
+        # do not wipe control model in this case
+        # e.g. if treeview.is_refresh():
+        # revert old model
+        # wipe refresh state to False
 
-        context = self.get_active_context()
-        # TODO: distinguish signals, e.g. "servers_failed_to_load"
-        self.emitter.emit("servers_loaded", context)
+        treeview.set_model(None)
         treeview.grab_focus()
-        dialog = ExceptionDialog(self, "API TIMEOUT")
-        dialog.run()
 
-    # def push_data_failure(self) -> None:
-    #    #treeview = self.get_active_treeview()
-    #    #treeview.set_loaded(True)
-    #    # TODO: wipe control model on failure or keep old results?
-    #    # manager = treeview.get_filter_man()
-    #    self.cleanup_func = CleanupFunc(self.cleanup_on_failure)
+        map_man.set_unique_maps(None)
+        context = self.get_active_context()
+
+        # TODO: distinguish signals, e.g. "servers_failed_to_load"
+        # may trigger different behavior
+        self.emitter.emit("servers_loaded", context)
+        dialog = ExceptionDialog(self, strings.api_warn_msg)
+        dialog.run()
 
     def push_data_success(self, data: tuple, mode: Optional[FilterMode]) -> None:
         # FIXME: set outside of thread
@@ -901,6 +889,7 @@ class Controller(GObject.GObject):
         self.cleanup_func = CleanupFunc(self.cleanup_on_success)
 
     def highlight_stale_cleanup(self, stale_mods: list) -> None:
+        """Manipulates attached ListStore in the main event loop"""
         model = self.get_mod_store()
         for mod in model:
             it = mod.iter
@@ -911,6 +900,7 @@ class Controller(GObject.GObject):
 
     @call_on_thread(strings.dialog.working)
     def highlight_stale(self) -> None:
+        # TODO: set progress bar for number of mods
         stale = find_stale_mods(self.prefs.paths.config)
         self.cleanup_func = CleanupFunc(self.highlight_stale_cleanup, stale)
 
@@ -995,6 +985,7 @@ class Controller(GObject.GObject):
 
     @call_on_thread(strings.dialog.fetching)
     def run_query_func(self, func: Callable) -> None:
+        # TODO: use CleanupFunc -> StoredFunc
         func()
 
     @call_on_thread(strings.dialog.filtering)
@@ -1010,6 +1001,7 @@ class Controller(GObject.GObject):
     # TODO: call filter_man methods directly
     def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
         tv = self.get_active_treeview()
+        #tv.freeze_child_notify()
         filter_man = tv.get_filter_man()
         if filter_man.get_control() is None:
             return
@@ -1022,7 +1014,7 @@ class Controller(GObject.GObject):
             self.emitter.emit("servers_loaded", treeview.get_enum())
             return
 
-        func = treeview.get_query_func()
+        func, jobs = treeview.get_query_func()
         if func is None:
             self.emitter.emit("servers_loaded", treeview.get_enum())
             treeview.set_model(None)
@@ -1031,8 +1023,10 @@ class Controller(GObject.GObject):
         # TODO: clear ephemeral model if necessary
         # manager = treeview.get_filter_man()
         # manager.clear_model()
+        #treeview.fancy_col.set_cell_data_func(treeview.fancy_rend, None)
 
         self.first_iteration = True
+        self.pending_jobs = jobs
         self.run_query_func(func)
 
     def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
@@ -1079,6 +1073,27 @@ class Controller(GObject.GObject):
     def get_prior_map(self) -> str:
         map_man = self.get_map_man()
         return map_man.get_prior_map()
+
+    def get_active_map(self) -> None:
+        return self.get_map_man().get_active_map()
+
+    def set_active_map(self, ind: int) -> None:
+        self.get_map_man().set_active_map(ind)
+
+    def _on_servers_loaded_init(self, emitter: "Emitter") -> None:
+        # FIXME: wipe maps store when changing tabs if model is none
+        tv = self.get_active_treeview()
+        if tv.loaded is False:
+            return
+        store = self.get_map_store()
+        self.emitter.emit("load_maps", store)
+
+    def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
+        # NOTE: workaround for GTK bug where fullscreen causes headers to vanish when model is None
+        state = self.has_server_model()
+        tv = self.get_active_treeview()
+        tv.set_headers_visible(state)
+        tv.set_headers_clickable(state)
 
     def _on_check_toggled(self, emitter: Emitter, label: str, state: bool) -> None:
         map_man = self.get_map_man()

@@ -153,7 +153,6 @@ class FilterPanel(Gtk.Box):
             "request_maps_focus", lambda _: self.maps_entry.grab_focus()
         )
         self.emitter.connect("check_button_pressed", self.toggle_check_by_key)
-        # self.emitter.connect("servers_loaded", self._on_servers_loaded)
         self.emitter.connect("load_maps", self._on_maps_loaded)
 
         # TODO: break into MapsCombo class
@@ -177,6 +176,9 @@ class FilterPanel(Gtk.Box):
         self.maps_combo.connect("changed", self._on_map_changed)
         self.maps_combo.connect("key-press-event", self._on_combo_keypress)
 
+        # FIXME: should be a property of treeview's meta manager
+        self.active_map = 0
+
         for el in (
             self.filters_label,
             self.keyword_entry,
@@ -194,10 +196,12 @@ class FilterPanel(Gtk.Box):
             if text == row[0]:
                 self.maps_combo.set_active(i)
                 self._on_map_changed(self.maps_combo)
+                self.controller.set_active_map(i)
 
     def _on_maps_loaded(self, emitter: "Emitter", store: Gtk.ListStore) -> None:
         self.maps_combo.set_model(store)
-        self.maps_combo.set_active(0)
+        ind = self.controller.get_active_map()
+        self.maps_combo.set_active(ind)
         self.button_grid.reload_filters()
 
     # TODO: move into metamanager
@@ -259,6 +263,8 @@ class FilterPanel(Gtk.Box):
         store = self.controller.get_map_store()
         if len(text) >= completion.get_minimum_key_length():
             completion.set_model(store)
+        ind = self.get_active_combo()
+        self.controller.set_active_map(ind)
 
     def restore_focus_to_treeview(self) -> Literal[False]:
         view = self.controller.get_active_treeview()

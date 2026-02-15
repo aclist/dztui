@@ -20,27 +20,21 @@ class ContextMixin(TreeView):
     ) -> None:
         # FIXME: double click causes issue
         # split into present by click and present by key
+
         if self.is_selection_empty():
             return False
 
-        if event.type is Gdk.EventType.BUTTON_PRESS:
-            if event.button != 3:
-                return False
-            try:
-                pathinfo = self.get_path_at_pos(int(event.x), int(event.y))
-                if pathinfo is None:
-                    return True
-                (path, col, cellx, celly) = pathinfo
-                if path is None:
-                    return True
-                self.set_cursor(path, col, False)
-            except AttributeError:
-                pass
-
-        if event.type is Gdk.EventType.KEY_PRESS:
-            if event.state is not Gdk.ModifierType.CONTROL_MASK:
-                return False
-            if event.keyval is not Gdk.KEY_l:
+        match event.type:
+            case Gdk.EventType.BUTTON_PRESS:
+                if event.button != 3:
+                    return False
+                self._process_button_event(event)
+            case Gdk.EventType.KEY_PRESS:
+                if event.state is not Gdk.ModifierType.CONTROL_MASK:
+                    return False
+                if event.keyval is not Gdk.KEY_l:
+                    return False
+            case _:
                 return False
 
         group = self.menu
@@ -63,6 +57,18 @@ class ContextMixin(TreeView):
                 self.context_menu.popup_at_pointer(event)
 
         self.context_menu.select_first(False)
+
+    def _process_button_event(self, event: Gdk.EventButton) -> None:
+        try:
+            pathinfo = self.get_path_at_pos(int(event.x), int(event.y))
+            if pathinfo is None:
+                return True
+            (path, col, cellx, celly) = pathinfo
+            if path is None:
+                return True
+            self.set_cursor(path, col, False)
+        except AttributeError:
+            pass
 
     def _on_menu_click(self, widget: Gtk.MenuItem, enum: ContextMenu) -> None:
         """
