@@ -6,6 +6,7 @@ import re
 import requests
 import socket
 import subprocess
+import threading
 import typing  # noqa
 
 from dataclasses import dataclass
@@ -56,7 +57,10 @@ def get_netmask() -> str:
     return netmask
 
 
-def test_ip(suffix: int, port: int) -> dict | None:
+# TODO: rename
+def test_ip(suffix: int, port: int, event: threading.Event) -> dict | None:
+    if event.is_set():
+        return
     netmask = get_netmask()
     hostname = f"{netmask}.{str(suffix)}"
     ping = ["ping", "-c1", "-i", "0.1", "-w", "1"]

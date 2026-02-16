@@ -436,34 +436,45 @@ class Controller(GObject.GObject):
             parsed = Servers.parse_json(serv)
         self.push_data_success(parsed, FilterMode.INITIAL)
 
-    def dump_lan(self, port: int) -> None:
+    # TODO: strings
+    @call_on_thread("scanning LAN ports")
+    def dump_lan(self, port: int, early_abort: bool) -> None:
         serv = []
+        event = threading.Event()
         with ThreadPoolExecutor() as executor:
-            futures = [executor.submit(Servers.test_ip, i, port) for i in range(1, 256)]
+            futures = [
+                executor.submit(Servers.test_ip, i, port, event) for i in range(1, 256)
+            ]
             for future in as_completed(futures):
                 try:
-                    res = future.result(timeout=3)
+                    res = future.result(timeout=0.5)
+                    if res is not None and early_abort is True:
+                        event.set()
+                        self.cleanup_func = StoredFunc(self.cleanup_on_failure)
+                        return
                     if res is None:
                         continue
-                    serv.panned(res)
-                if len(serv) == 0:
+                    serv.append(res)
+                except Exception as e:
+                    logger.critical(e)
                     self.cleanup_func = StoredFunc(self.cleanup_on_failure)
-                    return
+            if len(serv) == 0:
+                self.cleanup_func = StoredFunc(self.cleanup_on_failure)
+                return
             parsed = Servers.parse_json(serv)
         self.push_data_success(parsed, FilterMode.INITIAL)
-
 
     def dump_api(self) -> None:
         key = self.query_config(Preferences.STEAM)
         job = Servers.query_api
         params = Servers.params
         serv = []
-        #i = 0
+        # i = 0
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
             for future in as_completed(futures):
                 try:
-                    #i += 1
+                    # i += 1
                     GLib.idle_add(lambda: self.wait_dialog.increment())
                     res = future.result(timeout=3)
                     if res.status != 200 or not res.parsed:
@@ -477,6 +488,7 @@ class Controller(GObject.GObject):
                     return
 
         # NOTE: This step is allowed to fail, since this metadata is incidental
+        print("now checking exp servers")
         res = Servers.query_api(key, APPID_DAYZ_EXP, "")
         if res.status == 200 and res.parsed is True:
             j = res.json

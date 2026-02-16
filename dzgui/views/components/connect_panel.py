@@ -31,31 +31,51 @@ class LanPanel(Gtk.Frame):
         label = BoldLabel(lan_panel.heading)
         self.set_label_widget(label)
 
-        radio1 = Gtk.RadioButton.new_with_label(None, lan_panel.default_button)
+        self.radio1 = Gtk.RadioButton.new_with_label(None, lan_panel.default_button)
         radio2 = Gtk.RadioButton.new_with_label_from_widget(
-            radio1, lan_panel.custom_button
+            self.radio1, lan_panel.custom_button
         )
 
         self.entry = PortEntry(controller)
         self.scan = Gtk.Button(label=lan_panel.scan_button)
+        self.scan.connect("clicked", self._on_scan_clicked)
+        # TODO: strings
+        self.early_abort = Gtk.CheckButton("Stop scanning on first hit")
+        self.early_abort.set_active(True)
+        self.early_abort.set_tooltip_text(
+            "Unless you have multiple DayZ servers on your LAN,\nleave this checked to get results faster"
+        )
 
         self.entry.connect("string_validated", self._on_port_validated)
         self.emitter.connect(
             "request_lan_entry_focus", lambda _: self.entry.grab_focus()
         )
-        radio1.connect("toggled", self._on_radio_toggled)
+        self.radio1.connect("toggled", self._on_radio_toggled)
 
         self.grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
-        self.grid.attach(radio1, 0, 0, COLS, ROWS)
-        self.grid.attach_next_to(radio2, radio1, Gtk.PositionType.RIGHT, COLS, ROWS)
+        self.grid.attach(self.radio1, 0, 0, COLS, ROWS)
+        self.grid.attach_next_to(
+            radio2, self.radio1, Gtk.PositionType.RIGHT, COLS, ROWS
+        )
         self.grid.attach_next_to(self.entry, radio2, Gtk.PositionType.RIGHT, COLS, ROWS)
         self.grid.attach_next_to(
             self.scan, self.entry, Gtk.PositionType.RIGHT, COLS, ROWS
+        )
+        self.grid.attach_next_to(
+            self.early_abort, self.scan, Gtk.PositionType.RIGHT, COLS, ROWS
         )
 
         self.add(self.grid)
 
         self.entry.set_sensitive(False)
+
+    def _on_scan_clicked(self, button: Gtk.Button) -> None:
+        if self.radio1.get_active():
+            port = 27016
+        else:
+            port = self.entry.get_text()
+        abort = self.early_abort.get_active()
+        self.controller.dump_lan(int(port), abort)
 
     def _on_radio_toggled(self, button: Gtk.RadioButton) -> None:
         state = button.get_active()
