@@ -102,6 +102,11 @@ class KeywordEntry(Gtk.Entry):
                 return True
         return False
 
+    def restore_focus_to_treeview(self) -> Literal[False]:
+        view = self.controller.get_active_treeview()
+        view.grab_focus()
+        return False
+
     def _on_activated(self, entry: Gtk.Entry) -> None:
         # TODO: investigate this method
         self.controller.mediator.window.set_keep_below(False)

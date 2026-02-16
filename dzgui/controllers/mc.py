@@ -149,10 +149,6 @@ class Controller(GObject.GObject):
         except AttributeError:
             logger.critical(f"{attr} is not a valid AppNavigation attribute.")
 
-    # def terminate_process(self) -> None:
-    #    # TODO: only used by server table multiprocessing queue
-    #    self.get_active_treeview().terminate_process()
-
     def get_prefs(self) -> UserPrefs:
         return self.prefs
 
@@ -469,12 +465,10 @@ class Controller(GObject.GObject):
         job = Servers.query_api
         params = Servers.params
         serv = []
-        # i = 0
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
             for future in as_completed(futures):
                 try:
-                    # i += 1
                     GLib.idle_add(lambda: self.wait_dialog.increment())
                     res = future.result(timeout=3)
                     if res.status != 200 or not res.parsed:
@@ -488,7 +482,6 @@ class Controller(GObject.GObject):
                     return
 
         # NOTE: This step is allowed to fail, since this metadata is incidental
-        print("now checking exp servers")
         res = Servers.query_api(key, APPID_DAYZ_EXP, "")
         if res.status == 200 and res.parsed is True:
             j = res.json
@@ -803,6 +796,8 @@ class Controller(GObject.GObject):
             dialog = ExceptionDialog(self, strings.api_warn_msg)
             dialog.run()
 
+    # TODO: break into initial dump and refilter modes, can drop filtermode kwarg
+    # and stop pushing empty data
     def push_data_success(self, data: tuple, mode: Optional[FilterMode]) -> None:
         # FIXME: calls treeview read methods in thread
         # treeview = self.get_active_treeview()
@@ -925,11 +920,10 @@ class Controller(GObject.GObject):
     def filter_threaded(
         self, filter_man: "FilteredModelManager", mode: FilterMode, label: str
     ) -> None:
-        # TODO: why pushing empty data?
         filter_man.filter(mode, label)
-        self.push_data_success("", mode)
+        self.to_insert = filter_man.get_model()
+        self.cleanup_func = StoredFunc(self.cleanup_on_success)
 
-    # TODO: consolidate with method above
     # TODO: call filter_man methods directly
     def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
         tv = self.get_active_treeview()
@@ -960,7 +954,6 @@ class Controller(GObject.GObject):
         # TODO: clear ephemeral model if necessary
         # manager = treeview.get_filter_man()
         # manager.clear_model()
-        # treeview.fancy_col.set_cell_data_func(treeview.fancy_rend, None)
 
         self.first_iteration = True
         self.pending_jobs = jobs
