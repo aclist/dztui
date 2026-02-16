@@ -1,5 +1,4 @@
 import logging
-import multiprocessing
 
 from math import radians, cos, sin, asin, sqrt
 from typing import TYPE_CHECKING
@@ -40,12 +39,12 @@ class Haversine:
         return self.dist / 1609.344
 
 
-class CalcDist(multiprocessing.Process):
+class CalcDist:
     def __init__(
         self,
         addr: str,
         enum: "ServerTab",
-        result_queue: multiprocessing.Queue,
+        result_queue: "Queue",
         controller: "Controller",
     ) -> None:
         super().__init__()
@@ -54,9 +53,9 @@ class CalcDist(multiprocessing.Process):
         self.controller = controller
         self.result_queue = result_queue
         self.addr = addr
-        self.ip = addr.split(":")[0]
+        self.ip = self.addr #.split(":")[0]
 
-    def run(self) -> None:
+    #def run(self) -> None:
         cache = self.controller.get_dist_cache()
         if self.addr in cache:
             logger.info(f"Address '{self.addr}' already in cache")

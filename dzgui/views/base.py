@@ -171,7 +171,7 @@ class OuterWindow(Gtk.Window):
         self.halt_proc_and_quit()
 
     def halt_proc_and_quit(self) -> None:
-        MainController.terminate_process()
+        #MainController.terminate_process()
         MainController.save_res_and_quit()
 
 

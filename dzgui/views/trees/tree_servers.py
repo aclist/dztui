@@ -64,7 +64,9 @@ class ServerTreeView(ContextMixin, TreeView):
         self.seen_cache = []
 
         self.current_proc = None
-        self.queue = multiprocessing.Queue()
+        from queue import Queue
+        self.queue = Queue()
+        #self.queue = multiprocessing.Queue()
 
         prefs = self.controller.get_prefs()
         columns = prefs.paths.columns
@@ -128,6 +130,8 @@ class ServerTreeView(ContextMixin, TreeView):
         self.connect("key-press-event", self.present_menu)
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
+
+        self.thread = None
 
     def _get_ping(
         self,
@@ -235,12 +239,15 @@ class ServerTreeView(ContextMixin, TreeView):
         # NOTE: get final width after drag action completes
         GLib.idle_add(self.controller.propagate_column_width, col)
 
-    def terminate_process(self) -> None:
-        if self.current_proc and self.current_proc.is_alive():
-            self.current_proc.terminate()
+    #def terminate_process(self) -> None:
+    #    if self.thread and self.thread.is_alive():
+    #        print("thread still exists")
+    #    if self.current_proc and self.current_proc.is_alive():
+    #        self.current_proc.terminate()
 
     def start_distcalc(self, emitter: Optional["Emitter"] = None):
-        self.terminate_process()
+        #self.terminate_process()
+        #self.queue_id = GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
         self.emitter.emit("distcalc_started")
         record = self.get_record()
         if record is None:
@@ -255,10 +262,22 @@ class ServerTreeView(ContextMixin, TreeView):
             self.controller.set_statusbar_dist(haversine, self.get_enum())
             return
 
-        self.current_proc = CalcDist(
-            record.ip, self.get_enum(), self.queue, self.controller
+        #def t(ip, enum, queue) -> None:
+        #    if queue.empty():
+        #        queue.put(["LONG DISTANCE", 0])
+
+
+        enum = self.get_enum()
+        self.thread = threading.Thread(
+            daemon=True,
+            target=CalcDist,
+            args=(record.ip, enum, self.queue, self.controller),
         )
-        self.current_proc.start()
+        self.thread.start()
+        #self.current_proc = CalcDist(
+        #    record.ip, self.get_enum(), self.queue, self.controller
+        #)
+        #self.current_proc.start()
 
     def _check_result_queue(self) -> Literal[True]:
         latest_result = None

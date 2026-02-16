@@ -43,6 +43,7 @@ from dzgui.config import update
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.controllers.emitter import Emitter
+from dzgui.model.filtered_model import FilteredModelManager
 from dzgui.model.misc_model import ModelManager
 from dzgui.util import strings
 from dzgui.util._json import read_json, write_json
@@ -148,9 +149,9 @@ class Controller(GObject.GObject):
         except AttributeError:
             logger.critical(f"{attr} is not a valid AppNavigation attribute.")
 
-    def terminate_process(self) -> None:
-        # TODO: only used by server table multiprocessing queue
-        self.get_active_treeview().terminate_process()
+    # def terminate_process(self) -> None:
+    #    # TODO: only used by server table multiprocessing queue
+    #    self.get_active_treeview().terminate_process()
 
     def get_prefs(self) -> UserPrefs:
         return self.prefs
@@ -410,7 +411,7 @@ class Controller(GObject.GObject):
 
     def dump_ips(self, ips: list) -> None:
         # NOTE: block malformed records (TODO: add github issue no.)
-        ips = [ip for ip in ips if len(ip.split(":")) == 3 and ip.split(":")[2] != "" ]
+        ips = [ip for ip in ips if len(ip.split(":")) == 3 and ip.split(":")[2] != ""]
         with ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(
@@ -421,7 +422,7 @@ class Controller(GObject.GObject):
                 for ip in ips
             ]
             # TODO: update dialog in main loop
-            #wait(futures)
+            # wait(futures)
             serv = []
             for future in as_completed(futures):
                 res = future.result()
@@ -435,17 +436,34 @@ class Controller(GObject.GObject):
             parsed = Servers.parse_json(serv)
         self.push_data_success(parsed, FilterMode.INITIAL)
 
+    def dump_lan(self, port: int) -> None:
+        serv = []
+        with ThreadPoolExecutor() as executor:
+            futures = [executor.submit(Servers.test_ip, i, port) for i in range(1, 256)]
+            for future in as_completed(futures):
+                try:
+                    res = future.result(timeout=3)
+                    if res is None:
+                        continue
+                    serv.panned(res)
+                if len(serv) == 0:
+                    self.cleanup_func = StoredFunc(self.cleanup_on_failure)
+                    return
+            parsed = Servers.parse_json(serv)
+        self.push_data_success(parsed, FilterMode.INITIAL)
+
+
     def dump_api(self) -> None:
         key = self.query_config(Preferences.STEAM)
         job = Servers.query_api
         params = Servers.params
         serv = []
-        i = 0
+        #i = 0
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
             for future in as_completed(futures):
                 try:
-                    i += 1
+                    #i += 1
                     GLib.idle_add(lambda: self.wait_dialog.increment())
                     res = future.result(timeout=3)
                     if res.status != 200 or not res.parsed:
@@ -621,8 +639,9 @@ class Controller(GObject.GObject):
                 # FIXME: signal should instead be emitted off of treeview when rows added/inserted
                 # self.update_mod_statusbar()
 
-            # call a2s on thread and update ephemeral model in situ
             case ContextMenu.REFRESH_PLAYERS:
+                # get record
+                # call a2s on thread
                 pass
 
             # update history model, update tab label, pop off of queue, write new list into file
@@ -719,14 +738,13 @@ class Controller(GObject.GObject):
         self.pending_jobs = 1
         treeview = self.get_active_treeview()
         treeview.set_loaded(True)
-
         treeview.set_model(self.to_insert)
+
         # TODO: this will allow history and saved tab to emit signals to statusbar
         # CHORE: test if treeview's sort method inserts row at the correct index
         # inserting a row serializes file on disk, updates control model for that tab, and
         # reapplies filters to ephemeral model; since filters are applied, in-situ insertion might not be necessary
         self.to_insert.connect("row-inserted", lambda: print("row inserted into model"))
-        map_man = treeview.get_map_man()
 
         # TODO: signals or other approach to deferring map
         # model insertion after thread closes
@@ -738,6 +756,7 @@ class Controller(GObject.GObject):
 
         # CHORE: this is placeholder logic
         if self.first_iteration:
+            map_man = treeview.get_map_man()
             map_man.set_unique_maps(self.new_maps)
             self.emitter.emit("servers_loaded_init")
             self.first_iteration = False
@@ -773,14 +792,14 @@ class Controller(GObject.GObject):
             dialog.run()
 
     def push_data_success(self, data: tuple, mode: Optional[FilterMode]) -> None:
-        # FIXME: set outside of thread
-        treeview = self.get_active_treeview()
-        manager = treeview.get_filter_man()
+        # FIXME: calls treeview read methods in thread
+        # treeview = self.get_active_treeview()
+        # manager = treeview.get_filter_man()
+        manager = self.get_filter_man()
 
         if data is None:
             self.to_insert = None
         else:
-            # TODO: consolidate into filter manager
             if mode == FilterMode.INITIAL:
                 manager.set_control(data)
             manager.filter(mode)
@@ -789,7 +808,6 @@ class Controller(GObject.GObject):
             u_maps = set([row[1] for row in data])
             self.new_maps = sorted(u_maps)
 
-        treeview.set_loaded(True)
         self.cleanup_func = StoredFunc(self.cleanup_on_success)
 
     def highlight_stale_cleanup(self, stale_mods: list) -> None:
@@ -892,23 +910,27 @@ class Controller(GObject.GObject):
         func.call()
 
     @call_on_thread(strings.dialog.filtering)
-    def filter_threaded(self, mode: FilterMode, label: str) -> None:
-        # FIXME: call outside of thread
-        tv = self.get_active_treeview()
-        filter_man = tv.get_filter_man()
-        filter_man.filter(mode, label)
+    def filter_threaded(
+        self, filter_man: "FilteredModelManager", mode: FilterMode, label: str
+    ) -> None:
         # TODO: why pushing empty data?
+        filter_man.filter(mode, label)
         self.push_data_success("", mode)
 
     # TODO: consolidate with method above
     # TODO: call filter_man methods directly
     def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
         tv = self.get_active_treeview()
-        # tv.freeze_child_notify()
         filter_man = tv.get_filter_man()
         if filter_man.get_control() is None:
             return
-        self.filter_threaded(mode, label)
+        self.filter_threaded(filter_man, mode, label)
+
+    def get_filter_man(self) -> "FilteredModelManager":
+        return self.filter_man
+
+    def set_filter_man(self, filter_man: "FilteredModelManager") -> None:
+        self.filter_man = filter_man
 
     def populate_model(self) -> None:
         # NOTE: prepare GTK objects outside of thread
@@ -930,6 +952,9 @@ class Controller(GObject.GObject):
 
         self.first_iteration = True
         self.pending_jobs = jobs
+        # TODO: get filter manager a priori and set it so that it can be accessed out of thread
+        filter_man = treeview.get_filter_man()
+        self.set_filter_man(filter_man)
         self.run_query_func(func)
 
     def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
