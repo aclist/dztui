@@ -15,7 +15,7 @@ import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers
 import dzgui.util._json as JSON  # noqa
 
-from dzgui.api.probe import test_steam_api, test_bm_api
+from dzgui.api.bm import map_id_to_record
 from dzgui.api.mods import (
     get_delimited_mods,
     get_local_mod_path,
@@ -23,20 +23,20 @@ from dzgui.api.mods import (
     _hash,
     remove_stale_signatures,
 )
-from dzgui.const.enum import (
-    FilterMode,
-    Preferences,
-    NotebookPage,
-    ButtonType,
-    ContextMenu,
-)
-
+from dzgui.api.probe import test_steam_api, test_bm_api
 from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
     HEX_RED,
     WINDOW_DEFAULT_X,
     WINDOW_DEFAULT_Y,
+)
+from dzgui.const.enum import (
+    FilterMode,
+    Preferences,
+    NotebookPage,
+    ButtonType,
+    ContextMenu,
 )
 
 from dzgui.config import update
@@ -460,6 +460,43 @@ class Controller(GObject.GObject):
             parsed = Servers.parse_json(serv)
         self.push_data_success(parsed, FilterMode.INITIAL)
 
+    def query_ip_id(self, addr: str) -> None:
+        # NOTE: Battlemetrics
+        if addr.isdigit():
+            config = self.prefs.paths.config
+            resolved = map_id_to_record(config, addr)
+            res = Servers.query_direct(resolved.ip, resolved.qport)
+        else:
+            record = addr.split(":")
+            ip, qport = record[0], record[1]
+            res = Servers.query_direct(ip, int(qport))
+        return res
+
+    # TODO: strings
+    @call_on_thread("querying address")
+    def connect_by_id_or_ip(self, addr: str) -> None:
+        res = self.query_ip_id(addr)
+
+    def cleanup_on_insert(self) -> None:
+        print(self.get_cleanup_func())
+        treeview = self.get_active_treeview()
+        # TODO; update control model in filtered_model
+        model = treeview.get_model().append(self.insert_record[0])
+
+    @call_on_thread("querying address")
+    def add_by_id_or_ip(self, addr: str) -> None:
+        res = self.query_ip_id(addr)
+        self.insert_record = Servers.parse_json([res])
+        #if res is None:
+        #    # TODO: set cleanupfunc with dialog
+        #    return
+        # TODO: add into saved servers file
+        # TODO: update saved servers model
+        # if current focus is not save servers, update label
+        # TODO: add ip here
+        self.set_cleanup_func(StoredFunc(lambda: self.cleanup_on_insert()))
+
+
     def dump_api(self) -> None:
         key = self.query_config(Preferences.STEAM)
         job = Servers.query_api
@@ -749,7 +786,7 @@ class Controller(GObject.GObject):
         # CHORE: test if treeview's sort method inserts row at the correct index
         # inserting a row serializes file on disk, updates control model for that tab, and
         # reapplies filters to ephemeral model; since filters are applied, in-situ insertion might not be necessary
-        self.to_insert.connect("row-inserted", lambda: print("row inserted into model"))
+        self.to_insert.connect("row-inserted", lambda *args: print("row inserted into model"))
 
         # TODO: signals or other approach to deferring map
         # model insertion after thread closes
@@ -833,6 +870,9 @@ class Controller(GObject.GObject):
         stale = find_stale_mods(self.prefs.paths.config)
         self.cleanup_func = StoredFunc(self.highlight_stale_cleanup, stale)
 
+    def set_cleanup_func(self, func: StoredFunc) -> None:
+        self.cleanup_func = func
+
     def get_cleanup_func(self) -> StoredFunc:
         return self.cleanup_func
 
@@ -841,7 +881,7 @@ class Controller(GObject.GObject):
         func = self.get_cleanup_func()
         if func is not None:
             func.call()
-            self.cleanup_func = None
+            self.set_cleanup_func(None)
         self.mediator.window.set_sensitive(True)
 
     def dump_diagnostics(self) -> None:
@@ -922,6 +962,7 @@ class Controller(GObject.GObject):
     ) -> None:
         filter_man.filter(mode, label)
         self.to_insert = filter_man.get_model()
+        print("filtering threaded")
         self.cleanup_func = StoredFunc(self.cleanup_on_success)
 
     # TODO: call filter_man methods directly

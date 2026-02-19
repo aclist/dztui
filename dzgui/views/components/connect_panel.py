@@ -40,7 +40,7 @@ class LanPanel(Gtk.Frame):
         self.scan = Gtk.Button(label=lan_panel.scan_button)
         self.scan.connect("clicked", self._on_scan_clicked)
         # TODO: strings
-        self.early_abort = Gtk.CheckButton("Stop scanning on first hit")
+        self.early_abort = Gtk.CheckButton(label="Stop scanning on first hit")
         self.early_abort.set_active(True)
         self.early_abort.set_tooltip_text(
             "Unless you have multiple DayZ servers on your LAN,\nleave this checked to get results faster"
@@ -153,11 +153,14 @@ class AddPanel(Gtk.Frame):
         self.set_label_widget(label)
 
         self.add_server = AddButton()
+        self.add_server.connect("clicked", self._on_add_clicked)
+
         self.conn_server = SteamConnectButton()
         self.conn_server.set_sensitive(False)
         self.add_server.set_sensitive(False)
 
         self.entry = IpEntry(controller)
+        self.entry.connect("activate", self._on_activate)
         self.entry.connect("string_validated", self._on_ip_validated)
         self.emitter.connect(
             "request_ip_entry_focus", lambda _: self.entry.grab_focus()
@@ -173,6 +176,17 @@ class AddPanel(Gtk.Frame):
         )
 
         self.add(self.grid)
+
+    def _submit_query(self) -> None:
+        text = self.entry.get_text()
+        self.controller.add_by_id_or_ip(text)
+
+    def _on_activate(self, entry: Gtk.Entry) -> None:
+        self._submit_query()
+
+    def _on_add_clicked(self, button: Gtk.Button) -> None:
+        self._submit_query()
+
 
     def _on_ip_validated(self, entry: Gtk.Entry, state: bool) -> None:
         self.conn_server.set_sensitive(state)
