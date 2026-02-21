@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from dzgui.const.enum import ContextMenu, Preferences
 from dzgui.managers.thread_man import ThreadingManager
 from dzgui.util import strings
+from dzgui.util.clip import copy_clipboard
 from dzgui.util.open_links import open_workshop_page
 
 gi.require_version("Gtk", "3.0")
@@ -72,17 +73,13 @@ class ContextMenuManager:
 
     def copy_server_ip(self) -> None:
         record = self.treeview.get_simplified_ip()
-        self.copy_clipboard(record)
-
-    def copy_clipboard(self, text: str) -> None:
-        self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-        self.clipboard.set_text(text, -1)
+        copy_clipboard(record)
 
     def copy_server_name(self) -> None:
         name = self.treeview.get_value_at_index(0)
         if name is None:
             return
-        self.copy_clipboard(name)
+        copy_clipboard(name)
 
     def open_mod_page(self) -> None:
         mod = self.treeview.get_selected_mod()
@@ -101,4 +98,4 @@ class ContextMenuManager:
             concat = strings.delimiter.join(r)
             final.append(concat)
         text = "\n".join(final)
-        self.copy_clipboard(text)
+        copy_clipboard(text)

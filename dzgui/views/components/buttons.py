@@ -1,5 +1,6 @@
 from typing import Callable, Literal, Self, TYPE_CHECKING
 
+from dzgui.util.clip import copy_clipboard
 from dzgui.util.strings import atomic_buttons, connect_panel
 from dzgui.const.constants import (
     CLIPBOARD,
@@ -69,7 +70,7 @@ class ClipboardButton(IconTextButton):
 
     def _on_button_clicked(self, button: Self, func: Callable) -> None:
         data = func()
-        self.controller.copy_clipboard(data)
+        copy_clipboard(data)
 
 
 class WebButton(IconTextButton):
