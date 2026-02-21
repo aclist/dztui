@@ -3,6 +3,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from dzgui.const.enum import ContextMenuGroup
+from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
 from dzgui.views.trees.tree_base import TreeView
 from dzgui.views.mixins.context_mixin import ContextMixin
@@ -25,13 +26,11 @@ class LogTreeView(ContextMixin, TreeView):
         self.controller = controller
         self.controller.register_widget("logtreeview", self)
 
-        # TODO: maybe put this in init
         self.set_headers_visible(True)
         self.set_fixed_height_mode(True)
         self.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
 
-        model = self.controller.get_log_store()
-        self.set_model(model)
+        self.set_model(None)
 
         for i, column_title in enumerate(strings.log_cols):
             renderer = Gtk.CellRendererText()
@@ -44,7 +43,10 @@ class LogTreeView(ContextMixin, TreeView):
         self.connect("key-press-event", self._on_log_keypress)
         self.connect("button-press-event", self._on_log_keypress)
 
-        self.s = self.get_selection().get_selected_rows()
+    def populate_log(self, filepath: str) -> None:
+        model = ModelFactory().new_model_from_logfile(filepath)
+        self.set_model(model)
+        self.set_cursor(0)
 
     def _on_log_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
         self.present_menu(widget, event)

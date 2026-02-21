@@ -45,14 +45,13 @@ from dzgui.config.userprefs import UserPrefs
 from dzgui.controllers.emitter import Emitter
 from dzgui.model.contextmenu import ContextMenuManager
 from dzgui.model.filtered_model import FilteredModelManager
-from dzgui.model.misc_model import ModelManager
+from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
 from dzgui.util._json import read_json, write_json
 from dzgui.util.diag import write_diagnostic
 from dzgui.util.format import format_mods, format_player_count
 from dzgui.util.localize import number
 from dzgui.util.open_links import open_workshop_page, open_user_workshop
-from dzgui.util.redact import redact_log
 from dzgui.views.dialogs.filepicker import FilePicker
 from dzgui.views.dialogs.generic import ExceptionDialog, WaitDialog
 
@@ -112,7 +111,7 @@ class Controller(GObject.GObject):
         self.prefs: UserPrefs
         self.cleanup_func: StoredFunc = None
 
-        self.model_man = ModelManager()
+        #self.model_man = ModelManager()
         self.emitter = Emitter()
         self.emitter.connect("map_selection_changed", self._on_map_selection_changed)
         self.emitter.connect("check_toggled", self._on_check_toggled)
@@ -162,12 +161,6 @@ class Controller(GObject.GObject):
 
     def is_auto_install(self) -> bool:
         return self.query_config(Preferences.INSTALL)
-
-    def reinit_map_store(self) -> None:
-        self.model_man.set_all_maps()
-
-    def append_map(self, map_row: list) -> None:
-        self.model_man.append_map(map_row)
 
     def unblock_signals(self) -> None:
         self.block_signals(False)
@@ -313,7 +306,7 @@ class Controller(GObject.GObject):
 
     @call_on_thread(strings.dialog.modlist)
     def load_mods(self) -> None:
-        model = self.model_man.new_mod_store()
+        model = ModelFactory().make_mod_store() #self.model_man.new_mod_store()
         path = self.query_config(Preferences.DEFAULT)
         mods = get_delimited_mods(Path(path))
 
@@ -543,11 +536,7 @@ class Controller(GObject.GObject):
         self.push_data_success(parsed, FilterMode.INITIAL)
 
     def get_help_row(self) -> str:
-        tv = self.mediator.menu
-        model = self.get_help_store()
-        tree_iter = tv.get_focused_row_iter()
-        value = model.get_value(tree_iter, 1)
-        return value.dict["tooltip"]
+        return self.mediator.menu.get_row_enum()
 
     def open_user_workshop(self, uid: str) -> None:
         # NOTE: uid may contain leading zeroes, not a real integer
@@ -634,22 +623,12 @@ class Controller(GObject.GObject):
 
     def populate_log(self) -> None:
         log = self.prefs.paths.debug
-        store = self.model_man.get_log_store()
-        store.clear()
-        # NOTE: this model is reloaded each time as log changes
         try:
-            with open(log, "r") as f:
-                lines = [
-                    line.split(strings.delimiter) for line in f.read().splitlines()
-                ]
-                for record in lines:
-                    clean = redact_log(record)
-                    store.append(clean)
+            self.mediator.logtreeview.populate_log(log)
+            self.open_page(NotebookPage.LOG)
         except Exception as e:
             dialog = ExceptionDialog(self, str(e))
             dialog.run()
-            return
-        self.open_page(NotebookPage.LOG)
 
     def select_colorized(self) -> None:
         model = self.get_mod_store()
@@ -929,15 +908,6 @@ class Controller(GObject.GObject):
 
     def get_dist_cache(self) -> dict[str, "Haversine"]:
         return self.dist_cache
-
-    def get_help_store(self) -> Gtk.ListStore:
-        return self.model_man.get_help_store()
-
-    def get_modlist_store(self) -> Gtk.ListStore:
-        return self.model_man.get_modlist_store()
-
-    def get_log_store(self) -> Gtk.ListStore:
-        return self.model_man.get_log_store()
 
     def get_filters(self) -> list:
         return self.mediator.filters.get_filters()

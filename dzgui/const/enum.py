@@ -26,14 +26,6 @@ class Popup(Enum):
     QUIT = 8
 
 
-class Command(Enum):
-    INTERACTIVE = 1
-    ONESHOT = 2
-    HELP = 3
-    TOGGLE = 4
-    THANKS = 5
-
-
 class VAdjustment(Enum):
     UP = 1
     DOWN = 2
@@ -111,14 +103,14 @@ class Preferences(EnumWithAttrs):
 
 class NotebookPage(EnumWithAttrs):
     CHANGELOG = {"crumbs": strings.crumbs.changelog, "statusbar": True}
+    DEVELOPERS = {"crumbs": strings.crumbs.developers, "statusbar": False}
+    HELP = {"crumbs": strings.crumbs._help, "statusbar": True}
     KEYS = {"crumbs": strings.crumbs.keys, "statusbar": True}
     LOG = {"crumbs": strings.crumbs.log, "statusbar": True}
-    HELP = {"crumbs": strings.crumbs._help, "statusbar": True}
     MODS = {"crumbs": strings.crumbs.mods, "statusbar": True}
     OPTIONS = {"crumbs": strings.crumbs.options, "statusbar": False}
     SERVERS = {"crumbs": strings.crumbs.servers, "statusbar": True}
     THANKS = {"crumbs": strings.crumbs.thanks, "statusbar": True}
-    DEVELOPERS = {"crumbs": strings.crumbs.developers, "statusbar": False}
 
 
 class RowType(EnumWithAttrs):
@@ -128,7 +120,7 @@ class RowType(EnumWithAttrs):
             if string == member.dict["label"]:
                 return member
 
-    # TODO: add to strings
+    # TODO: add to notebook tab tooltips
     # SERVER_BROWSER = {
     #     "label": "Server browser",
     #     "tooltip": "Used to browse the global server list",
@@ -155,6 +147,7 @@ class RowType(EnumWithAttrs):
     #     "quad_label": "Mods",
     #     "type": "mods",
     # }
+    # TODO: strings
     CHANGELOG = {
         "label": "View changelog",
         "tooltip": "Opens the DZGUI changelog",
@@ -162,7 +155,6 @@ class RowType(EnumWithAttrs):
     SHOW_LOG = {
         "label": "Show debug log",
         "tooltip": "Read the DZGUI log generated since startup",
-        "quad_label": "Debug log",
     }
     SEPARATOR = {
         "label": "SEPARATOR",
@@ -171,43 +163,34 @@ class RowType(EnumWithAttrs):
     DUMP_LOG = {
         "label": "Output system info to log file",
         "tooltip": "Dump diagnostic data for troubleshooting",
-        "wait_msg": "Generating log",
-        "type": Command.ONESHOT,
     }
-    # help pages
     DOCS = {
         "label": "Documentation/help files (GitHub) ⧉",
         "tooltip": "Open the DZGUI documentation in a browser",
-        "type": Command.HELP,
     }
     DOCS_FALLBACK = {
         "label": "Documentation/help files (Codeberg mirror) ⧉",
         "tooltip": "Open the DZGUI documentation in a browser",
-        "type": Command.HELP,
     }
     BUGS = {
         "label": "Report a bug (GitHub) ⧉",
         "tooltip": "Open the DZGUI issue tracker in a browser",
-        "type": Command.HELP,
     }
     FORUM = {
         "label": "DZGUI Subreddit ⧉",
         "tooltip": "Open the DZGUI discussion forum in a browser",
-        "type": Command.HELP,
     }
     SPONSOR = {
         "label": "Sponsor (GitHub) ⧉",
         "tooltip": "Sponsor development of the DZGUI project",
-        "type": Command.HELP,
     }
     THANKS = {
         "label": "Special thanks",
         "tooltip": "A list of contributors, testers, and sponsors",
-        "type": Command.THANKS,
     }
 
 
-# TODO: rename to ContextItem
+# TODO: rename to ContextMenuItem
 class ContextMenu(EnumWithAttrs):
     ADD_NOTE = {"label": strings.add_note}
     ADD_SERVER = {"label": strings.add}
