@@ -322,3 +322,20 @@ class ServerModelManager:
     def _get_filter_man(self) -> "FilteredModelManager":
         return self.filter_man
 
+    # TODO: unimplemented
+    # @call_on_thread(strings.dialog.filtering)
+    # def filter_threaded(
+    #     self, filter_man: "FilteredModelManager", mode: FilterMode, label: str
+    # ) -> None:
+    #     filter_man.filter(mode, label)
+    #     self.to_insert = filter_man.get_proxy_model()
+    #     print("filtering threaded")
+    #     self.cleanup_func = StoredFunc(self.cleanup_on_success)
+
+    # TODO: call filter_man methods directly
+    #def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
+    #    tv = self.get_active_treeview()
+    #    filter_man = tv.get_filter_man()
+    #    if filter_man.get_control() is None:
+    #        return
+    #    self.filter_threaded(filter_man, mode, label)
