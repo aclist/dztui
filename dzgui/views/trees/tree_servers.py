@@ -1,5 +1,4 @@
 import logging
-import multiprocessing
 import threading
 from typing import Any, Optional, Self
 from warnings import deprecated

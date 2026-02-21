@@ -109,7 +109,7 @@ class KeywordEntry(Gtk.Entry):
 
     def _on_activated(self, entry: Gtk.Entry) -> None:
         # TODO: investigate this method
-        self.controller.mediator.window.set_keep_below(False)
+        # self.controller.mediator.window.set_keep_below(False)
 
         keyword = entry.get_text().lower()
         if keyword == self.controller.get_keyword():

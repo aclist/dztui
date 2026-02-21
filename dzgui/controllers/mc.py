@@ -43,6 +43,7 @@ from dzgui.config import update
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.controllers.emitter import Emitter
+from dzgui.model.contextmenu import ContextMenuManager
 from dzgui.model.filtered_model import FilteredModelManager
 from dzgui.model.misc_model import ModelManager
 from dzgui.util import strings
@@ -462,6 +463,7 @@ class Controller(GObject.GObject):
 
     def query_ip_id(self, addr: str) -> None:
         # NOTE: Battlemetrics
+        # TODO: stores full ip, gameport, qport in file as canonical record
         if addr.isdigit():
             config = self.prefs.paths.config
             resolved = map_id_to_record(config, addr)
@@ -478,24 +480,36 @@ class Controller(GObject.GObject):
         res = self.query_ip_id(addr)
 
     def cleanup_on_insert(self) -> None:
-        print(self.get_cleanup_func())
-        treeview = self.get_active_treeview()
-        # TODO; update control model in filtered_model
-        model = treeview.get_model().append(self.insert_record[0])
+        # FIXME: grab filterman outside of thread
+        treeview = self.mediator.servers.saved
+        filter_man = treeview.get_filter_man()
+        model = filter_man.get_control()
+        print(len(model))
+        # FIXME: refiltration should occur in thread
+        model.append(self.insert_record[0])
+        filtered = filter_man.filter(FilterMode.INITIAL)
+        treeview.set_model(filter_man.get_model())
+        # TODO: update statusbar
+        context = self.get_active_context()
+        # TODO: adding a row may update available maps
+        # TODO: if all filters are already applied, strange behavior may occur
+        # need to insert and update all according logic per current filters
+        self.emitter.emit("servers_loaded", context)
+        # model = treeview.get_model().append(self.insert_record[0])
 
     @call_on_thread("querying address")
     def add_by_id_or_ip(self, addr: str) -> None:
         res = self.query_ip_id(addr)
         self.insert_record = Servers.parse_json([res])
-        #if res is None:
+        # if res is None:
         #    # TODO: set cleanupfunc with dialog
         #    return
         # TODO: add into saved servers file
         # TODO: update saved servers model
         # if current focus is not save servers, update label
-        # TODO: add ip here
-        self.set_cleanup_func(StoredFunc(lambda: self.cleanup_on_insert()))
-
+        # TODO: saved servers might not be loaded yet, in which case
+        # should just add to server file
+        self.set_cleanup_func(StoredFunc(self.cleanup_on_insert))
 
     def dump_api(self) -> None:
         key = self.query_config(Preferences.STEAM)
@@ -540,53 +554,53 @@ class Controller(GObject.GObject):
         client = self.query_config(Preferences.CLIENT)
         open_user_workshop(uid, client)
 
-    def copy_log(self, paths: list[Gtk.TreePath]) -> str:
-        if len(paths) < 1:
-            return ""
-        final = []
-        for path in paths:
-            record = self.log_store[path]
-            r = [el for el in record]
-            concat = strings.delimiter.join(r)
-            final.append(concat)
-        text = "\n".join(final)
-        return text
+    # def copy_log(self, paths: list[Gtk.TreePath]) -> str:
+    #    if len(paths) < 1:
+    #        return ""
+    #    final = []
+    #    for path in paths:
+    #        record = self.log_store[path]
+    #        r = [el for el in record]
+    #        concat = strings.delimiter.join(r)
+    #        final.append(concat)
+    #    text = "\n".join(final)
+    #    return text
 
-    def get_col_value_by_path_index(self, path: Gtk.TreePath, index: int) -> Any:
-        treeview = self.get_active_treeview()
-        model = treeview.get_model()
-        if model is None:
-            return None
-        value = model[path][index]
-        return value
+    # def get_col_value_by_path_index(self, path: Gtk.TreePath, index: int) -> Any:
+    #    treeview = self.get_active_treeview()
+    #    model = treeview.get_model()
+    #    if model is None:
+    #        return None
+    #    value = model[path][index]
+    #    return value
 
-    def copy_name(self, path: Gtk.TreePath) -> None:
-        name = self.get_col_value_by_path_index(path, 0)
-        if name is None:
-            return
-        self.copy_clipboard(name)
+    # def copy_name(self, path: Gtk.TreePath) -> None:
+    #    name = self.get_col_value_by_path_index(path, 0)
+    #    if name is None:
+    #        return
+    #    self.copy_clipboard(name)
 
-    def copy_ip(self, path: Gtk.TreePath) -> None:
-        treeview = self.get_active_treeview()
-        record = treeview.get_record()
-        self.copy_clipboard(f"{record.ip}:{record.qport}")
+    # def copy_ip(self, path: Gtk.TreePath) -> None:
+    #    treeview = self.get_active_treeview()
+    #    record = treeview.get_record()
+    #    self.copy_clipboard(f"{record.ip}:{record.qport}")
 
-    def copy_clipboard(self, text: str) -> None:
-        self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-        self.clipboard.set_text(text, -1)
+    # def copy_clipboard(self, text: str) -> None:
+    #    self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+    #    self.clipboard.set_text(text, -1)
 
-    def open_mod_page(self, path: Gtk.TreePath) -> None:
-        mod, it = self.model_man.get_mod_from_tree_path(path)
-        cmd = self.query_config(Preferences.CLIENT)
-        open_workshop_page(mod, cmd)
+    # def open_mod_page(self, path: Gtk.TreePath) -> None:
+    #    mod, it = self.get_mod_from_tree_path(path)
+    #    cmd = self.query_config(Preferences.CLIENT)
+    #    open_workshop_page(mod, cmd)
 
-    def get_mod_from_tree_path(
-        self, tree_path: Gtk.TreePath
-    ) -> tuple[str, Gtk.TreeIter]:
-        model = self.get_mod_store()
-        tree_iter = model.get_iter(tree_path)
-        mod = model.get(tree_iter, 2)[0]
-        return mod, tree_iter
+    # def get_mod_from_tree_path(
+    #    self, tree_path: Gtk.TreePath
+    # ) -> tuple[str, Gtk.TreeIter]:
+    #    model = self.get_mod_store()
+    #    tree_iter = model.get_iter(tree_path)
+    #    mod = model.get(tree_iter, 2)[0]
+    #    return mod, tree_iter
 
     def delete_single_mod_cleanup(self, _iter: Gtk.TreeIter) -> None:
         self.get_mod_store().remove(_iter)
@@ -653,61 +667,65 @@ class Controller(GObject.GObject):
         simple_ip = treeview.get_simplified_ip()
         self.emitter.emit("fav_server_changed", name, simple_ip)
 
-    def menu_action(self, action: ContextMenu, path: Gtk.TreePath) -> None:
-        match action:
-            # NOTE: manipulates server stores and caches
-            # add to saved servers model verbatim and sort in place
-            # update tab with !
-            # update config file with IP
-            # TODO: needs threading
-            case ContextMenu.ADD_SERVER:
-                pass
+    def menu_action(self, action: ContextMenu, tree: Gtk.TreeView) -> None:
+        # TODO: pass prefs into contextman
+        context_man = ContextMenuManager(tree, self)
+        context_man.process(action)
+        # context_man.process(action)
+        # match action:
+        #    # NOTE: manipulates server stores and caches
+        #    # add to saved servers model verbatim and sort in place
+        #    # update tab with !
+        #    # update config file with IP
+        #    # TODO: needs threading
+        #    case ContextMenu.ADD_SERVER:
+        #        pass
 
-            # spawn edit dialog and update cache, notes file
-            case ContextMenu.ADD_NOTE:
-                pass
+        #    # spawn edit dialog and update cache, notes file
+        #    case ContextMenu.ADD_NOTE:
+        #        pass
 
-            case ContextMenu.COPY_CLIPBOARD:
-                self.copy_ip(path)
+        #    case ContextMenu.COPY_CLIPBOARD:
+        #        self.copy_ip(path)
 
-            case ContextMenu.COPY_NAME:
-                self.copy_name(path)
+        #    case ContextMenu.COPY_NAME:
+        #        self.copy_name(path)
 
-            case ContextMenu.DELETE_MOD:
-                self.delete_single_mod(path)
-                # TODO: connect to emitter automatically
-                # Gtk.TreeModel, row-inserted/row-deleted
-                # updates statusbar
-                # FIXME: signal should instead be emitted off of treeview when rows added/inserted
-                # self.update_mod_statusbar()
+        #    case ContextMenu.DELETE_MOD:
+        #        self.delete_single_mod(path)
+        #        # TODO: connect to emitter automatically
+        #        # Gtk.TreeModel, row-inserted/row-deleted
+        #        # updates statusbar
+        #        # FIXME: signal should instead be emitted off of treeview when rows added/inserted
+        #        # self.update_mod_statusbar()
 
-            case ContextMenu.REFRESH_PLAYERS:
-                # get record
-                # call a2s on thread
-                pass
+        #    case ContextMenu.REFRESH_PLAYERS:
+        #        # get record
+        #        # call a2s on thread
+        #        pass
 
-            # update history model, update tab label, pop off of queue, write new list into file
-            # see dq.py
-            case ContextMenu.REMOVE_HISTORY:
-                pass
+        #    # update history model, update tab label, pop off of queue, write new list into file
+        #    # see dq.py
+        #    case ContextMenu.REMOVE_HISTORY:
+        #        pass
 
-            # reverse of ADD_SERVER
-            case ContextMenu.REMOVE_SERVER:
-                pass
+        #    # reverse of ADD_SERVER
+        #    case ContextMenu.REMOVE_SERVER:
+        #        pass
 
-            case ContextMenu.SET_FAV:
-                self.set_fav()
+        #    case ContextMenu.SET_FAV:
+        #        self.set_fav()
 
-            # NOTE: spawns dedicated dialogs
-            # TODO: needs threading
-            case ContextMenu.SHOW_DETAILS:
-                pass
-            # TODO: needs threading
-            case ContextMenu.SHOW_MODS:
-                pass
+        #    # NOTE: spawns dedicated dialogs
+        #    # TODO: needs threading
+        #    case ContextMenu.SHOW_DETAILS:
+        #        pass
+        #    # TODO: needs threading
+        #    case ContextMenu.SHOW_MODS:
+        #        pass
 
-            case ContextMenu.OPEN_WORKSHOP:
-                self.open_mod_page(path)
+        #    case ContextMenu.OPEN_WORKSHOP:
+        #        self.open_mod_page(path)
 
     def toggle_mod_selection(self, state: bool) -> None:
         sel = self.mediator.modtreeview.get_selection()
@@ -715,6 +733,7 @@ class Controller(GObject.GObject):
             sel.select_all()
         else:
             sel.unselect_all()
+        # TODO: signal
         self.mediator.modtreeview.grab_focus()
 
     def populate_log(self) -> None:
@@ -786,7 +805,8 @@ class Controller(GObject.GObject):
         # CHORE: test if treeview's sort method inserts row at the correct index
         # inserting a row serializes file on disk, updates control model for that tab, and
         # reapplies filters to ephemeral model; since filters are applied, in-situ insertion might not be necessary
-        self.to_insert.connect("row-inserted", lambda *args: print("row inserted into model"))
+        # TODO: will be inserted out of order
+        # self.to_insert.connect("row-inserted", lambda *args: print("row inserted into model"))
 
         # TODO: signals or other approach to deferring map
         # model insertion after thread closes
@@ -1088,3 +1108,19 @@ class Controller(GObject.GObject):
     def has_server_model(self) -> bool:
         treeview = self.get_active_treeview()
         return treeview.get_model() is not None
+
+    def hide_widgets_on_init(self) -> None:
+        self.mediator.grid.conpan.set_lan_visible(False)
+        self.mediator.grid.right_panel.sel_panel.hide()
+
+    def get_notebook(self) -> "Notebook":
+        return self.mediator.notebook
+
+    def get_servers(self) -> "Notebook":
+        return self.mediator.servers.notebook
+
+    def get_window(self) -> "OuterWindow":
+        return self.mediator.window
+
+    def get_menu(self) -> "MenuTreeView":
+        return self.mediator.menu

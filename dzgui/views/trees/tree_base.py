@@ -1,6 +1,6 @@
 import logging
 
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 from warnings import deprecated
 
 from dzgui.const.constants import SEPARATOR
@@ -188,3 +188,10 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
             return None
         row = model[ind]
         return row
+
+    def get_col_value_by_path_index(self, path: Gtk.TreePath, index: int) -> Any:
+        model = self.get_model()
+        if model is None:
+            return None
+        value = model[path][index]
+        return value

@@ -63,6 +63,14 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
     def _on_mod_page_loaded(self, emitter: "Emitter") -> None:
         self.set_cursor(0)
 
+    def get_selected_mod(self) -> str:
+        path = self.get_focused_row_path()
+        model = self.get_model()
+        tree_iter = model.get_iter(path)
+        mod = model.get(tree_iter, 2)[0]
+        return mod
+        # return mod, tree_iter
+
     # def _on_mods_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
     #     # TODO: multiselect
     #     # if event.keyval is Gdk.KEY_space:
@@ -88,7 +96,6 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
         it: Gtk.TreeIter,
         data: Any,
     ) -> Any:
-        # https://docs.huihoo.com/pygtk/2.0-tutorial/sec-CellRenderers.html
         val = model[it][3]
         formatted = localize.number(val)
         cell.set_property("text", formatted)

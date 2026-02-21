@@ -157,12 +157,12 @@ class OuterWindow(Gtk.Window):
 
         # TODO: first run
         MainController.open_page(NotebookPage.SERVERS)
-        MainController.mediator.grid.conpan.lan.set_visible(False)
-        self.grid.right_panel.sel_panel.hide()
+        MainController.hide_widgets_on_init()
 
         # TODO: POC, trigger page change here
         MainController.loaded = True
 
+        # TODO: debug flag
         if MainController.get_prefs().is_debug:
             return
         MainController.populate_model()
@@ -171,7 +171,7 @@ class OuterWindow(Gtk.Window):
         self.halt_proc_and_quit()
 
     def halt_proc_and_quit(self) -> None:
-        #MainController.terminate_process()
+        # MainController.terminate_process()
         MainController.save_res_and_quit()
 
 

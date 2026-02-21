@@ -71,7 +71,5 @@ class RightPanel(Gtk.Box):
     #        unblock_signals()
     #    temp_model = self.AppNav.treeview.get_model()
     #    treeview.set_model(None)
-    #    treeview.wait_dialog = GenericDialog("Pinging servers", Popup.WAIT)
-    #    treeview.wait_dialog.show_all()
     #    thread = threading.Thread(target=_update_pings, args=())
     #    thread.start()

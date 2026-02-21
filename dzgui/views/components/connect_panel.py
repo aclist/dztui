@@ -187,7 +187,6 @@ class AddPanel(Gtk.Frame):
     def _on_add_clicked(self, button: Gtk.Button) -> None:
         self._submit_query()
 
-
     def _on_ip_validated(self, entry: Gtk.Entry, state: bool) -> None:
         self.conn_server.set_sensitive(state)
         self.add_server.set_sensitive(state)
@@ -208,5 +207,8 @@ class ConnectPanel(Gtk.Box):
         for el in self.lan, self.fav, self.add_panel:
             self.add(el)
 
-    def _on_lan_tab_toggled(self, emitter: "Emitter", state: bool) -> None:
+    def set_lan_visible(self, state: bool) -> None:
         self.lan.set_visible(state)
+
+    def _on_lan_tab_toggled(self, emitter: "Emitter", state: bool) -> None:
+        self.set_lan_visible(state)

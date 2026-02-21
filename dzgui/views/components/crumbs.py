@@ -21,8 +21,8 @@ class Breadcrumbs(Gtk.Label):
         crumbs = embolden(label_main_menu)
         self.set_markup(crumbs)
 
-        notebook = controller.mediator.notebook
-        servers = controller.mediator.servers.notebook
+        notebook = controller.get_notebook()
+        servers = controller.get_servers()
         notebook.connect_after("switch-page", self._on_notebook_page_changed)
         servers.connect_after("switch-page", self._on_server_tab_changed)
 

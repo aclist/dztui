@@ -86,8 +86,9 @@ class ContextMixin(TreeView):
             clipboard = self.controller.copy_log(records)
             self.controller.copy_clipboard(clipboard)
         else:
-            path = self.get_focused_row_path()
-            self.controller.menu_action(enum, path)
+            #path = self.get_focused_row_path()
+            #self.controller.menu_action(enum, path)
+            self.controller.menu_action(enum, self)
 
     def _on_key(self, menu: Gtk.Menu, event: Gdk.EventKey) -> bool | None:
         if not is_navkey(event.keyval):

@@ -39,7 +39,7 @@ class GenericDialog(Gtk.MessageDialog):
         secondary: str,
     ) -> None:
         super().__init__(
-            transient_for=controller.mediator.window,
+            transient_for=controller.get_window(),
             message_type=mtype,
             buttons=buttons,
             text=text,
@@ -141,6 +141,7 @@ class WaitDialog(GenericDialog):
 
 class QuitDialog(GenericDialog):
     def __init__(self, controller: "Controller", secondary: str):
+        # FIXME: do not pass controller to every dialog
         super().__init__(
             controller=controller,
             text=strings.wait,
@@ -156,6 +157,7 @@ class QuitDialog(GenericDialog):
         self.connect("delete-event", self._on_response)
 
     def _on_response(self, dialog: Self, response: Gtk.ResponseType) -> None:
+        # TODO: use a signal?
         self.controller.save_res_and_quit()
 
 

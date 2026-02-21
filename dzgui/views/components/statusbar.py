@@ -42,10 +42,8 @@ class Statusbar(Gtk.Grid):
 
         self.players = ""
 
-        controller.mediator.menu.connect(
-            "generic_treesel_changed", self._help_row_changed
-        )
-        controller.mediator.notebook.connect_after(
+        controller.get_menu().connect("generic_treesel_changed", self._help_row_changed)
+        controller.get_notebook().connect_after(
             "switch-page", self._on_notebook_page_changed
         )
 
@@ -83,9 +81,9 @@ class Statusbar(Gtk.Grid):
             case NotebookPage.HELP:
                 bar = self.controller.get_help_row()
             # TODO: drop
-            #case NotebookPage.MODS:
+            # case NotebookPage.MODS:
             #    return
-            #case NotebookPage.SERVERS:
+            # case NotebookPage.SERVERS:
             #    context = self.controller.get_active_context()
             #    # self.emitter.emit("servers_loaded", context)
             #    return

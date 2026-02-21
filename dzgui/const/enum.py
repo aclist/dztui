@@ -212,9 +212,9 @@ class ContextMenu(EnumWithAttrs):
     ADD_NOTE = {"label": strings.add_note}
     ADD_SERVER = {"label": strings.add}
     CONNECT = {"label": strings.connect}
-    COPY_CLIPBOARD = {"label": strings.copy_ip}
     COPY_LOG_CLIPBOARD = {"label": strings.copy_log}
-    COPY_NAME = {"label": strings.copy_name}
+    COPY_SERVER_IP = {"label": strings.copy_ip}
+    COPY_SERVER_NAME = {"label": strings.copy_name}
     DELETE_MOD = {"label": strings.delete_mod}
     OPEN_WORKSHOP = {"label": strings.open_workshop}
     REFRESH_PLAYERS = {"label": strings.refresh_players}
@@ -236,8 +236,8 @@ class ContextMenuGroup(Enum):
         ContextMenu.CONNECT,
         ContextMenu.ADD_SERVER,
         ContextMenu.SET_FAV,
-        ContextMenu.COPY_NAME,
-        ContextMenu.COPY_CLIPBOARD,
+        ContextMenu.COPY_SERVER_NAME,
+        ContextMenu.COPY_SERVER_IP,
         ContextMenu.ADD_NOTE,
         ContextMenu.SHOW_MODS,
         ContextMenu.SHOW_DETAILS,
@@ -246,8 +246,8 @@ class ContextMenuGroup(Enum):
     SCAN_LAN = (
         ContextMenu.CONNECT,
         ContextMenu.SET_FAV,
-        ContextMenu.COPY_NAME,
-        ContextMenu.COPY_CLIPBOARD,
+        ContextMenu.COPY_SERVER_NAME,
+        ContextMenu.COPY_SERVER_IP,
         ContextMenu.ADD_NOTE,
         ContextMenu.SHOW_MODS,
         ContextMenu.SHOW_DETAILS,
@@ -257,8 +257,8 @@ class ContextMenuGroup(Enum):
         ContextMenu.CONNECT,
         ContextMenu.SET_FAV,
         ContextMenu.REMOVE_SERVER,
-        ContextMenu.COPY_NAME,
-        ContextMenu.COPY_CLIPBOARD,
+        ContextMenu.COPY_SERVER_NAME,
+        ContextMenu.COPY_SERVER_IP,
         ContextMenu.ADD_NOTE,
         ContextMenu.SHOW_MODS,
         ContextMenu.SHOW_DETAILS,
@@ -269,8 +269,8 @@ class ContextMenuGroup(Enum):
         ContextMenu.ADD_SERVER,
         ContextMenu.SET_FAV,
         ContextMenu.REMOVE_HISTORY,
-        ContextMenu.COPY_NAME,
-        ContextMenu.COPY_CLIPBOARD,
+        ContextMenu.COPY_SERVER_NAME,
+        ContextMenu.COPY_SERVER_IP,
         ContextMenu.ADD_NOTE,
         ContextMenu.SHOW_MODS,
         ContextMenu.SHOW_DETAILS,
