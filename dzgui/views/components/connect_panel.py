@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from dzgui.model.servers import ServerModelManager
 from dzgui.util.strings import connect_panel, fav_panel, lan_panel
 from dzgui.views.components.buttons import (
     AddButton,
@@ -75,7 +76,9 @@ class LanPanel(Gtk.Frame):
         else:
             port = self.entry.get_text()
         abort = self.early_abort.get_active()
-        self.controller.dump_lan(int(port), abort)
+        smm = ServerModelManager(self.controller, self.controller.get_active_treeview())
+        smm.dump_lan(int(port), abort)
+        #self.controller.dump_lan(int(port), abort)
 
     def _on_radio_toggled(self, button: Gtk.RadioButton) -> None:
         state = button.get_active()

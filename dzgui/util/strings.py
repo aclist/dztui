@@ -234,6 +234,7 @@ class Dialog:
     modlist: str
     working: str
     updating_mods: str
+    scanning: str
 
 
 @dataclass(slots=True, frozen=True)
@@ -429,6 +430,7 @@ dialog = Dialog(
     modlist="Fetching modlist",
     working="Working",
     updating_mods="Updating mods",
+    scanning="Scanning LAN ports",
 )
 
 buttons = Button(

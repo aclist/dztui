@@ -3,7 +3,7 @@ import logging
 import threading
 
 from functools import wraps
-from typing import Callable
+from typing import Callable, Optional
 from dzgui.views.dialogs.generic import WaitDialog
 
 
@@ -49,6 +49,7 @@ class ThreadingManager:
         self.parent = parent
         self.jobs = 1
         self.cleanup_func = None
+        self.alternate_statusbar = None
 
     def call_on_thread(self, dialog_str: str, func: StoredFunc) -> None:
         def callback() -> None:
@@ -68,6 +69,13 @@ class ThreadingManager:
 
     def increment_dialog_with_str(self, text: str) -> None:
         GLib.idle_add(lambda: self.wait_dialog.increment(text))
+
+    # TODO: this should not be delegated here
+    def set_alternate_statusbar(self, msg: str) -> None:
+        self.alternate_statusbar = msg
+
+    def get_alternate_statusbar(self) -> Optional[str]:
+        return self.alternate_statusbar
 
     def set_cleanup_func(self, func: StoredFunc) -> None:
         if type(func) not in (StoredFunc, type(None)):

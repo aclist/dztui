@@ -45,7 +45,6 @@ class ServerTreeView(ContextMixin, TreeView):
         self.enum = enum
 
         self.loaded = False
-        self.query_func: Callable = None
 
         self.filter_man = FilteredModelManager(controller)
         model = self.filter_man.get_proxy_model()
@@ -59,12 +58,7 @@ class ServerTreeView(ContextMixin, TreeView):
 
         self.queue_id: int
         self.handler_id: int
-        self.query_func_jobs = 1
-
-        self.current_proc = None
-
         self.queue = Queue()
-        # self.queue = multiprocessing.Queue()
 
         prefs = self.controller.get_prefs()
         columns = prefs.paths.columns
@@ -129,6 +123,7 @@ class ServerTreeView(ContextMixin, TreeView):
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
 
+        # TODO: why is this being saved?
         self.thread = None
 
     def start_timeout(self) -> None:
@@ -183,14 +178,6 @@ class ServerTreeView(ContextMixin, TreeView):
         self.emitter.disconnect(self.handler_id)
         if self.get_enum() is ServerTab.LAN:
             self.emitter.emit("lan_tab_toggled", False)
-
-    def set_query_func(self, func: "StoredFunc", jobs: int = 1) -> None:
-        self.query_func = func
-        self.query_func_jobs = jobs
-
-    # TODO: possibly split this up
-    def get_query_func(self) -> tuple["StoredFunc", int]:
-        return self.query_func, self.query_func_jobs
 
     def _on_col_width_changed(
         self, col: Gtk.TreeViewColumn, width: GObject.ParamSpecInt

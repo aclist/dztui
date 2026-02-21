@@ -55,6 +55,18 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
 
+        self.emitter.connect("servers_loaded", self._on_servers_loaded)
+
+    def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
+        # NOTE: workaround for GTK bug where fullscreen causes headers to vanish when model is None
+        # TODO: this should be internal to servers page
+        tv = self.get_active_treeview()
+        state = False if tv.get_model() is None else True
+        tv.set_headers_visible(state)
+        tv.set_headers_clickable(state)
+        tv.set_loaded(True)
+        tv.grab_focus()
+
     def _on_map(self, widget: Self) -> None:
         self.emitter.emit("server_page_toggled", True)
         # FIXME: only applies to server notebook, not atomic page
@@ -137,5 +149,17 @@ class ServerNotebook(Gtk.ScrolledWindow):
                         tab, col, "_on_col_width_changed", False
                     )
 
-    def get_tabs(self) -> tuple:
-        return (self.browser, self.saved, self.recent, self.lan)
+    # def get_tabs(self) -> tuple:
+    #     return (self.browser, self.saved, self.recent, self.lan)
+
+    def get_browser(self) -> ServerTreeView:
+        return self.browser
+
+    def get_saved(self) -> ServerTreeView:
+        return self.saved
+
+    def get_recent(self) -> ServerTreeView:
+        return self.recent
+
+    def get_lan(self) -> ServerTreeView:
+        return self.lan

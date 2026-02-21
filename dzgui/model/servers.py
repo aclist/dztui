@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+import threading
 
 from concurrent.futures import wait, as_completed
 from concurrent.futures import ThreadPoolExecutor
@@ -21,6 +22,8 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib  # noqa E402
 
+LAN_TIMEOUT = 0.5
+API_TIMEOUT = 3
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
@@ -28,6 +31,10 @@ if TYPE_CHECKING:
     from dzgui.model.filtered_model import FilteredModelManager
 
 logger = logging.getLogger(__name__)
+
+
+# TODO: failure: spawns error dialog
+# TODO: non failure with empty model: updates statusbar
 
 class ServerModelManager:
     def __init__(self, controller: "Controller", tv: Gtk.TreeView, first_iteration=False) -> None:
@@ -37,6 +44,7 @@ class ServerModelManager:
         self.emitter = controller.get_emitter()
         if tv.is_loaded():
             self.emitter.emit("servers_loaded", enum)
+            return
 
         self.tv = tv
         self.jobs = 1
@@ -61,7 +69,8 @@ class ServerModelManager:
                 # TODO: get row count
                 self._dump_history()
             case ServerTab.LAN:
-                self._dump_lan()
+                return
+                #self._dump_lan()
 
     @call_on_thread(dialog.fetching)
     def _dump_api(self) -> None:
@@ -74,7 +83,7 @@ class ServerModelManager:
             for future in as_completed(futures):
                 try:
                     self.thread_man.increment_dialog()
-                    res = future.result(timeout=3)
+                    res = future.result(timeout=API_TIMEOUT)
                     if res.status != 200 or not res.parsed:
                         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
                         return
@@ -92,15 +101,12 @@ class ServerModelManager:
             j = res.json
             servers += j["response"]["servers"]
 
-        # TODO: strings
-        #self.thread_man.increment_dialog_with_str("Unpacking servers")
-        # TODO: try/except
+        # TODO: try/except when parsing
         parsed = Servers.parse_json(servers)
-        self._push_data_success(parsed, FilterMode.INITIAL)
+        self._push_data(parsed, FilterMode.INITIAL)
 
-    # TODO: strings
-    @call_on_thread("scanning LAN ports")
-    def _dump_lan(self, port: int, early_abort: bool) -> None:
+    @call_on_thread(dialog.scanning)
+    def dump_lan(self, port: int, early_abort: bool) -> None:
         servers = []
         ports = range(1, 256)
 
@@ -111,24 +117,24 @@ class ServerModelManager:
             ]
             for future in as_completed(futures):
                 try:
-                    res = future.result(timeout=0.5)
+                    res = future.result(timeout=LAN_TIMEOUT)
                     if res is not None and early_abort is True:
                         # NOTE: first non-empty hit, flag pending threads to close
                         event.set()
                         servers.append(res)
-                        self.cleanup_func = StoredFunc(self._cleanup_on_success)
+                        self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_success))
                         return
                     if res is None:
                         continue
                     servers.append(res)
                 except Exception as e:
                     logger.critical(e)
-                    self.cleanup_func = StoredFunc(self._cleanup_on_failure)
+                    self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
             if len(servers) == 0:
-                self.cleanup_func = StoredFunc(self._cleanup_on_failure)
+                self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
                 return
         parsed = Servers.parse_json(servers)
-        self._push_data_success(parsed, FilterMode.INITIAL)
+        self._push_data(parsed, FilterMode.INITIAL)
 
     # TODO: strings
     @call_on_thread("dumping ips")
@@ -136,10 +142,11 @@ class ServerModelManager:
         # NOTE: block malformed records (TODO: add github issue no.)
         # TODO: sanitize ip list at config time, drop this
         ips = [ip for ip in ips if len(ip.split(":")) == 3 and ip.split(":")[2] != ""]
+        job = Servers.query_direct
         with ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(
-                    Servers.query_direct,
+                    job,
                     ip.split(":")[0],
                     int(ip.split(":")[2]),
                 )
@@ -154,12 +161,11 @@ class ServerModelManager:
                     continue
                 servers.append(res)
                 if len(servers) == 0:
-                    self.cleanup_func = StoredFunc(self._cleanup_on_failure)
+                    self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
                     return
 
-        # NOTE: 1 extra progress bar pass for parsing
         parsed = Servers.parse_json(servers)
-        self._push_data_success(parsed, FilterMode.INITIAL)
+        self._push_data(parsed, FilterMode.INITIAL)
 
     def _query_ip_id(self, addr: str) -> None:
         # NOTE: Battlemetrics
@@ -177,7 +183,8 @@ class ServerModelManager:
     # TODO: strings
     @call_on_thread("querying address")
     def _connect_by_id_or_ip(self, addr: str) -> None:
-        res = self.query_ip_id(addr)
+        res = self._query_ip_id(addr)
+        # TODO: unimplemented
 
     @call_on_thread("querying address")
     def _add_by_id_or_ip(self, addr: str) -> None:
@@ -193,7 +200,8 @@ class ServerModelManager:
         # NOTE: this can be called from other tabs--if current focus is not ServerTab.SAVED, update label only
         # TODO: saved servers might not be loaded yet, in which case should just update local file only
         # TODO: perform simple equality comparison of self.tv.get_enum() == ServerTab.SAVED
-        # FIXME: filter man is saved on a per tab basis, so this will mismatch
+            # FIXME: filter man is saved on a per tab basis, so this will mismatch
+            # check if servers.get_active_treeview() is same as self.tv
         self.set_cleanup_func(StoredFunc(self._cleanup_on_insert))
 
     def _dump_history(self) -> None:
@@ -203,10 +211,10 @@ class ServerModelManager:
             with open(history, "r") as f:
                 rows = [row.rstrip("\n") for row in f]
         except OSError:
-            self.cleanup_func = StoredFunc(self._cleanup_on_failure, False)
+            self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure, False))
             return
         if len(rows) == 0:
-            self.cleanup_func = StoredFunc(self._cleanup_on_failure, False)
+            self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure, False))
             return
         self.thread_man.set_job_count(len(rows))
         self._dump_ips(rows)
@@ -218,7 +226,7 @@ class ServerModelManager:
         if len(ips) == 0:
             # FIXME: this is not a failure, just a quiet exit with custom statusbar
             # TODO: add custom statusbar parameters
-            self.cleanup_func = StoredFunc(self._cleanup_on_failure, False)
+            self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure, False))
             return
         self._dump_ips(ips)
 
@@ -243,17 +251,10 @@ class ServerModelManager:
         self.emitter.emit("servers_loaded", context)
 
     def _cleanup_on_success(self) -> None:
-        self.pending_jobs = 1
-        self.tv.set_loaded(True)
         self.tv.set_model(self.to_insert)
 
-        # TODO: this will allow history and saved tab to emit signals to statusbar
-        # CHORE: test if treeview's sort method inserts row at the correct index
-        # inserting a row serializes file on disk, updates control model for that tab, and
-        # reapplies filters to ephemeral model; since filters are applied, in-situ insertion might not be necessary
-        # TODO: will be inserted out of order
-        #self.to_insert.connect("row-inserted", lambda *args: print("row inserted into model"))
-
+        # inserting a row serializes file on disk, updates control model for that tab, and updates model
+        # NOTE: when inserting new rows, the entire control model is wiped and rebuilt, then proxy model is swapped in
         # TODO: signals or other approach to deferring map
         # model insertion after thread closes
         # cf. servers_loaded signal
@@ -262,7 +263,8 @@ class ServerModelManager:
         context = self.tv.get_enum()
         self.emitter.emit("servers_loaded", context)
 
-        # CHORE: this is placeholder logic
+        # CHORE: this is placeholder logic,
+        # refills map combo with new maps
         if self.first_iteration:
             map_man = self.tv.get_map_man()
             map_man.set_unique_maps(self.new_maps)
@@ -270,14 +272,11 @@ class ServerModelManager:
             self.first_iteration = False
             self.new_maps = None
 
-        self.tv.grab_focus()
-
     def _cleanup_on_failure(self, show_dialog=True) -> None:
-        self.treeview.set_loaded(True)
         map_man = self.treeview.get_map_man()
 
         # TODO: disable map, keyword, and filter widgets if model is None
-        # -> signal driven (servers_empty)
+            # -> signal driven (servers_empty, servers_failed_to_load)
         # TODO: what if refresh action occurred and failed, and the old model is still valid?
         # skip the step below if refresh action failed
         # do not wipe control model in this case
@@ -286,8 +285,6 @@ class ServerModelManager:
         # wipe refresh state to False
 
         self.treeview.set_model(None)
-        self.treeview.grab_focus()
-
         map_man.set_unique_maps(None)
         context = self.treeview.get_enum()
 
@@ -300,7 +297,7 @@ class ServerModelManager:
 
     # TODO: break into initial dump and refilter modes, can drop filtermode kwarg
     # and stop pushing empty data
-    def _push_data_success(self, data: tuple, mode: Optional[FilterMode]) -> None:
+    def _push_data(self, data: tuple, mode: Optional[FilterMode]) -> None:
         # FIXME: calls treeview read methods in thread
         # treeview = self.get_active_treeview()
         # manager = treeview.get_filter_man()
@@ -313,7 +310,7 @@ class ServerModelManager:
                 manager.set_control(data)
             manager.filter(mode)
             self.to_insert = manager.get_proxy_model()
-            # TODO: pre parse maps
+
             u_maps = set([row[1] for row in data])
             self.new_maps = sorted(u_maps)
 

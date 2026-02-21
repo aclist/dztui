@@ -112,6 +112,8 @@ class Controller(GObject.GObject):
         self.prefs: UserPrefs
         self.cleanup_func: StoredFunc = None
 
+        #self.config_man = ConfigManager()
+
         self.emitter = Emitter()
         self.emitter.connect("map_selection_changed", self._on_map_selection_changed)
         self.emitter.connect("check_toggled", self._on_check_toggled)
@@ -150,12 +152,15 @@ class Controller(GObject.GObject):
             logger.critical(f"{attr} is not a valid AppNavigation attribute.")
 
     def get_prefs(self) -> UserPrefs:
+        # return self.config_man.get_prefs()
         return self.prefs
 
     def set_prefs(self, prefs: UserPrefs) -> None:
+        # self.config_man.set_prefs()
         self.prefs = prefs
 
     def query_config(self, key: Preferences) -> str | bool | list:
+        # return self.config_man.lookup(key)
         config = self.prefs.paths.config
         return lookup(config, key)
 
@@ -201,6 +206,7 @@ class Controller(GObject.GObject):
             widget.handler_unblock_by_func(func)
 
     def toggle_debug_mode(self) -> None:
+        # self.config_man().toggle_config(Preferences.DEBUG)
         self.toggle_config(Preferences.DEBUG)
 
     def get_active_context(self) -> NotebookPage:
@@ -217,6 +223,7 @@ class Controller(GObject.GObject):
         treeview = self.get_active_treeview()
         columns = treeview.get_columns()
 
+        #columns_file = self.config_man.get_columns()
         columns_file = self.prefs.paths.columns
         try:
             data = JSON.read_json(columns_file)
@@ -242,6 +249,7 @@ class Controller(GObject.GObject):
         w, h = self.mediator.window.get_size()
         data = {"res": {"width": w, "height": h}}
 
+        #res_path = self.config_man.get_resolution()
         res_path = self.prefs.paths.resolution
         try:
             write_json(data, res_path)
@@ -279,6 +287,7 @@ class Controller(GObject.GObject):
         if haversine is None:
             dist = "Unknown"
         else:
+            # self.config_man.use_miles()
             if self.prefs.use_miles:
                 raw = round(haversine.as_miles())
                 separated = number(raw)
@@ -651,25 +660,6 @@ class Controller(GObject.GObject):
             model[path][4] = None
         self.mediator.modtreeview.set_cursor(0)
 
-    def dump_test_2(self) -> None:
-        data = (
-            [
-                "BAR",
-                "chernarusplus",
-                "a",
-                "a",
-                1,
-                1,
-                1,
-                "185.207.214.16:2302",
-                1,
-                1,
-                "a",
-                False,
-            ],
-        )
-        self.push_data_success(data, FilterMode.INITIAL)
-
     def get_map_man(self) -> "MapManager":
         return self.get_active_treeview().get_map_man()
 
@@ -928,6 +918,7 @@ class Controller(GObject.GObject):
         self.emitter.emit("load_maps", store)
 
     def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
+        return
         # NOTE: workaround for GTK bug where fullscreen causes headers to vanish when model is None
         # TODO: this should be internal to servers page
         state = self.has_server_model()
