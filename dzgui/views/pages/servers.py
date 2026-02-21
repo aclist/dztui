@@ -100,11 +100,12 @@ class ServerNotebook(Gtk.ScrolledWindow):
         if label is None:
             return
 
-        # TODO: strings
+        # TODO: strings, tab activity notifier
         text = label.strip("*")
         self.notebook.set_tab_label_text(child, text)
+
         # NOTE: spawns a thread
-        self.controller.populate_model()
+        self.controller.populate_model(self.get_active_treeview())
 
     def get_active_treeview(self) -> ServerTreeView:
         index = self.notebook.get_current_page()

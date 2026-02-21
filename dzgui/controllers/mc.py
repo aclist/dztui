@@ -43,8 +43,9 @@ from dzgui.config import update
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.controllers.emitter import Emitter
-from dzgui.model.contextmenu import ContextMenuManager
+from dzgui.managers.contextmenu import ContextMenuManager
 from dzgui.model.filtered_model import FilteredModelManager
+from dzgui.model.servers import ServerModelManager
 from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
 from dzgui.util._json import read_json, write_json
@@ -111,7 +112,6 @@ class Controller(GObject.GObject):
         self.prefs: UserPrefs
         self.cleanup_func: StoredFunc = None
 
-        #self.model_man = ModelManager()
         self.emitter = Emitter()
         self.emitter.connect("map_selection_changed", self._on_map_selection_changed)
         self.emitter.connect("check_toggled", self._on_check_toggled)
@@ -481,7 +481,7 @@ class Controller(GObject.GObject):
         # FIXME: refiltration should occur in thread
         model.append(self.insert_record[0])
         filtered = filter_man.filter(FilterMode.INITIAL)
-        treeview.set_model(filter_man.get_model())
+        treeview.set_model(filter_man.get_proxy_model())
         # TODO: update statusbar
         context = self.get_active_context()
         # TODO: adding a row may update available maps
@@ -640,6 +640,7 @@ class Controller(GObject.GObject):
                 sel.select_path(path)
 
     # TODO: make as method of tree?
+    # TODO: could have a LocalModManager that accepts button enums
     def uncolorize_mods(self) -> None:
         model = self.get_mod_store()
         for mod in model:
@@ -856,7 +857,7 @@ class Controller(GObject.GObject):
         self, filter_man: "FilteredModelManager", mode: FilterMode, label: str
     ) -> None:
         filter_man.filter(mode, label)
-        self.to_insert = filter_man.get_model()
+        self.to_insert = filter_man.get_proxy_model()
         print("filtering threaded")
         self.cleanup_func = StoredFunc(self.cleanup_on_success)
 
@@ -872,31 +873,33 @@ class Controller(GObject.GObject):
         return self.filter_man
 
     def set_filter_man(self, filter_man: "FilteredModelManager") -> None:
+        # TODO: used when staging filter man outside of thread
         self.filter_man = filter_man
 
-    def populate_model(self) -> None:
+    def populate_model(self, tv: Gtk.TreeView) -> None:
         # NOTE: prepare GTK objects outside of thread
-        treeview = self.get_active_treeview()
-        if treeview.is_loaded() is True:
-            self.emitter.emit("servers_loaded", treeview.get_enum())
-            return
+        #if tv.is_loaded() is True:
+        #    self.emitter.emit("servers_loaded", tv.get_enum())
+        #    return
 
-        func, jobs = treeview.get_query_func()
-        if func is None:
-            self.emitter.emit("servers_loaded", treeview.get_enum())
-            treeview.set_model(None)
-            return
+        #func, jobs = tv.get_query_func()
+        ServerModelManager(self, tv, first_iteration=True)
+
+        #if func is None:
+        #    self.emitter.emit("servers_loaded", tv.get_enum())
+        #    tv.set_model(None)
+        #    return
 
         # TODO: clear ephemeral model if necessary
         # manager = treeview.get_filter_man()
         # manager.clear_model()
 
-        self.first_iteration = True
-        self.pending_jobs = jobs
-        # TODO: get filter manager a priori and set it so that it can be accessed out of thread
-        filter_man = treeview.get_filter_man()
-        self.set_filter_man(filter_man)
-        self.run_query_func(func)
+        # self.first_iteration = True
+        # self.pending_jobs = jobs
+        # # TODO: get filter manager a priori and set it so that it can be accessed out of thread
+        # filter_man = treeview.get_filter_man()
+        # self.set_filter_man(filter_man)
+        # self.run_query_func(func)
 
     def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
         fav = str(self.query_config(Preferences.FAV_LBL))
@@ -950,10 +953,15 @@ class Controller(GObject.GObject):
 
     def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
         # NOTE: workaround for GTK bug where fullscreen causes headers to vanish when model is None
+        # TODO: this should be internal to servers page
         state = self.has_server_model()
         tv = self.get_active_treeview()
         tv.set_headers_visible(state)
         tv.set_headers_clickable(state)
+
+    def has_server_model(self) -> bool:
+        treeview = self.get_active_treeview()
+        return treeview.get_model() is not None
 
     def _on_check_toggled(self, emitter: Emitter, label: str, state: bool) -> None:
         map_man = self.get_map_man()
@@ -970,10 +978,6 @@ class Controller(GObject.GObject):
         map_man = self.get_map_man()
         map_man.set_selected_map(selection)
         self.refilter_model(FilterMode.MAP)
-
-    def has_server_model(self) -> bool:
-        treeview = self.get_active_treeview()
-        return treeview.get_model() is not None
 
     def hide_widgets_on_init(self) -> None:
         self.mediator.grid.conpan.set_lan_visible(False)

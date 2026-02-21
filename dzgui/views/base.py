@@ -152,20 +152,18 @@ class OuterWindow(Gtk.Window):
 
         MainController.set_resolution(self)
         self.show_all()
-
         css.load_css()
 
-        # TODO: first run
         MainController.open_page(NotebookPage.SERVERS)
-        MainController.hide_widgets_on_init()
+        self.grid.hide_widgets_on_init()
 
         # TODO: POC, trigger page change here
         MainController.loaded = True
 
-        # TODO: debug flag
+        # TODO: debug flag, perhaps drop
         if MainController.get_prefs().is_debug:
             return
-        MainController.populate_model()
+        MainController.populate_model(MainController.get_active_treeview())
 
     def _on_delete_event(self, window: "OuterWindow", event: Gdk.EventKey) -> None:
         self.halt_proc_and_quit()
@@ -351,6 +349,10 @@ class Grid(Gtk.Grid):
         self.show_all()
 
         self.emitter.connect("server_page_toggled", self.toggle_filter_panels)
+
+    def hide_widgets_on_init(self) -> None:
+        self.conpan.set_lan_visible(False)
+        self.right_panel.sel_panel.hide()
 
     def _shrink(self, button: Gtk.Button) -> None:
         tv = MainController.get_active_treeview()

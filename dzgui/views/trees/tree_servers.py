@@ -48,7 +48,7 @@ class ServerTreeView(ContextMixin, TreeView):
         self.query_func: Callable = None
 
         self.filter_man = FilteredModelManager(controller)
-        model = self.filter_man.get_model()
+        model = self.filter_man.get_proxy_model()
         self.set_model(model)
 
         # NOTE: each tab context has its own unique maps

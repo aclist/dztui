@@ -47,6 +47,7 @@ class StoredFunc:
 class ThreadingManager:
     def __init__(self, parent: Gtk.Window) -> None:
         self.parent = parent
+        self.jobs = 1
         self.cleanup_func = None
 
     def call_on_thread(self, dialog_str: str, func: StoredFunc) -> None:
@@ -54,10 +55,19 @@ class ThreadingManager:
             func.call()
             GLib.idle_add(self._destroy_on_idle)
 
-        self.wait_dialog = WaitDialog(self.parent, dialog_str)
+        self.wait_dialog = WaitDialog(self.parent, dialog_str, jobs=self.jobs)
         self.wait_dialog.show_all()
         thread = threading.Thread(target=callback)
         thread.start()
+
+    def set_job_count(self, jobs: int) -> None:
+        self.jobs = jobs
+
+    def increment_dialog(self) -> None:
+        GLib.idle_add(self.wait_dialog.increment)
+
+    def increment_dialog_with_str(self, text: str) -> None:
+        GLib.idle_add(lambda: self.wait_dialog.increment(text))
 
     def set_cleanup_func(self, func: StoredFunc) -> None:
         if type(func) not in (StoredFunc, type(None)):

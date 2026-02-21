@@ -53,7 +53,7 @@ class FilteredModelManager:
         self.filter_cache = {}
         self.ping_cache: dict[str, int] = {}
 
-        self.ephemeral_model: ListStore = None
+        self.proxy_model: ListStore = None
 
         self.control_model: list = None
         self.filtered: list = None
@@ -68,13 +68,13 @@ class FilteredModelManager:
         self.keyword_filter = keyword
 
     def append_row(self, row: list) -> None:
-        self.ephemeral_model.append(row)
+        self.proxy_model.append(row)
 
-    def clear_model(self) -> None:
-        self.ephemeral_model.clear()
+    def clear_proxy_model(self) -> None:
+        self.proxy_model.clear()
 
-    def get_model(self) -> ListStore:
-        return self.ephemeral_model
+    def get_proxy_model(self) -> ListStore:
+        return self.proxy_model
 
     def new_model_from_class(self, cls: type) -> ListStore:
         store = ListStore(*[ftype for field, ftype in cls.__annotations__.items()])
@@ -89,7 +89,7 @@ class FilteredModelManager:
 
         if filters in self.filter_cache:
             cache = self.filter_cache[filters]
-            self.set_model(cache[0])
+            self.set_proxy_model(cache[0])
             self.set_filtered(cache[1])
             return
 
@@ -128,11 +128,13 @@ class FilteredModelManager:
         if len(rows) > 0:
             rows = self.sort_rows(rows)
             for i, row in enumerate(rows):
+                # TODO: consider overriding append() method of Gtk.ListStore
+                # check Gtk source code
                 clone.insert_with_values(i, tuple(range(0, n_cols)), row)
                 #clone.append(row)
 
         self.set_cache(filters, clone, rows)
-        self.set_model(clone)
+        self.set_proxy_model(clone)
         return clone
 
     def sort_rows(self, rows: list) -> list:
@@ -266,11 +268,11 @@ class FilteredModelManager:
     def get_filtered(self) -> list:
         return self.filtered
 
-    def set_model(self, model: ListStore | None) -> None:
+    def set_proxy_model(self, model: ListStore | None) -> None:
         """
-        ListStore representation of the model
+        ListStore representation of the raw model after filtration
         """
-        self.ephemeral_model = model
+        self.proxy_model = model
 
     def set_control(self, rows: list) -> None:
         """
@@ -281,20 +283,20 @@ class FilteredModelManager:
     def get_control(self) -> list:
         return self.control_model
 
-    @deprecated("Legacy code")
-    def set_success(self, result: bool) -> None:
-        self.success = result
+    #@deprecated("Legacy code")
+    #def set_success(self, result: bool) -> None:
+    #    self.success = result
 
-    @deprecated("Legacy code")
-    def get_success(self) -> bool:
-        return self.success
+    #@deprecated("Legacy code")
+    #def get_success(self) -> bool:
+    #    return self.success
 
-    # NOTE: used when adding/removing rows in-situ in the ephemeral model
+    # NOTE: used when adding/removing rows in-situ in the proxy model
     # and syncing changes to control model, but ignored for player count/ping updates
     # cf. remove_from_history(), remove_server()
     # NOTE: this can most likely be simplified for v7
     def wipe_cache(self, full=False) -> None:
-        self.set_success(True)
+        # self.set_success(True)
         self.filtered = None
         self.filter_cache = {}
         self.ping_cache = {}
