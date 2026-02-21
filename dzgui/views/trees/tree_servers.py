@@ -1,11 +1,12 @@
 import logging
 import threading
+
+from queue import Queue
 from typing import Any, Optional, Self
 from warnings import deprecated
 
-
 from dzgui.views.mixins.context_mixin import ContextMixin
-from dzgui.const.enum import ContextMenuGroup, ServerTab
+from dzgui.const.enum import ContextMenu, ContextMenuGroup, ServerTab
 from dzgui.api.servers import Record
 from dzgui.api.servers import ping as Ping
 from dzgui.model.map_model import MapManager
@@ -60,12 +61,10 @@ class ServerTreeView(ContextMixin, TreeView):
         self.handler_id: int
         self.query_func_jobs = 1
 
-        self.seen_cache = []
-
         self.current_proc = None
-        from queue import Queue
+
         self.queue = Queue()
-        #self.queue = multiprocessing.Queue()
+        # self.queue = multiprocessing.Queue()
 
         prefs = self.controller.get_prefs()
         columns = prefs.paths.columns
@@ -131,42 +130,6 @@ class ServerTreeView(ContextMixin, TreeView):
         self.connect("unmap", self._on_unmap)
 
         self.thread = None
-
-    def _get_ping(
-        self,
-        column: Gtk.TreeViewColumn,
-        cell: Gtk.CellRendererText,
-        model: Gtk.TreeModel,
-        it: Gtk.TreeIter,
-        data: Any,
-    ):
-        def ping_server(model, _iter, ip: str, qport: int, ping: int):
-            # res = Ping(0, model[_iter])
-            res = Ping(0, ip, qport, ping)
-            ping = res.ping
-            print(res)
-            GLib.idle_add(lambda: model.set(_iter, ping_column, ping))
-
-        addr_column = 7
-        qport_column = 8
-        ping_column = 9
-        # TODO: unpack model before entering thread
-        # test 40k servers with unpacked model
-        addr = model.get_value(it, addr_column).split(":")[0]
-        qport = model.get_value(it, qport_column)
-        ping = model.get_value(it, ping_column)
-        ip = f"{addr}:{qport}"
-
-        if ip in self.seen_cache:
-            return
-        self.seen_cache.append(ip)
-
-        thread = threading.Thread(
-            daemon=True,
-            target=ping_server,
-            args=(model, it, ip, qport, ping),
-        )
-        thread.start()
 
     def start_timeout(self) -> None:
         self.queue_id = GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
@@ -238,15 +201,7 @@ class ServerTreeView(ContextMixin, TreeView):
         # NOTE: get final width after drag action completes
         GLib.idle_add(self.controller.propagate_column_width, col)
 
-    #def terminate_process(self) -> None:
-    #    if self.thread and self.thread.is_alive():
-    #        print("thread still exists")
-    #    if self.current_proc and self.current_proc.is_alive():
-    #        self.current_proc.terminate()
-
     def start_distcalc(self, emitter: Optional["Emitter"] = None):
-        #self.terminate_process()
-        #self.queue_id = GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
         self.emitter.emit("distcalc_started")
         record = self.get_record()
         if record is None:
@@ -261,11 +216,6 @@ class ServerTreeView(ContextMixin, TreeView):
             self.controller.set_statusbar_dist(haversine, self.get_enum())
             return
 
-        #def t(ip, enum, queue) -> None:
-        #    if queue.empty():
-        #        queue.put(["LONG DISTANCE", 0])
-
-
         enum = self.get_enum()
         self.thread = threading.Thread(
             daemon=True,
@@ -273,16 +223,13 @@ class ServerTreeView(ContextMixin, TreeView):
             args=(record.ip, enum, self.queue, self.controller),
         )
         self.thread.start()
-        #self.current_proc = CalcDist(
-        #    record.ip, self.get_enum(), self.queue, self.controller
-        #)
-        #self.current_proc.start()
 
     def _check_result_queue(self) -> Literal[True]:
         latest_result = None
         while not self.queue.empty():
             latest_result = self.queue.get()
 
+        # FIXME: cache is being checked at two intervals
         cache = self.controller.get_dist_cache()
 
         if latest_result:
@@ -299,9 +246,6 @@ class ServerTreeView(ContextMixin, TreeView):
     ) -> bool | None:
         if event.state is Gdk.ModifierType.CONTROL_MASK:
             match event.keyval:
-                case Gdk.KEY_r:
-                    # TODO: unimplemented, threading
-                    self.refresh_player_count()
                 case Gdk.KEY_f:
                     self.emitter.emit("request_keyword_focus")
                 case Gdk.KEY_m:
@@ -312,8 +256,10 @@ class ServerTreeView(ContextMixin, TreeView):
                     if self.enum is ServerTab.LAN:
                         self.emitter.emit("request_lan_entry_focus")
                 case Gdk.KEY_c:
-                    record = self.get_record()
-                    self.controller.copy_ip(record)
+                    self.controller.menu_action(ContextMenu.COPY_SERVER_IP, self)
+                case Gdk.KEY_r:
+                    # TODO: unimplemented, needs threading
+                    self.controller.menu_action(ContextMenu.REFRESH_PLAYERS, self)
         else:
             match event.keyval:
                 case Gdk.KEY_l | Gdk.KEY_Right:
@@ -321,30 +267,23 @@ class ServerTreeView(ContextMixin, TreeView):
                 case _:
                     self.emitter.emit("check_button_pressed", event.keyval)
 
-        # mod_context_items = [ContextMenu.OPEN_WORKSHOP, ContextMenu.DELETE_MOD]
-        # TODO: dynamic menu entries
-        # for row in items:
-        #    if row == ContextMenu.ADD_SERVER:
-        #        if self.is_in_favs():
-        #            row = ContextMenu.REMOVE_SERVER
-        #    item = Gtk.MenuItem(label=row.dict["label"])
-        #    item.type = row
-        #    item.action = row.dict["action"]
-        #    self.menu.append(item)
-        #    if row == ContextMenu.SHOW_MODS:
-        #        if not self.has_mods():
-        #            item.set_sensitive(False)
-        #    if row == ContextMenu.ADD_NOTE:
-        #        if self.get_record_string() in notes_cache:
-        #            item.set_label(strings.edit_note)
+    # TODO: unimplemented
+    # def is_modded(self) -> bool:
+    #    select = self.get_selection()
+    #    sels = select.get_selected_rows()
+    #    (model, pathlist) = sels
+    #    path = pathlist[0]
+    #    tree_iter = model.get_iter(path)
+    #    mods = model.get_value(tree_iter, 11)
+    #    return mods
 
-        # if event.type is Gdk.EventType.KEY_PRESS and event.keyval is Gdk.KEY_l:
-        #     if self.is_selection_empty():
-        #         return
-        #     self.menu.popup_at_widget(widget, Gdk.Gravity.CENTER, Gdk.Gravity.WEST)
-        # else:
-        #     self.menu.popup_at_pointer(event)
-        # self.menu.select_first(False)
+    # TODO: unimplemented
+    # def is_in_favs(self) -> bool:
+    #    record = self.get_record_string()
+    #    proc = call_out("is_in_favs", record)
+    #    if proc.returncode == 0:
+    #        return True
+    #    return False
 
     def _parent_row_activated(
         self, tree: TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn
@@ -368,7 +307,7 @@ class ServerTreeView(ContextMixin, TreeView):
         return f"{addr}:{qport}"
 
     def get_record(self) -> Record | None:
-        # TODO: use tree_base.get_selected_row()
+        # TODO: clean up, use tree_base.get_selected_row()
         select = self.get_selection()
         sels = select.get_selected_rows()
         (model, pathlist) = sels
@@ -391,6 +330,40 @@ class ServerTreeView(ContextMixin, TreeView):
 
     def set_loaded(self, status: bool) -> None:
         self.loaded = status
+
+    # @deprecated("currently unused")
+    # def _get_ping(
+    #    self,
+    #    column: Gtk.TreeViewColumn,
+    #    cell: Gtk.CellRendererText,
+    #    model: Gtk.TreeModel,
+    #    it: Gtk.TreeIter,
+    #    data: Any,
+    # ):
+    #    def ping_server(model, _iter, ip: str, qport: int, ping: int):
+    #        res = Ping(0, ip, qport, ping)
+    #        ping = res.ping
+    #        GLib.idle_add(lambda: model.set(_iter, ping_column, ping))
+
+    #    addr_column = 7
+    #    qport_column = 8
+    #    ping_column = 9
+
+    #    addr = model.get_value(it, addr_column).split(":")[0]
+    #    qport = model.get_value(it, qport_column)
+    #    ping = model.get_value(it, ping_column)
+    #    ip = f"{addr}:{qport}"
+
+    #    if ip in self.seen_cache:
+    #        return
+    #    self.seen_cache.append(ip)
+
+    #    thread = threading.Thread(
+    #        daemon=True,
+    #        target=ping_server,
+    #        args=(model, it, ip, qport, ping),
+    #    )
+    #    thread.start()
 
     @deprecated("Currently unused")
     def _lazy_load(

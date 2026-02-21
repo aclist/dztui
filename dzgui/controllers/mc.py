@@ -172,30 +172,30 @@ class Controller(GObject.GObject):
     def unblock_signals(self) -> None:
         self.block_signals(False)
 
-    @deprecated("Currently unused")
-    def block_signals(self, state: bool = True) -> None:
-        self.suppress_signal(
-            self.mediator.filters,
-            self.mediator.filters.maps_combo,
-            "_on_map_changed",
-            state,
-        )
-        self.suppress_signal(
-            self.mediator.menu,
-            self.mediator.menu.selected_row,
-            "_on_tree_selection_changed",
-            state,
-        )
-        self.suppress_signal(
-            self.mediator.menu, self.mediator.menu, "_on_keypress", state
-        )
-        for check in self.mediator.filters.checks:
-            self.suppress_signal(
-                self.mediator.filters,
-                check,
-                "_on_check_toggled",
-                state,
-            )
+    # @deprecated("Currently unused")
+    # def block_signals(self, state: bool = True) -> None:
+    #    self.suppress_signal(
+    #        self.mediator.filters,
+    #        self.mediator.filters.maps_combo,
+    #        "_on_map_changed",
+    #        state,
+    #    )
+    #    self.suppress_signal(
+    #        self.mediator.menu,
+    #        self.mediator.menu.selected_row,
+    #        "_on_tree_selection_changed",
+    #        state,
+    #    )
+    #    self.suppress_signal(
+    #        self.mediator.menu, self.mediator.menu, "_on_keypress", state
+    #    )
+    #    for check in self.mediator.filters.checks:
+    #        self.suppress_signal(
+    #            self.mediator.filters,
+    #            check,
+    #            "_on_check_toggled",
+    #            state,
+    #        )
 
     def suppress_signal(
         self, owner: Gtk.Widget, widget: Gtk.Widget, func_name: str, state: bool
@@ -554,54 +554,6 @@ class Controller(GObject.GObject):
         client = self.query_config(Preferences.CLIENT)
         open_user_workshop(uid, client)
 
-    # def copy_log(self, paths: list[Gtk.TreePath]) -> str:
-    #    if len(paths) < 1:
-    #        return ""
-    #    final = []
-    #    for path in paths:
-    #        record = self.log_store[path]
-    #        r = [el for el in record]
-    #        concat = strings.delimiter.join(r)
-    #        final.append(concat)
-    #    text = "\n".join(final)
-    #    return text
-
-    # def get_col_value_by_path_index(self, path: Gtk.TreePath, index: int) -> Any:
-    #    treeview = self.get_active_treeview()
-    #    model = treeview.get_model()
-    #    if model is None:
-    #        return None
-    #    value = model[path][index]
-    #    return value
-
-    # def copy_name(self, path: Gtk.TreePath) -> None:
-    #    name = self.get_col_value_by_path_index(path, 0)
-    #    if name is None:
-    #        return
-    #    self.copy_clipboard(name)
-
-    # def copy_ip(self, path: Gtk.TreePath) -> None:
-    #    treeview = self.get_active_treeview()
-    #    record = treeview.get_record()
-    #    self.copy_clipboard(f"{record.ip}:{record.qport}")
-
-    # def copy_clipboard(self, text: str) -> None:
-    #    self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-    #    self.clipboard.set_text(text, -1)
-
-    # def open_mod_page(self, path: Gtk.TreePath) -> None:
-    #    mod, it = self.get_mod_from_tree_path(path)
-    #    cmd = self.query_config(Preferences.CLIENT)
-    #    open_workshop_page(mod, cmd)
-
-    # def get_mod_from_tree_path(
-    #    self, tree_path: Gtk.TreePath
-    # ) -> tuple[str, Gtk.TreeIter]:
-    #    model = self.get_mod_store()
-    #    tree_iter = model.get_iter(tree_path)
-    #    mod = model.get(tree_iter, 2)[0]
-    #    return mod, tree_iter
-
     def delete_single_mod_cleanup(self, _iter: Gtk.TreeIter) -> None:
         self.get_mod_store().remove(_iter)
         remove_stale_signatures(self.prefs.paths.config, self.prefs.paths.version)
@@ -668,64 +620,8 @@ class Controller(GObject.GObject):
         self.emitter.emit("fav_server_changed", name, simple_ip)
 
     def menu_action(self, action: ContextMenu, tree: Gtk.TreeView) -> None:
-        # TODO: pass prefs into contextman
         context_man = ContextMenuManager(tree, self)
         context_man.process(action)
-        # context_man.process(action)
-        # match action:
-        #    # NOTE: manipulates server stores and caches
-        #    # add to saved servers model verbatim and sort in place
-        #    # update tab with !
-        #    # update config file with IP
-        #    # TODO: needs threading
-        #    case ContextMenu.ADD_SERVER:
-        #        pass
-
-        #    # spawn edit dialog and update cache, notes file
-        #    case ContextMenu.ADD_NOTE:
-        #        pass
-
-        #    case ContextMenu.COPY_CLIPBOARD:
-        #        self.copy_ip(path)
-
-        #    case ContextMenu.COPY_NAME:
-        #        self.copy_name(path)
-
-        #    case ContextMenu.DELETE_MOD:
-        #        self.delete_single_mod(path)
-        #        # TODO: connect to emitter automatically
-        #        # Gtk.TreeModel, row-inserted/row-deleted
-        #        # updates statusbar
-        #        # FIXME: signal should instead be emitted off of treeview when rows added/inserted
-        #        # self.update_mod_statusbar()
-
-        #    case ContextMenu.REFRESH_PLAYERS:
-        #        # get record
-        #        # call a2s on thread
-        #        pass
-
-        #    # update history model, update tab label, pop off of queue, write new list into file
-        #    # see dq.py
-        #    case ContextMenu.REMOVE_HISTORY:
-        #        pass
-
-        #    # reverse of ADD_SERVER
-        #    case ContextMenu.REMOVE_SERVER:
-        #        pass
-
-        #    case ContextMenu.SET_FAV:
-        #        self.set_fav()
-
-        #    # NOTE: spawns dedicated dialogs
-        #    # TODO: needs threading
-        #    case ContextMenu.SHOW_DETAILS:
-        #        pass
-        #    # TODO: needs threading
-        #    case ContextMenu.SHOW_MODS:
-        #        pass
-
-        #    case ContextMenu.OPEN_WORKSHOP:
-        #        self.open_mod_page(path)
 
     def toggle_mod_selection(self, state: bool) -> None:
         sel = self.mediator.modtreeview.get_selection()

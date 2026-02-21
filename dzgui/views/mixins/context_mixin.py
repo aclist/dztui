@@ -18,9 +18,8 @@ class ContextMixin(TreeView):
         widget: Gtk.Widget,
         event: Gdk.EventButton | Gdk.EventKey,
     ) -> None:
-        # FIXME: double click causes issue
-        # split into present by click and present by key
 
+        # FIXME: start debug log focused
         if self.is_selection_empty():
             return False
 
@@ -42,8 +41,7 @@ class ContextMixin(TreeView):
         self.context_menu.connect("key-press-event", self._on_key)
 
         for row in group.value:
-            item = Gtk.MenuItem(label=row.dict["label"])
-            item.connect("activate", self._on_menu_click, row)
+            item = self._process_dynamic_row(row)
             self.context_menu.append(item)
 
         self.context_menu.show_all()
@@ -58,6 +56,22 @@ class ContextMixin(TreeView):
 
         self.context_menu.select_first(False)
 
+    def _process_dynamic_row(self, row: ContextMenu) -> None:
+        if row == ContextMenu.ADD_SERVER and self.is_in_favs():
+            row = ContextMenu.REMOVE_SERVER
+
+        item = Gtk.MenuItem(label=row.dict["label"])
+        item.connect("activate", self._on_menu_click, row)
+
+        if row == ContextMenu.SHOW_MODS:
+            item.set_sensitive(self.is_modded())
+
+        return item
+        # TODO: notes cache
+        # if row == ContextMenu.ADD_NOTE:
+        #    if self.get_record_string() in notes_cache:
+        #        item.set_label(strings.edit_note)
+
     def _process_button_event(self, event: Gdk.EventButton) -> None:
         try:
             pathinfo = self.get_path_at_pos(int(event.x), int(event.y))
@@ -71,24 +85,7 @@ class ContextMixin(TreeView):
             pass
 
     def _on_menu_click(self, widget: Gtk.MenuItem, enum: ContextMenu) -> None:
-        """
-        Local mods page allows multi selection, so ensure that only focused row
-        is selected. Used by ContextMenu.OPEN_WORKSHOP and ContextMenu.DELETE_MOD.
-
-        ModTreeView supports multi-delete, but context menu enforces
-        single deletion on the focused row.
-
-        Debug log page allows multi selection and copy of rows, so special handling
-        is used per below.
-        """
-        if enum == ContextMenu.COPY_LOG_CLIPBOARD:
-            model, records = self.get_selection().get_selected_rows()
-            clipboard = self.controller.copy_log(records)
-            self.controller.copy_clipboard(clipboard)
-        else:
-            #path = self.get_focused_row_path()
-            #self.controller.menu_action(enum, path)
-            self.controller.menu_action(enum, self)
+        self.controller.menu_action(enum, self)
 
     def _on_key(self, menu: Gtk.Menu, event: Gdk.EventKey) -> bool | None:
         if not is_navkey(event.keyval):
