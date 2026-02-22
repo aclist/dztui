@@ -1,11 +1,10 @@
 import datetime
 import re
 
-from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
-from warnings import deprecated
 
 from dzgui.const.enum import FilterMode
+from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
 
 import gi
@@ -19,22 +18,6 @@ if TYPE_CHECKING:
     from dzgui.controllers.emitter import Emitter
 
 
-@dataclass(slots=True, frozen=True)
-class ServerColumns:
-    name: str
-    _map: str
-    perspective: str
-    gametime: str
-    players: int
-    _max: int
-    queue: int
-    ip: str
-    qport: int
-    ping: int
-    provider: str
-    modded: bool
-
-
 class FilteredModelManager:
     """
     Manages access to cached ListStore resources and
@@ -42,7 +25,9 @@ class FilteredModelManager:
     which share the same column structure.
 
     A FilteredModelManager is attached to each ServerTreeView.
-    Filter methods are not thread-safe in themselves.
+
+    Raw data is cached before being packed into a ListStore, see get_control()
+    Filtration creates a proxy of the TreeView's model, see get_proxy_model()
     """
 
     def __init__(self, controller: "Controller") -> None:
@@ -117,21 +102,17 @@ class FilteredModelManager:
                 rows = self.filter_toggle_on(filters, *args)
 
         # TODO: unimplemented
+        # just write pings into control model instead
         # if mode is not FilterMode.INITIAL:
         #    for row in rows:
         #        if row[7] in self.ping_cache:
         #            row[9] = self.ping_cache[row[7]]
 
         # NOTE: this ListStore manipulation must remain local to the thread
-        clone = self.new_model_from_class(ServerColumns)
-        n_cols = clone.get_n_columns()
+        clone = ModelFactory().make_server_store()
         if len(rows) > 0:
             rows = self.sort_rows(rows)
-            for i, row in enumerate(rows):
-                # TODO: consider overriding append() method of Gtk.ListStore
-                # check Gtk source code
-                clone.insert_with_values(i, tuple(range(0, n_cols)), row)
-                # clone.append(row)
+            clone.extend(rows)
 
         self.set_cache(filters, clone, rows)
         self.set_proxy_model(clone)

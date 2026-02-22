@@ -315,10 +315,10 @@ class Controller(GObject.GObject):
         path = self.query_config(Preferences.DEFAULT)
         mods = get_delimited_mods(Path(path))
 
+        # NOTE: cell renderer highlight toggle
         for mod in mods:
-            # NOTE: show highlight color bool
             mod.append(False)
-            model.append(mod)
+        model.extend(mods)
 
         self.cleanup_func = StoredFunc(self.load_mods_cleanup, model)
 

@@ -53,7 +53,8 @@ class ServerTreeView(ContextMixin, TreeView):
         self.map_man = MapManager()
 
         self.set_fixed_height_mode(True)
-        self.set_headers_visible(True)
+        # NOTE: headers become visible on model load
+        self.set_headers_visible(False)
 
         self.queue_id: int
         self.handler_id: int

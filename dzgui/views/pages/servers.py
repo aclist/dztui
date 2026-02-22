@@ -36,7 +36,6 @@ class ServerNotebook(Gtk.ScrolledWindow):
             controller, ServerTab.RECENT, ContextMenuGroup.RECENT
         )
         self.lan = ServerTreeView(controller, ServerTab.LAN, ContextMenuGroup.SCAN_LAN)
-        self.lan.set_headers_visible(False)
 
         tabs = [
             (self.browser, server_labels.browser),
