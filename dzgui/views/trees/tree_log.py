@@ -40,13 +40,25 @@ class LogTreeView(ContextMixin, TreeView):
             column.set_sort_column_id(i)
             self.append_column(column)
 
+        self.connect("button-press-event", self._on_log_buttonpress)
         self.connect("key-press-event", self._on_log_keypress)
-        self.connect("button-press-event", self._on_log_keypress)
 
     def populate_log(self, filepath: str) -> None:
         model = ModelFactory().new_model_from_logfile(filepath)
         self.set_model(model)
         self.set_cursor(0)
+
+    def _on_log_buttonpress(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
+        if event.button == Gdk.BUTTON_SECONDARY:
+            path, col, x, y = self.get_path_at_pos(int(event.x), int(event.y))
+            if path:
+                selection = self.get_selection()
+                model, selected_paths = selection.get_selected_rows()
+                if path not in selected_paths:
+                    selection.select_path(path)
+            self.present_menu(widget, event)
+            return True
+        return False
 
     def _on_log_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
         self.present_menu(widget, event)

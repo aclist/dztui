@@ -182,7 +182,7 @@ class ServerModelManager:
         self._push_data(parsed, FilterMode.INITIAL)
 
     @call_on_thread(dialog.querying)
-    def _add_by_id_or_ip(self, addr: str) -> None:
+    def add_by_id_or_ip(self, addr: str) -> None:
         res = Servers.query_id_or_ip(addr)
         if res is None:
             self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))

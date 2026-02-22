@@ -13,10 +13,9 @@ if TYPE_CHECKING:
     from dzgui.api.servers import Record
 
 
-def get_attributes(config: Path, uid: int) -> str:
+def get_attributes(key: str, uid: int) -> str:
     # TODO: handle if key is not set
     # TODO: tests for malformed IDs/values
-    key = lookup(config, Preferences.BM)
 
     hdr = {"Authorization": "Bearer " + key}
     payload: dict[str, str] = {
@@ -30,11 +29,11 @@ def get_attributes(config: Path, uid: int) -> str:
     return j
 
 
-def map_id_to_record(config: Path, uid: int) -> Optional["Record"]:
+def map_id_to_record(key: str, uid: int) -> Optional["Record"]:
     from dzgui.api.servers import Record
 
     try:
-        record = get_attributes(config, uid)
+        record = get_attributes(key, uid)
         ip = record["ip"]
         port = record["port"]
         qport = record["portQuery"]

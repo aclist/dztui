@@ -19,7 +19,6 @@ class ContextMixin(TreeView):
         event: Gdk.EventButton | Gdk.EventKey,
     ) -> None:
 
-        # FIXME: start debug log focused
         if self.is_selection_empty():
             return False
 
@@ -80,7 +79,15 @@ class ContextMixin(TreeView):
             (path, col, cellx, celly) = pathinfo
             if path is None:
                 return True
-            self.set_cursor(path, col, False)
+            # return True
+            selection = self.get_selection()
+            model, selected_paths = selection.get_selected_rows()
+            if path not in selected_paths:
+                for p in selected_paths:
+                    selection.unselect_path(p)
+                self.set_cursor(path, col, False)
+            return True
+            # FIXME: if selection is not multiple, change cursor
         except AttributeError:
             pass
 

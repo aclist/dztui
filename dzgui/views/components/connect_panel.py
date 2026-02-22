@@ -203,7 +203,7 @@ class AddPanel(Gtk.Frame):
 
     def _on_connect_clicked(self, button: Gtk.Button) -> None:
         text = self.entry.get_text()
-        ConnectionManager(self.controller)._connect_by_id_or_ip(text)
+        ConnectionManager(self.controller).connect_by_id_or_ip(text)
 
     def _submit_query(self) -> None:
         text = self.entry.get_text()

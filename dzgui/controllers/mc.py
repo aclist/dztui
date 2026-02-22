@@ -605,8 +605,8 @@ class Controller(GObject.GObject):
         record = treeview.get_record_string()
 
         try:
-            self.update_config(Preferences.FAV_LBL, name)
-            self.update_config(Preferences.FAV_SRV, record)
+            self.config_man.write_config(Preferences.FAV_LBL, name)
+            self.config_man.write_config(Preferences.FAV_SRV, record)
         except Exception as e:
             logger.critical(e)
             # TODO: add a failure dialog here

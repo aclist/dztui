@@ -461,18 +461,18 @@ def response_to_fq_ip(res: dict) -> str:
     return f"{ip}:{gameport}:{qport}"
 
 
-def query_id_or_ip(addr: str) -> None:
+def query_id_or_ip(addr: str, key: str) -> None:
     # NOTE: Battlemetrics
     if addr.isdigit():
         try:
-            config = self.controller.get_prefs().paths.config
-            resolved = map_id_to_record(config, addr)
+            resolved = map_id_to_record(key, addr)
             res = query_direct(resolved.ip, resolved.qport)
         except Exception as e:
             logger.critical(e)
             return None
     else:
         record = addr.split(":")
-        ip, qport = record[0], record[1]
+        # TODO: create a Record object
+        ip, qport = record[0], record[2]
         res = query_direct(ip, int(qport))
     return res

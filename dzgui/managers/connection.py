@@ -22,12 +22,12 @@ class ConnectionManager:
         self.thread_man = ThreadingManager(parent=controller)
 
     @call_on_thread(dialog.querying)
-    def _connect_by_id_or_ip(self, addr: str) -> None:
-        res = Servers.query_id_or_ip(addr)
+    def connect_by_id_or_ip(self, addr: str, key: str) -> None:
+        res = Servers.query_id_or_ip(addr, key)
+        print(res)
         if res is None:
             self.thread_man.set_cleanup_func(StoredFunc(self._connection_failure))
         # TODO: add to history if successful
-        print(res)
 
     def _connection_failure(self) -> None:
         # TODO: more explicit warning message, not necessarily API failure?

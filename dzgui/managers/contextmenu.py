@@ -3,7 +3,9 @@ import logging
 from typing import TYPE_CHECKING
 
 from dzgui.const.enum import ContextMenu, Preferences
+from dzgui.managers.connection import ConnectionManager
 from dzgui.managers.thread_man import ThreadingManager
+from dzgui.model.servers import ServerModelManager
 from dzgui.util import strings
 from dzgui.util.clip import copy_clipboard
 from dzgui.util.open_links import open_workshop_page
@@ -50,7 +52,16 @@ class ContextMenuManager:
                 self.controller.set_fav()
 
             # THREADED
+            case ContextMenu.CONNECT:
+                record = self.treeview.get_record_string()
+                # FIXME: context menu connections do not require BM key
+                key = self.controller.get_config_man().lookup(Preferences.BM)
+                ConnectionManager(self.controller).connect_by_id_or_ip(record, key)
             case ContextMenu.ADD_SERVER:
+                record = self.treeview.get_record_string()
+                ServerModelManager(self.controller, self.treeview).add_by_id_or_ip(
+                    record
+                )
                 # add to saved servers model verbatim and sort in place
                 # update tab with !
                 # update config file with IP

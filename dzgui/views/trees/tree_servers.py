@@ -256,22 +256,28 @@ class ServerTreeView(ContextMixin, TreeView):
                     self.emitter.emit("check_button_pressed", event.keyval)
 
     # TODO: unimplemented
-    # def is_modded(self) -> bool:
-    #    select = self.get_selection()
-    #    sels = select.get_selected_rows()
-    #    (model, pathlist) = sels
-    #    path = pathlist[0]
-    #    tree_iter = model.get_iter(path)
-    #    mods = model.get_value(tree_iter, 11)
-    #    return mods
+    def is_modded(self) -> bool:
+        select = self.get_selection()
+        sels = select.get_selected_rows()
+        (model, pathlist) = sels
+        path = pathlist[0]
+        tree_iter = model.get_iter(path)
+        has_mods = model.get_value(tree_iter, 11)
+        return has_mods
 
-    # TODO: unimplemented
-    # def is_in_favs(self) -> bool:
-    #    record = self.get_record_string()
-    #    proc = call_out("is_in_favs", record)
-    #    if proc.returncode == 0:
-    #        return True
-    #    return False
+    def get_selected_row(self) -> Gtk.TreeModelRow:
+        sel = self.get_selection()
+        sels = sel.get_selected_rows()
+        return sels[0]
+
+    def is_in_favs(self) -> bool:
+        from dzgui.const.enum import Preferences
+
+        record = self.get_record_string()
+        ips = self.controller.get_config_man().lookup(Preferences.IP_LIST)
+        if record in ips:
+            return True
+        return False
 
     def _parent_row_activated(
         self, tree: TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn
