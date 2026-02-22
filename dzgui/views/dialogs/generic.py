@@ -1,4 +1,3 @@
-import textwrap
 from typing import Literal, Self, TYPE_CHECKING
 
 from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL
@@ -52,17 +51,12 @@ class GenericDialog(Gtk.MessageDialog):
         self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
 
         self.set_default_response(Gtk.ResponseType.OK)
-        self.connect("response", self._on_response)
 
         self.get_action_area().set_layout(Gtk.ButtonBoxStyle.CENTER)
         self.get_action_area().set_margin_bottom(20)
         self.outer = self.get_content_area()
         self.outer.set_margin_start(30)
         self.outer.set_margin_end(30)
-
-    def _on_response(self, dialog: Self, response: Gtk.ResponseType) -> None:
-        self.destroy()
-        return response
 
 
 class ConfirmationDialog(GenericDialog):
@@ -113,7 +107,7 @@ class WaitDialog(GenericDialog):
         self.jobs = jobs
         self.cur_job = 1
 
-        self.connect("delete-event", self._on_dialog_delete)
+        self.connect("delete-event", lambda widget, event: True)
         content = self.get_content_area()
         spinner = Gtk.Spinner()
         self.prog = Gtk.ProgressBar()
@@ -129,14 +123,6 @@ class WaitDialog(GenericDialog):
         fraction = self.cur_job / self.jobs
         self.prog.set_fraction(fraction)
         self.cur_job += 1
-
-    def _on_dialog_delete(
-        self, response_id: Gtk.ResponseType, event: Gdk.Event
-    ) -> Literal[True]:
-        """
-        Prevent manual dialog destruction
-        """
-        return True
 
 
 class QuitDialog(GenericDialog):
