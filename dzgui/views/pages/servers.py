@@ -36,6 +36,7 @@ class ServerNotebook(Gtk.ScrolledWindow):
             controller, ServerTab.RECENT, ContextMenuGroup.RECENT
         )
         self.lan = ServerTreeView(controller, ServerTab.LAN, ContextMenuGroup.SCAN_LAN)
+        self.lan.set_headers_visible(False)
 
         tabs = [
             (self.browser, server_labels.browser),
@@ -63,7 +64,7 @@ class ServerNotebook(Gtk.ScrolledWindow):
         tv = self.get_active_treeview()
         state = False if tv.get_model() is None else True
         tv.set_headers_visible(state)
-        tv.set_headers_clickable(state)
+        # tv.set_headers_clickable(state)
         tv.set_loaded(True)
         tv.grab_focus()
 
