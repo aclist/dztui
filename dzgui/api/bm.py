@@ -1,13 +1,17 @@
 import logging
 import requests
 from pathlib import Path
+from typing import Optional, TYPE_CHECKING
 
-from dzgui.api.servers import Record
 from dzgui.config.query import lookup
 from dzgui.const.endpoints import BM_SERVERS
 from dzgui.const.enum import Preferences
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from dzgui.api.servers import Record
+
 
 def get_attributes(config: Path, uid: int) -> str:
     # TODO: handle if key is not set
@@ -18,7 +22,7 @@ def get_attributes(config: Path, uid: int) -> str:
     payload: dict[str, str] = {
         "filter[game]": "dayz",
         "sort": "-players",
-        "filter[ids][whitelist]": str(uid)
+        "filter[ids][whitelist]": str(uid),
     }
     res = requests.get(BM_SERVERS, params=payload, headers=hdr)
     res.raise_for_status()
@@ -26,13 +30,14 @@ def get_attributes(config: Path, uid: int) -> str:
     return j
 
 
-def map_id_to_record(config: Path, uid: int) -> Record | None:
+def map_id_to_record(config: Path, uid: int) -> Optional["Record"]:
+    from dzgui.api.servers import Record
+
     try:
         record = get_attributes(config, uid)
         ip = record["ip"]
         port = record["port"]
         qport = record["portQuery"]
         return Record(ip, port, qport)
-    except Exception as e:
-        logger.warn(e)
+    except Exception:
         return None

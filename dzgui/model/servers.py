@@ -1,40 +1,36 @@
-from datetime import datetime
 import logging
 import threading
-
-from concurrent.futures import wait, as_completed
+from concurrent.futures import as_completed
 from concurrent.futures import ThreadPoolExecutor
+from typing import Optional, TYPE_CHECKING
 
 import dzgui.api.servers as Servers
+from dzgui.const.enum import FilterMode, Preferences, ServerTab
 from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
 )
-from dzgui.const.enum import FilterMode, Preferences, ServerTab
 from dzgui.managers.thread_man import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.util.strings import api_warn_msg, dialog
 from dzgui.views.dialogs.generic import ExceptionDialog
 
-from typing import Optional, TYPE_CHECKING
-
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib  # noqa E402
+from gi.repository import Gtk  # noqa E402
 
 LAN_TIMEOUT = 0.5
 API_TIMEOUT = 3
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
-    from dzgui.controllers.emitter import Emitter
     from dzgui.model.filtered_model import FilteredModelManager
 
 logger = logging.getLogger(__name__)
 
 
 # TODO: failure: spawns error dialog
-# TODO: non failure with empty model: updates statusbar
+# TODO: non failure with empty model: updates statusbar with help text
 
 
 class ServerModelManager:
@@ -42,28 +38,32 @@ class ServerModelManager:
         self, controller: "Controller", tv: Gtk.TreeView, first_iteration=False
     ) -> None:
 
-        enum = tv.get_enum()
+        self.tv = tv
+        self.enum = tv.get_enum()
         self.controller = controller
         self.emitter = controller.get_emitter()
-        if tv.is_loaded():
-            self.emitter.emit("servers_loaded", enum)
-            return
 
-        self.tv = tv
         self.jobs = 1
 
+        # NOTE: store filter man for access inside thread
         self.filter_man = tv.get_filter_man()
+
+        # FIXME: change WaitDialog to use parent window only
         self.thread_man = ThreadingManager(parent=controller)
 
         # TODO: if first iteration, clear filter man control model
         # literal first load: iteration 1
         # refresh: iteration 1 (wipe model)
         # filter: iteration N+1
+        # TODO: can drop first iteration arg and process in methods
         self.first_iteration = first_iteration
 
-        # TODO: pass servers.saved treeview when using conpan regardless of current context
-
-        match enum:
+    def load(self) -> None:
+        """
+        There may be cases where you want to instantiate this class without dumping servers,
+        e.g., adding saved servers from another tab
+        """
+        match self.enum:
             case ServerTab.BROWSER:
                 # NOTE: extra DAYZ_EXP param
                 self.thread_man.set_job_count(len(Servers.params) + 1)
@@ -71,14 +71,12 @@ class ServerModelManager:
             case ServerTab.SAVED:
                 self._dump_favorites()
             case ServerTab.RECENT:
-                # TODO: get row count
                 self._dump_history()
             case ServerTab.LAN:
                 # NOTE: LAN tab is only loaded on demand
                 pass
             case _:
                 pass
-                # self._dump_lan()
 
     @call_on_thread(dialog.fetching)
     def _dump_api(self) -> None:
@@ -113,7 +111,6 @@ class ServerModelManager:
             j = res.json
             servers += j["response"]["servers"]
 
-        # TODO: try/except when parsing
         parsed = Servers.parse_json(servers)
         self._push_data(parsed, FilterMode.INITIAL)
 
@@ -150,11 +147,10 @@ class ServerModelManager:
         parsed = Servers.parse_json(servers)
         self._push_data(parsed, FilterMode.INITIAL)
 
-    # TODO: strings
-    @call_on_thread("dumping ips")
+    @call_on_thread(dialog.fetching)
     def _dump_ips(self, ips: list[str]) -> None:
         # NOTE: block malformed records (TODO: add github issue no.)
-        # TODO: sanitize ip list at config time, drop this
+        # TODO: sanitize ip list at config time and drop this
         ips = [ip for ip in ips if len(ip.split(":")) == 3 and ip.split(":")[2] != ""]
         job = Servers.query_direct
         with ThreadPoolExecutor() as executor:
@@ -183,42 +179,32 @@ class ServerModelManager:
         parsed = Servers.parse_json(servers)
         self._push_data(parsed, FilterMode.INITIAL)
 
-    def _query_ip_id(self, addr: str) -> None:
-        # NOTE: Battlemetrics
-        if addr.isdigit():
-            # FIXME:
-            config = self.controller.get_prefs().paths.config
-            resolved = map_id_to_record(config, addr)
-            res = Servers.query_direct(resolved.ip, resolved.qport)
-        else:
-            record = addr.split(":")
-            ip, qport = record[0], record[1]
-            res = Servers.query_direct(ip, int(qport))
-        return res
-
-    # TODO: strings
-    @call_on_thread("querying address")
-    def _connect_by_id_or_ip(self, addr: str) -> None:
-        res = self._query_ip_id(addr)
-        # TODO: unimplemented
-
-    @call_on_thread("querying address")
+    @call_on_thread(dialog.querying)
     def _add_by_id_or_ip(self, addr: str) -> None:
-        res = self.query_ip_id(addr)
-        # TODO: investigate this
+        res = Servers.query_id_or_ip(addr)
         if res is None:
-            self.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
+            self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
             return
-        # NOTE: single record insertion
-        self.insert_record = Servers.parse_json([res])
-        # TODO: add into saved servers file
-        # TODO: update saved servers model
-        # NOTE: this can be called from other tabs--if current focus is not ServerTab.SAVED, update label only
-        # TODO: saved servers might not be loaded yet, in which case should just update local file only
-        # TODO: perform simple equality comparison of self.tv.get_enum() == ServerTab.SAVED
-        # FIXME: filter man is saved on a per tab basis, so this will mismatch
-        # check if servers.get_active_treeview() is same as self.tv
-        self.set_cleanup_func(StoredFunc(self._cleanup_on_insert))
+
+        record = Servers.parse_json([res])
+
+        filter_man = self._get_filter_man()
+        model = filter_man.get_control()
+
+        # TODO: make this a method of ConfigManager
+        fqip = Servers.response_to_fq_ip(res)
+        ips = self.controller.query_config(Preferences.IP_LIST)
+        ips.append(fqip)
+        self.controller.update_config(Preferences.IP_LIST, ips)
+
+        if model is not None:
+            # NOTE: single record insertion
+            model.append(record[0])
+            # TODO: if all filters are already applied, strange behavior may occur
+            # -> need to insert and update per current filters
+            filter_man.filter(FilterMode.INITIAL)
+
+        self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_single_ip))
 
     def _dump_history(self) -> None:
         history = self.controller.get_prefs().paths.history
@@ -242,6 +228,7 @@ class ServerModelManager:
     def _dump_favorites(self) -> None:
         ips = self.controller.query_config(Preferences.IP_LIST)
         self.thread_man.set_job_count(len(ips))
+
         # TODO: customize statusbar to mention how records can be added via contextmenu
         if len(ips) == 0:
             # FIXME: this is not a failure, just a quiet exit with custom statusbar
@@ -252,25 +239,20 @@ class ServerModelManager:
             return
         self._dump_ips(ips)
 
-    def _cleanup_on_insert(self) -> None:
-        filter_man = self.get_filter_man()
-        model = filter_man.get_control()
-
-        # FIXME: this is a single row insertion,
-        # but refiltration should occur in thread for consistency/scalability
-        model.append(self.insert_record[0])
-        proxy = filter_man.filter(FilterMode.INITIAL)
-
-        # TODO: get proxy model out of thread
-        proxy = self.get_filter_man().get_proxy_model()
+    def _cleanup_single_ip(self) -> None:
+        proxy = self._get_filter_man().get_proxy_model()
         self.tv.set_model(proxy)
 
-        # TODO: update statusbar
-        context = self.tv.get_enum()
+        # TODO: if current tab != self.saved, add label
         # TODO: adding a row may update available maps
-        # TODO: if all filters are already applied, strange behavior may occur
-        # -> need to insert and update per current filters
-        self.emitter.emit("servers_loaded", context)
+        self.emitter.emit("servers_loaded", self.enum)
+        self._update_maps()
+
+    def _update_maps(self) -> None:
+        map_man = self.tv.get_map_man()
+        map_man.set_unique_maps(self._get_new_maps())
+        self.emitter.emit("servers_loaded_init")
+        self.first_iteration = False
 
     def _cleanup_on_success(self) -> None:
         self.tv.set_model(self.to_insert)
@@ -285,14 +267,8 @@ class ServerModelManager:
         context = self.tv.get_enum()
         self.emitter.emit("servers_loaded", context)
 
-        # CHORE: this is placeholder logic,
-        # refills map combo with new maps
         if self.first_iteration:
-            map_man = self.tv.get_map_man()
-            map_man.set_unique_maps(self.new_maps)
-            self.emitter.emit("servers_loaded_init")
-            self.first_iteration = False
-            self.new_maps = None
+            self._update_maps()
 
     def _cleanup_on_failure(self, show_dialog=True) -> None:
         map_man = self.tv.get_map_man()
@@ -334,9 +310,15 @@ class ServerModelManager:
             self.to_insert = manager.get_proxy_model()
 
             u_maps = set([row[1] for row in data])
-            self.new_maps = sorted(u_maps)
+            self._set_new_maps(sorted(u_maps))
 
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_success))
+
+    def _set_new_maps(self, maps: list[str]) -> None:
+        self.new_maps = maps
+
+    def _get_new_maps(self) -> list[str]:
+        return self.new_maps
 
     def _get_filter_man(self) -> "FilteredModelManager":
         return self.filter_man

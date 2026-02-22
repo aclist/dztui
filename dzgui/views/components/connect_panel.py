@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from dzgui.managers.connection import ConnectionManager
 from dzgui.model.servers import ServerModelManager
 from dzgui.util.strings import connect_panel, fav_panel, lan_panel
 from dzgui.views.components.buttons import (
@@ -178,6 +179,7 @@ class AddPanel(Gtk.Frame):
         self.add_server.connect("clicked", self._on_add_clicked)
 
         self.conn_server = SteamConnectButton()
+        self.conn_server.connect("clicked", self._on_connect_clicked)
         self.conn_server.set_sensitive(False)
         self.add_server.set_sensitive(False)
 
@@ -199,11 +201,14 @@ class AddPanel(Gtk.Frame):
 
         self.add(self.grid)
 
+    def _on_connect_clicked(self, button: Gtk.Button) -> None:
+        text = self.entry.get_text()
+        ConnectionManager(self.controller)._connect_by_id_or_ip(text)
+
     def _submit_query(self) -> None:
         text = self.entry.get_text()
-        # TODO: call servermodelmanager
-        ServerModelManager().add_by_id_or_ip(text)
-        # self.controller.add_by_id_or_ip(text)
+        saved = self.controller.get_servers().get_saved()
+        ServerModelManager(self.controller, saved)._add_by_id_or_ip(text)
 
     def _on_activate(self, entry: Gtk.Entry) -> None:
         if not self.add_server.is_sensitive():

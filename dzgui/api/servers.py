@@ -12,6 +12,7 @@ import typing  # noqa
 from dataclasses import dataclass
 from typing import Union
 
+from dzgui.api.bm import map_id_to_record
 from dzgui.const.constants import REQUEST_TIMEOUT
 from dzgui.const.endpoints import STEAM_SERVERS
 from dzgui.util import strings
@@ -451,3 +452,27 @@ def get_rules(ip: str, qport: int) -> list[int]:
     except Exception as e:
         logger.critical(e)
         return []
+
+
+def response_to_fq_ip(res: dict) -> str:
+    ip = res["addr"].split(":")[0]
+    gameport = res["gameport"]
+    qport = res["addr"].split(":")[1]
+    return f"{ip}:{gameport}:{qport}"
+
+
+def query_id_or_ip(addr: str) -> None:
+    # NOTE: Battlemetrics
+    if addr.isdigit():
+        try:
+            config = self.controller.get_prefs().paths.config
+            resolved = map_id_to_record(config, addr)
+            res = query_direct(resolved.ip, resolved.qport)
+        except Exception as e:
+            logger.critical(e)
+            return None
+    else:
+        record = addr.split(":")
+        ip, qport = record[0], record[1]
+        res = query_direct(ip, int(qport))
+    return res

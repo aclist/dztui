@@ -2,7 +2,6 @@ import logging
 
 from typing import Optional, Self, TYPE_CHECKING
 
-from dzgui.controllers.mc import StoredFunc
 from dzgui.const.enum import ContextMenuGroup, ServerTab
 from dzgui.views.trees.tree_servers import ServerTreeView
 from dzgui.util.strings import server_labels
@@ -16,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.mc import Emitter
 
 
 class ServerNotebook(Gtk.ScrolledWindow):

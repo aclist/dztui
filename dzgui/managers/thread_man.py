@@ -21,7 +21,6 @@ def call_on_thread(dialog_str: str) -> Callable:
         def wrapper(*args, **kwargs):
             self = args[0]
             stored = StoredFunc(func, *args, **kwargs)
-            print("SELF", self)
             if not hasattr(self, "thread_man"):
                 raise AttributeError
             if type(self.thread_man) is not ThreadingManager:

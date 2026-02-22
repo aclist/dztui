@@ -113,8 +113,8 @@ class Controller(GObject.GObject):
         self.emitter = Emitter()
         self.emitter.connect("map_selection_changed", self._on_map_selection_changed)
         self.emitter.connect("check_toggled", self._on_check_toggled)
-        self.emitter.connect("servers_loaded", self._on_servers_loaded)
         self.emitter.connect("servers_loaded_init", self._on_servers_loaded_init)
+        #self.emitter.connect("servers_loaded", self._on_servers_loaded)
 
         # NOTE: suppress requests until entire UI is loaded
         self.loaded = False
@@ -861,7 +861,11 @@ class Controller(GObject.GObject):
         self.filter_man = filter_man
 
     def populate_model(self, tv: Gtk.TreeView) -> None:
-        ServerModelManager(self, tv, first_iteration=True)
+        # NOTE: skip on previously loaded tabs
+        if tv.is_loaded():
+            self.emitter.emit("servers_loaded", tv.get_enum())
+            return
+        ServerModelManager(self, tv, first_iteration=True).load()
 
     def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
         fav = str(self.query_config(Preferences.FAV_LBL))
@@ -913,14 +917,14 @@ class Controller(GObject.GObject):
         store = self.get_map_store()
         self.emitter.emit("load_maps", store)
 
-    def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
-        return
-        # NOTE: workaround for GTK bug where fullscreen causes headers to vanish when model is None
-        # TODO: this should be internal to servers page
-        state = self.has_server_model()
-        tv = self.get_active_treeview()
-        tv.set_headers_visible(state)
-        tv.set_headers_clickable(state)
+    #def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
+    #    return
+    #    # NOTE: workaround for GTK bug where fullscreen causes headers to vanish when model is None
+    #    # TODO: this should be internal to servers page
+    #    state = self.has_server_model()
+    #    tv = self.get_active_treeview()
+    #    tv.set_headers_visible(state)
+    #    tv.set_headers_clickable(state)
 
     def has_server_model(self) -> bool:
         treeview = self.get_active_treeview()
@@ -946,6 +950,9 @@ class Controller(GObject.GObject):
         return self.mediator.notebook
 
     def get_servers(self) -> "Notebook":
+        return self.mediator.servers
+
+    def get_server_notebook(self) -> "Notebook":
         return self.mediator.servers.notebook
 
     def get_window(self) -> "OuterWindow":

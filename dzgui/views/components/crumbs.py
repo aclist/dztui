@@ -22,7 +22,7 @@ class Breadcrumbs(Gtk.Label):
         self.set_markup(crumbs)
 
         notebook = controller.get_notebook()
-        servers = controller.get_servers()
+        servers = controller.get_server_notebook()
         notebook.connect_after("switch-page", self._on_notebook_page_changed)
         servers.connect_after("switch-page", self._on_server_tab_changed)
 
