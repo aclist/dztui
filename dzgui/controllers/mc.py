@@ -113,7 +113,6 @@ class Controller(GObject.GObject):
         self.emitter.connect("map_selection_changed", self._on_map_selection_changed)
         self.emitter.connect("check_toggled", self._on_check_toggled)
         self.emitter.connect("servers_loaded_init", self._on_servers_loaded_init)
-        # self.emitter.connect("servers_loaded", self._on_servers_loaded)
 
         # NOTE: suppress requests until entire UI is loaded
         self.loaded = False
@@ -214,6 +213,7 @@ class Controller(GObject.GObject):
     def grab_active_treeview(self) -> None:
         self.get_active_treeview().grab_focus()
 
+    # TODO: resolution manager or config manager
     def save_res_and_quit(self, *args: Any) -> None:
         treeview = self.get_active_treeview()
         columns = treeview.get_columns()
@@ -381,166 +381,6 @@ class Controller(GObject.GObject):
 
         self.open_page(button.opens)
 
-    # def dump_favorites(self) -> None:
-    #     # TODO: if list is empty, return failure
-    #     ips = self.query_config(Preferences.IP_LIST)
-    #     if len(ips) == 0:
-    #         # FIXME: this is not a failure, just a quiet exit with custom statusbar
-    #         # TODO: add custom statusbar parameter
-    #         self.cleanup_func = StoredFunc(self.cleanup_on_failure, False)
-    #         return
-    #     self.dump_ips(ips)
-
-    # def dump_history(self) -> None:
-    #     history = self.prefs.paths.history
-    #     # TODO: customize statusbar to mention how records are added
-    #     try:
-    #         with open(history, "r") as f:
-    #             rows = [row.rstrip("\n") for row in f]
-    #     except OSError:
-    #         self.cleanup_func = StoredFunc(self.cleanup_on_failure, False)
-    #         return
-    #     if len(rows) == 0:
-    #         self.cleanup_func = StoredFunc(self.cleanup_on_failure, False)
-    #         return
-    #     self.dump_ips(rows)
-
-    # def dump_ips(self, ips: list) -> None:
-    #     # NOTE: block malformed records (TODO: add github issue no.)
-    #     ips = [ip for ip in ips if len(ip.split(":")) == 3 and ip.split(":")[2] != ""]
-    #     with ThreadPoolExecutor() as executor:
-    #         futures = [
-    #             executor.submit(
-    #                 Servers.query_direct,
-    #                 ip.split(":")[0],
-    #                 int(ip.split(":")[2]),
-    #             )
-    #             for ip in ips
-    #         ]
-    #         # TODO: update dialog in main loop
-    #         # wait(futures)
-    #         serv = []
-    #         for future in as_completed(futures):
-    #             res = future.result()
-    #             # NOTE: discard failing entries
-    #             if res is None:
-    #                 continue
-    #             serv.append(res)
-    #             if len(serv) == 0:
-    #                 self.cleanup_func = StoredFunc(self.cleanup_on_failure)
-    #                 return
-    #         parsed = Servers.parse_json(serv)
-    #     self.push_data_success(parsed, FilterMode.INITIAL)
-
-    # TODO: strings
-    # @call_on_thread("scanning LAN ports")
-    # def dump_lan(self, port: int, early_abort: bool) -> None:
-    #     serv = []
-    #     event = threading.Event()
-    #     with ThreadPoolExecutor() as executor:
-    #         futures = [
-    #             executor.submit(Servers.test_ip, i, port, event) for i in range(1, 256)
-    #         ]
-    #         for future in as_completed(futures):
-    #             try:
-    #                 res = future.result(timeout=0.5)
-    #                 if res is not None and early_abort is True:
-    #                     event.set()
-    #                     self.cleanup_func = StoredFunc(self.cleanup_on_failure)
-    #                     return
-    #                 if res is None:
-    #                     continue
-    #                 serv.append(res)
-    #             except Exception as e:
-    #                 logger.critical(e)
-    #                 self.cleanup_func = StoredFunc(self.cleanup_on_failure)
-    #         if len(serv) == 0:
-    #             self.cleanup_func = StoredFunc(self.cleanup_on_failure)
-    #             return
-    #         parsed = Servers.parse_json(serv)
-    #     self.push_data_success(parsed, FilterMode.INITIAL)
-
-    # def query_ip_id(self, addr: str) -> None:
-    #     # NOTE: Battlemetrics
-    #     # TODO: stores full ip, gameport, qport in file as canonical record
-    #     if addr.isdigit():
-    #         config = self.prefs.paths.config
-    #         resolved = map_id_to_record(config, addr)
-    #         res = Servers.query_direct(resolved.ip, resolved.qport)
-    #     else:
-    #         record = addr.split(":")
-    #         ip, qport = record[0], record[1]
-    #         res = Servers.query_direct(ip, int(qport))
-    #     return res
-
-    # # TODO: strings
-    # @call_on_thread("querying address")
-    # def connect_by_id_or_ip(self, addr: str) -> None:
-    #     res = self.query_ip_id(addr)
-
-    # def cleanup_on_insert(self) -> None:
-    #     # FIXME: grab filterman outside of thread
-    #     treeview = self.mediator.servers.saved
-    #     filter_man = treeview.get_filter_man()
-    #     model = filter_man.get_control()
-    #     print(len(model))
-    #     # FIXME: refiltration should occur in thread
-    #     model.append(self.insert_record[0])
-    #     filtered = filter_man.filter(FilterMode.INITIAL)
-    #     treeview.set_model(filter_man.get_proxy_model())
-    #     # TODO: update statusbar
-    #     context = self.get_active_context()
-    #     # TODO: adding a row may update available maps
-    #     # TODO: if all filters are already applied, strange behavior may occur
-    #     # need to insert and update all according logic per current filters
-    #     self.emitter.emit("servers_loaded", context)
-    #     # model = treeview.get_model().append(self.insert_record[0])
-
-    # @call_on_thread("querying address")
-    # def add_by_id_or_ip(self, addr: str) -> None:
-    #     res = self.query_ip_id(addr)
-    #     self.insert_record = Servers.parse_json([res])
-    #     # if res is None:
-    #     #    # TODO: set cleanupfunc with dialog
-    #     #    return
-    #     # TODO: add into saved servers file
-    #     # TODO: update saved servers model
-    #     # if current focus is not save servers, update label
-    #     # TODO: saved servers might not be loaded yet, in which case
-    #     # should just add to server file
-    #     self.set_cleanup_func(StoredFunc(self.cleanup_on_insert))
-
-    # def dump_api(self) -> None:
-    #     key = self.query_config(Preferences.STEAM)
-    #     job = Servers.query_api
-    #     params = Servers.params
-    #     serv = []
-    #     with ThreadPoolExecutor() as executor:
-    #         futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
-    #         for future in as_completed(futures):
-    #             try:
-    #                 GLib.idle_add(lambda: self.wait_dialog.increment())
-    #                 res = future.result(timeout=3)
-    #                 if res.status != 200 or not res.parsed:
-    #                     self.cleanup_func = StoredFunc(self.cleanup_on_failure)
-    #                     return
-    #                 j = res.json
-    #                 serv += j["response"]["servers"]
-    #             except Exception as e:
-    #                 logger.critical(e)
-    #                 self.cleanup_func = StoredFunc(self.cleanup_on_failure)
-    #                 return
-
-    #     # NOTE: This step is allowed to fail, since this metadata is incidental
-    #     res = Servers.query_api(key, APPID_DAYZ_EXP, "")
-    #     if res.status == 200 and res.parsed is True:
-    #         j = res.json
-    #         serv += j["response"]["servers"]
-
-    #     GLib.idle_add(lambda: self.wait_dialog.increment("Unpacking servers"))
-    #     parsed = Servers.parse_json(serv)
-    #     self.push_data_success(parsed, FilterMode.INITIAL)
-
     def get_help_row(self) -> str:
         return self.mediator.menu.get_row_enum()
 
@@ -659,85 +499,6 @@ class Controller(GObject.GObject):
     def get_map_man(self) -> "MapManager":
         return self.get_active_treeview().get_map_man()
 
-    # def cleanup_on_success(self) -> None:
-    #     self.pending_jobs = 1
-    #     treeview = self.get_active_treeview()
-    #     treeview.set_loaded(True)
-    #     treeview.set_model(self.to_insert)
-
-    #     # TODO: this will allow history and saved tab to emit signals to statusbar
-    #     # CHORE: test if treeview's sort method inserts row at the correct index
-    #     # inserting a row serializes file on disk, updates control model for that tab, and
-    #     # reapplies filters to ephemeral model; since filters are applied, in-situ insertion might not be necessary
-    #     # TODO: will be inserted out of order
-    #     # self.to_insert.connect("row-inserted", lambda *args: print("row inserted into model"))
-
-    #     # TODO: signals or other approach to deferring map
-    #     # model insertion after thread closes
-    #     # cf. servers_loaded signal
-
-    #     # TODO: servers_loaded vs servers_reloaded
-    #     context = self.get_active_context()
-    #     self.emitter.emit("servers_loaded", context)
-
-    #     # CHORE: this is placeholder logic
-    #     if self.first_iteration:
-    #         map_man = treeview.get_map_man()
-    #         map_man.set_unique_maps(self.new_maps)
-    #         self.emitter.emit("servers_loaded_init")
-    #         self.first_iteration = False
-    #         self.new_maps = None
-
-    #     treeview.grab_focus()
-
-    # def cleanup_on_failure(self, show_dialog=True) -> None:
-    #     treeview = self.get_active_treeview()
-    #     treeview.set_loaded(True)
-    #     map_man = treeview.get_map_man()
-
-    #     # TODO: disable map, keyword, and filter widgets if model is None
-    #     # -> signal driven (servers_empty)
-    #     # TODO: what if refresh action occurred and failed, and the old model is still valid?
-    #     # skip the step below if refresh action failed
-    #     # do not wipe control model in this case
-    #     # e.g. if treeview.is_refresh():
-    #     # revert old model
-    #     # wipe refresh state to False
-
-    #     treeview.set_model(None)
-    #     treeview.grab_focus()
-
-    #     map_man.set_unique_maps(None)
-    #     context = self.get_active_context()
-
-    #     # TODO: distinguish signals, e.g. "servers_failed_to_load", "servers_loaded_empty"
-    #     # customize statusbar accordingly
-    #     self.emitter.emit("servers_loaded", context)
-    #     if show_dialog:
-    #         dialog = ExceptionDialog(self, strings.api_warn_msg)
-    #         dialog.run()
-
-    # # TODO: break into initial dump and refilter modes, can drop filtermode kwarg
-    # # and stop pushing empty data
-    # def push_data_success(self, data: tuple, mode: Optional[FilterMode]) -> None:
-    #     # FIXME: calls treeview read methods in thread
-    #     # treeview = self.get_active_treeview()
-    #     # manager = treeview.get_filter_man()
-    #     manager = self.get_filter_man()
-
-    #     if data is None:
-    #         self.to_insert = None
-    #     else:
-    #         if mode == FilterMode.INITIAL:
-    #             manager.set_control(data)
-    #         manager.filter(mode)
-    #         self.to_insert = manager.get_model()
-    #         # TODO: pre parse maps
-    #         u_maps = set([row[1] for row in data])
-    #         self.new_maps = sorted(u_maps)
-
-    #     self.cleanup_func = StoredFunc(self.cleanup_on_success)
-
     def highlight_stale_cleanup(self, stale_mods: list) -> None:
         """Manipulates attached ListStore in the main event loop"""
         model = self.get_mod_store()
@@ -836,23 +597,6 @@ class Controller(GObject.GObject):
     def get_statusbar(self) -> None:
         return self.mediator.statusbar
 
-    # @call_on_thread(strings.dialog.filtering)
-    # def filter_threaded(
-    #     self, filter_man: "FilteredModelManager", mode: FilterMode, label: str
-    # ) -> None:
-    #     filter_man.filter(mode, label)
-    #     self.to_insert = filter_man.get_proxy_model()
-    #     print("filtering threaded")
-    #     self.cleanup_func = StoredFunc(self.cleanup_on_success)
-
-    # TODO: call filter_man methods directly
-    def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
-        tv = self.get_active_treeview()
-        filter_man = tv.get_filter_man()
-        if filter_man.get_control() is None:
-            return
-        self.filter_threaded(filter_man, mode, label)
-
     def get_filter_man(self) -> "FilteredModelManager":
         return self.filter_man
 
@@ -865,7 +609,7 @@ class Controller(GObject.GObject):
         if tv.is_loaded():
             self.emitter.emit("servers_loaded", tv.get_enum())
             return
-        ServerModelManager(self, tv, first_iteration=True).load()
+        ServerModelManager(self, tv).load()
 
     def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
         fav = str(self.query_config(Preferences.FAV_LBL))
@@ -917,19 +661,11 @@ class Controller(GObject.GObject):
         store = self.get_map_store()
         self.emitter.emit("load_maps", store)
 
-    # def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
-    #    return
-    #    # NOTE: workaround for GTK bug where fullscreen causes headers to vanish when model is None
-    #    # TODO: this should be internal to servers page
-    #    state = self.has_server_model()
-    #    tv = self.get_active_treeview()
-    #    tv.set_headers_visible(state)
-    #    tv.set_headers_clickable(state)
-
     def has_server_model(self) -> bool:
         treeview = self.get_active_treeview()
         return treeview.get_model() is not None
 
+    # TODO: this could be internal to filter panel now
     def _on_check_toggled(self, emitter: Emitter, label: str, state: bool) -> None:
         map_man = self.get_map_man()
         map_man.set_filter(label, state)
@@ -938,13 +674,14 @@ class Controller(GObject.GObject):
             mode = FilterMode.TOGGLE_ON
         else:
             mode = FilterMode.TOGGLE_OFF
-        self.refilter_model(mode, label)
+        ServerModelManager(self, self.get_active_treeview()).refilter(mode, label)
 
     # TODO: map man should be consolidated into filter man
     def _on_map_selection_changed(self, emitter: Emitter, selection: str) -> None:
         map_man = self.get_map_man()
         map_man.set_selected_map(selection)
-        self.refilter_model(FilterMode.MAP)
+        # FIXME: label should not be mandatory
+        ServerModelManager(self, self.get_active_treeview()).refilter(FilterMode.MAP)
 
     def get_notebook(self) -> "Notebook":
         return self.mediator.notebook

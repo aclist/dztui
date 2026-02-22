@@ -35,15 +35,14 @@ logger = logging.getLogger(__name__)
 
 
 class ServerModelManager:
-    def __init__(
-        self, controller: "Controller", tv: Gtk.TreeView, first_iteration=False
-    ) -> None:
+    def __init__(self, controller: "Controller", tv: Gtk.TreeView) -> None:
 
         self.tv = tv
         self.enum = tv.get_enum()
         self.controller = controller
         self.emitter = controller.get_emitter()
 
+        self.first_iteration: bool
         self.jobs = 1
 
         # NOTE: store filter man for access inside thread
@@ -52,18 +51,18 @@ class ServerModelManager:
         # FIXME: change WaitDialog to use parent window only
         self.thread_man = ThreadingManager(parent=controller)
 
+        # TODO: can drop first iteration arg and process in methods
         # TODO: if first iteration, clear filter man control model
         # literal first load: iteration 1
         # refresh: iteration 1 (wipe model)
         # filter: iteration N+1
-        # TODO: can drop first iteration arg and process in methods
-        self.first_iteration = first_iteration
 
     def load(self) -> None:
         """
         There may be cases where you want to instantiate this class without dumping servers,
         e.g., adding saved servers from another tab
         """
+        self.first_iteration = True
         match self.enum:
             case ServerTab.BROWSER:
                 # NOTE: extra DAYZ_EXP param
@@ -325,19 +324,10 @@ class ServerModelManager:
         return self.filter_man
 
     # TODO: unimplemented
-    # @call_on_thread(strings.dialog.filtering)
-    # def filter_threaded(
-    #     self, filter_man: "FilteredModelManager", mode: FilterMode, label: str
-    # ) -> None:
-    #     filter_man.filter(mode, label)
-    #     self.to_insert = filter_man.get_proxy_model()
-    #     print("filtering threaded")
-    #     self.cleanup_func = StoredFunc(self.cleanup_on_success)
-
-    # TODO: call filter_man methods directly
-    def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
-        tv = self.get_active_treeview()
-        self.filter_man = tv.get_filter_man()
-        if self.filter_man.get_control() is None:
-            return
-        self.filter_threaded(self.filter_man, mode, label)
+    @call_on_thread(dialog.filtering)
+    def refilter(self, mode: FilterMode, label: str) -> None:
+        self.first_iteration = False
+        filter_man = self._get_filter_man()
+        filter_man.filter(mode, label)
+        self.to_insert = filter_man.get_proxy_model()
+        self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_success))

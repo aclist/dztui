@@ -3,6 +3,7 @@ from typing import Literal, TYPE_CHECKING
 
 from dzgui.const.enum import FilterMode
 from dzgui.const.constants import EXPAND, NO_EXPAND, NO_FILL, NO_PADDING, SEARCH_ICON
+from dzgui.model.servers import ServerModelManager
 from dzgui.util.margins import set_surrounding_margins
 from dzgui.views.components.labels import BoldLabel
 
@@ -119,7 +120,10 @@ class KeywordEntry(Gtk.Entry):
 
         logger.info(f"User filtered by keyword '{keyword}'")
         self.emitter.emit("keyword_set", keyword)
-        self.controller.refilter_model(FilterMode.KEYWORD, keyword)
+
+        ServerModelManager(
+            self.controller, self.controller.get_active_treeview()
+        ).refilter(FilterMode.KEYWORD, keyword)
 
 
 class FilterPanel(Gtk.Box):

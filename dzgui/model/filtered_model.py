@@ -131,7 +131,7 @@ class FilteredModelManager:
                 # TODO: consider overriding append() method of Gtk.ListStore
                 # check Gtk source code
                 clone.insert_with_values(i, tuple(range(0, n_cols)), row)
-                #clone.append(row)
+                # clone.append(row)
 
         self.set_cache(filters, clone, rows)
         self.set_proxy_model(clone)
@@ -283,12 +283,12 @@ class FilteredModelManager:
     def get_control(self) -> list:
         return self.control_model
 
-    #@deprecated("Legacy code")
-    #def set_success(self, result: bool) -> None:
+    # @deprecated("Legacy code")
+    # def set_success(self, result: bool) -> None:
     #    self.success = result
 
-    #@deprecated("Legacy code")
-    #def get_success(self) -> bool:
+    # @deprecated("Legacy code")
+    # def get_success(self) -> bool:
     #    return self.success
 
     # NOTE: used when adding/removing rows in-situ in the proxy model
