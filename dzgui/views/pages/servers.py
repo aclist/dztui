@@ -1,6 +1,6 @@
 import logging
 
-from typing import Self, TYPE_CHECKING
+from typing import Optional, Self, TYPE_CHECKING
 
 from dzgui.controllers.mc import StoredFunc
 from dzgui.const.enum import ContextMenuGroup, ServerTab
@@ -76,13 +76,13 @@ class ServerNotebook(Gtk.ScrolledWindow):
     def _on_unmap(self, widget: Self) -> None:
         self.emitter.emit("server_page_toggled", False)
 
-    def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
+    def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> Optional[False]:
+        if event.state is Gdk.ModifierType.CONTROL_MASK:
+            return False
         match event.keyval:
             case Gdk.KEY_n:
                 self.notebook.next_page()
             case Gdk.KEY_p:
-                if event.state is Gdk.ModifierType.CONTROL_MASK:
-                    return
                 self.notebook.prev_page()
             case _:
                 return

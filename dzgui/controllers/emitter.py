@@ -33,8 +33,13 @@ class Emitter(GObject.GObject):
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
-    def request_lan_entry_focus(self) -> None:
-        """User invoked Ctrl-p keybinding from ServerTreeView"""
+    def request_custom_port_focus(self) -> None:
+        """User invoked Ctrl-n keybinding from ServerTreeView"""
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def request_default_port_focus(self) -> None:
+        """user invoked ctrl-d keybinding from servertreeview"""
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())

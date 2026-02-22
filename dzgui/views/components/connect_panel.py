@@ -32,9 +32,11 @@ class LanPanel(Gtk.Frame):
         label = BoldLabel(lan_panel.heading)
         self.set_label_widget(label)
 
-        self.radio1 = Gtk.RadioButton.new_with_label(None, lan_panel.default_button)
-        radio2 = Gtk.RadioButton.new_with_label_from_widget(
-            self.radio1, lan_panel.custom_button
+        self.default_radio = Gtk.RadioButton.new_with_label(
+            None, lan_panel.default_button
+        )
+        self.custom_radio = Gtk.RadioButton.new_with_label_from_widget(
+            self.default_radio, lan_panel.custom_button
         )
 
         self.entry = PortEntry(controller)
@@ -47,18 +49,22 @@ class LanPanel(Gtk.Frame):
             "Unless you have multiple DayZ servers on your LAN,\nleave this checked to get results faster"
         )
 
+        self.entry.connect("activate", self._on_entry_activated)
         self.entry.connect("string_validated", self._on_port_validated)
+        self.emitter.connect("request_custom_port_focus", self._on_custom_port_binding)
         self.emitter.connect(
-            "request_lan_entry_focus", lambda _: self.entry.grab_focus()
+            "request_default_port_focus", lambda _: self.default_radio.set_active(True)
         )
-        self.radio1.connect("toggled", self._on_radio_toggled)
+        self.default_radio.connect("toggled", self._on_radio_toggled)
 
         self.grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
-        self.grid.attach(self.radio1, 0, 0, COLS, ROWS)
+        self.grid.attach(self.default_radio, 0, 0, COLS, ROWS)
         self.grid.attach_next_to(
-            radio2, self.radio1, Gtk.PositionType.RIGHT, COLS, ROWS
+            self.custom_radio, self.default_radio, Gtk.PositionType.RIGHT, COLS, ROWS
         )
-        self.grid.attach_next_to(self.entry, radio2, Gtk.PositionType.RIGHT, COLS, ROWS)
+        self.grid.attach_next_to(
+            self.entry, self.custom_radio, Gtk.PositionType.RIGHT, COLS, ROWS
+        )
         self.grid.attach_next_to(
             self.scan, self.entry, Gtk.PositionType.RIGHT, COLS, ROWS
         )
@@ -70,23 +76,36 @@ class LanPanel(Gtk.Frame):
 
         self.entry.set_sensitive(False)
 
+    def _on_custom_port_binding(self, emitter: "Emitter") -> None:
+        self.custom_radio.set_active(True)
+        self.entry.grab_focus()
+
+    def _on_entry_activated(self, entry: Gtk.Entry) -> None:
+        if self.entry.get_text() == "":
+            return
+        self.scan_ports()
+
     def _on_scan_clicked(self, button: Gtk.Button) -> None:
-        if self.radio1.get_active():
+        self.scan_ports()
+
+    def scan_ports(self) -> None:
+        if self.default_radio.get_active():
             port = 27016
         else:
             port = self.entry.get_text()
         abort = self.early_abort.get_active()
         smm = ServerModelManager(self.controller, self.controller.get_active_treeview())
         smm.dump_lan(int(port), abort)
-        #self.controller.dump_lan(int(port), abort)
 
     def _on_radio_toggled(self, button: Gtk.RadioButton) -> None:
         state = button.get_active()
         self.entry.set_sensitive(not state)
         if state:
             self.scan.set_sensitive(True)
-        elif len(self.entry.get_text()) < 1:
-            self.scan.set_sensitive(False)
+        else:
+            self.entry.grab_focus()
+            if len(self.entry.get_text()) < 1:
+                self.scan.set_sensitive(False)
 
     def _on_port_validated(self, entry: Gtk.Entry, state: bool) -> None:
         self.scan.set_sensitive(state)
@@ -182,9 +201,13 @@ class AddPanel(Gtk.Frame):
 
     def _submit_query(self) -> None:
         text = self.entry.get_text()
-        self.controller.add_by_id_or_ip(text)
+        # TODO: call servermodelmanager
+        ServerModelManager().add_by_id_or_ip(text)
+        # self.controller.add_by_id_or_ip(text)
 
     def _on_activate(self, entry: Gtk.Entry) -> None:
+        if not self.add_server.is_sensitive():
+            return
         self._submit_query()
 
     def _on_add_clicked(self, button: Gtk.Button) -> None:

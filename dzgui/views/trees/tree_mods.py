@@ -1,11 +1,12 @@
 import logging
 from typing import Any, TYPE_CHECKING
 
+from dzgui.const.constants import HEX_RED
+from dzgui.const.enum import ContextMenuGroup
 from dzgui.util import strings, localize
-from dzgui.views.trees.tree_base import TreeView
 from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.views.mixins.mods_mixin import ModsMixin
-from dzgui.const.enum import ContextMenuGroup
+from dzgui.views.trees.tree_base import TreeView
 
 import gi
 
@@ -35,14 +36,15 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
 
         for i, column_title in enumerate(strings.mod_cols):
             renderer = Gtk.CellRendererText()
-            column = Gtk.TreeViewColumn(column_title, renderer, text=i, foreground=4)
-            if i == 3:
+            column = Gtk.TreeViewColumn(column_title, renderer, text=i)
+            column.set_cell_data_func(renderer, self._format_color, func_data=None)
+            if i == 4:
                 column.set_cell_data_func(renderer, self._format_float, func_data=None)
+
             if column_title == "Mod":
                 column.set_fixed_width(500)
             else:
                 column.set_fixed_width(150)
-            # NOTE: hidden color property column
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             column.set_sort_column_id(i)
             if i != 4:
@@ -87,6 +89,21 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
 
     def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
         pass
+
+    def _format_color(
+        self,
+        column: Gtk.TreeViewColumn,
+        cell: Gtk.CellRendererText,
+        model: Gtk.TreeModel,
+        it: Gtk.TreeIter,
+        data: Any,
+    ) -> Any:
+        state = model[it][4]
+        if state is True:
+            cell.set_property("foreground", HEX_RED)
+        else:
+            cell.set_property("foreground", None)
+        return
 
     def _format_float(
         self,

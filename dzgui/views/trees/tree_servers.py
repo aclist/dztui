@@ -8,12 +8,11 @@ from warnings import deprecated
 from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.const.enum import ContextMenu, ContextMenuGroup, ServerTab
 from dzgui.api.servers import Record
-from dzgui.api.servers import ping as Ping
 from dzgui.model.map_model import MapManager
 from dzgui.model.filtered_model import FilteredModelManager
 from dzgui.util.dist import CalcDist
 from dzgui.util import strings
-from typing import Callable, Literal, TYPE_CHECKING
+from typing import Literal, TYPE_CHECKING
 
 
 from dzgui.views.trees.tree_base import TreeView
@@ -28,7 +27,7 @@ from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from dzgui.controllers.mc import Controller, StoredFunc
+    from dzgui.controllers.mc import Controller
     from dzgui.controllers.emitter import Emitter
 
 QUEUE_CHECK_DELAY = 200
@@ -216,7 +215,7 @@ class ServerTreeView(ContextMixin, TreeView):
         while not self.queue.empty():
             latest_result = self.queue.get()
 
-        # FIXME: cache is being checked at two intervals
+        # FIXME: cache is being checked in two passes
         cache = self.controller.get_dist_cache()
 
         if latest_result:
@@ -239,9 +238,11 @@ class ServerTreeView(ContextMixin, TreeView):
                     self.emitter.emit("request_maps_focus")
                 case Gdk.KEY_i:
                     self.emitter.emit("request_ip_entry_focus")
-                case Gdk.KEY_p:
+                case Gdk.KEY_d:
+                    self.emitter.emit("request_default_port_focus")
+                case Gdk.KEY_n:
                     if self.enum is ServerTab.LAN:
-                        self.emitter.emit("request_lan_entry_focus")
+                        self.emitter.emit("request_custom_port_focus")
                 case Gdk.KEY_c:
                     self.controller.menu_action(ContextMenu.COPY_SERVER_IP, self)
                 case Gdk.KEY_r:
@@ -294,23 +295,12 @@ class ServerTreeView(ContextMixin, TreeView):
         return f"{addr}:{qport}"
 
     def get_record(self) -> Record | None:
-        # TODO: clean up, use tree_base.get_selected_row()
-        select = self.get_selection()
-        sels = select.get_selected_rows()
-        (model, pathlist) = sels
-        if len(pathlist) < 1:
+        r = self.get_record_string()
+        try:
+            ip, gameport, qport = r.split(":")
+            return Record(ip, int(gameport), int(qport))
+        except ValueError:
             return None
-        path = pathlist[0]
-        model = self.get_model()
-        if not model:
-            return None
-        addr = model[path][7]
-        if addr is None:
-            return
-        qport = model[path][8]
-        ip = addr.split(":")[0]
-        gameport = int(addr.split(":")[1])
-        return Record(ip, gameport, qport)
 
     def is_loaded(self) -> bool:
         return self.loaded
@@ -348,7 +338,7 @@ class ServerTreeView(ContextMixin, TreeView):
     #    thread = threading.Thread(
     #        daemon=True,
     #        target=ping_server,
-    #        args=(model, it, ip, qport, ping),
+    #        args=(model, it, addr, qport, ping),
     #    )
     #    thread.start()
 

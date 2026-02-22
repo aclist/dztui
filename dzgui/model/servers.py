@@ -12,7 +12,7 @@ from dzgui.const.constants import (
 )
 from dzgui.const.enum import FilterMode, Preferences, ServerTab
 from dzgui.managers.thread_man import call_on_thread, StoredFunc, ThreadingManager
-from dzgui.util.strings import dialog
+from dzgui.util.strings import api_warn_msg, dialog
 from dzgui.views.dialogs.generic import ExceptionDialog
 
 from typing import Optional, TYPE_CHECKING
@@ -36,8 +36,11 @@ logger = logging.getLogger(__name__)
 # TODO: failure: spawns error dialog
 # TODO: non failure with empty model: updates statusbar
 
+
 class ServerModelManager:
-    def __init__(self, controller: "Controller", tv: Gtk.TreeView, first_iteration=False) -> None:
+    def __init__(
+        self, controller: "Controller", tv: Gtk.TreeView, first_iteration=False
+    ) -> None:
 
         enum = tv.get_enum()
         self.controller = controller
@@ -58,6 +61,8 @@ class ServerModelManager:
         # filter: iteration N+1
         self.first_iteration = first_iteration
 
+        # TODO: pass servers.saved treeview when using conpan regardless of current context
+
         match enum:
             case ServerTab.BROWSER:
                 # NOTE: extra DAYZ_EXP param
@@ -69,8 +74,11 @@ class ServerModelManager:
                 # TODO: get row count
                 self._dump_history()
             case ServerTab.LAN:
-                return
-                #self._dump_lan()
+                # NOTE: LAN tab is only loaded on demand
+                pass
+            case _:
+                pass
+                # self._dump_lan()
 
     @call_on_thread(dialog.fetching)
     def _dump_api(self) -> None:
@@ -85,14 +93,18 @@ class ServerModelManager:
                     self.thread_man.increment_dialog()
                     res = future.result(timeout=API_TIMEOUT)
                     if res.status != 200 or not res.parsed:
-                        self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
+                        self.thread_man.set_cleanup_func(
+                            StoredFunc(self._cleanup_on_failure)
+                        )
                         return
                     j = res.json
                     servers += j["response"]["servers"]
                 except Exception as e:
                     # TODO: could store exception in cleanup func
                     logger.critical(e)
-                    self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
+                    self.thread_man.set_cleanup_func(
+                        StoredFunc(self._cleanup_on_failure)
+                    )
                     return
 
         # NOTE: This step is allowed to fail, since this metadata is incidental
@@ -112,9 +124,7 @@ class ServerModelManager:
 
         event = threading.Event()
         with ThreadPoolExecutor() as executor:
-            futures = [
-                executor.submit(Servers.test_ip, i, port, event) for i in ports
-            ]
+            futures = [executor.submit(Servers.test_ip, i, port, event) for i in ports]
             for future in as_completed(futures):
                 try:
                     res = future.result(timeout=LAN_TIMEOUT)
@@ -122,14 +132,18 @@ class ServerModelManager:
                         # NOTE: first non-empty hit, flag pending threads to close
                         event.set()
                         servers.append(res)
-                        self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_success))
+                        self.thread_man.set_cleanup_func(
+                            StoredFunc(self._cleanup_on_success)
+                        )
                         return
                     if res is None:
                         continue
                     servers.append(res)
                 except Exception as e:
                     logger.critical(e)
-                    self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
+                    self.thread_man.set_cleanup_func(
+                        StoredFunc(self._cleanup_on_failure)
+                    )
             if len(servers) == 0:
                 self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
                 return
@@ -161,7 +175,9 @@ class ServerModelManager:
                     continue
                 servers.append(res)
                 if len(servers) == 0:
-                    self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
+                    self.thread_man.set_cleanup_func(
+                        StoredFunc(self._cleanup_on_failure)
+                    )
                     return
 
         parsed = Servers.parse_json(servers)
@@ -200,8 +216,8 @@ class ServerModelManager:
         # NOTE: this can be called from other tabs--if current focus is not ServerTab.SAVED, update label only
         # TODO: saved servers might not be loaded yet, in which case should just update local file only
         # TODO: perform simple equality comparison of self.tv.get_enum() == ServerTab.SAVED
-            # FIXME: filter man is saved on a per tab basis, so this will mismatch
-            # check if servers.get_active_treeview() is same as self.tv
+        # FIXME: filter man is saved on a per tab basis, so this will mismatch
+        # check if servers.get_active_treeview() is same as self.tv
         self.set_cleanup_func(StoredFunc(self._cleanup_on_insert))
 
     def _dump_history(self) -> None:
@@ -211,10 +227,14 @@ class ServerModelManager:
             with open(history, "r") as f:
                 rows = [row.rstrip("\n") for row in f]
         except OSError:
-            self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure, False))
+            self.thread_man.set_cleanup_func(
+                StoredFunc(self._cleanup_on_failure, False)
+            )
             return
         if len(rows) == 0:
-            self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure, False))
+            self.thread_man.set_cleanup_func(
+                StoredFunc(self._cleanup_on_failure, False)
+            )
             return
         self.thread_man.set_job_count(len(rows))
         self._dump_ips(rows)
@@ -226,7 +246,9 @@ class ServerModelManager:
         if len(ips) == 0:
             # FIXME: this is not a failure, just a quiet exit with custom statusbar
             # TODO: add custom statusbar parameters
-            self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure, False))
+            self.thread_man.set_cleanup_func(
+                StoredFunc(self._cleanup_on_failure, False)
+            )
             return
         self._dump_ips(ips)
 
@@ -273,10 +295,10 @@ class ServerModelManager:
             self.new_maps = None
 
     def _cleanup_on_failure(self, show_dialog=True) -> None:
-        map_man = self.treeview.get_map_man()
+        map_man = self.tv.get_map_man()
 
         # TODO: disable map, keyword, and filter widgets if model is None
-            # -> signal driven (servers_empty, servers_failed_to_load)
+        # -> signal driven (servers_empty, servers_failed_to_load)
         # TODO: what if refresh action occurred and failed, and the old model is still valid?
         # skip the step below if refresh action failed
         # do not wipe control model in this case
@@ -284,15 +306,15 @@ class ServerModelManager:
         # revert old model
         # wipe refresh state to False
 
-        self.treeview.set_model(None)
+        self.tv.set_model(None)
         map_man.set_unique_maps(None)
-        context = self.treeview.get_enum()
+        context = self.tv.get_enum()
 
         # TODO: distinguish signals, e.g. "servers_failed_to_load", "servers_loaded_empty"
-        # customize statusbar accordingly
+        # customize statusbar and dialog accordingly
         self.emitter.emit("servers_loaded", context)
         if show_dialog:
-            dialog = ExceptionDialog(self, strings.api_warn_msg)
+            dialog = ExceptionDialog(self.controller, api_warn_msg)
             dialog.run()
 
     # TODO: break into initial dump and refilter modes, can drop filtermode kwarg
@@ -330,9 +352,9 @@ class ServerModelManager:
     #     self.cleanup_func = StoredFunc(self.cleanup_on_success)
 
     # TODO: call filter_man methods directly
-    #def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
-    #    tv = self.get_active_treeview()
-    #    filter_man = tv.get_filter_man()
-    #    if filter_man.get_control() is None:
-    #        return
-    #    self.filter_threaded(filter_man, mode, label)
+    def refilter_model(self, mode: FilterMode, label: Optional[str] = None) -> None:
+        tv = self.get_active_treeview()
+        self.filter_man = tv.get_filter_man()
+        if self.filter_man.get_control() is None:
+            return
+        self.filter_threaded(self.filter_man, mode, label)

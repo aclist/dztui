@@ -18,7 +18,7 @@ class ModCols:
     symlink: str
     directory: str
     size: float
-    color: str
+    color: bool
 
 
 @dataclass(slots=True, frozen=True)
@@ -42,6 +42,17 @@ class MenuCols:
     hidden: GObject.TYPE_PYOBJECT
 
 
+class FastInsertListStore(ListStore):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def append(self, row) -> None:
+        total = len(row)
+        i = len(self)
+        tree_iter = self.insert_with_values(i, tuple(range(0, total)), row)
+        return tree_iter
+
+
 class ModelFactory:
     def __init__(self) -> None:
         pass
@@ -49,17 +60,17 @@ class ModelFactory:
     def new_model_from_logfile(self, path: str) -> None:
         store = self.make_log_store()
         with open(path, "r") as f:
-            lines = [
-                line.split(delimiter) for line in f.read().splitlines()
-            ]
+            lines = [line.split(delimiter) for line in f.read().splitlines()]
             for record in lines:
                 # NOTE: strip PII and API keys
                 clean = redact_log(record)
                 store.append(clean)
         return store
 
-    def new_model_from_class(self, cls: type) -> ListStore:
-        store = ListStore(*[ftype for field, ftype in cls.__annotations__.items()])
+    def new_model_from_class(self, cls: type) -> FastInsertListStore:
+        store = FastInsertListStore(
+            *[ftype for field, ftype in cls.__annotations__.items()]
+        )
         return store
 
     def make_map_store(self) -> ListStore:

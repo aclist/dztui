@@ -4,18 +4,14 @@ import shutil
 import threading
 import traceback
 
-from concurrent.futures import wait, as_completed
-from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from pathlib import Path
 from typing import Any, Callable, Optional, TYPE_CHECKING
 from warnings import deprecated
 
 import dzgui.api.pefile as PeFile
-import dzgui.api.servers as Servers
 import dzgui.util._json as JSON  # noqa
 
-from dzgui.api.bm import map_id_to_record
 from dzgui.api.mods import (
     get_delimited_mods,
     get_local_mod_path,
@@ -112,7 +108,7 @@ class Controller(GObject.GObject):
         self.prefs: UserPrefs
         self.cleanup_func: StoredFunc = None
 
-        #self.config_man = ConfigManager()
+        # self.config_man = ConfigManager()
 
         self.emitter = Emitter()
         self.emitter.connect("map_selection_changed", self._on_map_selection_changed)
@@ -223,7 +219,7 @@ class Controller(GObject.GObject):
         treeview = self.get_active_treeview()
         columns = treeview.get_columns()
 
-        #columns_file = self.config_man.get_columns()
+        # columns_file = self.config_man.get_columns()
         columns_file = self.prefs.paths.columns
         try:
             data = JSON.read_json(columns_file)
@@ -249,7 +245,7 @@ class Controller(GObject.GObject):
         w, h = self.mediator.window.get_size()
         data = {"res": {"width": w, "height": h}}
 
-        #res_path = self.config_man.get_resolution()
+        # res_path = self.config_man.get_resolution()
         res_path = self.prefs.paths.resolution
         try:
             write_json(data, res_path)
@@ -316,13 +312,13 @@ class Controller(GObject.GObject):
     # TODO: delegate to threadmanager
     @call_on_thread(strings.dialog.modlist)
     def load_mods(self) -> None:
-        model = ModelFactory().make_mod_store() #self.model_man.new_mod_store()
+        model = ModelFactory().make_mod_store()  # self.model_man.new_mod_store()
         path = self.query_config(Preferences.DEFAULT)
         mods = get_delimited_mods(Path(path))
 
         for mod in mods:
-            # NOTE: holds color column
-            mod.append(None)
+            # NOTE: show highlight color bool
+            mod.append(False)
             model.append(mod)
 
         self.cleanup_func = StoredFunc(self.load_mods_cleanup, model)
@@ -749,7 +745,7 @@ class Controller(GObject.GObject):
             it = mod.iter
             path = model.get_path(it)
             if int(mod[2]) in stale_mods:
-                model[path][4] = HEX_RED
+                model[path][4] = True
         self.emitter.emit("mods_highlighted")
 
     @call_on_thread(strings.dialog.working)
@@ -945,10 +941,6 @@ class Controller(GObject.GObject):
         map_man = self.get_map_man()
         map_man.set_selected_map(selection)
         self.refilter_model(FilterMode.MAP)
-
-    def hide_widgets_on_init(self) -> None:
-        self.mediator.grid.conpan.set_lan_visible(False)
-        self.mediator.grid.right_panel.sel_panel.hide()
 
     def get_notebook(self) -> "Notebook":
         return self.mediator.notebook
