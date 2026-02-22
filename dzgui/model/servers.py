@@ -10,6 +10,7 @@ from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
 )
+from dzgui.managers.config import ConfigManager
 from dzgui.managers.thread_man import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.util.strings import api_warn_msg, dialog
 from dzgui.views.dialogs.generic import ExceptionDialog
@@ -80,7 +81,8 @@ class ServerModelManager:
 
     @call_on_thread(dialog.fetching)
     def _dump_api(self) -> None:
-        key = self.controller.query_config(Preferences.STEAM)
+        config_man = self.controller.get_config_man()
+        key = config_man.lookup(Preferences.STEAM)
         job = Servers.query_api
         params = Servers.params
         servers = []
@@ -191,11 +193,9 @@ class ServerModelManager:
         filter_man = self._get_filter_man()
         model = filter_man.get_control()
 
-        # TODO: make this a method of ConfigManager
         fqip = Servers.response_to_fq_ip(res)
-        ips = self.controller.query_config(Preferences.IP_LIST)
-        ips.append(fqip)
-        self.controller.update_config(Preferences.IP_LIST, ips)
+        config_man = self.controller.get_config_man()
+        config_man.add_saved_server(fqip)
 
         if model is not None:
             # NOTE: single record insertion
@@ -226,7 +226,8 @@ class ServerModelManager:
         self._dump_ips(rows)
 
     def _dump_favorites(self) -> None:
-        ips = self.controller.query_config(Preferences.IP_LIST)
+        config_man = self.controller.get_config_man()
+        ips = config_man.lookup(Preferences.IP_LIST)
         self.thread_man.set_job_count(len(ips))
 
         # TODO: customize statusbar to mention how records can be added via contextmenu

@@ -102,6 +102,8 @@ class ServerNotebook(Gtk.ScrolledWindow):
         if self.controller.loaded is False:
             return
 
+        # TODO: wipe statusbar when changing pages
+
         label = self.notebook.get_tab_label_text(child)
         if label is None:
             return

@@ -39,6 +39,7 @@ from dzgui.config import update
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.controllers.emitter import Emitter
+from dzgui.managers.config import ConfigManager
 from dzgui.managers.contextmenu import ContextMenuManager
 from dzgui.model.filtered_model import FilteredModelManager
 from dzgui.model.servers import ServerModelManager
@@ -108,13 +109,11 @@ class Controller(GObject.GObject):
         self.prefs: UserPrefs
         self.cleanup_func: StoredFunc = None
 
-        # self.config_man = ConfigManager()
-
         self.emitter = Emitter()
         self.emitter.connect("map_selection_changed", self._on_map_selection_changed)
         self.emitter.connect("check_toggled", self._on_check_toggled)
         self.emitter.connect("servers_loaded_init", self._on_servers_loaded_init)
-        #self.emitter.connect("servers_loaded", self._on_servers_loaded)
+        # self.emitter.connect("servers_loaded", self._on_servers_loaded)
 
         # NOTE: suppress requests until entire UI is loaded
         self.loaded = False
@@ -152,7 +151,7 @@ class Controller(GObject.GObject):
         return self.prefs
 
     def set_prefs(self, prefs: UserPrefs) -> None:
-        # self.config_man.set_prefs()
+        self.config_man = ConfigManager(prefs)
         self.prefs = prefs
 
     def query_config(self, key: Preferences) -> str | bool | list:
@@ -346,6 +345,7 @@ class Controller(GObject.GObject):
             dialog.run()
             # TODO: suppress signals
             # then reenable (or it spawns dialog twice)
+            # TODO: do this on demand for certain changes
             self.mediator.grid.notebook.settings.populate_settings()
             return
 
@@ -917,7 +917,7 @@ class Controller(GObject.GObject):
         store = self.get_map_store()
         self.emitter.emit("load_maps", store)
 
-    #def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
+    # def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
     #    return
     #    # NOTE: workaround for GTK bug where fullscreen causes headers to vanish when model is None
     #    # TODO: this should be internal to servers page
@@ -960,3 +960,6 @@ class Controller(GObject.GObject):
 
     def get_menu(self) -> "MenuTreeView":
         return self.mediator.menu
+
+    def get_config_man(self) -> ConfigManager:
+        return self.config_man
