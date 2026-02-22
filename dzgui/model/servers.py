@@ -10,7 +10,6 @@ from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
 )
-from dzgui.managers.config import ConfigManager
 from dzgui.managers.thread_man import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.util.strings import api_warn_msg, dialog
 from dzgui.views.dialogs.generic import ExceptionDialog
@@ -43,6 +42,7 @@ class ServerModelManager:
         self.emitter = controller.get_emitter()
 
         self.first_iteration: bool
+        self.preserve_on_fail: False
         self.jobs = 1
 
         # NOTE: store filter man for access inside thread
@@ -51,10 +51,9 @@ class ServerModelManager:
         # FIXME: change WaitDialog to use parent window only
         self.thread_man = ThreadingManager(parent=controller)
 
-        # TODO: can drop first iteration arg and process in methods
         # TODO: if first iteration, clear filter man control model
         # literal first load: iteration 1
-        # refresh: iteration 1 (wipe model)
+        # refresh: should be functionally identical to iteration 1
         # filter: iteration N+1
 
     def load(self) -> None:
@@ -77,6 +76,10 @@ class ServerModelManager:
                 pass
             case _:
                 pass
+
+    def refresh(self) -> None:
+        self.preserve_on_fail = True
+        self.load()
 
     @call_on_thread(dialog.fetching)
     def _dump_api(self) -> None:
@@ -190,24 +193,25 @@ class ServerModelManager:
         record = Servers.parse_json([res])
 
         filter_man = self._get_filter_man()
-        model = filter_man.get_control()
+        raw_model = filter_man.get_control()
 
         fqip = Servers.response_to_fq_ip(res)
         config_man = self.controller.get_config_man()
         config_man.add_saved_server(fqip)
 
-        if model is not None:
-            # NOTE: single record insertion
-            model.append(record[0])
-            # TODO: if all filters are already applied, strange behavior may occur
-            # -> need to insert and update per current filters
-            filter_man.filter(FilterMode.INITIAL)
+        # NOTE: tab was not instantiated yet
+        if model is None:
+            return
+
+        raw_model.append(record[0])
+        # TODO: if all filters are already applied, strange behavior may occur
+        # -> need to insert and update per current filters
+        filter_man.filter(FilterMode.INITIAL)
 
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_single_ip))
 
     def _dump_history(self) -> None:
         history = self.controller.get_prefs().paths.history
-        # TODO: customize statusbar to mention how records are added after connecting
         try:
             with open(history, "r") as f:
                 rows = [row.rstrip("\n") for row in f]
@@ -217,6 +221,8 @@ class ServerModelManager:
             )
             return
         if len(rows) == 0:
+            # TODO: customize statusbar to mention how records are added after connecting
+            # cf. cleanup on empty
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._cleanup_on_failure, False)
             )
@@ -258,52 +264,46 @@ class ServerModelManager:
         self.tv.set_model(self.to_insert)
 
         # inserting a row serializes file on disk, updates control model for that tab, and updates model
+        # TODO: make sure control model len is N + 1
         # NOTE: when inserting new rows, the entire control model is wiped and rebuilt, then proxy model is swapped in
         # TODO: signals or other approach to deferring map
         # model insertion after thread closes
         # cf. servers_loaded signal
 
         # TODO: servers_loaded vs servers_reloaded
-        context = self.tv.get_enum()
-        self.emitter.emit("servers_loaded", context)
+        self.emitter.emit("servers_loaded", self.enum)
 
         if self.first_iteration:
             self._update_maps()
 
-    def _cleanup_on_failure(self, show_dialog=True) -> None:
-        map_man = self.tv.get_map_man()
+    # def _cleanup_on_empty():
 
+    def _cleanup_on_failure(self, show_dialog=True) -> None:
         # TODO: disable map, keyword, and filter widgets if model is None
         # -> signal driven (servers_empty, servers_failed_to_load)
-        # TODO: what if refresh action occurred and failed, and the old model is still valid?
-        # skip the step below if refresh action failed
-        # do not wipe control model in this case
-        # e.g. if treeview.is_refresh():
-        # revert old model
-        # wipe refresh state to False
 
-        self.tv.set_model(None)
-        map_man.set_unique_maps(None)
-        context = self.tv.get_enum()
+        # NOTE: used by refresh action
+        if not self.preserve_on_fail:
+            self.tv.set_model(None)
+            map_man = self.tv.get_map_man()
+            map_man.set_unique_maps(None)
+            # TODO: emit signal to not disable widget sensitivity
 
         # TODO: distinguish signals, e.g. "servers_failed_to_load", "servers_loaded_empty"
         # customize statusbar and dialog accordingly
-        self.emitter.emit("servers_loaded", context)
+        self.emitter.emit("servers_loaded", self.enum)
         if show_dialog:
             dialog = ExceptionDialog(self.controller, api_warn_msg)
             dialog.run()
 
     # TODO: break into initial dump and refilter modes, can drop filtermode kwarg
-    # and stop pushing empty data
     def _push_data(self, data: tuple, mode: Optional[FilterMode]) -> None:
-        # FIXME: calls treeview read methods in thread
-        # treeview = self.get_active_treeview()
-        # manager = treeview.get_filter_man()
         manager = self._get_filter_man()
 
         if data is None:
             self.to_insert = None
         else:
+            # FIXME: filterman calls GTK methods in thread
             if mode == FilterMode.INITIAL:
                 manager.set_control(data)
             manager.filter(mode)
@@ -323,7 +323,6 @@ class ServerModelManager:
     def _get_filter_man(self) -> "FilteredModelManager":
         return self.filter_man
 
-    # TODO: unimplemented
     @call_on_thread(dialog.filtering)
     def refilter(self, mode: FilterMode, label: str) -> None:
         self.first_iteration = False

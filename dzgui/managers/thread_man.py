@@ -70,7 +70,7 @@ class ThreadingManager:
     def increment_dialog_with_str(self, text: str) -> None:
         GLib.idle_add(lambda: self.wait_dialog.increment(text))
 
-    # TODO: this should not be delegated here
+    # TODO: this should not be delegated here, set in cleanup func
     def set_alternate_statusbar(self, msg: str) -> None:
         self.alternate_statusbar = msg
 
