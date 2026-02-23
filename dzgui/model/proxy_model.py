@@ -1,55 +1,57 @@
 import re
 
 from typing import Optional, TYPE_CHECKING
+from warnings import deprecated
 
 from dzgui.const.enum import FilterMode
 from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
 
-import gi
-
-gi.require_version("Gtk", "3.0")
-from gi.repository.Gtk import ListStore  # noqa E402
-from gi.repository import GObject, GLib  # noqa E402
+# import gi
+#
+# gi.require_version("Gtk", "3.0")
+# from gi.repository.Gtk import ListStore  # noqa E402
+# from gi.repository import GObject, GLib  # noqa E402
 
 if TYPE_CHECKING:
-    from dzgui.controllers.mc import Controller
-    from dzgui.controllers.emitter import Emitter
+    # from dzgui.controllers.mc import Controller
+    # from dzgui.controllers.emitter import Emitter
+    from dzgui.managers.filter_man import FilterManager
+    from dzgui.model.model_factory import FastInsertListStore
 
 
 class ProxyModelManager:
     """
-    Manages access to cached ListStore resources and
+    Manages access to cached FastInsertListStore resources and
     performs filtering on behalf of atomic TreeViews,
     which share the same column structure.
 
     A ProxyModelManager is attached to each ServerTreeView.
 
-    Raw data is cached before being packed into a ListStore, see get_control()
+    Raw data is cached before being packed into a FastInsertListStore, see get_control()
     Filtration creates a proxy of the TreeView's model, see get_proxy_model()
     """
 
-    def __init__(self, controller: "Controller") -> None:
-        self.controller = controller
-        self.emitter = controller.get_emitter()
-        self.emitter.connect("keyword_set", self._on_keyword_set)
+    def __init__(self, filter_man: "FilterManager") -> None:
+        # self.emitter = controller.get_emitter()
+        # self.emitter.connect("keyword_set", self._on_keyword_set)
 
         self.filter_cache = {}
         self.ping_cache: dict[str, int] = {}
 
-        self.proxy_model: ListStore = None
+        self.proxy_model: "FastInsertListStore" = None
+        self.filter_man = filter_man
 
         self.control_model: list = None
         self.filtered: list = None
         self.success = True
 
-        self.keyword_filter = ""
 
-    def get_keyword_filter(self) -> str:
-        return self.keyword_filter
+    # def get_keyword_filter(self) -> str:
+    #     return self.keyword_filter
 
-    def _on_keyword_set(self, emitter: "Emitter", keyword: str) -> None:
-        self.keyword_filter = keyword
+    # def _on_keyword_set(self, emitter: "Emitter", keyword: str) -> None:
+    #     self.keyword_filter = keyword
 
     def append_row(self, row: list) -> None:
         self.proxy_model.append(row)
@@ -57,19 +59,19 @@ class ProxyModelManager:
     def clear_proxy_model(self) -> None:
         self.proxy_model.clear()
 
-    def get_proxy_model(self) -> ListStore:
+    def get_proxy_model(self) -> "FastInsertListStore":
         return self.proxy_model
 
-    def new_model_from_class(self, cls: type) -> ListStore:
-        store = ListStore(*[ftype for field, ftype in cls.__annotations__.items()])
-        return store
-
+    # def new_model_from_class(self, cls: type) -> ListStore:
+    #     store = ListStore(*[ftype for field, ftype in cls.__annotations__.items()])
+    #     return store
+    #
     def filter(self, mode: FilterMode, *args, **kwargs) -> None:
         """
         Native Gtk.TreeView.refilter() method was not performant enough
         when running in the main loop with 40k+ records
         """
-        filters = self.controller.get_filters()
+        filters = self.filter_man.get_all_filters()
 
         if filters in self.filter_cache:
             cache = self.filter_cache[filters]
@@ -82,7 +84,7 @@ class ProxyModelManager:
                 rows = self.filter_initial(filters)
 
             case FilterMode.MAP:
-                prior_map = self.controller.get_prior_map()
+                prior_map = self.filter_man.get_prior_map()
 
                 if prior_map == strings.all_maps:
                     rows = self.filter_map(filters)
@@ -107,7 +109,7 @@ class ProxyModelManager:
         #        if row[7] in self.ping_cache:
         #            row[9] = self.ping_cache[row[7]]
 
-        # NOTE: this ListStore manipulation must remain local to the thread
+        # NOTE: this FastInsertListStore manipulation must remain local to the thread
         clone = ModelFactory().make_server_store()
         if len(rows) > 0:
             rows = self.sort_rows(rows)
@@ -135,7 +137,7 @@ class ProxyModelManager:
         Multi-filtration for any context starts by narrowing by map
         """
         rows = self.filtered
-        sel_map = self.controller.get_selected_map()
+        sel_map = self.filter_man.get_active_map_name()
 
         if sel_map == strings.all_maps:
             return rows
@@ -144,7 +146,7 @@ class ProxyModelManager:
         return rows
 
     def filter_keyword(self, filters: tuple) -> list:
-        keyword = self.keyword_filter
+        keyword = self.filter_man.get_active_keyword()
         rows = self.filtered
 
         if keyword == "":
@@ -219,7 +221,7 @@ class ProxyModelManager:
             self.set_filtered(self.filter_toggle_off(filters, f))
         return self.filtered
 
-    def set_cache(self, filters: tuple, model: ListStore | None, rows: list) -> None:
+    def set_cache(self, filters: tuple, model: Optional["FastInsertListStore"], rows: list) -> None:
         self.filter_cache[filters] = (model, rows)
 
     def resync_model(self, addr: str, qport: int) -> None:
@@ -233,11 +235,12 @@ class ProxyModelManager:
                 self.control_model.remove(row)
 
         self.wipe_cache()
-        filters = self.controller.get_filters()
+        filters = self.get_filters()
         refiltered = self.filter_toggle_on(filters)
         self.set_filtered(refiltered)
 
-    def convert_model_to_list(self, model: ListStore) -> list:
+    @deprecated("Currently unused")
+    def convert_model_to_list(self, model: "FastInsertListStore") -> list:
         return [[el for el in row] for row in model]
 
     def set_filtered(self, rows: Optional[list]) -> None:
@@ -248,9 +251,9 @@ class ProxyModelManager:
     def get_filtered(self) -> list:
         return self.filtered
 
-    def set_proxy_model(self, model: ListStore | None) -> None:
+    def set_proxy_model(self, model: Optional["FastInsertListStore"]) -> None:
         """
-        ListStore representation of the raw model after filtration
+        FastInsertListStore representation of the raw model after filtration
         """
         self.proxy_model = model
 
@@ -282,9 +285,3 @@ class ProxyModelManager:
         self.ping_cache = {}
         # if full:
         # self.control_model = None
-
-    def set_active_map(self, _map: str) -> None:
-        self.active_map = _map
-
-    def get_active_map(self) -> str:
-        return self.active_map

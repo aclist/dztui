@@ -304,10 +304,9 @@ class ServerModelManager:
         # if data is None:
         #    self.to_insert = None
         # else:
-        # FIXME: filterman calls GTK methods in thread
-        # if mode == FilterMode.INITIAL:
 
         manager = self._get_proxy_man()
+        # TODO: consolidate these methods
         manager.wipe_cache()
         manager.set_control(data)
         manager.filter(FilterMode.INITIAL)

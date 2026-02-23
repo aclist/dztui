@@ -123,7 +123,7 @@ class FavPanel(Gtk.Frame):
         emitter = self.controller.get_emitter()
         emitter.connect("fav_server_changed", self._on_fav_server_changed)
 
-        self.server_name, self.server_ip = self.controller.get_favorite()
+        self.server_name, self.server_ip = self.controller.get_config_man().get_favorite() #self.controller.get_favorite()
         server_name = (
             f"{self.server_name} ({self.server_ip})"
             if self.server_name is not None
@@ -207,6 +207,7 @@ class AddPanel(Gtk.Frame):
 
     def _submit_query(self) -> None:
         text = self.entry.get_text()
+        # TODO: grabs ServerTab.SAVED ServerTreeView
         saved = self.controller.get_servers().get_saved()
         ServerModelManager(self.controller, saved)._add_by_id_or_ip(text)
 

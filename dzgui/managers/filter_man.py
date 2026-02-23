@@ -12,8 +12,6 @@ class FilterManager:
     def __init__(self) -> None:
 
         self.map_store = ModelFactory().make_map_store()
-        self.prior_map: str
-        self.selected_map = all_maps
 
         # TODO: namespace under strings.filters
         self.default_filters = {
@@ -30,18 +28,37 @@ class FilterManager:
             strings.filter_unofficial: True,
             strings.filter_modded: True,
         }
-        self.active_map = 0
+
+        self.active_keyword = ""
+        self.active_map = (0, all_maps)
+        self.prior_map = all_maps
+
         self.filters: list
         self.enabled_filters = dict(self.default_filters)
 
-    def reinit_filters(self) -> None:
-        self.enabled_filters = dict(self.default_filters)
+    # def reinit_filters(self) -> None:
+    #     self.enabled_filters = dict(self.default_filters)
+
+    def get_prior_map(self) -> str:
+        return self.prior_map
+
+    def set_prior_map(self, name: str) -> None:
+        self.prior_map = name
+
+    def get_active_map_name(self) -> str:
+        return self.active_map[1]
 
     def get_active_map(self) -> int:
         return self.active_map
 
-    def set_active_map(self, ind: int) -> None:
-        self.active_map = ind
+    def set_active_map(self, ind: int, name: str) -> None:
+        self.active_map = (ind, name)
+
+    def get_active_keyword(self) -> str:
+        return self.active_keyword
+
+    def set_active_keyword(self, word: str) -> None:
+        self.active_keyword = word
 
     def get_default_filters(self) -> dict:
         """Deep copy of defaults"""
@@ -60,23 +77,13 @@ class FilterManager:
         model = ModelFactory().make_map_store()
         model.append([all_maps])
         self.map_store = model
-        self.selected_map = all_maps
+        self.active_map = (0, all_maps)
 
     def get_prior_map(self) -> str:
         return self.prior_map
 
-    def get_selected_map(self) -> str:
-        return self.selected_map
-
-    def set_selected_map(self, selection: str) -> str:
-        self.prior_map = self.selected_map
-        self.selected_map = selection
-
     def append_map(self, row: list[str]) -> None:
         self.map_store.append(row)
-
-    def clear_map_store(self) -> None:
-        self.map_store.clear()
 
     def set_unique_maps(self, maps: list) -> None:
         if maps is None:
@@ -88,6 +95,14 @@ class FilterManager:
         for m in maps:
             self.append_map([m])
 
-    # when switching views, just grab the map store, active keyword, active map, and selected checks
-    # for that view and apply them to filter panel outside of thread
-    # initialize proxyman with access to filterman
+    def get_all_filters(self) -> tuple:
+        map_name = self.get_active_map_name()
+        enabled = self.get_filters()
+        kw = self.get_active_keyword()
+        filters = []
+        filters.append(map_name)
+        filters.append(kw)
+        for filt in enabled:
+            if enabled[filt] is False:
+                filters.append(filt)
+        return tuple(filters)

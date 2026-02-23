@@ -204,8 +204,10 @@ class Controller(GObject.GObject):
         self.toggle_config(Preferences.DEBUG)
 
     def get_active_context(self) -> Gtk.TreeView:
-        tv = self.get_active_treeview()
-        return tv.get_enum()
+        return self.get_active_treeview().get_enum()
+
+    def get_active_filterman(self) -> "FilterManager":
+        return self.get_active_treeview().get_filter_man()
 
     def get_active_treeview(self) -> "ServerTreeView":
         return self.mediator.notebook.servers.get_active_treeview()
@@ -596,10 +598,6 @@ class Controller(GObject.GObject):
     def get_proxy_man(self) -> "ProxyModelManager":
         return self.proxy_man
 
-    # def set_proxy_man(self, proxy_man: "ProxyModelManager") -> None:
-    #     # TODO: used when staging filter man outside of thread
-    #     self.proxy_man = proxy_man
-
     def populate_model(self, tv: Gtk.TreeView) -> None:
         # NOTE: skip on previously loaded tabs
         if tv.is_loaded():
@@ -607,26 +605,13 @@ class Controller(GObject.GObject):
             return
         ServerModelManager(self, tv).load()
 
-    def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
-        fav = str(self.query_config(Preferences.FAV_LBL))
-        if len(fav) < 1:
-            return None, None
-        ip = str(self.query_config(Preferences.FAV_SRV))
-        addr = ip.split(":")
-        return fav, f"{addr[0]}:{addr[2]}"
-
     def get_dist_cache(self) -> dict[str, "Haversine", "ServerTab"]:
         return self.dist_cache
 
     def get_filters(self) -> list:
         return self.mediator.filters.get_filters()
 
-    # TODO: filterman calls back to here, gets convoluted
-    def get_keyword(self) -> str:
-        tv = self.get_active_treeview()
-        proxy_man = tv.get_proxy_man()
-        return proxy_man.get_keyword_filter()
-
+    # TODO: clean up routes between controller and filter panel
     def get_map_store(self) -> Gtk.ListStore:
         filter_man = self.get_filter_man()
         return filter_man.get_map_store()
@@ -639,16 +624,7 @@ class Controller(GObject.GObject):
         filter_man = self.get_filter_man()
         return filter_man.get_filters()
 
-    def get_prior_map(self) -> str:
-        filter_man = self.get_filter_man()
-        return filter_man.get_prior_map()
-
-    def get_active_map(self) -> None:
-        return self.get_filter_man().get_active_map()
-
-    def set_active_map(self, ind: int) -> None:
-        self.get_filter_man().set_active_map(ind)
-
+    # TODO: rename
     def _on_servers_loaded_init(self, emitter: "Emitter") -> None:
         # FIXME: wipe maps store when changing tabs if model is none
         tv = self.get_active_treeview()
@@ -661,23 +637,16 @@ class Controller(GObject.GObject):
         treeview = self.get_active_treeview()
         return treeview.get_model() is not None
 
-    # TODO: this could be internal to filter panel now
     def _on_check_toggled(self, emitter: Emitter, label: str, state: bool) -> None:
         filter_man = self.get_filter_man()
         filter_man.set_filter(label, state)
 
-        if state:
-            mode = FilterMode.TOGGLE_ON
-        else:
-            mode = FilterMode.TOGGLE_OFF
+        mode = FilterMode.TOGGLE_ON if state else FilterMODE.TOGGLE_OFF
         ServerModelManager(self, self.get_active_treeview()).refilter(mode, label)
 
-    # TODO: map man should be consolidated into filter man
     def _on_map_selection_changed(self, emitter: Emitter, selection: str) -> None:
-        filter_man = self.get_filter_man()
-        filter_man.set_selected_map(selection)
-        # FIXME: label should not be mandatory
-        ServerModelManager(self, self.get_active_treeview()).refilter(FilterMode.MAP, selection)
+        smm = ServerModelManager(self, self.get_active_treeview())
+        smm.refilter(FilterMode.MAP, selection)
 
     def get_notebook(self) -> "Notebook":
         return self.mediator.notebook

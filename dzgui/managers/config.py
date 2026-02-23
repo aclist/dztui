@@ -54,6 +54,14 @@ class ConfigManager:
     def get_favorites(self) -> list[str]:
         return self.lookup(Preferences.IP_LIST)
 
+    def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
+        fav = str(self.lookup(Preferences.FAV_LBL))
+        if len(fav) < 1:
+            return None, None
+        ip = str(self.lookup(Preferences.FAV_SRV))
+        addr = ip.split(":")
+        return fav, f"{addr[0]}:{addr[2]}"
+
     def is_in_favs(self, record: str) -> bool:
         favs = self.get_favorites()
         if record in favs:

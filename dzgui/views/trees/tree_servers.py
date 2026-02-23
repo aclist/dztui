@@ -45,11 +45,10 @@ class ServerTreeView(ContextMixin, TreeView):
 
         self.loaded = False
 
-        self.proxy_man = ProxyModelManager(controller)
+        self.filter_man = FilterManager()
+        self.proxy_man = ProxyModelManager(self.filter_man)
         model = self.proxy_man.get_proxy_model()
         self.set_model(model)
-
-        self.filter_man = FilterManager()
 
         self.set_fixed_height_mode(True)
         # NOTE: headers become visible on model load
@@ -125,7 +124,7 @@ class ServerTreeView(ContextMixin, TreeView):
         # TODO: why is this being saved?
         self.thread = None
 
-    def start_timeout(self) -> None:
+    def start_queue_checker(self) -> None:
         self.queue_id = GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
 
     def get_filter_man(self) -> FilterManager:
@@ -165,10 +164,11 @@ class ServerTreeView(ContextMixin, TreeView):
             self.emitter.emit("lan_tab_toggled", True)
 
         store = self.filter_man.get_map_store()
+
         # FIXME: if model is none, wipe maps
         self.emitter.emit("load_maps", store)
         self.handler_id = self.emitter.connect("statusbar_loaded", self.start_distcalc)
-        self.start_timeout()
+        self.start_queue_checker()
         self.start_distcalc()
 
     def _on_unmap(self, a) -> None:

@@ -4,6 +4,7 @@ from typing import Literal, TYPE_CHECKING
 from dzgui.const.enum import FilterMode
 from dzgui.const.constants import EXPAND, NO_EXPAND, NO_FILL, NO_PADDING, SEARCH_ICON
 from dzgui.model.servers import ServerModelManager
+from dzgui.util.strings import all_maps
 from dzgui.views.components.labels import BoldLabel
 
 import gi
@@ -82,6 +83,7 @@ class KeywordEntry(Gtk.Entry):
         # TODO :strings
         super().__init__(placeholder_text="Filter by keyword")
 
+        self.keyword = ""
         self.controller = controller
         self.emitter = controller.get_emitter()
         self.connect("activate", self._on_activated)
@@ -112,13 +114,18 @@ class KeywordEntry(Gtk.Entry):
         # self.controller.mediator.window.set_keep_below(False)
 
         keyword = entry.get_text().lower()
-        if keyword == self.controller.get_keyword():
+        if keyword == self.keyword:
             return
         if keyword.isspace():
             return
 
+        self.keyword = keyword
+        # TODO: delegate to controller
+        tv = self.controller.get_active_treeview()
+        filter_man = tv.get_filter_man()
+        filter_man.set_active_keyword(keyword)
+
         logger.info(f"User filtered by keyword '{keyword}'")
-        self.emitter.emit("keyword_set", keyword)
 
         ServerModelManager(
             self.controller, self.controller.get_active_treeview()
@@ -141,15 +148,8 @@ class FilterPanel(Gtk.Box):
         self.controller.register_widget("filters", self)
         self.emitter = self.controller.get_emitter()
 
-        # TODO: strings
-        self.sel_map = "All maps"
+        self.sel_map = all_maps
 
-        # TODO: each treeview for that tab context has its own filter manager, independent of this
-        # self.selected_map: str = strings.all_maps
-        # self.prior_map: str = strings.all_maps
-        # self.set_orientation(Gtk.Orientation.VERTICAL)
-
-        # TODO: initialize to empty
         filter_man = self.controller.get_filter_man()
         defaults = filter_man.get_default_filters()
         self.map_store = filter_man.get_map_store()
@@ -191,9 +191,6 @@ class FilterPanel(Gtk.Box):
         self.maps_combo.connect("changed", self._on_map_changed)
         self.maps_combo.connect("key-press-event", self._on_combo_keypress)
 
-        # FIXME: should be a property of treeview's meta manager
-        self.active_map = 0
-
         for el in (
             self.filters_label,
             self.keyword_entry,
@@ -212,37 +209,14 @@ class FilterPanel(Gtk.Box):
         for i, row in enumerate(model):
             if text == row[0]:
                 self.maps_combo.set_active(i)
-                # self.controller.set_active_map(i)
-        # print("HERE3")
 
+    # TODO: use same sort of signal to reinitialize keyword and checks
     def _on_maps_loaded(self, emitter: "Emitter", store: Gtk.ListStore) -> None:
         self.maps_combo.set_model(store)
-        ind = self.controller.get_active_map()
+        tv = self.controller.get_active_treeview()
+        ind, name = tv.filter_man.get_active_map()
         self.maps_combo.set_active(ind)
         self.button_grid.reload_filters()
-
-    # TODO: move into metamanager
-    def get_filters(self) -> tuple:
-        selected = self.controller.get_selected_map()
-        enabled = self.controller.get_enabled_filters()
-        filters = []
-        filters.append(selected)
-        filters.append(self.controller.get_keyword())
-        for filt in enabled:
-            if enabled[filt] is False:
-                filters.append(filt)
-        return tuple(filters)
-
-    # TODO: should be used when switching ServerTab contexts
-    # use signals here
-    # def reinit_panel(self) -> None:
-    #    self.keyword_entry.set_text("")
-    #    self.keyword_filter = ""
-    #    self.reinit_filters()
-    #    self.set_visible(False)
-    #    sel_panel = self.controller.mediator.grid.sel_panel
-    #    if sel_panel.is_visible():
-    #        sel_panel.set_visible(False)
 
     # TODO: this chiefly applies when clicking refresh button, etc.
     # and setting filters to default state
@@ -296,12 +270,6 @@ class FilterPanel(Gtk.Box):
             case _:
                 return False
 
-    # def get_active_combo(self) -> int:
-    #     return self.maps_combo.get_active()
-    #
-    # def set_active_combo(self, row: int) -> None:
-    #     self.maps_combo.set_active(row)
-
     def toggle_check_by_key(self, emitter: "Emitter", keyval: int) -> bool:
         mappings = {
             Gdk.KEY_1: 0,
@@ -333,10 +301,15 @@ class FilterPanel(Gtk.Box):
         ind = combo.get_active()
         if ind < 0:
             return
-        selection = self.maps_entry.get_text()
-        self.sel_map = selection
-        self.emitter.emit("map_selection_changed", selection)
+        name = self.maps_entry.get_text()
+        self.prior_map = self.sel_map
+        self.sel_map = name
 
+        # TODO: abstraction into controller:
+        # pass ind, name
         tv = self.controller.get_active_treeview()
-        proxy_man = tv.get_proxy_man()
-        proxy_man.set_active_map(selection)
+        filter_man = tv.get_filter_man()
+        filter_man.set_prior_map(name)
+        filter_man.set_active_map(ind, name)
+
+        self.emitter.emit("map_selection_changed", name)
