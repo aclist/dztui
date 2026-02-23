@@ -9,7 +9,7 @@ from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.const.enum import ContextMenu, ContextMenuGroup, ServerTab
 from dzgui.api.servers import Record
 from dzgui.model.map_model import MapManager
-from dzgui.model.filtered_model import FilteredModelManager
+from dzgui.model.proxy_model import ProxyModelManager
 from dzgui.util.dist import CalcDist
 from dzgui.util import strings
 from typing import Literal, TYPE_CHECKING
@@ -45,8 +45,8 @@ class ServerTreeView(ContextMixin, TreeView):
 
         self.loaded = False
 
-        self.filter_man = FilteredModelManager(controller)
-        model = self.filter_man.get_proxy_model()
+        self.proxy_man = ProxyModelManager(controller)
+        model = self.proxy_man.get_proxy_model()
         self.set_model(model)
 
         # NOTE: each tab context has its own unique maps
@@ -132,8 +132,8 @@ class ServerTreeView(ContextMixin, TreeView):
     def get_map_man(self) -> MapManager:
         return self.map_man
 
-    def get_filter_man(self) -> FilteredModelManager:
-        return self.filter_man
+    def get_proxy_man(self) -> ProxyModelManager:
+        return self.proxy_man
 
     # def shrink_to_fit(self) -> None:
     #    cols = self.get_columns()
@@ -372,6 +372,6 @@ class ServerTreeView(ContextMixin, TreeView):
             return
         if row_index >= start[0] <= end[0]:
             # NOTE: fetch raw data rows
-            real_model = self.filter_man.get_control()
+            real_model = self.proxy_man.get_control()
             value = real_model[row_index][col_index]
             cell.set_property("text", str(value))

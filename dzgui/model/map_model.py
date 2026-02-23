@@ -1,18 +1,18 @@
-import gi
+from typing import TYPE_CHECKING
 
+from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
 from dzgui.util.strings import all_maps
 
-gi.require_version("Gtk", "3.0")
-from gi.repository.Gtk import ListStore  # noqa E402
-from gi.repository import Gtk  # noqa E402
+if TYPE_CHECKING:
+    from dzgui.model.model_factory import FastInsertListStore
 
 
 # TODO: rename class to MetaManager
 class MapManager:
     def __init__(self) -> None:
 
-        self.map_store = ListStore(str)
+        self.map_store = ModelFactory().make_map_store()
         self.prior_map: str
         self.selected_map = all_maps
 
@@ -54,11 +54,11 @@ class MapManager:
     def set_filter(self, label: str, state: bool) -> None:
         self.enabled_filters[label] = state
 
-    def get_map_store(self) -> ListStore:
+    def get_map_store(self) -> "FastInsertListStore":
         return self.map_store
 
     def reinit_map_store(self) -> None:
-        model = ListStore(str)
+        model = ModelFactory().make_map_store()
         model.append([all_maps])
         self.map_store = model
         self.selected_map = all_maps
@@ -88,3 +88,7 @@ class MapManager:
         self.reinit_map_store()
         for m in maps:
             self.append_map([m])
+
+    # when switching views, just grab the map store, active keyword, active map, and selected checks
+    # for that view and apply them to filter panel outside of thread
+    # initialize proxyman with access to filterman

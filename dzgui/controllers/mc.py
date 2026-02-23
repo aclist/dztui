@@ -41,7 +41,7 @@ from dzgui.config.userprefs import UserPrefs
 from dzgui.controllers.emitter import Emitter
 from dzgui.managers.config import ConfigManager
 from dzgui.managers.contextmenu import ContextMenuManager
-from dzgui.model.filtered_model import FilteredModelManager
+from dzgui.model.proxy_model import ProxyModelManager
 from dzgui.model.servers import ServerModelManager
 from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
@@ -585,20 +585,20 @@ class Controller(GObject.GObject):
     def get_player_count(self) -> str:
         treeview = self.get_active_treeview()
         model = treeview.get_model()
-        filter_man = treeview.get_filter_man()
-        control_model = filter_man.get_control()
+        proxy_man = treeview.get_proxy_man()
+        control_model = proxy_man.get_control()
         count = format_player_count(model, control_model)
         return count
 
     def get_statusbar(self) -> None:
         return self.mediator.statusbar
 
-    def get_filter_man(self) -> "FilteredModelManager":
-        return self.filter_man
+    def get_proxy_man(self) -> "ProxyModelManager":
+        return self.proxy_man
 
-    def set_filter_man(self, filter_man: "FilteredModelManager") -> None:
-        # TODO: used when staging filter man outside of thread
-        self.filter_man = filter_man
+    # def set_proxy_man(self, proxy_man: "ProxyModelManager") -> None:
+    #     # TODO: used when staging filter man outside of thread
+    #     self.proxy_man = proxy_man
 
     def populate_model(self, tv: Gtk.TreeView) -> None:
         # NOTE: skip on previously loaded tabs
@@ -624,8 +624,8 @@ class Controller(GObject.GObject):
     # TODO: filterman calls back to here, gets convoluted
     def get_keyword(self) -> str:
         tv = self.get_active_treeview()
-        filter_man = tv.get_filter_man()
-        return filter_man.get_keyword_filter()
+        proxy_man = tv.get_proxy_man()
+        return proxy_man.get_keyword_filter()
 
     def get_map_store(self) -> Gtk.ListStore:
         map_man = self.get_map_man()
@@ -677,7 +677,7 @@ class Controller(GObject.GObject):
         map_man = self.get_map_man()
         map_man.set_selected_map(selection)
         # FIXME: label should not be mandatory
-        ServerModelManager(self, self.get_active_treeview()).refilter(FilterMode.MAP)
+        ServerModelManager(self, self.get_active_treeview()).refilter(FilterMode.MAP, selection)
 
     def get_notebook(self) -> "Notebook":
         return self.mediator.notebook

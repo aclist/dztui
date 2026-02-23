@@ -24,7 +24,7 @@ API_TIMEOUT = 3
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
-    from dzgui.model.filtered_model import FilteredModelManager
+    from dzgui.model.proxy_model import ProxyModelManager
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class ServerModelManager:
         self.jobs = 1
 
         # NOTE: store filter man for access inside thread
-        self.filter_man = tv.get_filter_man()
+        self.proxy_man = tv.get_proxy_man()
 
         # FIXME: change WaitDialog to use parent window only
         self.thread_man = ThreadingManager(parent=controller)
@@ -195,8 +195,8 @@ class ServerModelManager:
 
         record = Servers.parse_json([res])
 
-        filter_man = self._get_filter_man()
-        raw_model = filter_man.get_control()
+        proxy_man = self._get_proxy_man()
+        raw_model = proxy_man.get_control()
 
         fqip = Servers.response_to_fq_ip(res)
         config_man = self.controller.get_config_man()
@@ -209,7 +209,7 @@ class ServerModelManager:
         raw_model.append(record[0])
         # TODO: if all filters are already applied, strange behavior may occur
         # -> need to insert and update per current filters
-        filter_man.filter(FilterMode.INITIAL)
+        proxy_man.filter(FilterMode.INITIAL)
 
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_single_ip))
 
@@ -249,7 +249,7 @@ class ServerModelManager:
         self._dump_ips(ips)
 
     def _cleanup_single_ip(self) -> None:
-        proxy = self._get_filter_man().get_proxy_model()
+        proxy = self._get_proxy_man().get_proxy_model()
         self.tv.set_model(proxy)
 
         # TODO: if current tab != self.saved, add label
@@ -307,7 +307,7 @@ class ServerModelManager:
         # FIXME: filterman calls GTK methods in thread
         # if mode == FilterMode.INITIAL:
 
-        manager = self._get_filter_man()
+        manager = self._get_proxy_man()
         manager.wipe_cache()
         manager.set_control(data)
         manager.filter(FilterMode.INITIAL)
@@ -324,13 +324,13 @@ class ServerModelManager:
     def _get_new_maps(self) -> list[str]:
         return self.new_maps
 
-    def _get_filter_man(self) -> "FilteredModelManager":
-        return self.filter_man
+    def _get_proxy_man(self) -> "ProxyModelManager":
+        return self.proxy_man
 
     @call_on_thread(dialog.filtering)
     def refilter(self, mode: FilterMode, label: str) -> None:
         self.first_iteration = False
-        filter_man = self._get_filter_man()
-        filter_man.filter(mode, label)
-        self.to_insert = filter_man.get_proxy_model()
+        proxy_man = self._get_proxy_man()
+        proxy_man.filter(mode, label)
+        self.to_insert = proxy_man.get_proxy_model()
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_success))

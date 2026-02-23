@@ -17,13 +17,13 @@ if TYPE_CHECKING:
     from dzgui.controllers.emitter import Emitter
 
 
-class FilteredModelManager:
+class ProxyModelManager:
     """
     Manages access to cached ListStore resources and
     performs filtering on behalf of atomic TreeViews,
     which share the same column structure.
 
-    A FilteredModelManager is attached to each ServerTreeView.
+    A ProxyModelManager is attached to each ServerTreeView.
 
     Raw data is cached before being packed into a ListStore, see get_control()
     Filtration creates a proxy of the TreeView's model, see get_proxy_model()
@@ -282,3 +282,9 @@ class FilteredModelManager:
         self.ping_cache = {}
         # if full:
         # self.control_model = None
+
+    def set_active_map(self, _map: str) -> None:
+        self.active_map = _map
+
+    def get_active_map(self) -> str:
+        return self.active_map

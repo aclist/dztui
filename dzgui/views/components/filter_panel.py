@@ -4,7 +4,6 @@ from typing import Literal, TYPE_CHECKING
 from dzgui.const.enum import FilterMode
 from dzgui.const.constants import EXPAND, NO_EXPAND, NO_FILL, NO_PADDING, SEARCH_ICON
 from dzgui.model.servers import ServerModelManager
-from dzgui.util.margins import set_surrounding_margins
 from dzgui.views.components.labels import BoldLabel
 
 import gi
@@ -128,12 +127,24 @@ class KeywordEntry(Gtk.Entry):
 
 class FilterPanel(Gtk.Box):
     def __init__(self, controller: "Controller") -> None:
-        super().__init__(spacing=6, vexpand=False, orientation=Gtk.Orientation.VERTICAL)
+        super().__init__(
+            spacing=6,
+            vexpand=False,
+            orientation=Gtk.Orientation.VERTICAL,
+            margin_top=1,
+            margin_bottom=10,
+            margin_left=10,
+            margin_right=10,
+        )
 
         self.controller = controller
         self.controller.register_widget("filters", self)
         self.emitter = self.controller.get_emitter()
 
+        # TODO: strings
+        self.sel_map = "All maps"
+
+        # TODO: each treeview for that tab context has its own filter manager, independent of this
         # self.selected_map: str = strings.all_maps
         # self.prior_map: str = strings.all_maps
         # self.set_orientation(Gtk.Orientation.VERTICAL)
@@ -146,11 +157,6 @@ class FilterPanel(Gtk.Box):
 
         self.keyword_entry = KeywordEntry(self.controller)
         self.button_grid = ButtonGrid(self.controller, defaults)
-
-        # TODO: unintended legacy behavior?
-        self.connect("button-release-event", lambda *args: True)
-        set_surrounding_margins(self, 10)
-        self.set_margin_top(1)
 
         # TODO: strings
         self.filters_label = BoldLabel("Filters")
@@ -201,11 +207,13 @@ class FilterPanel(Gtk.Box):
         model = self.maps_combo.get_model()
         if text is None:
             return
+        if text == self.sel_map:
+            return
         for i, row in enumerate(model):
             if text == row[0]:
                 self.maps_combo.set_active(i)
-                self._on_map_changed(self.maps_combo)
-                self.controller.set_active_map(i)
+                # self.controller.set_active_map(i)
+        # print("HERE3")
 
     def _on_maps_loaded(self, emitter: "Emitter", store: Gtk.ListStore) -> None:
         self.maps_combo.set_model(store)
@@ -272,8 +280,8 @@ class FilterPanel(Gtk.Box):
         store = self.controller.get_map_store()
         if len(text) >= completion.get_minimum_key_length():
             completion.set_model(store)
-        ind = self.get_active_combo()
-        self.controller.set_active_map(ind)
+        # ind = self.get_active_combo()
+        # self.controller.set_active_map(ind)
 
     def restore_focus_to_treeview(self) -> Literal[False]:
         view = self.controller.get_active_treeview()
@@ -282,17 +290,17 @@ class FilterPanel(Gtk.Box):
 
     def _on_combo_keypress(self, combo: Gtk.ComboBox, event: Gdk.EventKey) -> bool:
         match event.keyval:
-            case Gdk.KEY_Down:
+            case Gdk.KEY_Down | Gdk.KEY_Up:
                 self.maps_combo.popup()
                 return True
             case _:
                 return False
 
-    def get_active_combo(self) -> int:
-        return self.maps_combo.get_active()
-
-    def set_active_combo(self, row: int) -> None:
-        self.maps_combo.set_active(row)
+    # def get_active_combo(self) -> int:
+    #     return self.maps_combo.get_active()
+    #
+    # def set_active_combo(self, row: int) -> None:
+    #     self.maps_combo.set_active(row)
 
     def toggle_check_by_key(self, emitter: "Emitter", keyval: int) -> bool:
         mappings = {
@@ -322,16 +330,13 @@ class FilterPanel(Gtk.Box):
         check.set_active(not state)
 
     def _on_map_changed(self, combo: Gtk.ComboBox) -> None:
-        old_sel = self.controller.get_selected_map()
-        model = combo.get_model()
-        tree_iter = combo.get_active_iter()
-        if tree_iter is None:
+        ind = combo.get_active()
+        if ind < 0:
             return
-        selection = model[tree_iter][0]
-        if selection == old_sel:
-            return
-        if not selection:
-            return
-        self.maps_entry.set_text(selection)
-        logger.info(f"User selected map '{selection}'")
+        selection = self.maps_entry.get_text()
+        self.sel_map = selection
         self.emitter.emit("map_selection_changed", selection)
+
+        tv = self.controller.get_active_treeview()
+        proxy_man = tv.get_proxy_man()
+        proxy_man.set_active_map(selection)
