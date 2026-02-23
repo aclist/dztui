@@ -8,8 +8,7 @@ if TYPE_CHECKING:
     from dzgui.model.model_factory import FastInsertListStore
 
 
-# TODO: rename class to MetaManager
-class MapManager:
+class FilterManager:
     def __init__(self) -> None:
 
         self.map_store = ModelFactory().make_map_store()

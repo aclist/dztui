@@ -259,8 +259,8 @@ class ServerModelManager:
         self._update_maps()
 
     def _update_maps(self) -> None:
-        map_man = self.tv.get_map_man()
-        map_man.set_unique_maps(self._get_new_maps())
+        filter_man = self.tv.get_filter_man()
+        filter_man.set_unique_maps(self._get_new_maps())
         self.emitter.emit("servers_loaded_init")
         self.first_iteration = False
 
@@ -289,8 +289,8 @@ class ServerModelManager:
         # NOTE: used by refresh action
         if not self.preserve_on_fail:
             self.tv.set_model(None)
-            map_man = self.tv.get_map_man()
-            map_man.set_unique_maps(None)
+            filter_man = self.tv.get_filter_man()
+            filter_man.set_unique_maps(None)
             # TODO: emit signal to not disable widget sensitivity
 
         # TODO: distinguish signals, e.g. "servers_failed_to_load", "servers_loaded_empty"

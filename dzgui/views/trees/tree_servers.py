@@ -8,7 +8,7 @@ from warnings import deprecated
 from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.const.enum import ContextMenu, ContextMenuGroup, ServerTab
 from dzgui.api.servers import Record
-from dzgui.model.map_model import MapManager
+from dzgui.managers.filter_man import FilterManager
 from dzgui.model.proxy_model import ProxyModelManager
 from dzgui.util.dist import CalcDist
 from dzgui.util import strings
@@ -49,8 +49,7 @@ class ServerTreeView(ContextMixin, TreeView):
         model = self.proxy_man.get_proxy_model()
         self.set_model(model)
 
-        # NOTE: each tab context has its own unique maps
-        self.map_man = MapManager()
+        self.filter_man = FilterManager()
 
         self.set_fixed_height_mode(True)
         # NOTE: headers become visible on model load
@@ -129,8 +128,8 @@ class ServerTreeView(ContextMixin, TreeView):
     def start_timeout(self) -> None:
         self.queue_id = GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
 
-    def get_map_man(self) -> MapManager:
-        return self.map_man
+    def get_filter_man(self) -> FilterManager:
+        return self.filter_man
 
     def get_proxy_man(self) -> ProxyModelManager:
         return self.proxy_man
@@ -165,7 +164,7 @@ class ServerTreeView(ContextMixin, TreeView):
         if self.get_enum() is ServerTab.LAN:
             self.emitter.emit("lan_tab_toggled", True)
 
-        store = self.map_man.get_map_store()
+        store = self.filter_man.get_map_store()
         # FIXME: if model is none, wipe maps
         self.emitter.emit("load_maps", store)
         self.handler_id = self.emitter.connect("statusbar_loaded", self.start_distcalc)

@@ -62,7 +62,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from dzgui.const.enum import ServerTab
-    from dzgui.model.map_model import MapManager
+    from dzgui.managers.filter_man import FilterManager
     from dzgui.util.dist import Haversine
     from dzgui.views.base import Notebook, Grid, OuterWindow
     from dzgui.views.components.buttonbox import ContextualButton
@@ -492,8 +492,8 @@ class Controller(GObject.GObject):
             model[path][4] = None
         self.mediator.modtreeview.set_cursor(0)
 
-    def get_map_man(self) -> "MapManager":
-        return self.get_active_treeview().get_map_man()
+    def get_filter_man(self) -> "FilterManager":
+        return self.get_active_treeview().get_filter_man()
 
     def highlight_stale_cleanup(self, stale_mods: list) -> None:
         """Manipulates attached ListStore in the main event loop"""
@@ -628,26 +628,26 @@ class Controller(GObject.GObject):
         return proxy_man.get_keyword_filter()
 
     def get_map_store(self) -> Gtk.ListStore:
-        map_man = self.get_map_man()
-        return map_man.get_map_store()
+        filter_man = self.get_filter_man()
+        return filter_man.get_map_store()
 
     def get_selected_map(self) -> str:
-        map_man = self.get_map_man()
-        return map_man.get_selected_map()
+        filter_man = self.get_filter_man()
+        return filter_man.get_selected_map()
 
     def get_enabled_filters(self) -> dict:
-        map_man = self.get_map_man()
-        return map_man.get_filters()
+        filter_man = self.get_filter_man()
+        return filter_man.get_filters()
 
     def get_prior_map(self) -> str:
-        map_man = self.get_map_man()
-        return map_man.get_prior_map()
+        filter_man = self.get_filter_man()
+        return filter_man.get_prior_map()
 
     def get_active_map(self) -> None:
-        return self.get_map_man().get_active_map()
+        return self.get_filter_man().get_active_map()
 
     def set_active_map(self, ind: int) -> None:
-        self.get_map_man().set_active_map(ind)
+        self.get_filter_man().set_active_map(ind)
 
     def _on_servers_loaded_init(self, emitter: "Emitter") -> None:
         # FIXME: wipe maps store when changing tabs if model is none
@@ -663,8 +663,8 @@ class Controller(GObject.GObject):
 
     # TODO: this could be internal to filter panel now
     def _on_check_toggled(self, emitter: Emitter, label: str, state: bool) -> None:
-        map_man = self.get_map_man()
-        map_man.set_filter(label, state)
+        filter_man = self.get_filter_man()
+        filter_man.set_filter(label, state)
 
         if state:
             mode = FilterMode.TOGGLE_ON
@@ -674,8 +674,8 @@ class Controller(GObject.GObject):
 
     # TODO: map man should be consolidated into filter man
     def _on_map_selection_changed(self, emitter: Emitter, selection: str) -> None:
-        map_man = self.get_map_man()
-        map_man.set_selected_map(selection)
+        filter_man = self.get_filter_man()
+        filter_man.set_selected_map(selection)
         # FIXME: label should not be mandatory
         ServerModelManager(self, self.get_active_treeview()).refilter(FilterMode.MAP, selection)
 

@@ -150,9 +150,9 @@ class FilterPanel(Gtk.Box):
         # self.set_orientation(Gtk.Orientation.VERTICAL)
 
         # TODO: initialize to empty
-        map_man = self.controller.get_map_man()
-        defaults = map_man.get_default_filters()
-        self.map_store = map_man.get_map_store()
+        filter_man = self.controller.get_filter_man()
+        defaults = filter_man.get_default_filters()
+        self.map_store = filter_man.get_map_store()
         self.enabled_filters = defaults
 
         self.keyword_entry = KeywordEntry(self.controller)
