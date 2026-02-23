@@ -3,20 +3,34 @@ import traceback
 
 from typing import Any, TYPE_CHECKING
 
-from dzgui.const.constants import STEAM_CMD, FLATPAK_RUN_CMD, FLATPAK_SANDBOX
+from dzgui.const.constants import (
+    STEAM_CMD,
+    FLATPAK_RUN_CMD,
+    FLATPAK_SANDBOX,
+    WINDOW_DEFAULT_X,
+    WINDOW_DEFAULT_Y,
+)
 from dzgui.const.enum import Preferences
 from dzgui.views.dialogs.generic import ExceptionDialog
 from dzgui.util._json import read_json, write_json
 
+import gi
+
+gi.require_version("Gtk", "3.0")
+from gi.repository.Gtk import main_quit  # noqa E402
+
 # import dzgui.api.servers as Servers
 if TYPE_CHECKING:
     from dzgui.config.userprefs import UserPrefs
+    from dzgui.views.base import OuterWindow
+    from dzgui.views.trees.tree_servers import ServerTreeView
 
 logger = logging.getLogger(__name__)
 
 
 class ConfigManager:
     def __init__(self, prefs: "UserPrefs") -> None:
+        self.prefs = prefs
         self.config = prefs.paths.config
 
     def lookup(self, enum: Preferences) -> Any:
@@ -41,7 +55,6 @@ class ConfigManager:
         # then reenable (or it spawns dialog twice)
         # TODO: do this on demand if/when in options page
         # self.mediator.grid.notebook.settings.populate_settings()
-        return
 
     def get_config(self) -> dict:
         # TODO: is this being called twice?
@@ -102,3 +115,63 @@ class ConfigManager:
             dialog = ExceptionDialog(self, trace)
             dialog.run()
             raise e
+
+    def save_res_and_quit(self, tv: "ServerTreeView", window: "OuterWindow") -> None:
+        columns = tv.get_columns()
+        columns_file = self.prefs.paths.columns
+        try:
+            data = read_json(columns_file)
+        except Exception as e:
+            logger.critical(e)
+            data = {"cols": {}}
+
+        for column in columns:
+            title = column.get_title()
+            size = column.get_width()
+            data["cols"][title] = size
+
+        try:
+            write_json(data, columns_file)
+        except Exception as e:
+            logger.critical(e)
+
+        logger.info("Normal user exit")
+        if window.props.is_maximized:
+            main_quit()
+            return
+
+        w, h = window.get_size()
+        data = {"res": {"width": w, "height": h}}
+
+        res_path = self.prefs.paths.resolution
+        try:
+            write_json(data, res_path)
+        except Exception as e:
+            logger.critical(e)
+
+        main_quit()
+
+    def set_resolution(self, window: "OuterWindow") -> None:
+        if self.prefs.is_game_mode:
+            window.fullscreen()
+            return
+        elif self.lookup(Preferences.WINDOW) is True:
+            window.fullscreen()
+
+        try:
+            data = read_json(self.prefs.paths.resolution)
+            valid_json = True
+        except Exception as e:
+            valid_json = False
+            logger.critical(e)
+
+        if valid_json:
+            res = data["res"]
+            w, h = res["width"], res["height"]
+            logger.info(f"Restoring window size to {w},{h}")
+            window.set_default_size(w, h)
+        else:
+            w = WINDOW_DEFAULT_X
+            h = WINDOW_DEFAULT_Y
+            logger.info(f"Using default window size {w},{h}")
+            window.set_default_size(w, h)

@@ -155,8 +155,9 @@ class Controller(GObject.GObject):
 
     def query_config(self, key: Preferences) -> str | bool | list:
         # return self.config_man.lookup(key)
-        config = self.prefs.paths.config
-        return lookup(config, key)
+        return self.config_man.lookup(key)
+        # config = self.prefs.paths.config
+        # return lookup(config, key)
 
     def is_auto_install(self) -> bool:
         return self.query_config(Preferences.INSTALL)
@@ -218,42 +219,8 @@ class Controller(GObject.GObject):
     # TODO: resolution manager or config manager
     def save_res_and_quit(self, *args: Any) -> None:
         treeview = self.get_active_treeview()
-        columns = treeview.get_columns()
-
-        # columns_file = self.config_man.get_columns()
-        columns_file = self.prefs.paths.columns
-        try:
-            data = JSON.read_json(columns_file)
-        except Exception as e:
-            logger.critical(e)
-            data = {"cols": {}}
-
-        for column in columns:
-            title = column.get_title()
-            size = column.get_width()
-            data["cols"][title] = size
-
-        try:
-            JSON.write_json(data, columns_file)
-        except Exception as e:
-            logger.critical(e)
-
-        logger.info("Normal user exit")
-        if self.mediator.window.props.is_maximized:
-            Gtk.main_quit()
-            return
-
-        w, h = self.mediator.window.get_size()
-        data = {"res": {"width": w, "height": h}}
-
-        # res_path = self.config_man.get_resolution()
-        res_path = self.prefs.paths.resolution
-        try:
-            write_json(data, res_path)
-        except Exception as e:
-            logger.critical(e)
-
-        Gtk.main_quit()
+        window = self.get_window()
+        self.config_man.save_res_and_quit(treeview, window)
 
     @deprecated("use statusbar internal contexts")
     def remove_statusbar(self, context: str) -> None:
@@ -266,6 +233,7 @@ class Controller(GObject.GObject):
         msg_id = self.mediator.statusbar.set_text(text, context)
         return msg_id
 
+    # TODO: StatusBarManager
     def set_statusbar_dist(self, haversine: "Haversine", enum: "ServerTab") -> None:
         """
         NOTE: prevents race condition when server tab changed,
@@ -320,32 +288,34 @@ class Controller(GObject.GObject):
 
         self.cleanup_func = StoredFunc(self.load_mods_cleanup, model)
 
-    def toggle_config(self, context: Preferences) -> None:
-        config = self.prefs.paths.config
-        try:
-            update.toggle_config(config, context)
-            # NOTE: 'use_miles' key is updated dynamically for statusbar unit
-            if context == Preferences.DIST:
-                self.prefs.use_miles = not self.prefs.use_miles
-        except Exception as e:
-            logger.critical(e)
-            trace = traceback.format_exc()
-            dialog = ExceptionDialog(self, trace)
-            dialog.run()
+    def toggle_config(self, key: Preferences) -> None:
+        self.config_man.toggle_config(key)
+        #config = self.prefs.paths.config
+        #try:
+        #    update.toggle_config(config, context)
+        #    # NOTE: 'use_miles' key is updated dynamically for statusbar unit
+        #    if context == Preferences.DIST:
+        #        self.prefs.use_miles = not self.prefs.use_miles
+        #except Exception as e:
+        #    logger.critical(e)
+        #    trace = traceback.format_exc()
+        #    dialog = ExceptionDialog(self, trace)
+        #    dialog.run()
 
     def update_config(self, key: Preferences, value: str) -> None:
-        try:
-            update.write_config(self.prefs.paths.config, key, value)
-        except Exception as e:
-            logger.critical(e)
-            trace = traceback.format_exc()
-            dialog = ExceptionDialog(self, trace)
-            dialog.run()
-            # TODO: suppress signals
-            # then reenable (or it spawns dialog twice)
-            # TODO: do this on demand for certain changes
-            self.mediator.grid.notebook.settings.populate_settings()
-            return
+        self.config_man.update_config(key, value)
+        #try:
+        #    update.write_config(self.prefs.paths.config, key, value)
+        #except Exception as e:
+        #    logger.critical(e)
+        #    trace = traceback.format_exc()
+        #    dialog = ExceptionDialog(self, trace)
+        #    dialog.run()
+        #    # TODO: suppress signals
+        #    # then reenable (or it spawns dialog twice)
+        #    # TODO: do this on demand for certain changes
+        #    self.mediator.grid.notebook.settings.populate_settings()
+        #    return
 
     def open_keybindings(self) -> None:
         notebook = self.mediator.grid.notebook
@@ -537,6 +507,7 @@ class Controller(GObject.GObject):
                 dialog = ExceptionDialog(self, str(e))
                 dialog.run()
 
+    # TODO: move to ConfigMan
     @call_on_thread(strings.dialog.working)
     def update_api_key(self, text: str, key: Preferences) -> None:
         if key is Preferences.STEAM:
@@ -552,29 +523,7 @@ class Controller(GObject.GObject):
             )
 
     def set_resolution(self, window: "OuterWindow") -> None:
-        if self.prefs.is_game_mode:
-            window.fullscreen()
-            return
-        elif self.query_config(Preferences.WINDOW) is True:
-            window.fullscreen()
-
-        try:
-            data = read_json(self.prefs.paths.resolution)
-            valid_json = True
-        except Exception as e:
-            valid_json = False
-            logger.critical(e)
-
-        if valid_json:
-            res = data["res"]
-            w, h = res["width"], res["height"]
-            logger.info(f"Restoring window size to {w},{h}")
-            window.set_default_size(w, h)
-        else:
-            w = WINDOW_DEFAULT_X
-            h = WINDOW_DEFAULT_Y
-            logger.info(f"Using default window size {w},{h}")
-            window.set_default_size(w, h)
+        self.config_man.set_resolution(window)
 
     def propagate_column_width(self, col: Gtk.TreeViewColumn) -> None:
         GLib.idle_add(self.mediator.servers.update_tab_widths, col)
@@ -584,6 +533,7 @@ class Controller(GObject.GObject):
         treeview.set_loaded(False)
         ServerModelManager(self, treeview).refresh()
 
+    # TODO: move to servermodelman
     def get_player_count(self) -> str:
         treeview = self.get_active_treeview()
         model = treeview.get_model()
