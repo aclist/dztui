@@ -7,10 +7,9 @@ import requests
 import socket
 import subprocess
 import threading
-import typing  # noqa
 
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional, Union
 
 from dzgui.api.bm import map_id_to_record
 from dzgui.const.constants import REQUEST_TIMEOUT
@@ -461,7 +460,7 @@ def response_to_fq_ip(res: dict) -> str:
     return f"{ip}:{gameport}:{qport}"
 
 
-def query_id_or_ip(addr: str, key: str) -> None:
+def query_id_or_ip(addr: str, key: str) -> Optional[dict]:
     # NOTE: Battlemetrics
     if addr.isdigit():
         try:

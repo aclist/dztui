@@ -1,6 +1,6 @@
 import gi
 import logging
-from typing import TYPE_CHECKING
+from typing import Union, TYPE_CHECKING
 
 from dzgui.const.enum import ContextMenu, Preferences
 from dzgui.managers.connection import ConnectionManager
@@ -9,6 +9,9 @@ from dzgui.model.servers import ServerModelManager
 from dzgui.util import strings
 from dzgui.util.clip import copy_clipboard
 from dzgui.util.open_links import open_workshop_page
+
+from dzgui.views.trees.tree_servers import ServerTreeView
+
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib, GObject  # noqa E402
@@ -21,7 +24,11 @@ if TYPE_CHECKING:
 
 
 class ContextMenuManager:
-    def __init__(self, treeview: Gtk.TreeView, controller: "Controller") -> None:
+    def __init__(
+        self,
+        treeview: Gtk.TreeView,
+        controller: "Controller",
+    ) -> None:
         self.controller = controller
         self.treeview = treeview
         self.thread_man = ThreadingManager(parent=controller)
@@ -83,6 +90,8 @@ class ContextMenuManager:
                 pass
 
     def copy_server_ip(self) -> None:
+        if not isinstance(self.treeview, ServerTreeView):
+            return
         record = self.treeview.get_simplified_ip()
         copy_clipboard(record)
 

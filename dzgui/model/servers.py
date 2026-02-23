@@ -42,7 +42,7 @@ class ServerModelManager:
         self.emitter = controller.get_emitter()
 
         self.first_iteration: bool
-        self.preserve_on_fail: False
+        self.preserve_on_fail = False
         self.jobs = 1
 
         # NOTE: store filter man for access inside thread
@@ -80,6 +80,8 @@ class ServerModelManager:
     def refresh(self) -> None:
         self.preserve_on_fail = True
         self.load()
+        # TODO: if refresh is active, callback to button decrement signal
+        # and do not mark refresh as sensitive
 
     @call_on_thread(dialog.fetching)
     def _dump_api(self) -> None:
@@ -109,14 +111,14 @@ class ServerModelManager:
                     )
                     return
 
-        # NOTE: This step is allowed to fail, since this metadata is incidental
+        # NOTE: this step is allowed to fail, since this metadata is incidental
         res = Servers.query_api(key, APPID_DAYZ_EXP, "")
         if res.status == 200 and res.parsed is True:
             j = res.json
             servers += j["response"]["servers"]
 
         parsed = Servers.parse_json(servers)
-        self._push_data(parsed, FilterMode.INITIAL)
+        self._push_data(parsed)
 
     @call_on_thread(dialog.scanning)
     def dump_lan(self, port: int, early_abort: bool) -> None:
@@ -149,14 +151,16 @@ class ServerModelManager:
                 self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
                 return
         parsed = Servers.parse_json(servers)
-        self._push_data(parsed, FilterMode.INITIAL)
+        self._push_data(parsed)
 
     @call_on_thread(dialog.fetching)
     def _dump_ips(self, ips: list[str]) -> None:
         # NOTE: block malformed records (TODO: add github issue no.)
         # TODO: sanitize ip list at config time and drop this
+        # TODO: make test for this
         ips = [ip for ip in ips if len(ip.split(":")) == 3 and ip.split(":")[2] != ""]
         job = Servers.query_direct
+        servers = []
         with ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(
@@ -166,9 +170,8 @@ class ServerModelManager:
                 )
                 for ip in ips
             ]
-            servers = []
             for future in as_completed(futures):
-                res = future.result()
+                res = future.result(timeout=API_TIMEOUT)
                 self.thread_man.increment_dialog()
                 # NOTE: failing entries are culled
                 if res is None:
@@ -181,7 +184,7 @@ class ServerModelManager:
                     return
 
         parsed = Servers.parse_json(servers)
-        self._push_data(parsed, FilterMode.INITIAL)
+        self._push_data(parsed)
 
     @call_on_thread(dialog.querying)
     def add_by_id_or_ip(self, addr: str) -> None:
@@ -199,8 +202,8 @@ class ServerModelManager:
         config_man = self.controller.get_config_man()
         config_man.add_saved_server(fqip)
 
-        # NOTE: tab was not instantiated yet
-        if model is None:
+        # NOTE: if tab was not instantiated yet
+        if raw_model is None:
             return
 
         raw_model.append(record[0])
@@ -250,8 +253,9 @@ class ServerModelManager:
         self.tv.set_model(proxy)
 
         # TODO: if current tab != self.saved, add label
-        # TODO: adding a row may update available maps
         self.emitter.emit("servers_loaded", self.enum)
+        # NOTE: adding a row may update available maps
+        # TODO: test this
         self._update_maps()
 
     def _update_maps(self) -> None:
@@ -263,8 +267,8 @@ class ServerModelManager:
     def _cleanup_on_success(self) -> None:
         self.tv.set_model(self.to_insert)
 
-        # inserting a row serializes file on disk, updates control model for that tab, and updates model
         # TODO: make sure control model len is N + 1
+        # inserting a row serializes file on disk, updates control model for that tab, and updates model
         # NOTE: when inserting new rows, the entire control model is wiped and rebuilt, then proxy model is swapped in
         # TODO: signals or other approach to deferring map
         # model insertion after thread closes
@@ -296,21 +300,21 @@ class ServerModelManager:
             dialog = ExceptionDialog(self.controller, api_warn_msg)
             dialog.run()
 
-    # TODO: break into initial dump and refilter modes, can drop filtermode kwarg
-    def _push_data(self, data: tuple, mode: Optional[FilterMode]) -> None:
+    def _push_data(self, data: list) -> None:
+        # if data is None:
+        #    self.to_insert = None
+        # else:
+        # FIXME: filterman calls GTK methods in thread
+        # if mode == FilterMode.INITIAL:
+
         manager = self._get_filter_man()
+        manager.wipe_cache()
+        manager.set_control(data)
+        manager.filter(FilterMode.INITIAL)
+        self.to_insert = manager.get_proxy_model()
 
-        if data is None:
-            self.to_insert = None
-        else:
-            # FIXME: filterman calls GTK methods in thread
-            if mode == FilterMode.INITIAL:
-                manager.set_control(data)
-            manager.filter(mode)
-            self.to_insert = manager.get_proxy_model()
-
-            u_maps = set([row[1] for row in data])
-            self._set_new_maps(sorted(u_maps))
+        u_maps = set([row[1] for row in data])
+        self._set_new_maps(sorted(u_maps))
 
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_success))
 

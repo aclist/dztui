@@ -6,7 +6,7 @@ import traceback
 
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Optional, TYPE_CHECKING
+from typing import Any, Callable, TYPE_CHECKING
 from warnings import deprecated
 
 import dzgui.api.pefile as PeFile
@@ -49,7 +49,7 @@ from dzgui.util._json import read_json, write_json
 from dzgui.util.diag import write_diagnostic
 from dzgui.util.format import format_mods, format_player_count
 from dzgui.util.localize import number
-from dzgui.util.open_links import open_workshop_page, open_user_workshop
+from dzgui.util.open_links import open_user_workshop
 from dzgui.views.dialogs.filepicker import FilePicker
 from dzgui.views.dialogs.generic import ExceptionDialog, WaitDialog
 
@@ -161,8 +161,8 @@ class Controller(GObject.GObject):
     def is_auto_install(self) -> bool:
         return self.query_config(Preferences.INSTALL)
 
-    def unblock_signals(self) -> None:
-        self.block_signals(False)
+    # def unblock_signals(self) -> None:
+    #    self.block_signals(False)
 
     # @deprecated("Currently unused")
     # def block_signals(self, state: bool = True) -> None:
@@ -203,7 +203,7 @@ class Controller(GObject.GObject):
         # self.config_man().toggle_config(Preferences.DEBUG)
         self.toggle_config(Preferences.DEBUG)
 
-    def get_active_context(self) -> NotebookPage:
+    def get_active_context(self) -> Gtk.TreeView:
         tv = self.get_active_treeview()
         return tv.get_enum()
 
@@ -311,13 +311,9 @@ class Controller(GObject.GObject):
     # TODO: delegate to threadmanager
     @call_on_thread(strings.dialog.modlist)
     def load_mods(self) -> None:
-        model = ModelFactory().make_mod_store()  # self.model_man.new_mod_store()
+        model = ModelFactory().make_mod_store()
         path = self.query_config(Preferences.DEFAULT)
         mods = get_delimited_mods(Path(path))
-
-        # NOTE: cell renderer highlight toggle
-        for mod in mods:
-            mod.append(False)
         model.extend(mods)
 
         self.cleanup_func = StoredFunc(self.load_mods_cleanup, model)
@@ -394,7 +390,7 @@ class Controller(GObject.GObject):
         remove_stale_signatures(self.prefs.paths.config, self.prefs.paths.version)
 
     # TODO: strings
-    # TODO: delegate to LocalModManager
+    # TODO: delegate to LocalModManager or api/mods.py
     @call_on_thread("deleting mod")
     def delete_single_mod(self, tree_path: Gtk.TreePath) -> None:
         config = self.prefs.paths.config
@@ -584,7 +580,7 @@ class Controller(GObject.GObject):
     def refresh_tree(self) -> None:
         treeview = self.get_active_treeview()
         treeview.set_loaded(False)
-        self.populate_model()
+        ServerModelManager(self, treeview).refresh()
 
     def get_player_count(self) -> str:
         treeview = self.get_active_treeview()
@@ -619,7 +615,7 @@ class Controller(GObject.GObject):
         addr = ip.split(":")
         return fav, f"{addr[0]}:{addr[2]}"
 
-    def get_dist_cache(self) -> dict[str, "Haversine"]:
+    def get_dist_cache(self) -> dict[str, "Haversine", "ServerTab"]:
         return self.dist_cache
 
     def get_filters(self) -> list:

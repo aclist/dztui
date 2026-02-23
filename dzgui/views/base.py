@@ -273,7 +273,6 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
         if widget is None:
             return
 
-        # FIXME: deprecated
         widget.grab_content_area()
 
     def get_page(self) -> Gtk.Widget | None:

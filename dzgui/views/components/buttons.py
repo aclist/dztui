@@ -103,6 +103,7 @@ class RefreshButton(IconTextButton):
         # FIXME: do this after threaded call fully finishes
         # FIXME: other signals cause refresh button to become sensitive
         # after model is loaded
+        # TODO: put in smm cleanup func, use signal
         GLib.timeout_add_seconds(1, self.decrement)
         self.controller.refresh_tree()
 

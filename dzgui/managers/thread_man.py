@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 def call_on_thread(dialog_str: str) -> Callable:
     def decorator(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Callable:
             self = args[0]
             stored = StoredFunc(func, *args, **kwargs)
             if not hasattr(self, "thread_man"):

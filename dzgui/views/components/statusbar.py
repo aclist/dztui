@@ -150,10 +150,11 @@ class Statusbar(Gtk.Grid):
     def set_cache(self, string: str) -> None:
         self.cache = string
 
-    def set_text(self, string: str, context: str) -> None:
+    def set_text(self, string: str, context: str) -> int:
         meta = self.statusbar.get_context_id(context)
         self.statusbar.push(meta, string)
         self.set_cache(string)
+        return meta
 
     def _help_row_changed(self, tree: "TreeView", sel: Gtk.TreeSelection) -> None:
         row = tree.get_value_at_index(1)

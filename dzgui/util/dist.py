@@ -13,6 +13,7 @@ from gi.repository import Gtk  # noqa E402
 if TYPE_CHECKING:
     from dzgui.const.enum import ServerTab
     from dzgui.controllers.mc import Controller
+    from queue import Queue
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +54,9 @@ class CalcDist:
         self.controller = controller
         self.result_queue = result_queue
         self.addr = addr
-        self.ip = self.addr #.split(":")[0]
+        self.ip = self.addr  # .split(":")[0]
 
-    #def run(self) -> None:
+        # def run(self) -> None:
         cache = self.controller.get_dist_cache()
         if self.addr in cache:
             logger.info(f"Address '{self.addr}' already in cache")

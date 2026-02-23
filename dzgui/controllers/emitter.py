@@ -3,7 +3,7 @@ from typing import Union, TYPE_CHECKING
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository.Gtk import ListStore
+from gi.repository.Gtk import ListStore  # noqa E402
 from gi.repository import Gdk, GObject  # noqa E402
 
 if TYPE_CHECKING:
@@ -86,16 +86,6 @@ class Emitter(GObject.GObject):
     def distcalc_ended(
         self, dist: Union[str, None], context: Union["ServerTab", "NotebookPage"]
     ) -> None:
-        pass
-
-    @GObject.Signal(
-        flags=GObject.SignalFlags.RUN_LAST,
-        arg_types=(
-            str,
-            bool,
-        ),
-    )
-    def check_toggled(self, label: str, state: bool) -> None:
         pass
 
     @GObject.Signal(

@@ -1,4 +1,3 @@
-import datetime
 import re
 
 from typing import Optional, TYPE_CHECKING
@@ -281,5 +280,5 @@ class FilteredModelManager:
         self.filtered = None
         self.filter_cache = {}
         self.ping_cache = {}
-        if full:
-            self.control_model = None
+        # if full:
+        # self.control_model = None

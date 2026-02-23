@@ -1,11 +1,8 @@
 import logging
 import requests
-from pathlib import Path
 from typing import Optional, TYPE_CHECKING
 
-from dzgui.config.query import lookup
 from dzgui.const.endpoints import BM_SERVERS
-from dzgui.const.enum import Preferences
 
 logger = logging.getLogger(__name__)
 

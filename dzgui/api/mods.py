@@ -50,7 +50,7 @@ def get_local_mods(workshop_path: Path) -> list[Path]:
     return mods
 
 
-# TODO: TEST: mock bad meta files with fixtures and remove them
+# TODO: TEST: mock bad meta files with fixtures and skip them
 def parse_meta(file: Path) -> ModMeta:
     mod = file / "meta.cpp"
     if mod.exists() is False:
@@ -67,7 +67,7 @@ def parse_meta(file: Path) -> ModMeta:
             if tok == "protocol" or tok == "publishedid":
                 ntok = lex.get_token()
             elif tok == "timestamp":
-                # some malformed .NET tick conversions result in numbers < 0
+                # NOTE: some malformed .NET tick conversions result in numbers < 0
                 ntok = lex.get_token()
                 if ntok == "-":
                     ntok += str(lex.get_token())
@@ -99,7 +99,8 @@ def get_delimited_mods(steam_path: Path) -> list[Any]:
         if meta is None:
             continue
         size = get_mod_size(mod)
-        clean.append([meta.name, symlink, mod_dir, size])
+        # NOTE: final col is cell renderer highlight toggle
+        clean.append([meta.name, symlink, mod_dir, size, False])
     clean.sort(key=lambda row: row[0])
     return clean
 
@@ -147,6 +148,7 @@ def remove_stale_signatures(config: Path, versions: Path) -> None:
         for line in lines:
             f.write(line)
 
+
 def find_stale_mods(config: Path) -> list[int]:
     def push_record(rec: str) -> list:
         add = rec.split(":")
@@ -163,10 +165,7 @@ def find_stale_mods(config: Path) -> list[int]:
     remote_mods = []
 
     with ThreadPoolExecutor() as executor:
-        futures = [
-            executor.submit(push_record, record)
-            for record in records
-        ]
+        futures = [executor.submit(push_record, record) for record in records]
         wait(futures)
         for future in futures:
             res = future.result()

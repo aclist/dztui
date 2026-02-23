@@ -55,8 +55,8 @@ class ContextMixin(TreeView):
 
         self.context_menu.select_first(False)
 
-    def _process_dynamic_row(self, row: ContextMenu) -> None:
-        if row == ContextMenu.ADD_SERVER and self.is_in_favs():
+    def _process_dynamic_row(self, row: ContextMenu) -> Gtk.MenuItem:
+        if row == ContextMenu.ADD_SERVER and self.is_in_favs():  # type: ignore
             row = ContextMenu.REMOVE_SERVER
 
         item = Gtk.MenuItem(label=row.dict["label"])
@@ -71,7 +71,7 @@ class ContextMixin(TreeView):
         #    if self.get_record_string() in notes_cache:
         #        item.set_label(strings.edit_note)
 
-    def _process_button_event(self, event: Gdk.EventButton) -> None:
+    def _process_button_event(self, event: Gdk.EventButton) -> bool:
         try:
             pathinfo = self.get_path_at_pos(int(event.x), int(event.y))
             if pathinfo is None:
@@ -89,7 +89,7 @@ class ContextMixin(TreeView):
             return True
             # FIXME: if selection is not multiple, change cursor
         except AttributeError:
-            pass
+            return False
 
     def _on_menu_click(self, widget: Gtk.MenuItem, enum: ContextMenu) -> None:
         self.controller.menu_action(enum, self)

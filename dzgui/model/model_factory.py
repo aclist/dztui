@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Sequence, Union
 
 from dzgui.const.enum import HELP_MENU_ROWS
 from dzgui.util.redact import redact_log
@@ -8,7 +8,7 @@ from dzgui.util.strings import delimiter
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository.Gtk import ListStore  # noqa E402
+from gi.repository.Gtk import ListStore, TreeIter  # noqa E402
 from gi.repository import GObject  # noqa E402
 
 GTYPE_TO_PYTHON = {
@@ -53,27 +53,27 @@ class LogCols:
 @dataclass(slots=True, frozen=True)
 class ServerModCols:
     name: str
-    uid: GObject.TYPE_INT64
+    uid: int  # GObject.TYPE_INT64
     installed: str
 
 
 @dataclass(slots=True, frozen=True)
 class MenuCols:
-    name: GObject.TYPE_STRING  # str
-    hidden: GObject.TYPE_PYOBJECT
+    name: str
+    hidden: object  # GObject.TYPE_PYOBJECT
 
 
 class FastInsertListStore(ListStore):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-    def _is_same_length(self, lists: list[list[Any]]) -> bool:
+    def _is_same_length(self, lists: Sequence[Any]) -> bool:
         first_len = len(lists[0])
         if not all(len(sublist) == first_len for sublist in lists):
             return False
         return True
 
-    def _is_type_homogeneous(self, lists: list[list[Any]]) -> bool:
+    def _is_type_homogeneous(self, lists: Sequence[Any]) -> bool:
         transposed = zip(*lists)
 
         for column in transposed:
@@ -82,7 +82,7 @@ class FastInsertListStore(ListStore):
                 return False
         return True
 
-    def extend(self, rows: list[list[Any]]) -> None:
+    def extend(self, rows: Sequence[Any]) -> None:
         """
         Compared to calling append() directly, introduces negligible overhead,
         but guarantees type and length equivalence prior to insertion
@@ -103,7 +103,7 @@ class FastInsertListStore(ListStore):
         for row in rows:
             self.append(row)
 
-    def append(self, row) -> None:
+    def append(self, row: list[Any] | tuple[Any, ...] | None = ...) -> TreeIter:
         """
         Optimized for speed, but makes no assurances about row homogeneity
         and may segfault if types and length are not identical to ListStore.
@@ -120,7 +120,7 @@ class ModelFactory:
     def __init__(self) -> None:
         pass
 
-    def new_model_from_logfile(self, path: str) -> None:
+    def new_model_from_logfile(self, path: str) -> FastInsertListStore:
         store = self.make_log_store()
         with open(path, "r") as f:
             lines = [line.split(delimiter) for line in f.read().splitlines()]
@@ -137,17 +137,12 @@ class ModelFactory:
         return store
 
     def make_map_store(self) -> FastInsertListStore:
-        return ListStore(str)
+        return FastInsertListStore(str)
 
     def make_help_store(self) -> FastInsertListStore:
         store = self.new_model_from_class(MenuCols)
         rows = [[row.dict["label"], row] for row in HELP_MENU_ROWS]
-        # for row in rows:HELP_MENU_ROWS:
-        #    print(type(row) is object)
         store.extend(rows)
-        # for row in HELP_MENU_ROWS:
-        #    label = row.dict["label"]
-        #    store.append([label, row])
         return store
 
     def make_mod_store(self) -> FastInsertListStore:
