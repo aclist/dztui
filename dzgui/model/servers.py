@@ -187,8 +187,19 @@ class ServerModelManager:
         self._push_data(parsed)
 
     @call_on_thread(dialog.querying)
-    def add_by_id_or_ip(self, addr: str) -> None:
-        res = Servers.query_id_or_ip(addr)
+    def add_by_id(self, addr: str) -> None:
+        # KEY
+        config_man = self.controller.get_config_man()
+        key = config_man.lookup(Preferences.BM)
+        res = Servers.query_by_id(addr, key)
+        self.parse_single_record(res)
+
+    @call_on_thread(dialog.querying)
+    def add_by_ip(self, addr: str) -> None:
+        res = Servers.query_by_ip(addr)
+        self.parse_single_record(res)
+
+    def parse_single_record(self, record: dict) -> None:
         if res is None:
             self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
             return

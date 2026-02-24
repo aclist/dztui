@@ -59,20 +59,15 @@ class ContextMenuManager:
                 self.controller.set_fav()
 
             # THREADED
+            case ContextMenu.ADD_SERVER:
+                record = self.treeview.get_record_string()
+                ServerModelManager(self.controller, self.treeview).add_by_ip(record)
+                # TODO: update tab with !
             case ContextMenu.CONNECT:
                 record = self.treeview.get_record_string()
                 # FIXME: context menu connections do not require BM key
                 key = self.controller.get_config_man().lookup(Preferences.BM)
-                ConnectionManager(self.controller).connect_by_id_or_ip(record, key)
-            case ContextMenu.ADD_SERVER:
-                record = self.treeview.get_record_string()
-                ServerModelManager(self.controller, self.treeview).add_by_id_or_ip(
-                    record
-                )
-                # add to saved servers model verbatim and sort in place
-                # update tab with !
-                # update config file with IP
-                pass
+                ConnectionManager(self.controller).connect_ip(record, key)
             case ContextMenu.REFRESH_PLAYERS:
                 # get record
                 # call a2s on thread

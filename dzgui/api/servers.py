@@ -460,18 +460,22 @@ def response_to_fq_ip(res: dict) -> str:
     return f"{ip}:{gameport}:{qport}"
 
 
-def query_id_or_ip(addr: str, key: str) -> Optional[dict]:
-    # NOTE: Battlemetrics
-    if addr.isdigit():
-        try:
-            resolved = map_id_to_record(key, addr)
-            res = query_direct(resolved.ip, resolved.qport)
-        except Exception as e:
-            logger.critical(e)
-            return None
-    else:
+# NOTE: Battlemetrics
+def query_by_id(addr: str, key: str) -> Optional[dict]:
+    try:
+        resolved = map_id_to_record(key, addr)
+        res = query_direct(resolved.ip, resolved.qport)
+    except Exception as e:
+        logger.critical(e)
+        return None
+
+def query_by_ip(addr: str) -> Optional[dict]:
+    try:
         record = addr.split(":")
         # TODO: create a Record object
         ip, qport = record[0], record[2]
         res = query_direct(ip, int(qport))
+    except Exception as e:
+        logger.critical(e)
+        return None
     return res
