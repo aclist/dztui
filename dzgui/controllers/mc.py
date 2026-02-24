@@ -591,7 +591,7 @@ class Controller(GObject.GObject):
         filter_man = self.get_filter_man()
         filter_man.set_filter(label, state)
 
-        mode = FilterMode.TOGGLE_ON if state else FilterMODE.TOGGLE_OFF
+        mode = FilterMode.TOGGLE_ON if state else FilterMode.TOGGLE_OFF
         ServerModelManager(self, self.get_active_treeview()).refilter(mode, label)
 
     def _on_map_selection_changed(self, emitter: Emitter, selection: str) -> None:
