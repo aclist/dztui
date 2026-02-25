@@ -11,7 +11,7 @@ from dzgui.views.dialogs.generic import WaitDialog
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GLib, GObject  # noqa E402
+from gi.repository import Gtk, GLib  # noqa E402
 
 logger = logging.getLogger(__name__)
 
@@ -88,9 +88,14 @@ class ThreadingManager:
     def get_cleanup_func(self) -> StoredFunc:
         return self.cleanup_func
 
-    def _destroy_on_idle(self) -> None:
-        self.wait_dialog.destroy()
+    def _d(self) -> None:
+        self.wait_dialog.hide()
+        return False
+
+    def _destroy_on_idle(self) -> GLib.SOURCE_REMOVE:
         func = self.get_cleanup_func()
         if func is not None:
             func.call()
             self.set_cleanup_func(None)
+        self.wait_dialog.destroy()
+        return GLib.SOURCE_REMOVE

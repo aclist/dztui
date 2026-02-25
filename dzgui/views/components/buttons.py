@@ -17,7 +17,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib  # noqa E402
 
 if TYPE_CHECKING:
-    from GLib import SOURCE_REMOVE
+    from gi.repository import GLib
     from dzgui.controllers.mc import Controller
 
 
@@ -107,7 +107,7 @@ class RefreshButton(IconTextButton):
         GLib.timeout_add_seconds(1, self.decrement)
         self.controller.refresh_tree()
 
-    def decrement(self) -> "SOURCE_REMOVE" | Literal[True]:
+    def decrement(self) -> "GLib.SOURCE_REMOVE" | Literal[True]:
         self.time -= 1
         if self.time == 0:
             self.time = 30

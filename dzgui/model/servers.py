@@ -85,6 +85,7 @@ class ServerModelManager:
 
     @call_on_thread(dialog.fetching)
     def _dump_api(self) -> None:
+        # TODO: pass api key a priori in .load() call
         config_man = self.controller.get_config_man()
         key = config_man.lookup(Preferences.STEAM)
         job = Servers.query_api
@@ -276,6 +277,7 @@ class ServerModelManager:
         self.first_iteration = False
 
     def _cleanup_on_success(self) -> None:
+        self.tv.set_model(None)
         self.tv.set_model(self.to_insert)
 
         # TODO: make sure control model len is N + 1
@@ -286,7 +288,7 @@ class ServerModelManager:
         # cf. servers_loaded signal
 
         # TODO: servers_loaded vs servers_reloaded
-        self.emitter.emit("servers_loaded", self.enum)
+        # self.emitter.emit("servers_loaded", self.enum)
 
         if self.first_iteration:
             self._update_maps()
@@ -339,6 +341,7 @@ class ServerModelManager:
 
     @call_on_thread(dialog.filtering)
     def refilter(self, mode: FilterMode, label: str) -> None:
+        # FIXME: causes two wait dialogs when map selection change signal emits after loading servers
         self.first_iteration = False
         proxy_man = self._get_proxy_man()
         proxy_man.filter(mode, label)
