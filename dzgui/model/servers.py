@@ -204,7 +204,7 @@ class ServerModelManager:
             self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
             return
 
-        record = Servers.parse_json([response])
+        records = Servers.parse_json([response])
 
         proxy_man = self._get_proxy_man()
         raw_model = proxy_man.get_control()
@@ -217,10 +217,15 @@ class ServerModelManager:
         if raw_model is None:
             return
 
-        raw_model.append(record[0])
+        # NOTE: expected to only contain one item
+        raw_model.append(records[0])
+
         # TODO: if all filters are already applied, strange behavior may occur
-        # -> need to insert and update per current filters
+        # -> need to insert and reupdate tre per current filters
+        # for example, non-empty will only show up in empty because it is not cached
         proxy_man.filter(FilterMode.INITIAL)
+
+        self._sort_unique_maps(records)
 
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_single_ip))
 
@@ -276,8 +281,10 @@ class ServerModelManager:
         self.first_iteration = False
 
     def _cleanup_on_success(self) -> None:
-        self.tv.set_model(None)
-        self.tv.set_model(self.to_insert)
+        proxy = self._get_proxy_man().get_proxy_model()
+        self.tv.set_model(proxy)
+        # self.tv.set_model(None)
+        # self.tv.set_model(self.to_insert)
 
         # TODO: make sure control model len is N + 1
         # inserting a row serializes file on disk, updates control model for that tab, and updates model
@@ -325,10 +332,13 @@ class ServerModelManager:
         self.to_insert = manager.get_proxy_model()
 
         # TODO: abstract for all methods
-        u_maps = set([row[1] for row in data])
-        self._set_new_maps(sorted(u_maps))
+        self._sort_unique_maps(data)
 
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_success))
+
+    def _sort_unique_maps(self, data: list) -> None:
+        u_maps = set([row[1] for row in data])
+        self._set_new_maps(u_maps)
 
     def _set_new_maps(self, maps: list[str]) -> None:
         self.new_maps = maps
