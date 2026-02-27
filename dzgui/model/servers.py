@@ -189,7 +189,6 @@ class ServerModelManager:
 
     @call_on_thread(dialog.querying)
     def add_by_id(self, addr: str) -> None:
-        # KEY
         config_man = self.controller.get_config_man()
         key = config_man.lookup(Preferences.BM)
         res = Servers.query_by_id(addr, key)

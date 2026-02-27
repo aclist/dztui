@@ -65,9 +65,7 @@ class ContextMenuManager:
                 # TODO: update tab with !
             case ContextMenu.CONNECT:
                 record = self.treeview.get_record_string()
-                # FIXME: context menu connections do not require BM key
-                key = self.controller.get_config_man().lookup(Preferences.BM)
-                ConnectionManager(self.controller).connect_ip(record, key)
+                ConnectionManager(self.controller).connect_by_ip(record)
             case ContextMenu.REFRESH_PLAYERS:
                 # get record
                 # call a2s on thread
