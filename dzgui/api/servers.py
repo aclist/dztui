@@ -473,7 +473,7 @@ def query_by_ip(addr: str) -> Optional[dict]:
     try:
         record = addr.split(":")
         # TODO: create a Record object
-        ip, qport = record[0], record[2]
+        ip, qport = record[0], record[1]
         res = query_direct(ip, int(qport))
     except Exception as e:
         logger.critical(e)

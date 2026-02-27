@@ -197,19 +197,19 @@ class ServerModelManager:
     @call_on_thread(dialog.querying)
     def add_by_ip(self, addr: str) -> None:
         res = Servers.query_by_ip(addr)
-        self.parse_single_record(res)
+        self._parse_single_record(res)
 
-    def parse_single_record(self, record: dict) -> None:
-        if res is None:
+    def _parse_single_record(self, response: dict) -> None:
+        if response is None:
             self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
             return
 
-        record = Servers.parse_json([res])
+        record = Servers.parse_json([response])
 
         proxy_man = self._get_proxy_man()
         raw_model = proxy_man.get_control()
 
-        fqip = Servers.response_to_fq_ip(res)
+        fqip = Servers.response_to_fq_ip(response)
         config_man = self.controller.get_config_man()
         config_man.add_saved_server(fqip)
 
@@ -324,6 +324,7 @@ class ServerModelManager:
         manager.filter(FilterMode.INITIAL)
         self.to_insert = manager.get_proxy_model()
 
+        # TODO: abstract for all methods
         u_maps = set([row[1] for row in data])
         self._set_new_maps(sorted(u_maps))
 

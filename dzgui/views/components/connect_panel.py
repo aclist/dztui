@@ -217,6 +217,7 @@ class AddPanel(Gtk.Frame):
             ServerModelManager(self.controller, tree).add_by_ip(addr)
 
     def _on_activate(self, entry: Gtk.Entry) -> None:
+        # NOTE: default action is to add a record, not connect
         if not self.add_server.is_sensitive():
             return
         self._submit_query()
