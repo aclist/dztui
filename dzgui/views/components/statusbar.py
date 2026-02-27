@@ -29,16 +29,8 @@ class Statusbar(Gtk.Grid):
 
         self.spinner = Gtk.Spinner()
 
-        version = self.controller.get_prefs().version
-        self.status_right_label = Gtk.Label(
-            label=version, hexpand=True, halign=Gtk.Align.END
-        )
-
         self.attach(self.statusbar, 0, 0, 3, 1)
         self.attach_next_to(self.spinner, self.statusbar, Gtk.PositionType.RIGHT, 3, 1)
-        self.attach_next_to(
-            self.status_right_label, self.spinner, Gtk.PositionType.RIGHT, 3, 1
-        )
 
         self.players = ""
 
