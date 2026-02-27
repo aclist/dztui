@@ -287,7 +287,7 @@ class ServerModelManager:
         # cf. servers_loaded signal
 
         # TODO: servers_loaded vs servers_reloaded
-        # self.emitter.emit("servers_loaded", self.enum)
+        self.emitter.emit("servers_loaded", self.enum)
 
         if self.first_iteration:
             self._update_maps()
