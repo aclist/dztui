@@ -204,11 +204,11 @@ class AddPanel(Gtk.Frame):
 
     def _on_connect_clicked(self, button: Gtk.Button) -> None:
         addr = self.entry.get_text()
-        self.controller.connect_server(addr)
+        self.controller.connect_by_str(addr)
 
     def _add_server(self) -> None:
         addr = self.entry.get_text()
-        self.controller.add_server(addr)
+        self.controller.add_by_str(addr)
 
     def _on_activate(self, entry: Gtk.Entry) -> None:
         # NOTE: default action is to add a record, not connect

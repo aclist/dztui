@@ -471,12 +471,27 @@ def query_by_id(addr: str, key: str) -> Optional[dict]:
 
 
 def query_by_ip(addr: str) -> Optional[dict]:
+    record = short_ip_to_record(addr)
+    return query_by_record(record)
+
+
+def query_by_record(record: Record) -> Optional[dict]:
     try:
-        record = addr.split(":")
-        # TODO: create a Record object
-        ip, qport = record[0], record[1]
-        res = query_direct(ip, int(qport))
+        return query_direct(record.ip, record.qport)
     except Exception as e:
         logger.critical(e)
         return None
-    return res
+
+
+def short_ip_to_record(addr: str) -> Optional[Record]:
+    r = addr.split(":")
+    if len(r) != 2:
+        return None
+    return Record(r[0], 0, int(r[1]))
+
+
+def fqip_to_record(addr: str) -> Optional[Record]:
+    r = addr.split(":")
+    if len(r) != 3:
+        return None
+    return Record(r[0], int(r[1]), int(r[2]))

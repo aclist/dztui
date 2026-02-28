@@ -2,7 +2,7 @@ import logging
 import threading
 from concurrent.futures import as_completed
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional, TYPE_CHECKING
+from typing import Union, TYPE_CHECKING
 
 import dzgui.api.servers as Servers
 from dzgui.const.enum import FilterMode, Preferences, ServerTab
@@ -192,12 +192,22 @@ class ServerModelManager:
         config_man = self.controller.get_config_man()
         key = config_man.lookup(Preferences.BM)
         res = Servers.query_by_id(addr, key)
-        self.parse_single_record(res)
+        self._parse_single_record(res)
 
     @call_on_thread(dialog.querying)
     def add_by_ip(self, addr: str) -> None:
         res = Servers.query_by_ip(addr)
         self._parse_single_record(res)
+
+    def add_by_record(self, record: Servers.Record) -> None:
+        res = Servers.query_by_record(record)
+        self._parse_single_record(res)
+
+    def add_by_str(self, addr: str) -> None:
+        if addr.isdigit():
+            self.add_by_id(addr)
+        else:
+            self.add_by_ip(addr)
 
     def _parse_single_record(self, response: dict) -> None:
         if response is None:

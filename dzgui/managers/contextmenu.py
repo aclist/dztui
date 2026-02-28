@@ -1,9 +1,8 @@
 import gi
 import logging
-from typing import Union, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from dzgui.const.enum import ContextMenu, Preferences
-from dzgui.managers.connection import ConnectionManager
 from dzgui.managers.thread_man import ThreadingManager
 from dzgui.model.servers import ServerModelManager
 from dzgui.util import strings
@@ -60,12 +59,12 @@ class ContextMenuManager:
 
             # THREADED
             case ContextMenu.ADD_SERVER:
-                record = self.treeview.get_record_string()
-                ServerModelManager(self.controller, self.treeview).add_by_ip(record)
-                # TODO: update tab with !
+                record = self.treeview.get_record()
+                self.controller.add_by_record(record)
             case ContextMenu.CONNECT:
-                record = self.treeview.get_record_string()
-                ConnectionManager(self.controller).connect_by_ip(record)
+                record = self.treeview.get_record()
+                self.controller.connect_by_record(record)
+
             case ContextMenu.REFRESH_PLAYERS:
                 # get record
                 # call a2s on thread

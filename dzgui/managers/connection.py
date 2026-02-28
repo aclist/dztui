@@ -26,8 +26,7 @@ class ConnectionManager:
         res = Servers.query_by_id(addr, key)
         if res is None:
             self.thread_man.set_cleanup_func(StoredFunc(self._connection_failure))
-        # TODO: add to history if successful
-        print("CONNECT")
+
         print(res)
 
     @call_on_thread(dialog.querying)
@@ -35,8 +34,16 @@ class ConnectionManager:
         res = Servers.query_by_ip(addr)
         if res is None:
             self.thread_man.set_cleanup_func(StoredFunc(self._connection_failure))
+
+        print(res)
+
+    @call_on_thread(dialog.querying)
+    def connect_by_record(self, record: Servers.Record) -> None:
+        res = Servers.query_by_record(record)
+        if res is None:
+            self.thread_man.set_cleanup_func(StoredFunc(self._connection_failure))
+
         # TODO: add to history if successful
-        print("CONNECT")
         print(res)
 
     def _connection_failure(self) -> None:

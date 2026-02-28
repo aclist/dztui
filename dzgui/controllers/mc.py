@@ -2,11 +2,10 @@ import inspect
 import logging
 import shutil
 import threading
-import traceback
 
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, Callable, Union, TYPE_CHECKING
 from warnings import deprecated
 
 import dzgui.api.pefile as PeFile
@@ -25,8 +24,6 @@ from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
     HEX_RED,
-    WINDOW_DEFAULT_X,
-    WINDOW_DEFAULT_Y,
 )
 from dzgui.const.enum import (
     FilterMode,
@@ -36,7 +33,6 @@ from dzgui.const.enum import (
     ContextMenu,
 )
 
-from dzgui.config import update
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.controllers.emitter import Emitter
@@ -47,7 +43,6 @@ from dzgui.model.proxy_model import ProxyModelManager
 from dzgui.model.servers import ServerModelManager
 from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
-from dzgui.util._json import read_json, write_json
 from dzgui.util.diag import write_diagnostic
 from dzgui.util.format import format_mods, format_player_count
 from dzgui.util.localize import number
@@ -63,6 +58,7 @@ from gi.repository import Gtk, Gdk, GLib, GObject  # noqa E402
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from dzgui.api.servers import Record
     from dzgui.const.enum import ServerTab
     from dzgui.managers.filter_man import FilterManager
     from dzgui.util.dist import Haversine
@@ -590,7 +586,7 @@ class Controller(GObject.GObject):
         return treeview.get_model() is not None
 
     def _on_check_toggled(self, emitter: Emitter, label: str, state: bool) -> None:
-        print('check toggled, refiltering')
+        print("check toggled, refiltering")
         filter_man = self.get_filter_man()
         filter_man.set_filter(label, state)
 
@@ -620,17 +616,21 @@ class Controller(GObject.GObject):
     def get_config_man(self) -> ConfigManager:
         return self.config_man
 
-    def add_server(self, addr: str) -> None:
+    def add_by_str(self, addr: str) -> None:
         saved_tree = self.get_servers().get_saved()
-        if addr.isdigit():
-            ServerModelManager(self, saved).add_by_id(addr)
-        else:
-            ServerModelManager(self, saved).add_by_ip(addr)
+        ServerModelManager(self, saved_tree).add_by_str(addr)
 
-    def connect_server(self, addr: str) -> None:
+    def add_by_record(self, record: "Record") -> None:
+        saved_tree = self.get_servers().get_saved()
+        ServerModelManager(self, saved_tree).add_by_record(record)
+
+    def connect_by_str(self, addr: str) -> None:
         if addr.isdigit():
             config_man = self.get_config_man()
             key = config_man.lookup(Preferences.BM)
             ConnectionManager(self).connect_by_id(addr, key)
         else:
             ConnectionManager(self).connect_by_ip(addr)
+
+    def connect_by_record(self, record: "Record") -> None:
+        ConnectionManager(self).connect_by_record(record)
