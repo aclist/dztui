@@ -42,6 +42,7 @@ class LanPanel(Gtk.Frame):
         self.entry = PortEntry(controller)
         self.scan = Gtk.Button(label=lan_panel.scan_button)
         self.scan.connect("clicked", self._on_scan_clicked)
+
         # TODO: strings
         self.early_abort = Gtk.CheckButton(label="Stop scanning on first hit")
         self.early_abort.set_active(True)
@@ -51,6 +52,7 @@ class LanPanel(Gtk.Frame):
 
         self.entry.connect("activate", self._on_entry_activated)
         self.entry.connect("string_validated", self._on_port_validated)
+        self.entry.connect("key-release-event", self._on_lan_keypress)
         self.emitter.connect("request_custom_port_focus", self._on_custom_port_binding)
         self.emitter.connect(
             "request_default_port_focus", lambda _: self.default_radio.set_active(True)
@@ -75,6 +77,14 @@ class LanPanel(Gtk.Frame):
         self.add(self.grid)
 
         self.entry.set_sensitive(False)
+
+    def _on_lan_keypress(self, widget: Gtk.Entry, event: Gdk.EventKey) -> None:
+        if event.state & Gdk.ModifierType.CONTROL_MASK:
+            if event.keyval == Gdk.KEY_d:
+                self.default_radio.set_active(True)
+                self.controller.grab_active_treeview()
+                return True
+        return False
 
     def _on_custom_port_binding(self, emitter: "Emitter") -> None:
         self.custom_radio.set_active(True)

@@ -232,6 +232,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
     def _on_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
         match event.keyval:
             case Gdk.KEY_Right | Gdk.KEY_l:
+                # FIXME: propagation bool
                 if event.state is Gdk.ModifierType.CONTROL_MASK:
                     return
                 MainController.get_emitter().emit("request_button_box_focus")
