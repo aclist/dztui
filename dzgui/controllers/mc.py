@@ -12,6 +12,7 @@ from warnings import deprecated
 import dzgui.api.pefile as PeFile
 import dzgui.util._json as JSON  # noqa
 
+
 from dzgui.api.mods import (
     get_delimited_mods,
     get_local_mod_path,
@@ -40,6 +41,7 @@ from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.controllers.emitter import Emitter
 from dzgui.managers.config import ConfigManager
+from dzgui.managers.connection import ConnectionManager
 from dzgui.managers.contextmenu import ContextMenuManager
 from dzgui.model.proxy_model import ProxyModelManager
 from dzgui.model.servers import ServerModelManager
@@ -290,13 +292,13 @@ class Controller(GObject.GObject):
 
     def toggle_config(self, key: Preferences) -> None:
         self.config_man.toggle_config(key)
-        #config = self.prefs.paths.config
-        #try:
+        # config = self.prefs.paths.config
+        # try:
         #    update.toggle_config(config, context)
         #    # NOTE: 'use_miles' key is updated dynamically for statusbar unit
         #    if context == Preferences.DIST:
         #        self.prefs.use_miles = not self.prefs.use_miles
-        #except Exception as e:
+        # except Exception as e:
         #    logger.critical(e)
         #    trace = traceback.format_exc()
         #    dialog = ExceptionDialog(self, trace)
@@ -304,9 +306,9 @@ class Controller(GObject.GObject):
 
     def update_config(self, key: Preferences, value: str) -> None:
         self.config_man.update_config(key, value)
-        #try:
+        # try:
         #    update.write_config(self.prefs.paths.config, key, value)
-        #except Exception as e:
+        # except Exception as e:
         #    logger.critical(e)
         #    trace = traceback.format_exc()
         #    dialog = ExceptionDialog(self, trace)
@@ -588,6 +590,7 @@ class Controller(GObject.GObject):
         return treeview.get_model() is not None
 
     def _on_check_toggled(self, emitter: Emitter, label: str, state: bool) -> None:
+        print('check toggled, refiltering')
         filter_man = self.get_filter_man()
         filter_man.set_filter(label, state)
 
@@ -595,6 +598,7 @@ class Controller(GObject.GObject):
         ServerModelManager(self, self.get_active_treeview()).refilter(mode, label)
 
     def _on_map_selection_changed(self, emitter: Emitter, selection: str) -> None:
+        print("map sel changed, refiltering")
         smm = ServerModelManager(self, self.get_active_treeview())
         smm.refilter(FilterMode.MAP, selection)
 
@@ -615,3 +619,18 @@ class Controller(GObject.GObject):
 
     def get_config_man(self) -> ConfigManager:
         return self.config_man
+
+    def add_server(self, addr: str) -> None:
+        saved_tree = self.get_servers().get_saved()
+        if addr.isdigit():
+            ServerModelManager(self, saved).add_by_id(addr)
+        else:
+            ServerModelManager(self, saved).add_by_ip(addr)
+
+    def connect_server(self, addr: str) -> None:
+        if addr.isdigit():
+            config_man = self.get_config_man()
+            key = config_man.lookup(Preferences.BM)
+            ConnectionManager(self).connect_by_id(addr, key)
+        else:
+            ConnectionManager(self).connect_by_ip(addr)

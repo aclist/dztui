@@ -464,10 +464,11 @@ def response_to_fq_ip(res: dict) -> str:
 def query_by_id(addr: str, key: str) -> Optional[dict]:
     try:
         resolved = map_id_to_record(key, addr)
-        res = query_direct(resolved.ip, resolved.qport)
+        return query_direct(resolved.ip, resolved.qport)
     except Exception as e:
         logger.critical(e)
         return None
+
 
 def query_by_ip(addr: str) -> Optional[dict]:
     try:

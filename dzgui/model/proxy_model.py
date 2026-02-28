@@ -67,6 +67,7 @@ class ProxyModelManager:
     #     return store
     #
     def filter(self, mode: FilterMode, *args, **kwargs) -> None:
+        print("proxy model filtering now")
         """
         Native Gtk.TreeView.refilter() method was not performant enough
         when running in the main loop with 40k+ records

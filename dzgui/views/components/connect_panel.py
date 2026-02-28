@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from dzgui.managers.connection import ConnectionManager
 from dzgui.model.servers import ServerModelManager
 from dzgui.util.strings import connect_panel, fav_panel, lan_panel
 from dzgui.views.components.buttons import (
@@ -125,7 +124,7 @@ class FavPanel(Gtk.Frame):
 
         self.server_name, self.server_ip = (
             self.controller.get_config_man().get_favorite()
-        )  # self.controller.get_favorite()
+        )
         server_name = (
             f"{self.server_name} ({self.server_ip})"
             if self.server_name is not None
@@ -204,26 +203,21 @@ class AddPanel(Gtk.Frame):
         self.add(self.grid)
 
     def _on_connect_clicked(self, button: Gtk.Button) -> None:
-        text = self.entry.get_text()
-        ConnectionManager(self.controller).connect_by_id_or_ip(text)
-
-    def _submit_query(self) -> None:
         addr = self.entry.get_text()
-        # TODO: grabs ServerTab.SAVED ServerTreeView
-        tree = self.controller.get_servers().get_saved()
-        if addr.isdigit():
-            ServerModelManager(self.controller, tree).add_by_id(addr)
-        else:
-            ServerModelManager(self.controller, tree).add_by_ip(addr)
+        self.controller.connect_server(addr)
+
+    def _add_server(self) -> None:
+        addr = self.entry.get_text()
+        self.controller.add_server(addr)
 
     def _on_activate(self, entry: Gtk.Entry) -> None:
         # NOTE: default action is to add a record, not connect
         if not self.add_server.is_sensitive():
             return
-        self._submit_query()
+        self._add_server()
 
     def _on_add_clicked(self, button: Gtk.Button) -> None:
-        self._submit_query()
+        self._add_server()
 
     def _on_ip_validated(self, entry: Gtk.Entry, state: bool) -> None:
         self.conn_server.set_sensitive(state)
