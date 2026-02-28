@@ -25,6 +25,7 @@
 - Show hidden server count after filtering
 - Atomic map filters per server context
 - Use concurrency when checking stale mods (performance uplift)
+- Copy version by clicking label
 
 ## Changed
 - Reduce padding on keys button
@@ -40,10 +41,11 @@
 - Moved dialogs out of threads
 
 ## Unreleased
+- Load offline mods
+- Choose to jump into splash screen instead of server
 - Setup wizard
-- Local documentation
-- Offline mods
 - Move debug mode to developers only
+- Local documentation
 
 ## Devs
 - Show deprecation warnings
