@@ -129,7 +129,7 @@ class KeywordEntry(Gtk.Entry):
 
         ServerModelManager(
             self.controller, self.controller.get_active_treeview()
-        ).refilter(FilterMode.KEYWORD, keyword)
+        ).refilter(FilterMode.KEYWORD)
 
 
 class FilterPanel(Gtk.Box):

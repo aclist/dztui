@@ -7,15 +7,7 @@ from dzgui.const.enum import FilterMode
 from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
 
-# import gi
-#
-# gi.require_version("Gtk", "3.0")
-# from gi.repository.Gtk import ListStore  # noqa E402
-# from gi.repository import GObject, GLib  # noqa E402
-
 if TYPE_CHECKING:
-    # from dzgui.controllers.mc import Controller
-    # from dzgui.controllers.emitter import Emitter
     from dzgui.managers.filter_man import FilterManager
     from dzgui.model.model_factory import FastInsertListStore
 
@@ -33,9 +25,6 @@ class ProxyModelManager:
     """
 
     def __init__(self, filter_man: "FilterManager") -> None:
-        # self.emitter = controller.get_emitter()
-        # self.emitter.connect("keyword_set", self._on_keyword_set)
-
         self.filter_cache = {}
         self.ping_cache: dict[str, int] = {}
 
@@ -46,13 +35,6 @@ class ProxyModelManager:
         self.filtered: list = None
         self.success = True
 
-
-    # def get_keyword_filter(self) -> str:
-    #     return self.keyword_filter
-
-    # def _on_keyword_set(self, emitter: "Emitter", keyword: str) -> None:
-    #     self.keyword_filter = keyword
-
     def append_row(self, row: list) -> None:
         self.proxy_model.append(row)
 
@@ -62,16 +44,14 @@ class ProxyModelManager:
     def get_proxy_model(self) -> "FastInsertListStore":
         return self.proxy_model
 
-    # def new_model_from_class(self, cls: type) -> ListStore:
-    #     store = ListStore(*[ftype for field, ftype in cls.__annotations__.items()])
-    #     return store
-    #
     def filter(self, mode: FilterMode, *args, **kwargs) -> None:
-        print("proxy model filtering now")
+        # TODO: proxy model can fetch args directly from filter man, no need to process extra input
         """
         Native Gtk.TreeView.refilter() method was not performant enough
         when running in the main loop with 40k+ records
         """
+        # TODO: return a dataclass object with clearly enumerated map, keyword, and filter values
+        # instead of just a serial list of strings
         filters = self.filter_man.get_all_filters()
 
         if filters in self.filter_cache:
@@ -84,24 +64,18 @@ class ProxyModelManager:
             case FilterMode.INITIAL:
                 rows = self.filter_initial(filters)
 
-            case FilterMode.MAP:
-                prior_map = self.filter_man.get_prior_map()
-
-                if prior_map == strings.all_maps:
-                    rows = self.filter_map(filters)
-                else:
-                    rows = self.filter_toggle_on(filters, *args)
-
-            case FilterMode.KEYWORD:
-                rows = self.filter_toggle_on(filters, *args)
+            # TODO: consolidate into one enum
+            case FilterMode.MAP | FilterMode.KEYWORD | FilterMode.TOGGLE_ON:
+                rows = self.filter_toggle_on(filters)
 
             case FilterMode.TOGGLE_OFF:
                 for f in filters[2:]:
                     self.set_filtered(self.filter_toggle_off(filters, f))
                 rows = self.filtered
 
-            case FilterMode.TOGGLE_ON:
-                rows = self.filter_toggle_on(filters, *args)
+            # case FilterMode.TOGGLE_ON:
+            #     rows = self.filter_toggle_on(filters)
+            #     # rows = self.filter_toggle_on(filters, *args)
 
         # TODO: unimplemented
         # just write pings into control model instead
@@ -212,7 +186,7 @@ class ProxyModelManager:
                 rows = [row for row in rows if not row[11]]
         return rows
 
-    def filter_toggle_on(self, filters: tuple, *args: str) -> list:
+    def filter_toggle_on(self, filters: tuple) -> list:
         """Effectively applies all filters"""
         self.set_filtered(self.control_model)
         self.set_filtered(self.filter_map(filters))
@@ -222,7 +196,9 @@ class ProxyModelManager:
             self.set_filtered(self.filter_toggle_off(filters, f))
         return self.filtered
 
-    def set_cache(self, filters: tuple, model: Optional["FastInsertListStore"], rows: list) -> None:
+    def set_cache(
+        self, filters: tuple, model: Optional["FastInsertListStore"], rows: list
+    ) -> None:
         self.filter_cache[filters] = (model, rows)
 
     def resync_model(self, addr: str, qport: int) -> None:

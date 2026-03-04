@@ -235,8 +235,11 @@ class ServerModelManager:
         # for example, non-empty will only show up in empty because it is not cached
         proxy_man.filter(FilterMode.INITIAL)
 
-        self._sort_unique_maps(records)
-
+        filter_man = self.tv.get_filter_man()
+        old_maps = filter_man.get_unique_maps()
+        cur_map = records[0][1]
+        if cur_map not in old_maps:
+            self._set_new_maps([cur_map])
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_single_ip))
 
     def _dump_history(self) -> None:
@@ -280,9 +283,12 @@ class ServerModelManager:
 
         # TODO: if current tab != self.saved, add label
         self.emitter.emit("servers_loaded", self.enum)
-        # NOTE: adding a row may update available maps
-        # TODO: test this
-        self._update_maps()
+
+        # TODO: consolidate methods and handle multi/single map addition
+        filter_man = self.tv.get_filter_man()
+        filter_man.append_map(self._get_new_maps())
+        self.emitter.emit("servers_loaded_init")
+        self.first_iteration = False
 
     def _update_maps(self) -> None:
         filter_man = self.tv.get_filter_man()
@@ -308,8 +314,6 @@ class ServerModelManager:
 
         if self.first_iteration:
             self._update_maps()
-
-    # def _cleanup_on_empty():
 
     def _cleanup_on_failure(self, show_dialog=True) -> None:
         # TODO: disable map, keyword, and filter widgets if model is None
@@ -348,7 +352,7 @@ class ServerModelManager:
 
     def _sort_unique_maps(self, data: list) -> None:
         u_maps = set([row[1] for row in data])
-        self._set_new_maps(u_maps)
+        self._set_new_maps(sorted(u_maps))
 
     def _set_new_maps(self, maps: list[str]) -> None:
         self.new_maps = maps
@@ -360,10 +364,11 @@ class ServerModelManager:
         return self.proxy_man
 
     @call_on_thread(dialog.filtering)
-    def refilter(self, mode: FilterMode, label: str) -> None:
+    def refilter(self, mode: FilterMode) -> None:
         # FIXME: causes two wait dialogs when map selection change signal emits after loading servers
         self.first_iteration = False
         proxy_man = self._get_proxy_man()
-        proxy_man.filter(mode, label)
+        proxy_man.filter(mode)
+        # proxy_man.filter(mode, label)
         self.to_insert = proxy_man.get_proxy_model()
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_success))

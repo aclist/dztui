@@ -551,6 +551,8 @@ class Controller(GObject.GObject):
         if tv.is_loaded():
             self.emitter.emit("servers_loaded", tv.get_enum())
             return
+        # TODO: placeholder logic, wipe statusbar when changing page
+        self.mediator.statusbar.set_text("", "")
         ServerModelManager(self, tv).load()
 
     def get_dist_cache(self) -> dict[str, "Haversine", "ServerTab"]:
@@ -586,17 +588,17 @@ class Controller(GObject.GObject):
         return treeview.get_model() is not None
 
     def _on_check_toggled(self, emitter: Emitter, label: str, state: bool) -> None:
-        print("check toggled, refiltering")
+        print("DEBUG: check toggled, refiltering")
         filter_man = self.get_filter_man()
         filter_man.set_filter(label, state)
 
         mode = FilterMode.TOGGLE_ON if state else FilterMode.TOGGLE_OFF
-        ServerModelManager(self, self.get_active_treeview()).refilter(mode, label)
+        ServerModelManager(self, self.get_active_treeview()).refilter(mode)
 
     def _on_map_selection_changed(self, emitter: Emitter, selection: str) -> None:
-        print("map sel changed, refiltering")
+        print("DEBUG: map sel changed, refiltering")
         smm = ServerModelManager(self, self.get_active_treeview())
-        smm.refilter(FilterMode.MAP, selection)
+        smm.refilter(FilterMode.MAP)
 
     def get_notebook(self) -> "Notebook":
         return self.mediator.notebook

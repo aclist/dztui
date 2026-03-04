@@ -39,9 +39,6 @@ class FilterManager:
     # def reinit_filters(self) -> None:
     #     self.enabled_filters = dict(self.default_filters)
 
-    def get_prior_map(self) -> str:
-        return self.prior_map
-
     def set_prior_map(self, name: str) -> None:
         self.prior_map = name
 
@@ -79,9 +76,6 @@ class FilterManager:
         self.map_store = model
         self.active_map = (0, all_maps)
 
-    def get_prior_map(self) -> str:
-        return self.prior_map
-
     def append_map(self, row: list[str]) -> None:
         self.map_store.append(row)
 
@@ -94,6 +88,9 @@ class FilterManager:
         self.reinit_map_store()
         for m in maps:
             self.append_map([m])
+
+    def get_unique_maps(self) -> list[str]:
+        return [row[0] for row in self.map_store]
 
     def get_all_filters(self) -> tuple:
         map_name = self.get_active_map_name()
