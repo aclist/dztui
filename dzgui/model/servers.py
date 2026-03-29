@@ -133,7 +133,7 @@ class ServerModelManager:
                 try:
                     res = future.result(timeout=LAN_TIMEOUT)
                     if res is not None and early_abort is True:
-                        # NOTE: first non-empty hit, flag pending threads to close
+                        # NOTE: on first non-empty hit, flag pending threads to close
                         event.set()
                         servers.append(res)
                         self.thread_man.set_cleanup_func(
@@ -215,6 +215,7 @@ class ServerModelManager:
             return
 
         records = Servers.parse_json([response])
+        record = records[0]
 
         proxy_man = self._get_proxy_man()
         raw_model = proxy_man.get_control()
@@ -223,21 +224,21 @@ class ServerModelManager:
         config_man = self.controller.get_config_man()
         config_man.add_saved_server(fqip)
 
-        # NOTE: if tab was not instantiated yet
+        # NOTE: if tab contents were not loaded yet
         if raw_model is None:
             return
 
         # NOTE: expected to only contain one item
-        raw_model.append(records[0])
+        raw_model.append(record)
 
         # TODO: if all filters are already applied, strange behavior may occur
-        # -> need to insert and reupdate tre per current filters
+        # -> need to insert and reupdate tree per current filters
         # for example, non-empty will only show up in empty because it is not cached
         proxy_man.filter(FilterMode.INITIAL)
 
         filter_man = self.tv.get_filter_man()
         old_maps = filter_man.get_unique_maps()
-        cur_map = records[0][1]
+        cur_map = record[1]
         if cur_map not in old_maps:
             self._set_new_maps([cur_map])
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_single_ip))

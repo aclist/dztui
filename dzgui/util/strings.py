@@ -544,7 +544,7 @@ connect_panel = ConnectPanel(
     connect="Connect",
     add="Add",
     add_con="Add/connect",
-    placeholder="Enter IP or Battlemetrics ID",
+    placeholder="Enter IP (IP:Query port) or Battlemetrics ID (numerical id)",
     entry_tooltip=(
         "- IP: format as IP:Query port\ne.g. 192.168.1.1:27016\n"
         "- Battlemetrics: numeric server ID\ne.g. 123456"

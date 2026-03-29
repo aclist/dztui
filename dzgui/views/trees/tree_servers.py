@@ -166,6 +166,7 @@ class ServerTreeView(ContextMixin, TreeView):
         store = self.filter_man.get_map_store()
 
         # FIXME: if model is none, wipe maps
+        # distinguish this signal from changing map combo in-situ
         self.emitter.emit("load_maps", store)
         self.handler_id = self.emitter.connect("statusbar_loaded", self.start_distcalc)
         self.start_queue_checker()

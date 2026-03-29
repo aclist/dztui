@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 from dzgui.const.enum import ContextMenu, Preferences
 from dzgui.managers.thread_man import ThreadingManager
-from dzgui.model.servers import ServerModelManager
 from dzgui.util import strings
 from dzgui.util.clip import copy_clipboard
 from dzgui.util.open_links import open_workshop_page
@@ -34,8 +33,9 @@ class ContextMenuManager:
 
     def process(self, action: ContextMenu) -> None:
         match action:
-            # NON THREADED
+            # UNTHREADED
             case ContextMenu.ADD_NOTE:
+                print("DEBUG: unimplemented")
                 # spawn edit dialog and update cache, notes file
                 pass
             case ContextMenu.COPY_LOG_CLIPBOARD:
@@ -66,19 +66,24 @@ class ContextMenuManager:
                 self.controller.connect_by_record(record)
 
             case ContextMenu.REFRESH_PLAYERS:
+                print("DEBUG: unimplemented")
                 # get record
                 # call a2s on thread
                 pass
             case ContextMenu.REMOVE_HISTORY:
+                print("DEBUG: unimplemented")
                 # update history model, update tab label, pop off of queue, write new list into file
                 # see dq.py
                 pass
             case ContextMenu.REMOVE_SERVER:
+                print("DEBUG: unimplemented")
                 # reverse of ADD_SERVER
                 pass
             case ContextMenu.SHOW_DETAILS:
+                print("DEBUG: unimplemented")
                 pass
             case ContextMenu.SHOW_MODS:
+                print("DEBUG: unimplemented")
                 pass
 
     def copy_server_ip(self) -> None:

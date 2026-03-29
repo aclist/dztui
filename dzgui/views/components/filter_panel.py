@@ -212,6 +212,7 @@ class FilterPanel(Gtk.Box):
 
     # TODO: use same sort of signal to reinitialize keyword and checks
     def _on_maps_loaded(self, emitter: "Emitter", store: Gtk.ListStore) -> None:
+        self.is_first_run = True
         self.maps_combo.set_model(store)
         tv = self.controller.get_active_treeview()
         ind, name = tv.filter_man.get_active_map()
@@ -312,4 +313,9 @@ class FilterPanel(Gtk.Box):
         filter_man.set_prior_map(name)
         filter_man.set_active_map(ind, name)
 
+        # TODO: 2026-03-29
+        # don't signal controller to refilter if we are switching pages
+        if self.is_first_run:
+            self.is_first_run = False
+            return
         self.emitter.emit("map_selection_changed", name)

@@ -44,7 +44,7 @@ class ProxyModelManager:
     def get_proxy_model(self) -> "FastInsertListStore":
         return self.proxy_model
 
-    def filter(self, mode: FilterMode, *args, **kwargs) -> None:
+    def filter(self, mode: FilterMode) -> None:
         # TODO: proxy model can fetch args directly from filter man, no need to process extra input
         """
         Native Gtk.TreeView.refilter() method was not performant enough

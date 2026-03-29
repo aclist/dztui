@@ -152,10 +152,7 @@ class Controller(GObject.GObject):
         self.prefs = prefs
 
     def query_config(self, key: Preferences) -> str | bool | list:
-        # return self.config_man.lookup(key)
         return self.config_man.lookup(key)
-        # config = self.prefs.paths.config
-        # return lookup(config, key)
 
     def is_auto_install(self) -> bool:
         return self.query_config(Preferences.INSTALL)
@@ -288,32 +285,9 @@ class Controller(GObject.GObject):
 
     def toggle_config(self, key: Preferences) -> None:
         self.config_man.toggle_config(key)
-        # config = self.prefs.paths.config
-        # try:
-        #    update.toggle_config(config, context)
-        #    # NOTE: 'use_miles' key is updated dynamically for statusbar unit
-        #    if context == Preferences.DIST:
-        #        self.prefs.use_miles = not self.prefs.use_miles
-        # except Exception as e:
-        #    logger.critical(e)
-        #    trace = traceback.format_exc()
-        #    dialog = ExceptionDialog(self, trace)
-        #    dialog.run()
 
     def update_config(self, key: Preferences, value: str) -> None:
         self.config_man.update_config(key, value)
-        # try:
-        #    update.write_config(self.prefs.paths.config, key, value)
-        # except Exception as e:
-        #    logger.critical(e)
-        #    trace = traceback.format_exc()
-        #    dialog = ExceptionDialog(self, trace)
-        #    dialog.run()
-        #    # TODO: suppress signals
-        #    # then reenable (or it spawns dialog twice)
-        #    # TODO: do this on demand for certain changes
-        #    self.mediator.grid.notebook.settings.populate_settings()
-        #    return
 
     def open_keybindings(self) -> None:
         notebook = self.mediator.grid.notebook
