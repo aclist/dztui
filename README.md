@@ -11,13 +11,22 @@ This overcomes certain limitations in the Linux client and helps prepare the gam
 - Concatenate launch options to pass to Steam
 - Connect to mod-enabled LAN servers
 
+## Design philosophy
+
+DZGUI is the longest actively maintained graphical server browser and mod manager for Linux.
+It follows a specific set of guidelines, enumerated below:
+
+- Provide a free and open-source tool under GPL
+- Do not use undocumented, third-party servers to aggregate data; no central "DZGUI" server
+- All connections go to Steam and DayZ servers directly; the tool should function in perpetuity without intermediary endpoints
+- Target Linux desktop and Steam deck specifically; not a cross-platform tool
+
 ## Setup and usage
 
 Refer to the documentation for installation and setup instructions:
 
 - [GitHub](https://aclist.github.io/dzgui/index.html)
 - [Mirror (Codeberg)](https://aclist.codeberg.page)
-
 
 ![A screenshot of DZGUI](/images/example.png)
 
