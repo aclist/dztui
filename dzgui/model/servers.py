@@ -320,7 +320,7 @@ class ServerModelManager:
         # TODO: disable map, keyword, and filter widgets if model is None
         # -> signal driven (servers_empty, servers_failed_to_load)
 
-        # NOTE: used by refresh action
+        # NOTE: used by refresh button action
         if not self.preserve_on_fail:
             self.tv.set_model(None)
             filter_man = self.tv.get_filter_man()
@@ -330,6 +330,8 @@ class ServerModelManager:
         # TODO: distinguish signals, e.g. "servers_failed_to_load", "servers_loaded_empty"
         # customize statusbar and dialog accordingly
         self.emitter.emit("servers_loaded", self.enum)
+        # TODO: destroy wait dialog first
+        # see threadman.set_cleanup_func(_, destroy_first=True)
         if show_dialog:
             dialog = ExceptionDialog(self.controller, api_warn_msg)
             dialog.run()

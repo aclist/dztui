@@ -283,7 +283,8 @@ class ServerTreeView(ContextMixin, TreeView):
     def _parent_row_activated(
         self, tree: TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn
     ) -> None:
-        print(self.get_value_at_index(0))
+        record = self.get_record()
+        self.controller.connect_by_record(record)
 
     def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
         if self.loaded is False:

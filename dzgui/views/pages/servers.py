@@ -63,7 +63,6 @@ class ServerNotebook(Gtk.ScrolledWindow):
         tv = self.get_active_treeview()
         state = False if tv.get_model() is None else True
         tv.set_headers_visible(state)
-        # tv.set_headers_clickable(state)
         tv.set_loaded(True)
         tv.grab_focus()
 
@@ -150,9 +149,6 @@ class ServerNotebook(Gtk.ScrolledWindow):
                     self.controller.suppress_signal(
                         tab, col, "_on_col_width_changed", False
                     )
-
-    # def get_tabs(self) -> tuple:
-    #     return (self.browser, self.saved, self.recent, self.lan)
 
     def get_browser(self) -> ServerTreeView:
         return self.browser

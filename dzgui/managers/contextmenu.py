@@ -3,7 +3,6 @@ import logging
 from typing import TYPE_CHECKING
 
 from dzgui.const.enum import ContextMenu, Preferences
-from dzgui.managers.thread_man import ThreadingManager
 from dzgui.util import strings
 from dzgui.util.clip import copy_clipboard
 from dzgui.util.open_links import open_workshop_page
@@ -29,7 +28,6 @@ class ContextMenuManager:
     ) -> None:
         self.controller = controller
         self.treeview = treeview
-        self.thread_man = ThreadingManager(parent=controller)
 
     def process(self, action: ContextMenu) -> None:
         match action:
@@ -80,8 +78,8 @@ class ContextMenuManager:
                 # reverse of ADD_SERVER
                 pass
             case ContextMenu.SHOW_DETAILS:
-                print("DEBUG: unimplemented")
-                pass
+                record = self.treeview.get_record()
+                self.controller.get_details(record)
             case ContextMenu.SHOW_MODS:
                 print("DEBUG: unimplemented")
                 pass

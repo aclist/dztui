@@ -50,7 +50,9 @@ class ThreadingManager:
         self.parent = parent
         self.jobs = 1
         self.cleanup_func = None
-        self.alternate_statusbar = None
+        self.destroy_first = False
+
+        # self.alternate_statusbar = None
 
     def call_on_thread(self, dialog_str: str, func: StoredFunc) -> None:
         def callback() -> None:
@@ -72,30 +74,39 @@ class ThreadingManager:
         GLib.idle_add(lambda: self.wait_dialog.increment(text))
 
     # TODO: this should not be delegated here, set in cleanup func
-    def set_alternate_statusbar(self, msg: str) -> None:
-        self.alternate_statusbar = msg
+    # def set_alternate_statusbar(self, msg: str) -> None:
+    #     self.alternate_statusbar = msg
 
-    def get_alternate_statusbar(self) -> Optional[str]:
-        return self.alternate_statusbar
+    # def get_alternate_statusbar(self) -> Optional[str]:
+    #     return self.alternate_statusbar
 
-    def set_cleanup_func(self, func: StoredFunc) -> None:
+    def set_cleanup_func(self, func: StoredFunc, destroy_first: bool = False) -> None:
         if type(func) not in (StoredFunc, type(None)):
             msg = f"Callback function '{func}' is not of type StoredFunc or None"
             logger.critical(msg)
             raise TypeError(msg)
+        self.destroy_first = destroy_first
         self.cleanup_func = func
 
     def get_cleanup_func(self) -> StoredFunc:
         return self.cleanup_func
 
-    def _d(self) -> None:
-        self.wait_dialog.hide()
-        return False
+    # def _d(self) -> None:
+    #     self.wait_dialog.hide()
+    #     return False
 
     def _destroy_on_idle(self) -> GLib.SOURCE_REMOVE:
+        if self.destroy_first:
+            self.wait_dialog.destroy()
+
         func = self.get_cleanup_func()
         if func is not None:
             func.call()
             self.set_cleanup_func(None)
-        self.wait_dialog.destroy()
+        if not self.destroy_first:
+            self.wait_dialog.destroy()
+
         return GLib.SOURCE_REMOVE
+
+    def get_wait_dialog(self) -> WaitDialog:
+        return self.wait_dialog

@@ -102,7 +102,7 @@ build_corrupted = (
 api_warn_msg = """No servers returned. Please wait and try again.
 If this issue persists, your API key may be defunct or your network is blocking requests.
 """
-server_timeout = "Timed out when querying server, check IP or try again later"
+server_timeout = "Timed out when querying server, check IP or try again later."
 server_error = (
     "Error while contacting server, possibly timed out. Please wait and try again."
 )

@@ -19,13 +19,6 @@ if TYPE_CHECKING:
 #        dialog_type = Gtk.MessageType.INFO
 #        button_type = Gtk.ButtonsType.OK
 #        header_text = strings.modlist
-#    case Popup.DETAILS:
-#        dialog_type = Gtk.MessageType.INFO
-#        button_type = Gtk.ButtonsType.OK
-#        header_text = strings.server_details
-# TODO: unused
-# def update_label(self, text: str) -> None:
-#    self.format_secondary_text(text)
 
 
 class GenericDialog(Gtk.MessageDialog):

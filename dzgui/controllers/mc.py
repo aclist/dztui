@@ -449,6 +449,7 @@ class Controller(GObject.GObject):
                 model[path][4] = True
         self.emitter.emit("mods_highlighted")
 
+    # TODO: delegate to mod manager
     @call_on_thread(strings.dialog.working)
     def highlight_stale(self) -> None:
         # TODO: set progress bar for number of mods
@@ -609,4 +610,8 @@ class Controller(GObject.GObject):
             ConnectionManager(self).connect_by_ip(addr)
 
     def connect_by_record(self, record: "Record") -> None:
+        # NOTE: calls on thread
         ConnectionManager(self).connect_by_record(record)
+
+    def get_details(self, record: "Record") -> None:
+        ConnectionManager(self).query_details(record)
