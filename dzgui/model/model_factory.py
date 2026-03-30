@@ -53,7 +53,7 @@ class LogCols:
 @dataclass(slots=True, frozen=True)
 class ServerModCols:
     name: str
-    uid: int  # GObject.TYPE_INT64
+    uid: str
     installed: str
 
 

@@ -615,3 +615,6 @@ class Controller(GObject.GObject):
 
     def get_details(self, record: "Record") -> None:
         ConnectionManager(self).query_details(record)
+
+    def get_modlist(self, record: "Record") -> None:
+        ConnectionManager(self).query_modlist(record)

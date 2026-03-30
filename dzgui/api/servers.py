@@ -273,7 +273,7 @@ def get_prereqs(ip: str, qport: int) -> Prereqs:
     return Prereqs(is_password, gameport, appid, version)
 
 
-def details(record: Record) -> Details:
+def get_details(record: Record) -> Details:
     ip = record.ip
     qport = record.qport
     default_str = strings.none_provided
@@ -448,9 +448,11 @@ def validate_ip(addr: str) -> Record:
     return record
 
 
-def get_rules(ip: str, qport: int) -> list[int]:
+def get_rules(record: Record) -> list[int]:
+    ip = record.ip
+    qport = record.qport
     try:
-        mods = dayzquery.dayz_rules((ip, int(qport))).mods
+        mods = dayzquery.dayz_rules((ip, qport)).mods
         return [mod for mod in mods]
     except Exception as e:
         logger.critical(e)

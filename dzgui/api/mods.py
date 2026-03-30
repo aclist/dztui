@@ -109,6 +109,7 @@ def get_missing_mods(local: list, remote: list) -> list:
     return [mod for mod in remote if mod not in local]
 
 
+# FIXME: steam path is missing
 def get_server_modlist(server: Record, steam: Path) -> list:
     try:
         rules = dayzquery.dayz_rules((server.ip, server.qport))

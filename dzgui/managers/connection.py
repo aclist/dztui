@@ -4,7 +4,7 @@ import dzgui.api.servers as Servers
 from dzgui.managers.thread_man import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.util.strings import api_warn_msg, dialog, server_timeout
 from dzgui.views.dialogs.generic import ExceptionDialog
-from dzgui.views.dialogs.server_details import ServerDetailsDialog
+from dzgui.views.dialogs.servers import ServerDetailsDialog, ServerModDialog
 
 import gi
 
@@ -57,7 +57,7 @@ class ConnectionManager:
 
     @call_on_thread(dialog.querying)
     def query_details(self, record: Servers.Record) -> None:
-        details = Servers.details(record)
+        details = Servers.get_details(record)
         if details.success is False:
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._server_timeout), destroy_first=True
@@ -67,6 +67,31 @@ class ConnectionManager:
             StoredFunc(self._present_details_dialog, details), destroy_first=True
         )
 
+    @call_on_thread(dialog.querying)
+    def query_modlist(self, record: Servers.Record) -> None:
+        mods = Servers.get_rules(record)
+        # TODO: test if locally installed
+        # see api.mods for this same logic
+        # call controller to look up steam path from ConfigManager
+        if len(mods) == 0:
+            # TODO: message for no mods
+            # TODO: message for actual timeout
+            self.thread_man.set_cleanup_func(
+                StoredFunc(self._server_timeout), destroy_first=True
+            )
+            return
+        alpha_mods = [[mod.name, str(mod.workshop_id), "Test"] for mod in mods]
+        alpha_mods.sort(key=lambda x: x[0])
+
+        self.thread_man.set_cleanup_func(
+            StoredFunc(self._present_modlist_dialog, alpha_mods), destroy_first=True
+        )
+
+    # TODO: data type is dayzquery.DayzMod
+    def _present_modlist_dialog(self, mods: list[str]) -> None:
+        dialog = ServerModDialog(self.controller, mods)
+        dialog.run()
+
     def _present_details_dialog(self, details: Servers.Details) -> None:
         dialog = ServerDetailsDialog(self.controller, details)
         dialog.run()
@@ -74,8 +99,3 @@ class ConnectionManager:
     def _server_timeout(self) -> None:
         dialog = ExceptionDialog(self.controller, server_timeout)
         dialog.run()
-
-    # def _connection_failure(self) -> None:
-    #     # FIXME: returns api warning, but this is more likely a localized server issue
-    #     dialog = ExceptionDialog(self.controller, api_warn_msg)
-    #     dialog.run()

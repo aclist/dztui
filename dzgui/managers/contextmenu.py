@@ -81,8 +81,8 @@ class ContextMenuManager:
                 record = self.treeview.get_record()
                 self.controller.get_details(record)
             case ContextMenu.SHOW_MODS:
-                print("DEBUG: unimplemented")
-                pass
+                record = self.treeview.get_record()
+                self.controller.get_modlist(record)
 
     def copy_server_ip(self) -> None:
         if not isinstance(self.treeview, ServerTreeView):
