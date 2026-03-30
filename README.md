@@ -13,8 +13,7 @@ This overcomes certain limitations in the Linux client and helps prepare the gam
 
 ## Design philosophy
 
-DZGUI is the longest actively maintained graphical server browser and mod manager for Linux.
-It follows a specific set of guidelines, enumerated below:
+DZGUI follows a specific set of guidelines, enumerated below:
 
 - Provide a free and open-source tool under GPL
 - Do not use undocumented, third-party servers to aggregate data; no central "DZGUI" server
