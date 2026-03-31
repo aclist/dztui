@@ -91,6 +91,7 @@ def main() -> None:
     if has_new_config(XDG.config) is False:
         migrate_legacy_conf(XDG.config)
         migrate_cols_file(XDG.columns)
+        # TODO: copy notes file
         copy_state_files(xdg_paths["XDG_STATE_HOME"])
 
     _format = (

@@ -46,7 +46,7 @@ from dzgui.util import strings
 from dzgui.util.diag import write_diagnostic
 from dzgui.util.format import format_mods, format_player_count
 from dzgui.util.localize import number
-from dzgui.util.open_links import open_user_workshop
+from dzgui.util.open_links import open_user_workshop, open_workshop_page
 from dzgui.views.dialogs.filepicker import FilePicker
 from dzgui.views.dialogs.generic import ExceptionDialog, WaitDialog
 
@@ -618,3 +618,11 @@ class Controller(GObject.GObject):
 
     def get_modlist(self, record: "Record") -> None:
         ConnectionManager(self).query_modlist(record)
+
+    def get_server_name(self) -> str:
+        tv = self.get_active_treeview()
+        return tv.get_name()
+
+    def open_workshop_page(self, mod: str) -> None:
+        cmd = self.query_config(Preferences.CLIENT)
+        open_workshop_page(mod, cmd)

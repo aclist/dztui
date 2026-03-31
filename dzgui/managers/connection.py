@@ -1,8 +1,11 @@
 from typing import TYPE_CHECKING
 
 import dzgui.api.servers as Servers
+
+from dzgui.api.mods import get_local_mod_ids
+from dzgui.const.enum import Preferences
 from dzgui.managers.thread_man import call_on_thread, StoredFunc, ThreadingManager
-from dzgui.util.strings import api_warn_msg, dialog, server_timeout
+from dzgui.util.strings import api_warn_msg, dialog, server_timeout, checkmark
 from dzgui.views.dialogs.generic import ExceptionDialog
 from dzgui.views.dialogs.servers import ServerDetailsDialog, ServerModDialog
 
@@ -69,25 +72,32 @@ class ConnectionManager:
 
     @call_on_thread(dialog.querying)
     def query_modlist(self, record: Servers.Record) -> None:
+
         mods = Servers.get_rules(record)
-        # TODO: test if locally installed
-        # see api.mods for this same logic
-        # call controller to look up steam path from ConfigManager
+        steam_path = self.controller.query_config(Preferences.DEFAULT)
+        local = get_local_mod_ids(steam_path)
         if len(mods) == 0:
-            # TODO: message for no mods
-            # TODO: message for actual timeout
+            # TODO: separate message for no mods
+            # TODO: separate message for actual timeout
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._server_timeout), destroy_first=True
             )
             return
-        alpha_mods = [[mod.name, str(mod.workshop_id), "Test"] for mod in mods]
+        alpha_mods = [
+            [
+                mod.name,
+                str(mod.workshop_id),
+                checkmark if mod.workshop_id in local else ""
+            ]
+            for mod in mods
+        ]
         alpha_mods.sort(key=lambda x: x[0])
 
         self.thread_man.set_cleanup_func(
-            StoredFunc(self._present_modlist_dialog, alpha_mods), destroy_first=True
+            StoredFunc(self._present_modlist_dialog, alpha_mods),
+            destroy_first=True,
         )
 
-    # TODO: data type is dayzquery.DayzMod
     def _present_modlist_dialog(self, mods: list[str]) -> None:
         dialog = ServerModDialog(self.controller, mods)
         dialog.run()

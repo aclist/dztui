@@ -14,7 +14,7 @@
 - Redact API key in log table
 - Integrate add/connect widgets into main menu
 - Favorite/connect/LAN panels integrated with server views
-- Colorized IP/ID validation
+- Colorized IP/ID validation fields
 - Copy favorite server IP to clipboard
 - Set favorite server from tables
 - Detailed/copyable trace in critical error dialogs

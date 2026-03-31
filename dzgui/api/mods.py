@@ -40,7 +40,7 @@ def get_local_mod_ids(steam_path: Path) -> list[int]:
 
 
 def get_local_mod_path(steam_path: Path) -> Path:
-    p = PeFile.get_app_path(steam_path / LIBRARYFOLDERS_PATH, APPID_DAYZ)
+    p = PeFile.get_app_path(steam_path / Path(LIBRARYFOLDERS_PATH), APPID_DAYZ)
     workshop_path = p / WORKSHOP_PATH
     return workshop_path
 
@@ -109,7 +109,7 @@ def get_missing_mods(local: list, remote: list) -> list:
     return [mod for mod in remote if mod not in local]
 
 
-# FIXME: steam path is missing
+# FIXME: steam path is missing when comparing to local mods
 def get_server_modlist(server: Record, steam: Path) -> list:
     try:
         rules = dayzquery.dayz_rules((server.ip, server.qport))

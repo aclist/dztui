@@ -234,7 +234,6 @@ class Ping:
 
 @dataclass(slots=True, frozen=True)
 class Details:
-    name: Union[str, None]
     data: Union[list, None]
     description: str
     success: bool
@@ -282,16 +281,16 @@ def get_details(record: Record) -> Details:
         info = a2s.info((ip, qport))
         name = info.server_name
     except TimeoutError:
-        return Details(None, None, default_str, False)
+        return Details(None, default_str, False)
     try:
         rules = dayzquery.dayz_rules((ip, qport))
-    except TimeoutError:
-        return Details(None, None, default_str, False)
+    except Exception:
+        return Details(None, default_str, False)
 
     try:
         keywords = info.keywords.split(",")
     except AttributeError:
-        return Details(None, None, default_str, False)
+        return Details(None, default_str, False)
 
     battleye = strings.disabled
     if "battleye" in keywords:
@@ -366,7 +365,7 @@ def get_details(record: Record) -> Details:
         ["Version", version],
     ]
 
-    return Details(name, rows, description, True)
+    return Details(rows, description, True)
 
 
 def ping(iteration: int, addr: list, qport: int, ping: int) -> Ping:

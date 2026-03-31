@@ -1,7 +1,7 @@
 import re
 
 from dzgui.util.localize import number
-from dzgui.util.strings import no_mods, no_servers
+from dzgui.util.strings import no_mods, no_servers, workshop
 
 import gi
 
@@ -51,6 +51,11 @@ def format_mods(size: int, mods: int) -> str:
     return f"Found {mods:n} {plural} taking up {l_size} MiB. {suffix}"
 
 
+def format_server_mods(mods: int) -> str:
+    plural = pluralize("mods", mods)
+    return f"Found {mods:n} {plural}. {workshop}"
+
+
 def format_player_count(model: Gtk.TreeModel | None, control: list) -> str:
     players = 0
     hits: int
@@ -66,7 +71,9 @@ def format_player_count(model: Gtk.TreeModel | None, control: list) -> str:
     players_pretty = pluralize("players", players)
     hidden = control_total - hits
     hidden_pretty = f" ({hidden:n} hidden)" if hidden > 0 else ""
-    status = f"Showing {hits:n} {hits_pretty}{hidden_pretty}, {players:n} {players_pretty}."
+    status = (
+        f"Showing {hits:n} {hits_pretty}{hidden_pretty}, {players:n} {players_pretty}."
+    )
     return status
 
 
