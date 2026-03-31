@@ -26,6 +26,7 @@
 - Atomic map filters per server context
 - Use concurrency when checking stale mods (performance uplift)
 - Copy version by clicking label
+- Add server name to server mod dialogs
 
 ## Changed
 - Reduce padding on keys button
@@ -37,6 +38,7 @@
 
 ## Fixed
 - Longstanding issue with left clicks not registering as tree selection changes after spamming keyboard input
+- Center server title text on server dialogs
 - Rare segfaults when changing maps (threading)
 - Moved dialogs out of threads
 

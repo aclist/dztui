@@ -33,7 +33,12 @@ class ContextMenuManager:
         match action:
             # UNTHREADED
             case ContextMenu.ADD_NOTE:
+                from dzgui.views.dialogs.note import NoteDialog
+
+                dialog = NoteDialog(self.controller)
+                dialog.run()
                 print("DEBUG: unimplemented")
+                # dialog = NoteDialog()
                 # spawn edit dialog and update cache, notes file
                 pass
             case ContextMenu.COPY_LOG_CLIPBOARD:

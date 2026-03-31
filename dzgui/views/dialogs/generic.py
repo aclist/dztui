@@ -1,7 +1,6 @@
 from typing import Literal, Self, TYPE_CHECKING
 
-from dzgui.const.constants import NO_EXPAND, NO_FILL, EXPAND, FILL
-from dzgui.const.enum import Popup, ButtonType, NotebookPage
+from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING, EXPAND, FILL
 from dzgui.util import strings
 from dzgui.views.components.buttons import ClipboardButton
 
@@ -50,6 +49,10 @@ class GenericDialog(Gtk.MessageDialog):
         self.outer = self.get_content_area()
         self.outer.set_margin_start(30)
         self.outer.set_margin_end(30)
+
+    def pack(self, widget: Gtk.Widget) -> None:
+        content = self.get_content_area()
+        content.pack_start(widget, EXPAND, FILL, NO_PADDING)
 
 
 class ConfirmationDialog(GenericDialog):
