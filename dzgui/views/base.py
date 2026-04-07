@@ -366,6 +366,7 @@ class Grid(Gtk.Grid):
 
 class App(Gtk.Application):
     def __init__(self, prefs: "UserPrefs") -> None:
+
         GLib.set_prgname(APP_NAME)
         MainController.set_prefs(prefs)
 

@@ -187,6 +187,8 @@ class ServerModelManager:
         parsed = Servers.parse_json(servers)
         self._push_data(parsed)
 
+    # TODO: add cleanup?
+    # FIXME: use "adding server" string
     @call_on_thread(dialog.querying)
     def add_by_id(self, addr: str) -> None:
         config_man = self.controller.get_config_man()
@@ -194,11 +196,16 @@ class ServerModelManager:
         res = Servers.query_by_id(addr, key)
         self._parse_single_record(res)
 
+    # TODO: add cleanup?
+    # FIXME: use "adding server" string
     @call_on_thread(dialog.querying)
     def add_by_ip(self, addr: str) -> None:
         res = Servers.query_by_ip(addr)
         self._parse_single_record(res)
 
+    # TODO: add cleanup?
+    # FIXME: use "adding server" string
+    @call_on_thread(dialog.querying)
     def add_by_record(self, record: Servers.Record) -> None:
         res = Servers.query_by_record(record)
         self._parse_single_record(res)

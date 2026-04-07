@@ -36,11 +36,16 @@ def validate_ip_or_id(text: str) -> bool:
 
 
 class ValidatedEntry(Gtk.Entry):
-    def __init__(self, controller: "Controller", func: Callable) -> None:
+    def __init__(
+        self,
+        controller: "Controller",
+        func: Callable,
+        placeholder_text: str = "",
+        tooltip_text: str = "",
+    ) -> None:
+        # TODO: tooltip text should not be hardcoded
         super().__init__(
-            hexpand=True,
-            placeholder_text=connect_panel.placeholder,
-            tooltip_text=connect_panel.entry_tooltip,
+            hexpand=True, placeholder_text=placeholder_text, tooltip_text=tooltip_text
         )
 
         self.func: Callable
@@ -116,13 +121,23 @@ class ValidatedEntry(Gtk.Entry):
 
 class IpEntry(ValidatedEntry):
     def __init__(self, controller: "Controller") -> None:
-        super().__init__(controller, func=validate_ip_or_id)
+        super().__init__(
+            controller,
+            func=validate_ip_or_id,
+            placeholder_text=connect_panel.placeholder,
+            tooltip_text=connect_panel.entry_tooltip,
+        )
         self.set_placeholder_text(connect_panel.placeholder)
         self.set_tooltip_text(connect_panel.entry_tooltip)
 
 
 class PortEntry(ValidatedEntry):
     def __init__(self, controller: "Controller") -> None:
-        super().__init__(controller, func=validate_port)
+        super().__init__(
+            controller,
+            func=validate_port,
+            placeholder_text=connect_panel.placeholder,
+            tooltip_text=connect_panel.entry_tooltip,
+        )
         self.set_placeholder_text(lan_panel.placeholder)
         self.set_tooltip_text(lan_panel.entry_tooltip)

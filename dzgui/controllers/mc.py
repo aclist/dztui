@@ -103,6 +103,7 @@ class StoredFunc:
 class Controller(GObject.GObject):
     def __init__(self) -> None:
         self.dist_cache: dict[str, "Haversine", "ServerTab"] = {}
+        self.notes_cache: dict[str, str] = {}
         self.mediator = AppNavigation()
         self.prefs: UserPrefs
         self.cleanup_func: StoredFunc = None
@@ -610,7 +611,6 @@ class Controller(GObject.GObject):
             ConnectionManager(self).connect_by_ip(addr)
 
     def connect_by_record(self, record: "Record") -> None:
-        # NOTE: calls on thread
         ConnectionManager(self).connect_by_record(record)
 
     def get_details(self, record: "Record") -> None:
@@ -626,3 +626,22 @@ class Controller(GObject.GObject):
     def open_workshop_page(self, mod: str) -> None:
         cmd = self.query_config(Preferences.CLIENT)
         open_workshop_page(mod, cmd)
+
+    def get_note(self) -> None:
+        # TODO: load from file
+        tv = self.get_active_treeview()
+        record = tv.get_record_string()
+        try:
+            text = self.notes_cache[record]
+            return text
+        except Exception:
+            return ""
+
+    def add_note(self, note: str) -> None:
+        print(note)
+
+    def delete_note(self) -> None:
+        tv = self.get_active_treeview()
+        record = tv.get_record_string()
+        del self.notes_cache[record]
+        # TODO: serialize into file

@@ -7,6 +7,7 @@ from dzgui.util import strings
 from dzgui.util.clip import copy_clipboard
 from dzgui.util.open_links import open_workshop_page
 
+from dzgui.views.dialogs.note import NoteDialog
 from dzgui.views.trees.tree_servers import ServerTreeView
 
 
@@ -33,14 +34,9 @@ class ContextMenuManager:
         match action:
             # UNTHREADED
             case ContextMenu.ADD_NOTE:
-                from dzgui.views.dialogs.note import NoteDialog
-
                 dialog = NoteDialog(self.controller)
                 dialog.run()
                 print("DEBUG: unimplemented")
-                # dialog = NoteDialog()
-                # spawn edit dialog and update cache, notes file
-                pass
             case ContextMenu.COPY_LOG_CLIPBOARD:
                 self.copy_log()
             case ContextMenu.COPY_SERVER_IP:
@@ -48,6 +44,7 @@ class ContextMenuManager:
             case ContextMenu.COPY_SERVER_NAME:
                 self.copy_server_name()
             case ContextMenu.DELETE_MOD:
+                print("DEBUG: unimplemented")
                 # self.delete_single_mod()
                 # TODO: connect to emitter automatically
                 # Gtk.TreeModel, row-inserted/row-deleted
