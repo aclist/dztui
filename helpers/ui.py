@@ -39,7 +39,8 @@ locale.setlocale(locale.LC_ALL, "")
 
 import gi  # noqa E402
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
+gi.require_version("GLibUnix", "2.0")
+from gi.repository import Gtk, GLib, GLibUnix, Gdk, GObject, Pango  # noqa E402
 
 # https://bugzilla.gnome.org/show_bug.cgi?id=708676
 warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
@@ -4651,7 +4652,7 @@ class App(Gtk.Application):
         )
         self.win.add_accel_group(accel)
 
-        GLib.unix_signal_add(
+        GLibUnix.signal_add_full(
             GLib.PRIORITY_DEFAULT, signal.SIGINT, self._catch_sigint
         )
         Gtk.main()
