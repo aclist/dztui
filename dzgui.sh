@@ -1122,9 +1122,9 @@ calc_local_coords(){
 }
 initial_setup(){
     check_architecture
-#    test_connection
-#    fetch_helpers
-#    varcheck
+    test_connection
+    fetch_helpers
+    varcheck
     source "$config_file"
     lock
     legacy_vars
