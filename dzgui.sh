@@ -2,7 +2,7 @@
 set -o pipefail
 
 src_path="$(readlink -e "$0")"
-version=6.0.2-beta.3
+version=6.0.2-beta.4
 
 #CONSTANTS
 aid=221100
@@ -626,10 +626,10 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="9c790def4f70b6d1b0ed604a2b87b0dc"
+        ["funcs"]="a823824ec835a7db836aaff0eccd3a50"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
-        ["ui.py"]="d09b9d8bed3854efd51377289786c5ac"
+        ["ui.py"]="d00c37fd006fa8cfb7fd02a8505e67e0"
         ["vdf2json.py"]="2f49f6f5d3af919bebaab2e9c220f397"
         ["pefile.py"]="b452974a84bff1d821872fcebf59e380"
     )
@@ -1122,9 +1122,9 @@ calc_local_coords(){
 }
 initial_setup(){
     check_architecture
-    test_connection
-    fetch_helpers
-    varcheck
+#    test_connection
+#    fetch_helpers
+#    varcheck
     source "$config_file"
     lock
     legacy_vars

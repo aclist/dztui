@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.2-beta.3] 2026-04-10
+## Fixed
+- Use GLibUnix namespace when setting up SIGINT handling
+
 ## [6.0.2-beta.3] 2026-01-26
 ## Fixed
 - Raise error correctly from module
