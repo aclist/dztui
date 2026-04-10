@@ -1,6 +1,6 @@
 # Changelog
 
-## [6.0.2-beta.3] 2026-04-10
+## [6.0.2-beta.4] 2026-04-10
 ## Fixed
 - Use GLibUnix namespace when setting up SIGINT handling
 
