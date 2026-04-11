@@ -160,9 +160,6 @@ class OuterWindow(Gtk.Window):
         # TODO: POC, trigger page change here
         MainController.loaded = True
 
-        # TODO: debug flag, perhaps drop
-        if MainController.get_prefs().is_debug:
-            return
         MainController.populate_model(MainController.get_active_treeview())
 
     def _on_delete_event(self, window: "OuterWindow", event: Gdk.EventKey) -> None:
