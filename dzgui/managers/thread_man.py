@@ -4,7 +4,7 @@ import threading
 from typing import Any
 
 from functools import wraps
-from typing import Callable, Optional
+from typing import Callable
 from dzgui.views.dialogs.generic import WaitDialog
 
 

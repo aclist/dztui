@@ -39,6 +39,7 @@ from dzgui.controllers.emitter import Emitter
 from dzgui.managers.config import ConfigManager
 from dzgui.managers.connection import ConnectionManager
 from dzgui.managers.contextmenu import ContextMenuManager
+from dzgui.managers.notes import NoteManager
 from dzgui.model.proxy_model import ProxyModelManager
 from dzgui.model.servers import ServerModelManager
 from dzgui.model.model_factory import ModelFactory
@@ -103,8 +104,8 @@ class StoredFunc:
 class Controller(GObject.GObject):
     def __init__(self) -> None:
         self.dist_cache: dict[str, "Haversine", "ServerTab"] = {}
-        self.notes_cache: dict[str, str] = {}
         self.mediator = AppNavigation()
+
         self.prefs: UserPrefs
         self.cleanup_func: StoredFunc = None
 
@@ -150,6 +151,7 @@ class Controller(GObject.GObject):
 
     def set_prefs(self, prefs: UserPrefs) -> None:
         self.config_man = ConfigManager(prefs)
+        self.notes_man = NoteManager(self, prefs.paths.notes)
         self.prefs = prefs
 
     def query_config(self, key: Preferences) -> str | bool | list:
@@ -627,21 +629,26 @@ class Controller(GObject.GObject):
         cmd = self.query_config(Preferences.CLIENT)
         open_workshop_page(mod, cmd)
 
-    def get_note(self) -> None:
-        # TODO: load from file
+    def has_note(self) -> bool:
+        note = self.get_note()
+        if len(note) > 0:
+            return True
+        return False
+
+    def get_note_by_record(self, record: str) -> str:
+        return self.notes_man.get_note(record)
+
+    def get_note(self) -> str:
         tv = self.get_active_treeview()
         record = tv.get_record_string()
-        try:
-            text = self.notes_cache[record]
-            return text
-        except Exception:
-            return ""
+        return self.notes_man.get_note(record)
 
     def add_note(self, note: str) -> None:
-        print(note)
+        tv = self.get_active_treeview()
+        record = tv.get_record_string()
+        self.notes_man.add_note(record, note)
 
     def delete_note(self) -> None:
         tv = self.get_active_treeview()
         record = tv.get_record_string()
-        del self.notes_cache[record]
-        # TODO: serialize into file
+        self.notes_man.delete_note(record)

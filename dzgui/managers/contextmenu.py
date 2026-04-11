@@ -36,7 +36,6 @@ class ContextMenuManager:
             case ContextMenu.ADD_NOTE:
                 dialog = NoteDialog(self.controller)
                 dialog.run()
-                print("DEBUG: unimplemented")
             case ContextMenu.COPY_LOG_CLIPBOARD:
                 self.copy_log()
             case ContextMenu.COPY_SERVER_IP:

@@ -5,7 +5,7 @@ import dzgui.api.servers as Servers
 from dzgui.api.mods import get_local_mod_ids
 from dzgui.const.enum import Preferences
 from dzgui.managers.thread_man import call_on_thread, StoredFunc, ThreadingManager
-from dzgui.util.strings import api_warn_msg, dialog, server_timeout, checkmark
+from dzgui.util.strings import dialog, server_timeout, checkmark
 from dzgui.views.dialogs.generic import ExceptionDialog
 from dzgui.views.dialogs.servers import ServerDetailsDialog, ServerModDialog
 
@@ -87,7 +87,7 @@ class ConnectionManager:
             [
                 mod.name,
                 str(mod.workshop_id),
-                checkmark if mod.workshop_id in local else ""
+                checkmark if mod.workshop_id in local else "",
             ]
             for mod in mods
         ]

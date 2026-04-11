@@ -2,7 +2,7 @@ import logging
 import threading
 from concurrent.futures import as_completed
 from concurrent.futures import ThreadPoolExecutor
-from typing import Union, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import dzgui.api.servers as Servers
 from dzgui.const.enum import FilterMode, Preferences, ServerTab

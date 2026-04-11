@@ -16,12 +16,6 @@ def read_json(path: Path) -> dict:
 def write_json(data: dict, path: Path) -> None:
     try:
         j = json.dumps(data, indent=2)
+        path.write_text(j)
     except Exception as e:
-        raise e
-
-    # TODO: Path.write_text()
-    try:
-        with open(path, "w") as outfile:
-            outfile.write(j)
-    except OSError as e:
         raise e

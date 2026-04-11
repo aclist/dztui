@@ -1,6 +1,7 @@
 import logging
 from dzgui.const.enum import ContextMenu
 from dzgui.util.keys import is_navkey
+from dzgui.util.strings import edit_note
 from dzgui.views.trees.tree_base import TreeView
 
 import gi
@@ -65,11 +66,11 @@ class ContextMixin(TreeView):
         if row == ContextMenu.SHOW_MODS:
             item.set_sensitive(self.is_modded())
 
+        if row == ContextMenu.ADD_NOTE:
+            if self.controller.has_note():
+                item.set_label(edit_note)
+
         return item
-        # TODO: notes cache
-        # if row == ContextMenu.ADD_NOTE:
-        #    if self.get_record_string() in notes_cache:
-        #        item.set_label(strings.edit_note)
 
     def _process_button_event(self, event: Gdk.EventButton) -> bool:
         try:

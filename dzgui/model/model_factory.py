@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Sequence, Union
+from typing import Any, Sequence
 
 from dzgui.const.enum import HELP_MENU_ROWS
 from dzgui.util.redact import redact_log

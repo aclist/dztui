@@ -121,8 +121,40 @@ class ServerTreeView(ContextMixin, TreeView):
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
 
+        self.set_has_tooltip(True)
+        self.connect("query-tooltip", self._on_tooltip)
+
         # TODO: why is this being saved?
         self.thread = None
+
+    def _on_tooltip(
+        self,
+        widget: Gtk.Widget,
+        x: int,
+        y: int,
+        keyboard_mode: bool,
+        tooltip: Gtk.Tooltip,
+    ) -> bool:
+        """
+        Present record data for the hovered row even if it is unfocused
+        """
+        coords = widget.convert_widget_to_bin_window_coords(x, y)
+        path = self.get_path_at_pos(coords.bx, coords.by)
+        if path is None:
+            return False
+
+        model = self.get_model()
+        tree_iter = model.get_iter(path[0])
+        ip = model.get_value(tree_iter, 7)
+        qport = model.get_value(tree_iter, 8)
+        addr = ip + ":" + str(qport)
+        note = self.controller.get_note_by_record(addr)
+
+        if len(note) > 0:
+            tooltip.set_text(note)
+            self.set_tooltip_row(tooltip, path[0])
+            return True
+        return False
 
     def start_queue_checker(self) -> None:
         self.queue_id = GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
