@@ -118,6 +118,10 @@ class ServerModelManager:
             j = res.json
             servers += j["response"]["servers"]
 
+        import json
+
+        with open("test.txt", "w") as f:
+            json.dump(servers, f)
         parsed = Servers.parse_json(servers)
         self._push_data(parsed)
 

@@ -140,6 +140,8 @@ def parse_json(json: list) -> list:
         try:
             r = row["gametype"].split("lqs")
             queue = r[1].split(",")[0]
+            if int(queue) > 255:
+                continue
         except IndexError:
             queue = 0
 
@@ -226,13 +228,6 @@ class Res:
 
 
 @dataclass(slots=True, frozen=True)
-class Ping:
-    addr: str
-    iteration: int
-    ping: int
-
-
-@dataclass(slots=True, frozen=True)
 class Details:
     data: Union[list, None]
     description: str
@@ -279,7 +274,6 @@ def get_details(record: Record) -> Details:
 
     try:
         info = a2s.info((ip, qport))
-        name = info.server_name
     except TimeoutError:
         return Details(None, default_str, False)
     try:
@@ -368,31 +362,15 @@ def get_details(record: Record) -> Details:
     return Details(rows, description, True)
 
 
-def ping(iteration: int, addr: list, qport: int, ping: int) -> Ping:
-    # addr = row[7]
-    # qport = row[8]
-
-    res = None
-
-    if ping != 9999:
-        return Ping(addr, iteration, ping)
-
-    try:
-        ip = addr.split(":")[0]
-    except IndexError:
-        ping = 9999
-
+def ping(ip: str, qport: int) -> int:
     try:
         res = query_direct(ip, qport, 0.5)
+        if res is None:
+            return 9999
+        else:
+            return res["ping"]
     except Exception:
-        pass
-
-    if res is None:
-        ping = 9999
-    else:
-        ping = res["ping"]
-
-    return Ping(addr, iteration, ping)
+        return 9999
 
 
 def query_api(key: str, appid: int, param: str) -> Res:

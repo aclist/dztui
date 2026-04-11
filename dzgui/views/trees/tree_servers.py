@@ -58,6 +58,8 @@ class ServerTreeView(ContextMixin, TreeView):
         self.handler_id: int
         self.queue = Queue()
 
+        self.seen_cache = []
+
         prefs = self.controller.get_prefs()
         columns = prefs.paths.columns
         try:
@@ -93,10 +95,10 @@ class ServerTreeView(ContextMixin, TreeView):
             else:
                 w = width_map[column_title]
                 column.set_fixed_width(w)
-            # if column_title == "Ping":
-            # self.fancy_col = column
-            # self.fancy_rend = renderer
-            # column.set_cell_data_func(renderer, self._get_ping)
+            if column_title == "Ping":
+                # self.fancy_col = column
+                # self.fancy_rend = renderer
+                column.set_cell_data_func(renderer, self._get_ping)
             # if column_title == "Name":
             #    column.set_fixed_width(800)
             # if column_title == "Map":
@@ -351,39 +353,42 @@ class ServerTreeView(ContextMixin, TreeView):
     def set_loaded(self, status: bool) -> None:
         self.loaded = status
 
-    # @deprecated("currently unused")
-    # def _get_ping(
-    #    self,
-    #    column: Gtk.TreeViewColumn,
-    #    cell: Gtk.CellRendererText,
-    #    model: Gtk.TreeModel,
-    #    it: Gtk.TreeIter,
-    #    data: Any,
-    # ):
-    #    def ping_server(model, _iter, ip: str, qport: int, ping: int):
-    #        res = Ping(0, ip, qport, ping)
-    #        ping = res.ping
-    #        GLib.idle_add(lambda: model.set(_iter, ping_column, ping))
+    def _get_ping(
+        self,
+        column: Gtk.TreeViewColumn,
+        cell: Gtk.CellRendererText,
+        model: Gtk.TreeModel,
+        _iter: Gtk.TreeIter,
+        data: Any,
+    ):
+        def ping_server(model, _iter: Gtk.TreeIter, ip: str, qport: int, ping: int):
+            from dzgui.api.servers import ping
 
-    #    addr_column = 7
-    #    qport_column = 8
-    #    ping_column = 9
+            _ping = ping(ip, qport, ping)
+            GLib.idle_add(lambda: model.set(_iter, ping_column, _ping))
 
-    #    addr = model.get_value(it, addr_column).split(":")[0]
-    #    qport = model.get_value(it, qport_column)
-    #    ping = model.get_value(it, ping_column)
-    #    ip = f"{addr}:{qport}"
+        addr_column = 7
+        qport_column = 8
+        ping_column = 9
 
-    #    if ip in self.seen_cache:
-    #        return
-    #    self.seen_cache.append(ip)
+        addr = model.get_value(_iter, addr_column).split(":")
+        ip = addr[0]
+        gameport = addr[1]
+        qport = model.get_value(_iter, qport_column)
+        # ping = model.get_value(_iter, ping_column)
+        record = f"{addr}:{gameport}:{qport}"
 
-    #    thread = threading.Thread(
-    #        daemon=True,
-    #        target=ping_server,
-    #        args=(model, it, addr, qport, ping),
-    #    )
-    #    thread.start()
+        if record in self.seen_cache:
+            return
+        self.seen_cache.append(record)
+
+        # TODO: use thread manager
+        thread = threading.Thread(
+            daemon=True,
+            target=ping_server,
+            args=(model, _iter, ip, qport),
+        )
+        thread.start()
 
     @deprecated("Currently unused")
     def _lazy_load(

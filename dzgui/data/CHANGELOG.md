@@ -35,6 +35,7 @@
 - Sidebar buttos do not steal focus
 - Copy IP copies IP:queryport only instead of IP:gameport:queryport, mimics syntax needed by add by ip method
 - Load new model into view without flushing
+- Cull servers with abnormal queue values (integer overflow: 2147483647)
 
 ## Fixed
 - Longstanding issue with left clicks not registering as tree selection changes after spamming keyboard input
