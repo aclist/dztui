@@ -30,7 +30,7 @@ class NoteDialog(GenericDialog):
         delete_button = Gtk.Button(label="Delete note")
         delete_button.set_sensitive(False)
         self.add_action_widget(delete_button, Gtk.ResponseType.CANCEL)
-        self.add_button("OK", Gtk.ResponseType.OK)
+        self.add_button("Update note", Gtk.ResponseType.OK)
         self.ok = self.get_widget_for_response(Gtk.ResponseType.OK)
         self.ok.grab_default()
 
@@ -43,6 +43,9 @@ class NoteDialog(GenericDialog):
         self.entry.set_text(note)
         if len(note) > 0:
             delete_button.set_sensitive(True)
+            self.format_secondary_text(f"Current note: {note}")
+        elif len(note) == 0:
+            self.ok.set_sensitive(False)
 
         self.show_all()
         # NOTE: explicitly deselect region and move to end of line
@@ -50,9 +53,16 @@ class NoteDialog(GenericDialog):
 
         self.entry.set_activates_default(True)
         self.connect("response", self._on_response)
+        self.entry.connect("changed", self._on_text_changed)
+
+    def _on_text_changed(self, entry: Gtk.Entry) -> None:
+        """
+        Called in conjunction with signal callback in the parent class
+        """
+        if len(entry.get_text()) == 0:
+            self.ok.set_sensitive(False)
 
     def validate(self, text: str) -> None:
-        # FIXME: not checking for text deletion, e.g., ctrl-a, ctrl-x
         if text.isspace():
             sensitive = False
         else:
@@ -66,9 +76,7 @@ class NoteDialog(GenericDialog):
                 self.destroy()
             case Gtk.ResponseType.OK:
                 note = self.entry.get_text()
-                # FIXME: handle deleting existing note, going from N chars to 0 chars and clicking OK
-                if len(note) > 0:
-                    self.controller.add_note(note)
+                self.controller.add_note(note)
                 self.destroy()
             case Gtk.ResponseType.CANCEL:
                 self.controller.delete_note()
