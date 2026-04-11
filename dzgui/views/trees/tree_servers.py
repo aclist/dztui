@@ -361,10 +361,10 @@ class ServerTreeView(ContextMixin, TreeView):
         _iter: Gtk.TreeIter,
         data: Any,
     ):
-        def ping_server(model, _iter: Gtk.TreeIter, ip: str, qport: int, ping: int):
+        def ping_server(model, _iter: Gtk.TreeIter, ip: str, qport: int):
             from dzgui.api.servers import ping
 
-            _ping = ping(ip, qport, ping)
+            _ping = ping(ip, qport)
             GLib.idle_add(lambda: model.set(_iter, ping_column, _ping))
 
         addr_column = 7
