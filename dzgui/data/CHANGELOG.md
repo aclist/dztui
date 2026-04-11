@@ -27,6 +27,7 @@
 - Use concurrency when checking stale mods (performance uplift)
 - Copy version by clicking label
 - Add server name to server mod dialogs
+- Lazy load ping cell data func
 
 ## Changed
 - Reduce padding on keys button
