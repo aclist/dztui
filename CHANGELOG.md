@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.3] 2026-04-12
+## Fixed
+- Use GLibUnix namespace where available when setting up SIGINT callback
+
 ## [6.0.2] 2026-01-26
 ## Fixed
 - Explicitly use Python 3.13 when calling subprocesses
