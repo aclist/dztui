@@ -38,8 +38,10 @@ if TYPE_CHECKING:
 locale.setlocale(locale.LC_ALL, "")
 
 import gi  # noqa E402
+
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
+gi.require_version("GLibUnix", "2.0")
+from gi.repository import Gtk, GLib, GLibUnix, Gdk, GObject, Pango  # noqa E402
 
 # https://bugzilla.gnome.org/show_bug.cgi?id=708676
 warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
@@ -852,9 +854,7 @@ def call_out(command: str, *args: str) -> subprocess.CompletedProcess:
     arg_ar = []
     for i in args:
         arg_ar.append(i)
-    logger.info(
-        f"Context '{name}' calling subprocess '{command}' with args '{arg_ar}'"
-    )
+    logger.info(f"Context '{name}' calling subprocess '{command}' with args '{arg_ar}'")
     proc = subprocess.run(
         ["/usr/bin/env", "bash", funcs, command] + arg_ar,
         capture_output=True,
@@ -880,9 +880,7 @@ def spawn_dialog(msg: str, mode: Popup) -> bool:
     return False
 
 
-def process_shell_return_code(
-    msg: str, code: int, original_input: RowType
-) -> None:
+def process_shell_return_code(msg: str, code: int, original_input: RowType) -> None:
     logger.info(
         f"Processing return code '{code}' for the input "
         f"'{original_input}', returned message '{msg}'"
@@ -909,9 +907,7 @@ def process_shell_return_code(
             spawn_dialog("Invalid Steam API key, reverting", Popup.NOTIFY)
             App.notebook.settings.revert(Preferences.STEAM)
         case 79:  # failed settings update (bm)
-            spawn_dialog(
-                "Invalid Battlemetrics API key, reverting", Popup.NOTIFY
-            )
+            spawn_dialog("Invalid Battlemetrics API key, reverting", Popup.NOTIFY)
             App.notebook.settings.revert(Preferences.BM)
         case 80:  # pop toast after successful settings change
             config_vals.clear()
@@ -977,9 +973,7 @@ def call_on_thread(
     if state:
         wait_dialog = GenericDialog(msg, Popup.WAIT)
         wait_dialog.show_all()
-        thread = threading.Thread(
-            target=_background, args=(subproc, args, wait_dialog)
-        )
+        thread = threading.Thread(target=_background, args=(subproc, args, wait_dialog))
         thread.start()
     else:
         """
@@ -1004,18 +998,14 @@ def process_tree_option(choice: RowType) -> None:
         record = App.treeview.get_record_string()
         wait_msg = command.dict["wait_msg"]
         show_wait_dialog = True
-        call_on_thread(
-            show_wait_dialog, cmd_string, wait_msg, record, choice=choice
-        )
+        call_on_thread(show_wait_dialog, cmd_string, wait_msg, record, choice=choice)
         return
 
     # modlist highlight stale action
     if context == WindowContext.TABLE_MODS and command == RowType.HIGHLIGHT:
         wait_msg = command.dict["wait_msg"]
         show_wait_dialog = True
-        call_on_thread(
-            show_wait_dialog, cmd_string, wait_msg, "", choice=choice
-        )
+        call_on_thread(show_wait_dialog, cmd_string, wait_msg, "", choice=choice)
         return
 
     if command == RowType.CHANGELOG:
@@ -1083,12 +1073,8 @@ def prepare_connection(rowtype: RowType, record: Record) -> None:
     thread = threading.Thread(target=background, args=(rowtype, record))
     thread.start()
 
-def try_connect(
-    addr: str,
-    appid: str,
-    path: str,
-    row: RowType
-) -> None:
+
+def try_connect(addr: str, appid: str, path: str, row: RowType) -> None:
     def background(addr, appid, path):
         def cleanup():
             App.treeview.dialog_hide()
@@ -1151,6 +1137,7 @@ def connect_by_ip(enum: RowType, response: str) -> None:
         return
     prepare_connection(enum, record)
 
+
 def connect_by_id(enum: RowType, response: str, key: str) -> None:
     def _prep(key: str, response: str) -> None:
         def cleanup() -> None:
@@ -1179,9 +1166,7 @@ def process_user_input(enum: RowType) -> None:
     if enum == RowType.CONN_BY_ID:
         key = query_config("api_key")[0]
         if len(key) == 0:
-            spawn_dialog(
-                "No Battlemetrics API key is set; see Options", Popup.NOTIFY
-            )
+            spawn_dialog("No Battlemetrics API key is set; see Options", Popup.NOTIFY)
             return
 
     user_entry = EntryDialog(prompt, Popup.ENTRY, link_label)
@@ -1202,9 +1187,7 @@ def process_user_input(enum: RowType) -> None:
 
     show_wait_dialog = True
     wait_msg = "Working"
-    call_on_thread(
-        show_wait_dialog, cmd_string, wait_msg, response, choice=enum
-    )
+    call_on_thread(show_wait_dialog, cmd_string, wait_msg, response, choice=enum)
     return
 
 
@@ -1292,9 +1275,7 @@ class OuterWindow(Gtk.Window):
             logger.info(f"Using default window size {w},{h}")
             self.set_default_size(w, h)
 
-    def _on_delete_event(
-        self, window: "OuterWindow", event: Gdk.EventKey
-    ) -> None:
+    def _on_delete_event(self, window: "OuterWindow", event: Gdk.EventKey) -> None:
         self.halt_proc_and_quit()
 
     def halt_proc_and_quit(self) -> None:
@@ -1361,8 +1342,7 @@ class RightPanel(Gtk.Box):
         self.pack_start(self.filters_vbox, False, False, 0)
 
         debug_tooltip = (
-            "Used to perform a dry run without\n"
-            "actually connecting to a server"
+            "Used to perform a dry run without\n" "actually connecting to a server"
         )
         ping_tooltip = (
             "Refresh the ping for visible servers.\n"
@@ -1431,8 +1411,7 @@ class RightPanel(Gtk.Box):
             rows = ModelManager.get_filtered()
             with ThreadPoolExecutor(100) as executor:
                 futures = [
-                    executor.submit(Servers.ping, i, row)
-                    for i, row in enumerate(rows)
+                    executor.submit(Servers.ping, i, row) for i, row in enumerate(rows)
                 ]
                 wait(futures)
                 for future in futures:
@@ -1808,9 +1787,7 @@ class ModelManagerSingleton:
 
 
 class TreeView(Gtk.TreeView):
-    __gsignals__ = {
-        "on_distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())
-    }
+    __gsignals__ = {"on_distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())}
 
     def __init__(self):
         super().__init__()
@@ -1929,9 +1906,7 @@ class TreeView(Gtk.TreeView):
         if self.current_proc and self.current_proc.is_alive():
             self.current_proc.terminate()
 
-    def _delete_note(
-        self, button: Gtk.Button, user_entry: Gtk.Box, addr: str
-    ) -> None:
+    def _delete_note(self, button: Gtk.Button, user_entry: Gtk.Box, addr: str) -> None:
         box = button.get_parent()
         dialog = box.get_parent()
         try:
@@ -2023,9 +1998,7 @@ class TreeView(Gtk.TreeView):
             model.remove(it)
 
         block_signals()
-        thread = threading.Thread(
-            target=ModelManager.resync_model, args=(addr, qport)
-        )
+        thread = threading.Thread(target=ModelManager.resync_model, args=(addr, qport))
         thread.start()
 
     def remove_from_history(self) -> None:
@@ -2049,16 +2022,12 @@ class TreeView(Gtk.TreeView):
         if hasattr(TreeView, menu_item.action):
             func = getattr(TreeView, menu_item.action)
             msg = (
-                f"User clicked context menu '{menu_item.get_label()}', "
-                f"calls {func}"
+                f"User clicked context menu '{menu_item.get_label()}', " f"calls {func}"
             )
             logger.info(msg)
             func(self)
         else:
-            msg = (
-                f"Context menu function for '{menu_item.action}' "
-                f"does not exist"
-            )
+            msg = f"Context menu function for '{menu_item.action}' " f"does not exist"
             u_msg = (
                 f"Something went wrong when accessing the method "
                 f"'{menu_item.action}'"
@@ -2099,9 +2068,7 @@ class TreeView(Gtk.TreeView):
             return True
         return False
 
-    def _on_button_release(
-        self, widget: Gtk.Widget, event: Gdk.EventButton
-    ) -> None:
+    def _on_button_release(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
         if event.type is Gdk.EventType.BUTTON_RELEASE and event.button != 3:
             return
 
@@ -2185,9 +2152,7 @@ class TreeView(Gtk.TreeView):
         if event.type is Gdk.EventType.KEY_PRESS and event.keyval is Gdk.KEY_l:
             if self.is_selection_empty():
                 return
-            self.menu.popup_at_widget(
-                widget, Gdk.Gravity.CENTER, Gdk.Gravity.WEST
-            )
+            self.menu.popup_at_widget(widget, Gdk.Gravity.CENTER, Gdk.Gravity.WEST)
         else:
             self.menu.popup_at_pointer(event)
         self.menu.select_first(False)
@@ -2201,9 +2166,7 @@ class TreeView(Gtk.TreeView):
             return None
         call_out("start_cooldown", "", "")
 
-        thread = threading.Thread(
-            target=self._background_player_count, args=()
-        )
+        thread = threading.Thread(target=self._background_player_count, args=())
         thread.start()
 
     def get_current_iter(self) -> Gtk.TreeIter | None:
@@ -2218,9 +2181,7 @@ class TreeView(Gtk.TreeView):
 
         context = App.treeview.get_subpage_label()
         row_sel = self.get_value_at_index(0)
-        logger.info(
-            f"Tree selection for context '{context}' changed to '{row_sel}'"
-        )
+        logger.info(f"Tree selection for context '{context}' changed to '{row_sel}'")
 
         if self.current_proc and self.current_proc.is_alive():
             self.current_proc.terminate()
@@ -2278,9 +2239,7 @@ class TreeView(Gtk.TreeView):
         self.set_cursor(path)
         return None
 
-    def _on_keypress(
-        self, treeview: Gtk.TreeView, event: Gdk.EventKey
-    ) -> bool | None:
+    def _on_keypress(self, treeview: Gtk.TreeView, event: Gdk.EventKey) -> bool | None:
         keyname = Gdk.keyval_name(event.keyval)
         grid = App.grid
         if event.state is Gdk.ModifierType.CONTROL_MASK:
@@ -2335,9 +2294,7 @@ class TreeView(Gtk.TreeView):
                     return False
         return None
 
-    def _on_key_release(
-        self, treeview: Gtk.TreeView, event: Gdk.EventKey
-    ) -> None:
+    def _on_key_release(self, treeview: Gtk.TreeView, event: Gdk.EventKey) -> None:
         """
         Suppresses spamming on keydown
         """
@@ -2452,10 +2409,7 @@ class TreeView(Gtk.TreeView):
         params = Servers.params
         serv = []
         with ThreadPoolExecutor() as executor:
-            futures = [
-                executor.submit(job, key, APPID_DAYZ, param)
-                for param in params
-            ]
+            futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
             wait(futures)
             for future in futures:
                 res = future.result()
@@ -2477,10 +2431,7 @@ class TreeView(Gtk.TreeView):
 
     def _dump_lan(self, port: int) -> list | None:
         with ThreadPoolExecutor() as executor:
-            futures = [
-                executor.submit(Servers.test_ip, i, port)
-                for i in range(1, 256)
-            ]
+            futures = [executor.submit(Servers.test_ip, i, port) for i in range(1, 256)]
             wait(futures)
             servers = []
             for future in futures:
@@ -2500,7 +2451,7 @@ class TreeView(Gtk.TreeView):
         if len(ips) == 0:
             return []
         # NOTE: block malformed records
-        ips = [ip for ip in ips if len(ip.split(":")) == 3 and ip.split(":")[2] != "" ]
+        ips = [ip for ip in ips if len(ip.split(":")) == 3 and ip.split(":")[2] != ""]
         with ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(
@@ -2605,9 +2556,7 @@ class TreeView(Gtk.TreeView):
         ModelManager.set_store(App.treeview.get_model())
         App.treeview.set_model(None)
 
-        thread = threading.Thread(
-            target=ModelManager.filter, args=(mode, *args)
-        )
+        thread = threading.Thread(target=ModelManager.filter, args=(mode, *args))
         thread.start()
 
     def _background_quad(self, dialog: "GenericDialog", mode: RowType) -> None:
@@ -2766,13 +2715,9 @@ class TreeView(Gtk.TreeView):
         self.initialize_columns()
         self.set_selection_mode(Gtk.SelectionMode.SINGLE)
 
-        self.wait_dialog = GenericDialog(
-            "Fetching server metadata", Popup.WAIT
-        )
+        self.wait_dialog = GenericDialog("Fetching server metadata", Popup.WAIT)
         self.wait_dialog.show_all()
-        thread = threading.Thread(
-            target=self._query_servers, args=(mode, port)
-        )
+        thread = threading.Thread(target=self._query_servers, args=(mode, port))
         thread.start()
 
     def _format_float(
@@ -2951,9 +2896,7 @@ class TreeView(Gtk.TreeView):
     def get_view(self):
         return self.view
 
-    def get_prereqs(
-        self, record: Record
-    ) -> tuple[bool, str, str|None, "Prereqs"]:
+    def get_prereqs(self, record: Record) -> tuple[bool, str, str | None, "Prereqs"]:
         """
         Always called on a thread with a dialog on the transient parent window
         """
@@ -2967,18 +2910,14 @@ class TreeView(Gtk.TreeView):
         steam_path = query_config("default_steam_path")[0]
 
         if len(steam_path) < 1:
-            logger.critical(
-                "Config file has no value set for 'default_steam_path'"
-            )
+            logger.critical("Config file has no value set for 'default_steam_path'")
             msg = "Local Steam installation is not set, possibly malformed config file."
             return (False, msg, None, prereqs)
 
         try:
             pefile_path = PeFile.get_pefile_path(steam_path, prereqs.appid)
         except AppNotInstalledError:
-            logger.critical(
-                f"'{prereqs.appid}' not found in user's libraryfolders"
-            )
+            logger.critical(f"'{prereqs.appid}' not found in user's libraryfolders")
             msg = (
                 f"This server is running {build}. You can install "
                 f"{build} by searching for it in your Steam library. "
@@ -2987,9 +2926,7 @@ class TreeView(Gtk.TreeView):
             )
             return (False, msg, None, prereqs)
         except AppMovedError:
-            logger.critical(
-                f"Library folder synch error for '{prereqs.appid}'"
-            )
+            logger.critical(f"Library folder synch error for '{prereqs.appid}'")
             msg = (
                 f"Steam is reporting that {build} is installed at a non-existent location. "
                 f"If you recently installed {build} or moved it to a different drive, "
@@ -3043,7 +2980,6 @@ class TreeView(Gtk.TreeView):
             return (True, msg, pefile_path, prereqs)
 
         return (True, "", pefile_path, prereqs)
-
 
     @signal_emission
     @update_window_labels
@@ -3198,7 +3134,7 @@ class GenericDialog(Gtk.MessageDialog):
         self.outer.set_margin_end(30)
 
     def _on_dialog_delete(
-            self, response_id: Gtk.ResponseType, event: Gdk.Event
+        self, response_id: Gtk.ResponseType, event: Gdk.Event
     ) -> Literal[True]:
         """
         Prevent manual dialog destruction
@@ -3277,9 +3213,7 @@ class LanDialog(Gtk.MessageDialog):
         self.connect("delete-event", self.restore_context)
 
         self.entry.connect("insert-text", self._on_text_typed)
-        self.entry.get_property("buffer").connect(
-            "deleted-text", self._on_text_deleted
-        )
+        self.entry.get_property("buffer").connect("deleted-text", self._on_text_deleted)
 
     def _validate(self, text: str) -> None:
         if self._is_invalid(text):
@@ -3395,9 +3329,7 @@ class DetailsDialog(GenericDialog):
         for i, column_title in enumerate(["Item", "Details"]):
             renderer = Gtk.CellRendererText(xalign=0)
             if i == 0:
-                column = Gtk.TreeViewColumn(
-                    column_title, renderer, text=i, weight=2
-                )
+                column = Gtk.TreeViewColumn(column_title, renderer, text=i, weight=2)
             else:
                 column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
@@ -3413,12 +3345,8 @@ class DetailsDialog(GenericDialog):
         scrollable_message = Gtk.ScrolledWindow()
         desc = Gtk.Label(label="Server message", valign=Gtk.Align.START)
         add_class(desc, "details-heading")
-        box = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL, halign=Gtk.Align.CENTER
-        )
-        self.description = Gtk.Label(
-            justify=Gtk.Justification.CENTER, wrap=True
-        )
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, halign=Gtk.Align.CENTER)
+        self.description = Gtk.Label(justify=Gtk.Justification.CENTER, wrap=True)
         sep = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
         sep.set_margin_bottom(10)
         for el in desc, sep, self.description:
@@ -3456,9 +3384,7 @@ class DetailsDialog(GenericDialog):
         self.run()
         self.destroy()
 
-    def _background(
-        self, dialog: "GenericDialog", ip: str, qport: int
-    ) -> None:
+    def _background(self, dialog: "GenericDialog", ip: str, qport: int) -> None:
         response = Servers.details(self.ip, self.qport)
         if response.success:
             for row in response.data:
@@ -3515,9 +3441,7 @@ class ModDialog(GenericDialog):
 
         wait_dialog = GenericDialog("Fetching modlist", Popup.WAIT)
         wait_dialog.show_all()
-        thread = threading.Thread(
-            target=self._background, args=(wait_dialog, record)
-        )
+        thread = threading.Thread(target=self._background, args=(wait_dialog, record))
         thread.start()
 
     def _background(self, dialog: "GenericDialog", record: str) -> None:
@@ -3542,9 +3466,7 @@ class ModDialog(GenericDialog):
         self.view.set_model(modlist_store)
         GLib.idle_add(_load)
 
-    def _parse_modlist_rows(
-        self, data: subprocess.CompletedProcess
-    ) -> bool | int:
+    def _parse_modlist_rows(self, data: subprocess.CompletedProcess) -> bool | int:
         lines = data.stdout.splitlines()
         hits = len(lines)
         reader = csv.reader(lines, delimiter=delimiter)
@@ -3574,9 +3496,7 @@ class ModDialog(GenericDialog):
 
 
 class LinkDialog(GenericDialog):
-    def __init__(
-        self, text: str, link: str | None, command: RowType, uid: str = ""
-    ):
+    def __init__(self, text: str, link: str | None, command: RowType, uid: str = ""):
         super().__init__(text, Popup.NOTIFY)
 
         text = textwrap.dedent(text)
@@ -3794,7 +3714,12 @@ class Options(Gtk.Box):
         client_store = Gtk.ListStore(str, str)
         client_store.append(["steam", "steam"])
         client_store.append(["flatpak", "flatpak run com.valvesoftware.Steam"])
-        client_store.append(["flatpak (container)", "flatpak-spawn --host flatpak run com.valvesoftware.Steam"])
+        client_store.append(
+            [
+                "flatpak (container)",
+                "flatpak-spawn --host flatpak run com.valvesoftware.Steam",
+            ]
+        )
 
         renderer_text = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
         self.client_combo = Gtk.ComboBox.new_with_model(client_store)
@@ -3818,8 +3743,7 @@ class Options(Gtk.Box):
         self.force_button.set_sensitive(False)
 
         msg = (
-            "Manual: prompt to subscribe to mods in Steam. "
-            "Auto: unmanned downloads."
+            "Manual: prompt to subscribe to mods in Steam. " "Auto: unmanned downloads."
         )
         eb = InfoEventBox(msg)
 
@@ -3878,9 +3802,7 @@ class Options(Gtk.Box):
             self.make_frame(mods_grid, "Mods"),
             self.make_frame(version_grid, "Version"),
         ]:
-            grid.attach(
-                frame, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT
-            )
+            grid.attach(frame, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
             row += 1
 
         self.scrollable = Gtk.ScrolledWindow(vexpand=True)
@@ -3926,9 +3848,7 @@ class Options(Gtk.Box):
 
         return box
 
-    def _on_field_activated(
-        self, entry: Gtk.Entry, context: Preferences
-    ) -> None:
+    def _on_field_activated(self, entry: Gtk.Entry, context: Preferences) -> None:
         text = entry.get_text()
         button = entry.sibling
         if not self._is_valid_text(text, context):
@@ -3949,9 +3869,7 @@ class Options(Gtk.Box):
         for record in rows:
             col = 1
             for el in record:
-                grid.attach(
-                    el, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT
-                )
+                grid.attach(el, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
                 col += 1
             row += 1
         return grid
@@ -4004,9 +3922,7 @@ class Options(Gtk.Box):
             return
         process_toggle(RowType.TGL_BRANCH)
 
-    def _on_radio_toggled(
-        self, button: Gtk.RadioButton, context: Preferences
-    ) -> None:
+    def _on_radio_toggled(self, button: Gtk.RadioButton, context: Preferences) -> None:
         if App.treeview.subpage is not RowType.OPTIONS:
             return
         match context:
@@ -4150,18 +4066,14 @@ class Options(Gtk.Box):
                 field[1].get_children()[1].set_sensitive(False)
 
         try:
-            pe_file_path = PeFile.get_pefile_path(
-                default_steam_path, APPID_DAYZ
-            )
+            pe_file_path = PeFile.get_pefile_path(default_steam_path, APPID_DAYZ)
             vers = PeFile.get_dayz_version(pe_file_path)
             dayz_version = PeFile.dayz_version_to_str(vers)
         except Exception:
             dayz_version = "-"
 
         try:
-            exp_file_path = PeFile.get_pefile_path(
-                default_steam_path, APPID_DAYZ_EXP
-            )
+            exp_file_path = PeFile.get_pefile_path(default_steam_path, APPID_DAYZ_EXP)
             vers = PeFile.get_dayz_version(exp_file_path)
             dayz_exp_version = PeFile.dayz_version_to_str(vers)
         except Exception:
@@ -4270,9 +4182,7 @@ class KeybindingsDialog(Gtk.Box):
                 if not sep:
                     grid.attach(desc, col, row, w, h)
                 else:
-                    grid.attach_next_to(
-                        desc, sep, Gtk.PositionType.BOTTOM, w, h
-                    )
+                    grid.attach_next_to(desc, sep, Gtk.PositionType.BOTTOM, w, h)
                     row += 1
                     sep = None
                 grid.attach_next_to(frame, desc, Gtk.PositionType.RIGHT, w, h)
@@ -4280,9 +4190,7 @@ class KeybindingsDialog(Gtk.Box):
             l_spacer = Gtk.Label(label="")
             r_spacer = Gtk.Label(label="")
             grid.attach(l_spacer, col, row + 1, w, h)
-            grid.attach_next_to(
-                r_spacer, l_spacer, Gtk.PositionType.RIGHT, w, h
-            )
+            grid.attach_next_to(r_spacer, l_spacer, Gtk.PositionType.RIGHT, w, h)
             row += 1
         return grid
 
@@ -4291,9 +4199,7 @@ class KeybindingsDialog(Gtk.Box):
         col = 0
         w = 1
         h = 1
-        sidebar = Gtk.Grid(
-            row_homogeneous=True, orientation=Gtk.Orientation.VERTICAL
-        )
+        sidebar = Gtk.Grid(row_homogeneous=True, orientation=Gtk.Orientation.VERTICAL)
         for cat in categories:
             label = Gtk.Label(label=cat)
             add_class(label, "left-label")
@@ -4313,9 +4219,7 @@ class KeybindingsDialog(Gtk.Box):
         column = 1
         w = 1
         h = 1
-        sidebar = self.build_sidebar(
-            ["Servers", "Navigation", "Vim-style keys"]
-        )
+        sidebar = self.build_sidebar(["Servers", "Navigation", "Vim-style keys"])
         separator = Gtk.Separator()
         keys_box = self.build_keys(items)
 
@@ -4533,9 +4437,7 @@ class Statusbar(Gtk.Statusbar):
 
         players_pretty = pluralize("players", players)
         hits_pretty = pluralize("matches", hits)
-        formatted = (
-            f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
-        )
+        formatted = f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
         suffix = "| Distance: calculating..."
 
         if players == 0:
@@ -4587,9 +4489,7 @@ class Grid(Gtk.Grid):
         self.breadcrumbs = Gtk.Label(label="Main menu", halign=Gtk.Align.START)
 
         self.attach(self.notebook, 0, 0, 3, 1)
-        self.attach_next_to(
-            self.breadcrumbs, self.notebook, Gtk.PositionType.TOP, 3, 1
-        )
+        self.attach_next_to(self.breadcrumbs, self.notebook, Gtk.PositionType.TOP, 3, 1)
         self.attach_next_to(
             self.statusbar, self.notebook, Gtk.PositionType.BOTTOM, 3, 1
         )
@@ -4651,10 +4551,22 @@ class App(Gtk.Application):
         )
         self.win.add_accel_group(accel)
 
-        GLib.unix_signal_add(
-            GLib.PRIORITY_DEFAULT, signal.SIGINT, self._catch_sigint
-        )
+        self.setup_signals()
         Gtk.main()
+
+    def setup_signals(self) -> None:
+        SIGNAL_ADD = "signal_add"
+        SIGNAL_ADD_FULL = "signal_add_full"
+        try:
+            if SIGNAL_ADD in dir(GLibUnix):
+                func = GLibUnix.signal_add
+            elif SIGNAL_ADD_FULL in dir(GLibUnix):
+                func = GLibUnix.signal_add_full
+            else:
+                func = GLib.unix_signal_add
+            func(GLib.PRIORITY_DEFAULT, signal.SIGINT, self._catch_sigint)
+        except Exception as e:
+            logger.critical(e)
 
     def _catch_sigint(self) -> None:
         self.win.halt_proc_and_quit()
@@ -4740,9 +4652,7 @@ class ModSelectionPanel(Gtk.Box):
 
     def toggle_select_stale_button(self, state: bool) -> None:
         if state:
-            button = Gtk.Button(
-                label="Select stale", margin_start=10, margin_end=10
-            )
+            button = Gtk.Button(label="Select stale", margin_start=10, margin_end=10)
             text = "Bulk selects all currently highlighted mods"
             button.set_tooltip_text(text)
             button.connect("clicked", self._on_button_clicked)
@@ -4862,9 +4772,7 @@ class FilterPanel(Gtk.Box):
         self.keyword_entry = Gtk.Entry()
         self.keyword_entry.set_placeholder_text("Filter by keyword")
         self.keyword_entry.connect("activate", self._on_keyword_enter)
-        self.keyword_entry.connect(
-            "key-press-event", self._on_keyword_keypress
-        )
+        self.keyword_entry.connect("key-press-event", self._on_keyword_keypress)
 
         completion = Gtk.EntryCompletion(inline_completion=True)
         completion.set_text_column(0)
@@ -4932,9 +4840,7 @@ class FilterPanel(Gtk.Box):
             state = self.default_filters[label]
             check.set_active(state)
 
-    def _on_map_entry_keypress(
-        self, entry: Gtk.Entry, event: Gdk.EventKey
-    ) -> None:
+    def _on_map_entry_keypress(self, entry: Gtk.Entry, event: Gdk.EventKey) -> None:
         match event.keyval:
             case Gdk.KEY_Return:
                 text = entry.get_text()
@@ -4977,9 +4883,7 @@ class FilterPanel(Gtk.Box):
         App.treeview.grab_focus()
         return False
 
-    def _on_keyword_keypress(
-        self, entry: Gtk.Entry, event: Gdk.EventKey
-    ) -> bool:
+    def _on_keyword_keypress(self, entry: Gtk.Entry, event: Gdk.EventKey) -> bool:
         match event.keyval:
             case Gdk.KEY_Up:
                 return True
@@ -4990,9 +4894,7 @@ class FilterPanel(Gtk.Box):
                 return True
         return False
 
-    def _on_combo_keypress(
-        self, combo: Gtk.ComboBox, event: Gdk.EventKey
-    ) -> bool:
+    def _on_combo_keypress(self, combo: Gtk.ComboBox, event: Gdk.EventKey) -> bool:
         match event.keyval:
             case Gdk.KEY_Down:
                 self.maps_combo.popup()
