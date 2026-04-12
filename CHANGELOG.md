@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.2-beta.5] 2026-04-12
+## Fixed
+- Use conditional logic when testing GLibUnix namespaces
+
 ## [6.0.2-beta.4] 2026-04-10
 ## Fixed
 - Use GLibUnix namespace when setting up SIGINT handling
