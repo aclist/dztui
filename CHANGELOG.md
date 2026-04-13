@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.0.5-beta.1] 2026-04-13
+## Fixed
+- Update A2S module checksums to support servers with missing description field
+## Changed
+- Bump version to reflect hotfixes on stable branch
+
 ## [6.0.2-beta.5] 2026-04-12
 ## Fixed
 - Use conditional logic when testing GLibUnix namespaces
