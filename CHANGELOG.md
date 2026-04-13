@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.4] 2026-04-13
+## Fixed
+- Update A2S module checksums to support servers with missing description field
+
 ## [6.0.3] 2026-04-12
 ## Fixed
 - Use GLibUnix namespace where available when setting up SIGINT callback

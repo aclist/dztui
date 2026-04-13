@@ -2,7 +2,7 @@
 set -o pipefail
 
 src_path="$(readlink -e "$0")"
-version=6.0.3
+version=6.0.4
 
 #CONSTANTS
 aid=221100
@@ -583,13 +583,13 @@ fetch_a2s(){
     logger INFO "Updated A2S helper to sha '$sha'"
 }
 fetch_dzq(){
-    local sum="0a334e1e144e76e560419d155435c91e"
+    local sum="0d316badbb8d943c5f078e73862cac3e"
     local file="$helpers_path/a2s/dayzquery.py"
     if [[ -f $file ]] && [[ $(get_hash "$file") == $sum ]]; then
         logger INFO "DZQ is current"
         return 0
     fi
-    local sha=a22a9f428cbe075d7dda62f78000296955eea92a
+    local sha="07483b88ed096327ebca752f5e177011b604d7fe"
     local author="yepoleb"
     local repo="dayzquery"
     local url="https://raw.githubusercontent.com/$author/$repo/$sha/dayzquery.py"
