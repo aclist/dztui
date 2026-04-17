@@ -13,7 +13,7 @@ class FilterManager:
 
         self.map_store = ModelFactory().make_map_store()
 
-        # TODO: namespace under strings.filters
+        # TODO: namespace under own file: strings.filters
         self.default_filters = {
             strings.filter_1pp: True,
             strings.filter_day: True,
@@ -35,9 +35,6 @@ class FilterManager:
 
         self.filters: list
         self.enabled_filters = dict(self.default_filters)
-
-    # def reinit_filters(self) -> None:
-    #     self.enabled_filters = dict(self.default_filters)
 
     def set_prior_map(self, name: str) -> None:
         self.prior_map = name
@@ -86,11 +83,14 @@ class FilterManager:
             return
 
         self.reinit_map_store()
+        maps.sort()
         for m in maps:
+            if m == "All maps":
+                continue
             self.append_map([m])
 
     def get_unique_maps(self) -> list[str]:
-        return [row[0] for row in self.map_store]
+        return [row[0] for row in self.map_store if row != "All maps"]
 
     def get_all_filters(self) -> tuple:
         map_name = self.get_active_map_name()

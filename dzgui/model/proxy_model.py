@@ -44,21 +44,25 @@ class ProxyModelManager:
     def get_proxy_model(self) -> "FastInsertListStore":
         return self.proxy_model
 
-    def filter(self, mode: FilterMode) -> None:
+    def filter(self, mode: FilterMode, skip_cache: bool = False) -> None:
         # TODO: proxy model can fetch args directly from filter man, no need to process extra input
         """
         Native Gtk.TreeView.refilter() method was not performant enough
         when running in the main loop with 40k+ records
+
+        skip_cache: used when updating a record on Saved Servers/History and forcing a refilter
         """
-        # TODO: return a dataclass object with clearly enumerated map, keyword, and filter values
+        # TODO: filter cache: return a dataclass object with clearly enumerated map, keyword, and filter values
         # instead of just a serial list of strings
         filters = self.filter_man.get_all_filters()
 
-        if filters in self.filter_cache:
-            cache = self.filter_cache[filters]
-            self.set_proxy_model(cache[0])
-            self.set_filtered(cache[1])
-            return
+        if skip_cache is False:
+            if filters in self.filter_cache:
+                print("already in cache, not updating proxy model")
+                cache = self.filter_cache[filters]
+                self.set_proxy_model(cache[0])
+                self.set_filtered(cache[1])
+                return
 
         match mode:
             case FilterMode.INITIAL:

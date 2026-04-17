@@ -235,7 +235,7 @@ class ServerModelManager:
         config_man = self.controller.get_config_man()
         config_man.add_saved_server(fqip)
 
-        # NOTE: if tab contents were not loaded yet
+        # NOTE: abort early if Saved Servers tab was not loaded yet
         if raw_model is None:
             return
 
@@ -245,13 +245,16 @@ class ServerModelManager:
         # TODO: if all filters are already applied, strange behavior may occur
         # -> need to insert and reupdate tree per current filters
         # for example, non-empty will only show up in empty because it is not cached
-        proxy_man.filter(FilterMode.INITIAL)
+
+        # FIXME: new results are not being shown when tabbing over to Saved Servers
+        proxy_man.filter(FilterMode.INITIAL, skip_cache=True)
 
         filter_man = self.tv.get_filter_man()
         old_maps = filter_man.get_unique_maps()
         cur_map = record[1]
         if cur_map not in old_maps:
-            self._set_new_maps([cur_map])
+            old_maps.append(cur_map)
+        self._set_new_maps(old_maps)
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_single_ip))
 
     def _dump_history(self) -> None:
@@ -293,12 +296,14 @@ class ServerModelManager:
         proxy = self._get_proxy_man().get_proxy_model()
         self.tv.set_model(proxy)
 
-        # TODO: if current tab != self.saved, add label
+        # TODO: animate saved servers tab if we are on other tab
         self.emitter.emit("servers_loaded", self.enum)
 
         # TODO: consolidate methods and handle multi/single map addition
         filter_man = self.tv.get_filter_man()
-        filter_man.append_map(self._get_new_maps())
+        maps = self._get_new_maps()
+        filter_man.set_unique_maps(maps)
+
         self.emitter.emit("servers_loaded_init")
         self.first_iteration = False
 
@@ -311,8 +316,6 @@ class ServerModelManager:
     def _cleanup_on_success(self) -> None:
         proxy = self._get_proxy_man().get_proxy_model()
         self.tv.set_model(proxy)
-        # self.tv.set_model(None)
-        # self.tv.set_model(self.to_insert)
 
         # TODO: make sure control model len is N + 1
         # inserting a row serializes file on disk, updates control model for that tab, and updates model
@@ -348,16 +351,11 @@ class ServerModelManager:
             dialog.run()
 
     def _push_data(self, data: list) -> None:
-        # if data is None:
-        #    self.to_insert = None
-        # else:
-
-        manager = self._get_proxy_man()
         # TODO: consolidate these methods
+        manager = self._get_proxy_man()
         manager.wipe_cache()
         manager.set_control(data)
         manager.filter(FilterMode.INITIAL)
-        self.to_insert = manager.get_proxy_model()
 
         # TODO: abstract for all methods
         self._sort_unique_maps(data)
@@ -369,7 +367,7 @@ class ServerModelManager:
         self._set_new_maps(sorted(u_maps))
 
     def _set_new_maps(self, maps: list[str]) -> None:
-        self.new_maps = maps
+        self.new_maps: list[str] = maps
 
     def _get_new_maps(self) -> list[str]:
         return self.new_maps
@@ -383,6 +381,4 @@ class ServerModelManager:
         self.first_iteration = False
         proxy_man = self._get_proxy_man()
         proxy_man.filter(mode)
-        # proxy_man.filter(mode, label)
-        self.to_insert = proxy_man.get_proxy_model()
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_success))

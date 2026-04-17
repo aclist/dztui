@@ -12,6 +12,7 @@ from dzgui.init.prefix import is_prefix_writeable
 
 logger = logging.getLogger(__name__)
 
+
 def get_latest_release() -> str | None:
     tag = None
     # TODO: check order; github often has gateway errors
@@ -26,18 +27,20 @@ def get_latest_release() -> str | None:
             continue
     return tag
 
+
 def allow_updates(allow: bool) -> bool:
     if allow is False:
         return False
     if allow is True:
         return is_prefix_writeable()
 
+
 def check_updates(version: str) -> None:
-    latest = get_latest_release()
-    prefix = sys.prefix
-    if latest is None:
-        return
     try:
+        latest = get_latest_release()
+        prefix = sys.prefix
+        if latest is None:
+            return
         if Version(version) >= Version(latest):
             return
 
@@ -51,5 +54,5 @@ def check_updates(version: str) -> None:
                 # TODO: pop a dialog
                 pass
             sys.exit(proc)
-    except InvalidVersion:
+    except Exception:
         return
