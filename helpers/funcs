@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -o pipefail
-version="6.0.5-beta.1"
+version="6.0.5-beta.2"
 
 #CONSTANTS
 aid=221100
@@ -690,6 +690,7 @@ toggle(){
                 auto_install="1"
             else
                 auto_install=""
+                rm "$versions_file"
             fi
             ;;
         Toggle[[:space:]]debug[[:space:]]mode)
@@ -1077,41 +1078,42 @@ try_connect(){
     local appid="$2"
     local binary="$3"
 
-    local ip=$(<<< $record awk -F: '{print $1}')
-    local gameport=$(<<< $record awk -F: '{print $2}')
-    local qport=$(<<< $record awk -F: '{print $3}')
+    IFS=":" read -ra address <<< "$record"
+    local ip
+    local gameport
+    local qport
+    ip=${address[0]}
+    gameport=${address[1]}
+    qport=${address[2]}
 
-    [[ $appid -eq $exp ]] && echo "$binary" > $_cache_binary
+    [[ $appid -eq $exp ]] && echo "$binary" > "$_cache_binary"
 
     local remote_mods
-    remote_mods=$(a2s $ip $qport rules)
+    remote_mods=$(a2s "$ip" "$qport" rules)
     if [[ $? -eq 1 ]]; then
         printf "Failed to fetch server modlist, possibly timed out"
         return 1
     fi
-    logger INFO "Server returned modlist: $(<<< $remote_mods tr '\n' ' ')"
-    local sanitized_mods=$(query_defunct "$remote_mods")
-    local diff=$(compare "$sanitized_mods")
+    logger INFO "Server returned modlist: $(<<< "$remote_mods" tr '\n' ' ')"
+
+    local sanitized_mods
+    sanitized_mods=$(query_defunct "$remote_mods")
 
     logger INFO "Connection attempt for $ip:$qport"
     update_history "$record"
 
-    if [[ -n $auto_install ]]; then
-        logger INFO "Merging modlists"
-        diff=$(merge_modlists "$diff")
-        diff=$(query_defunct "$diff")
-    fi
-    if [[ -n $diff ]]; then
-        if [[ $(check_architecture) -eq 1 ]] && [[ $(test_display_mode) == "gm" ]]; then
-            printf "Use Desktop Mode to download mods on Steam Deck"
-            return 1
-        fi
-        case $auto_install in
-            "") manual_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods" "" "$appid";;
-            1|2) manual_mod_install "$ip" "$gameport" "$diff" "$sanitized_mods" "auto" "$appid" ;;
-        esac
-    else
+    case $auto_install in
+        "") install_mods "$sanitized_mods" "manual" ;;
+        1|2) install_mods "$sanitized_mods" "auto" ;;
+    esac
+
+    # NOTE: clean diff indicates that all requisite mods were downloaded
+    diff=$(compare "$sanitized_mods")
+    if [[ -z $diff ]]; then
         launch "$ip" "$gameport" "$sanitized_mods" "$appid"
+    else
+        printf "User aborted download process, or some mods may have failed to download. Try connecting again to resync."
+        exit 1
     fi
 }
 check_architecture(){
@@ -1127,13 +1129,15 @@ force_update(){
         printf "Only available when mod auto-install is ON"
         return 1
     fi
+    # NOTE: forcibly regenerate signatures by removing file
     rm "$versions_file"
-    local update=$(check_timestamps)
-    manual_mod_install "null" "null" "$update" "null" "force" "null"
+    local mods
+    mods=$(ls -1 "$workshop_dir")
+    install_mods "$mods" "force"
     echo "Finished requesting mod updates."
     return 0
 }
-get_local_stamps(){
+get_timestamps(){
     readarray -t modlist < <(printf "%s\n" "$@")
     local max="${#modlist[@]}"
     _concat(){
@@ -1157,67 +1161,6 @@ update_stamps(){
     for((i=0;i<${#stamps[@]};i++)); do
         printf "%s\n" "${stamps[$i]}" >> $versions_file
     done
-}
-check_timestamps(){
-    readarray -t local_modlist < <(ls -1 $workshop_dir)
-    local max=${#local_modlist[@]}
-    logger INFO "Local mod count: $max"
-    [[ $max -eq 0 ]] && return 1
-    local local_stamps=$(get_local_stamps "${local_modlist[@]}")
-    if [[ -z $local_stamps ]]; then
-        logger WARN "Timestamp query returned empty response"
-        return 1
-    fi
-    local aligned=$(<<< "$local_stamps" jq -r '.response.publishedfiledetails[]|"\(.publishedfileid),\(.time_updated)"')
-    readarray -t remote_ids < <(<<< "$aligned" awk -F, '{print $1}')
-    readarray -t remote_times < <(<<< "$aligned" awk -F, '{print $2}')
-
-    if [[ ! -f $versions_file ]]; then
-        logger INFO "No prior versions file found, creating"
-        update_stamps "$aligned"
-        #force refresh all mods if versions file was missing
-        printf "%s\n" "${remote_ids[@]}"
-        return 0
-    fi
-
-    readarray -t old_ids < <(< $versions_file awk -F, '{print $1}')
-    readarray -t old_times < <(< $versions_file awk -F, '{print $2}')
-
-    declare -A remote_version
-    declare -A local_version
-
-    for((i = 0; i < ${#remote_ids[@]}; ++i)); do
-        remote_version[${remote_ids[$i]}]=${remote_times[$i]}
-    done
-
-    needs_update=()
-    for((i=0;i<${#old_ids[@]};i++)); do
-        local id=${old_ids[$i]}
-        local time=${old_times[$i]}
-        if [[ $time != ${remote_version[$id]} ]]; then
-                logger WARN "Mod '$id' timestamp '$time' != '${remote_version[$id]}'"
-                needs_update+=($id)
-        fi
-    done
-    printf "%s\n" "${needs_update[@]}"
-}
-merge_modlists(){
-    local diff="$1"
-    _sort(){
-        printf "%s\n" "$diff"
-        printf "%s\n" "${needs_update[@]}"
-    }
-    readarray -t needs_update < <(check_timestamps)
-    if [[ -z ${needs_update[@]} ]]; then
-        echo "$diff"
-        return 0
-    fi
-    if [[ -z "$diff" ]] && [[ ${#needs_update[@]} -gt 0 ]]; then
-        printf "%s\n" "${needs_update[@]}"
-    else
-        # remove duplicates
-        _sort | sort -u
-    fi
 }
 concat_mods(){
     readarray -t concat_arr <<< "$@"
@@ -1260,7 +1203,7 @@ launch(){
 
     if [[ $debug -eq 1 ]]; then
         local launch_options="$steam_cmd -applaunch $appid -connect=$ip:$gameport -nolauncher -nosplash -name=$name -skipintro -mod=$concat"
-        printf "Debug mode: these options would have been used to launch the game: $launch_options"
+        printf "Debug mode: these options would have been used to launch the game: %s" "$launch_options"
         return 0
     fi
     echo "$concat" > "$_cache_launch"
@@ -1296,75 +1239,121 @@ final_handshake(){
     printf "\n"
     return 6
 }
-manual_mod_install(){
-    local ip="$1"
-    local gameport="$2"
-    local diff="$3"
-    local sanitized_mods="$4"
-    local mode="$5"
-    local appid="$6"
-    local ex="$state_path/dzg.watcher"
+watcher(){
+    local -n to_download="$1"
+    local -n signatures="$2"
+    local mode="$3"
 
-    readarray -t stage_mods <<< "$diff"
-    [[ -f $ex ]] && rm $ex
+    declare -i i=0
+    local remote_time
+    local length
+    length=${#to_download[@]}
+    for mod in "${!to_download[@]}"; do
+        remote_time=${to_download[$mod]}
+        [[ -f $ex ]] && return 1
+        case $mode in
+            "auto" | "force")
+                $steam_cmd "steam://url/CommunityFilePage/${mod}+workshop_download_item ${aid} ${mod}"
+                echo "# Opening workshop page for ${mod}. If you see no progress, you may be out of disk space."
+                ;;
+            *)
+                $steam_cmd "steam://url/CommunityFilePage/${mod}"
+                echo "# Opening workshop page for ${mod}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
+                ;;
+        esac
+        sleep 1s
+        foreground
 
-    _watcher(){
-        for((i=0;i<${#stage_mods[@]};i++)); do
+        until [[ -d $downloads_dir/${mod} ]]; do
             [[ -f $ex ]] && return 1
-
-            if [[ $mode == "auto" ]] || [[ $mode == "force" ]]; then
-                $steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}+workshop_download_item $aid ${stage_mods[$i]}"
-                echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress, you may be out of disk space."
-            else
-                $steam_cmd "steam://url/CommunityFilePage/${stage_mods[$i]}"
-                echo "# Opening workshop page for ${stage_mods[$i]}. If you see no progress after subscribing, try unsubscribing and resubscribing again until the download commences."
-            fi
-            sleep 1s
-            foreground
-
-            until [[ -d $downloads_dir/${stage_mods[$i]} ]]; do
-                [[ -f $ex ]] && return 1
-                sleep 0.1s
-                if [[ -d $workshop_dir/${stage_mods[$i]} ]]; then
+            sleep 0.1s
+            # NOTE: fallback for instantaneous downloads
+            if [[ $mode == "auto" || $mode == "force" ]]; then
+                if [[ -d $workshop_dir/${mod} ]]; then
                     break
                 fi
-            done
-
-            foreground
-            if [[ $mode == "auto" ]] || [[ $mode == "force" ]]; then
-                echo "# Steam is downloading ${stage_mods[$i]} (mod $((i+1)) of ${#stage_mods[@]}). You do not need to manually Subscribe."
-            else
-                echo "# Steam is downloading ${stage_mods[$i]} (mod $((i+1)) of ${#stage_mods[@]})"
             fi
-            until [[ -d $workshop_dir/${stage_mods[$i]} ]]; do
-                [[ -f $ex ]] && return 1
-                sleep 0.1s
-            done
-
-            foreground
-            echo "# ${stage_mods[$i]} moved to mods dir"
         done
-        echo "100"
-    }
-    _watcher > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZG Watcher" --width=500 2>/dev/null; rc=$?; [[ $rc -eq 1 ]] && touch $ex)
 
-    if [[ $mode == "force" ]]; then
-        rm "$versions_file"
-        check_timestamps
-        return 0
+        foreground
+        case $mode in
+            "auto" | "force")
+                echo "# Steam is downloading ${mod} (mod $((i+1)) of ${length}). You do not need to manually Subscribe."
+                ;;
+            *)
+                echo "# Steam is downloading ${mod} (mod $((i+1)) of ${length})"
+                ;;
+        esac
+
+        until [[ -d $workshop_dir/${mod} ]]; do
+            [[ -f $ex ]] && return 1
+            sleep 0.1s
+        done
+
+        foreground
+        if [[ ! -v signatures["${mod}"] ]]; then
+            echo "$mod,$remote_time" >> "$versions_file"
+        else
+            sed -i "s/$mod,${signatures[$mod]}/$mod,$remote_time/" "$versions_file"
+        fi
+        echo "# ${mod} moved to mods dir"
+        i+=1
+    done
+    echo "100"
+}
+install_mods(){
+    local sanitized_mods="$1"
+    local mode="$2"
+    local ex="$state_path/dzg.watcher"
+
+    [[ -f $ex ]] && rm "$ex"
+
+    if [[ -f "$versions_file" ]]; then
+        readarray -t local_mods < "$versions_file"
+    else
+        local_mods=()
     fi
 
-    local diff=$(compare "$sanitized_mods")
-    if [[ -z $diff ]]; then
-        if [[ $mode == "auto" ]]; then
-            rm "$versions_file"
-            check_timestamps
+    declare -A mod_signatures
+    local local_id
+    local local_time
+    for mod in "${local_mods[@]}"; do
+        IFS="," read -ra fields <<< "$mod"
+        local_id="${fields[0]}"
+        local_time="${fields[1]}"
+        mod_signatures[$local_id]=$local_time
+    done
+
+    readarray -t remote_mods <<< "$sanitized_mods"
+    declare -A download
+    local remote_timestamps
+    local remote_id
+    local remote_time
+    remote_timestamps=$(get_timestamps "${remote_mods[@]}")
+    for mod in $(<<< "$remote_timestamps" jq -r '.response.publishedfiledetails[]|"\(.publishedfileid),\(.time_updated)"'); do
+        IFS="," read -ra fields <<< "$mod"
+        remote_id="${fields[0]}"
+        remote_time="${fields[1]}"
+
+        # NOTE: mod is not present in versions file
+        if [[ ! -v mod_signatures["$remote_id"] ]]; then
+            download["$remote_id"]=$remote_time
+            continue
         fi
-        launch "$ip" "$gameport" "$sanitized_mods" "$appid"
-    else
-        printf "User aborted download process, or some mods may have failed to download. Try connecting again to resync."
+        # NOTE: mod timestamp is out of date
+        local_time="${mod_signatures["$remote_id"]}"
+        if [[ $remote_time != "$local_time" ]]; then
+            download["$remote_id"]=$remote_time
+            continue
+        fi
+    done
+
+    [[ ${#download[@]} -lt 1 ]] && return
+    if [[ $(check_architecture) -eq 1 ]] && [[ $(test_display_mode) == "gm" ]]; then
+        printf "Use Desktop Mode to download mods on Steam Deck"
         exit 1
     fi
+    watcher download mod_signatures "$mode" > >($steamsafe_zenity --pulsate --progress --auto-close --title="DZG Watcher" --width=500 2>/dev/null; rc=$?; [[ $rc -eq 1 ]] && touch "$ex")
 }
 test_display_mode(){
     pgrep -a gamescope | grep -q "generate-drm-mode"

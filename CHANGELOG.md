@@ -1,5 +1,9 @@
 # Changelog
 
+## [6.0.5-beta.2] 2026-04-17
+## Changed
+- During server connection attempts, only download mods local to specific server
+
 ## [6.0.5-beta.1] 2026-04-13
 ## Fixed
 - Update A2S module checksums to support servers with missing description field
