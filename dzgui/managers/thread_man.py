@@ -91,10 +91,6 @@ class ThreadingManager:
     def get_cleanup_func(self) -> StoredFunc:
         return self.cleanup_func
 
-    # def _d(self) -> None:
-    #     self.wait_dialog.hide()
-    #     return False
-
     def _destroy_on_idle(self) -> GLib.SOURCE_REMOVE:
         if self.destroy_first:
             self.wait_dialog.destroy()
