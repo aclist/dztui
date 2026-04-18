@@ -6,7 +6,7 @@ from dzgui.views.components.buttonbox import ButtonBox
 from dzgui.views.components.filter_panel import FilterPanel
 from dzgui.views.components.mod_panel import ModSelectionPanel
 from dzgui.views.components.buttons import RefreshButton, KeysButton
-from dzgui.const.constants import NO_EXPAND, NO_FILL, FILL, NO_PADDING
+from dzgui.const.constants import EXPAND, NO_EXPAND, NO_FILL, FILL, NO_PADDING
 
 import gi
 

@@ -151,6 +151,7 @@ class FavPanel(Gtk.Frame):
         scrollable_label.add(self.fav_label)
 
         self.fav_button = SteamConnectButton()
+        self.fav_button.connect("clicked", self._on_connect_clicked)
         if server_name is None:
             self.fav_button.set_sensitive(False)
         copy = ClipboardButton(self.controller, self.get_fav_ip)
@@ -161,6 +162,9 @@ class FavPanel(Gtk.Frame):
         grid.attach_next_to(self.fav_button, copy, Gtk.PositionType.RIGHT, COLS, ROWS)
 
         self.add(grid)
+
+    def _on_connect_clicked(self, button: Gtk.Button) -> None:
+        self.controller.connect_by_str(self.server_ip)
 
     def get_fav_ip(self) -> str:
         return self.server_ip

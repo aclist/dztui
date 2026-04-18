@@ -32,6 +32,14 @@ class Statusbar(Gtk.Grid):
         self.attach(self.statusbar, 0, 0, 3, 1)
         self.attach_next_to(self.spinner, self.statusbar, Gtk.PositionType.RIGHT, 3, 1)
 
+        # TODO: pack version event box in right panel into hbox with update button
+        # TODO: spawns a modal or just jumps right to install page
+        #from dzgui.views.components.buttons import IconTextButton
+        #b = IconTextButton("dialog-information-symbolic", label="Updates available")
+        #b.set_halign(Gtk.Align.END)
+        #b.set_hexpand(True)
+        #self.attach_next_to(b, self.spinner, Gtk.PositionType.RIGHT, 3, 1)
+
         self.players = ""
 
         controller.get_menu().connect("generic_treesel_changed", self._help_row_changed)

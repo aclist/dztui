@@ -32,7 +32,8 @@ class ConnectionManager:
                 StoredFunc(self._server_timeout), destroy_first=True
             )
 
-        print("DEBUG")
+        # TODO: resolve real ip
+        print("UNIMPLEMENTED: get rules")
         print(res)
 
     @call_on_thread(dialog.querying)
@@ -43,7 +44,8 @@ class ConnectionManager:
                 StoredFunc(self._server_timeout), destroy_first=True
             )
 
-        print("DEBUG")
+        # TODO: resolve real ip
+        print("UNIMPLEMENTED: get rules")
         print(res)
 
     @call_on_thread(dialog.querying)
@@ -55,7 +57,7 @@ class ConnectionManager:
             )
 
         # TODO: add to history if successful
-        print("DEBUG")
+        print("UNIMPLEMENTED: get rules")
         print(res)
 
     @call_on_thread(dialog.querying)

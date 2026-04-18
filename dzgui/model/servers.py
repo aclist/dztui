@@ -260,6 +260,7 @@ class ServerModelManager:
         fqip = Servers.response_to_fq_ip(response)
         config_man = self.controller.get_config_man()
 
+        # TODO: less convoluted
         if delete:
             # NOTE: abort early if Saved Servers tab was not loaded yet
             config_man.remove_saved_server(fqip)
@@ -268,6 +269,9 @@ class ServerModelManager:
                 return
             proxy_man.remove_row_from_control(record)
         else:
+            if config_man.is_in_favs(fqip):
+                self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_when_no_model))
+                return
             config_man.add_saved_server(fqip)
             if proxy_man.has_control_model() is False:
                 self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_when_no_model))
