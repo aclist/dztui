@@ -54,9 +54,8 @@ class CalcDist:
         self.controller = controller
         self.result_queue = result_queue
         self.addr = addr
-        self.ip = self.addr  # .split(":")[0]
+        self.ip = self.addr
 
-        # def run(self) -> None:
         cache = self.controller.get_dist_cache()
         if self.addr in cache:
             logger.info(f"Address '{self.addr}' already in cache")

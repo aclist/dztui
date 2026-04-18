@@ -250,7 +250,6 @@ class Controller(GObject.GObject):
         if haversine is None:
             dist = "Unknown"
         else:
-            # self.config_man.use_miles()
             if self.prefs.use_miles:
                 raw = round(haversine.as_miles())
                 separated = number(raw)
@@ -287,6 +286,9 @@ class Controller(GObject.GObject):
         self.cleanup_func = StoredFunc(self.load_mods_cleanup, model)
 
     def toggle_config(self, key: Preferences) -> None:
+        # NOTE: Preferences.DIST is dynamic
+        if key == Preferences.DIST:
+            self.prefs.use_miles = not self.prefs.use_miles
         self.config_man.toggle_config(key)
 
     def update_config(self, key: Preferences, value: str) -> None:
