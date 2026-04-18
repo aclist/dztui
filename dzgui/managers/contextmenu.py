@@ -65,13 +65,8 @@ class ContextMenuManager:
                 self.controller.connect_by_record(record)
 
             case ContextMenu.REFRESH_PLAYERS:
-                print("DEBUG: unimplemented")
                 record = self.treeview.get_record()
                 self.controller.refresh_players(record)
-                 
-                # TODO: just updates proxy model, this info is ephemeral
-                # call a2s on thread
-                pass
             case ContextMenu.REMOVE_HISTORY:
                 print("DEBUG: unimplemented")
                 # update history model, update tab label, pop off of queue, write new list into file
