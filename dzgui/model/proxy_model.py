@@ -41,7 +41,9 @@ class ProxyModelManager:
         self.success = True
 
     def has_control_model(self) -> bool:
-        pass
+        if self.control_model is None:
+            return False
+        return True
 
     def append_row(self, row: list) -> None:
         self.proxy_model.append(row)

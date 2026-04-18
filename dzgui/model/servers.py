@@ -264,17 +264,22 @@ class ServerModelManager:
             # NOTE: abort early if Saved Servers tab was not loaded yet
             config_man.remove_saved_server(fqip)
             if proxy_man.has_control_model() is False:
+                self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_when_no_model))
                 return
             proxy_man.remove_row_from_control(record)
         else:
             config_man.add_saved_server(fqip)
             if proxy_man.has_control_model() is False:
+                self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_when_no_model))
                 return
             proxy_man.append_row_to_control(record)
 
         control_model = proxy_man.get_control()
         self._sort_unique_maps(control_model)
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_single_ip))
+
+    def _cleanup_when_no_model(self) -> None:
+        self.emitter.emit("saved_servers_changed")
 
     def _dump_history(self) -> None:
         history = self.controller.get_prefs().paths.history
@@ -325,6 +330,7 @@ class ServerModelManager:
 
         self.emitter.emit("servers_loaded_init")
         self.first_iteration = False
+        self.emitter.emit("saved_servers_changed")
 
     def _update_maps(self) -> None:
         filter_man = self.tv.get_filter_man()

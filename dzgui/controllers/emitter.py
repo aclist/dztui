@@ -23,6 +23,11 @@ class Emitter(GObject.GObject):
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def saved_servers_changed(self) -> None:
+        """Record was added/removed from Saved Servers model"""
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def request_maps_focus(self) -> None:
         """User invoked Ctrl-m keybinding from ServerTreeView"""
         pass

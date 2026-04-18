@@ -56,6 +56,15 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.connect("unmap", self._on_unmap)
 
         self.emitter.connect("servers_loaded", self._on_servers_loaded)
+        self.emitter.connect("saved_servers_changed", self._on_saved_servers_changed)
+
+    def _on_saved_servers_changed(self, emitter: "Emitter") -> None:
+        saved = 1
+        if self.notebook.get_current_page() == saved:
+            return
+        page = self.notebook.get_nth_page(saved)
+        label = self.notebook.get_tab_label(page)
+        label.set_text(f"{server_labels.saved}*")
 
     def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
         # NOTE: workaround for GTK bug where fullscreen causes headers to vanish when model is None
@@ -101,13 +110,8 @@ class ServerNotebook(Gtk.ScrolledWindow):
         if self.controller.loaded is False:
             return
 
-        # TODO: wipe statusbar when changing pages
-
         label = self.notebook.get_tab_label_text(child)
-        if label is None:
-            return
-
-        # TODO: strings, tab activity notifier
+        # TODO: strings
         text = label.strip("*")
         self.notebook.set_tab_label_text(child, text)
 
