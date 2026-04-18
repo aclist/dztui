@@ -453,10 +453,23 @@ def query_by_id(addr: str, key: str) -> Optional[dict]:
         return None
 
 
+def query_playercount(record: Record) -> Optional[tuple[int]]:
+    try:
+        res = query_direct(record.ip, record.qport)
+        players = int(res["players"])
+        r = res["gametype"].split("lqs")
+        try:
+            queue = int(r[1].split(",")[0])
+        except IndexError:
+            queue = 0
+        return (players, queue)
+    except Exception as e:
+        logger.critical(e)
+        return None
+
 def query_by_ip(addr: str) -> Optional[dict]:
     record = short_ip_to_record(addr)
     return query_by_record(record)
-
 
 def query_by_record(record: Record) -> Optional[dict]:
     try:

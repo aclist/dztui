@@ -10,7 +10,12 @@ from dzgui.util import strings
 if TYPE_CHECKING:
     from dzgui.managers.filter_man import FilterManager
     from dzgui.model.model_factory import FastInsertListStore
+    from dzgui.model.servers import NewPlayerCount
 
+import gi
+
+gi.require_version("Gtk", "3.0")
+from gi.repository.Gtk import TreeIter
 
 class ProxyModelManager:
     """
@@ -35,8 +40,26 @@ class ProxyModelManager:
         self.filtered: list = None
         self.success = True
 
+    def has_control_model(self) -> bool:
+        pass
+
     def append_row(self, row: list) -> None:
         self.proxy_model.append(row)
+
+    def append_row_to_control(self, row: list) -> None:
+        self.control_model.append(row)
+        self.filter(FilterMode.INITIAL, skip_cache=True)
+
+    def remove_row_from_control(self, row: list) -> None:
+        for record in self.control_model:
+            if row[7] == record[7] and row[8] == record[8]:
+                self.control_model.remove(record)
+        self.filter(FilterMode.INITIAL, skip_cache=True)
+
+    def update_playercount(self, playercount: "NewPlayerCount") -> None:
+        treeiter = playercount.treeiter
+        self.proxy_model[treeiter][4] = playercount.players
+        self.proxy_model[treeiter][6] = playercount.queue
 
     def clear_proxy_model(self) -> None:
         self.proxy_model.clear()

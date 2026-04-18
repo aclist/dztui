@@ -604,6 +604,10 @@ class Controller(GObject.GObject):
         saved_tree = self.get_servers().get_saved()
         ServerModelManager(self, saved_tree).add_by_record(record)
 
+    def remove_by_record(self, record: "Record") -> None:
+        saved_tree = self.get_servers().get_saved()
+        ServerModelManager(self, saved_tree).remove_by_record(record)
+
     def connect_by_str(self, addr: str) -> None:
         if addr.isdigit():
             config_man = self.get_config_man()
@@ -652,3 +656,8 @@ class Controller(GObject.GObject):
         tv = self.get_active_treeview()
         record = tv.get_record_string()
         self.notes_man.delete_note(record)
+
+    def refresh_players(self, record: "Record") -> None:
+        treeview = self.get_active_treeview()
+        model, treeiter = treeview.get_selection().get_selected()
+        ServerModelManager(self, treeview).update_playercount(treeiter, record)

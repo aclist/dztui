@@ -48,6 +48,11 @@ class ConfigManager:
         ips.append(record)
         self.update_config(Preferences.IP_LIST, ips)
 
+    def remove_saved_server(self, record: str) -> None:
+        ips = self.lookup(Preferences.IP_LIST)
+        ips.remove(record)
+        self.update_config(Preferences.IP_LIST, ips)
+
     # TODO: drop/reroute
     def update_config(self, key: Preferences, value: str) -> None:
         self.write_config(key, value)

@@ -1,7 +1,9 @@
 import logging
 import threading
+
 from concurrent.futures import as_completed
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import dzgui.api.servers as Servers
@@ -29,8 +31,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-# TODO: failure: spawns error dialog
+# TODO: failure should spawn error dialog
 # TODO: non failure with empty model: updates statusbar with help text
+
+@dataclass
+class NewPlayerCount:
+    treeiter: Gtk.TreeIter
+    players: int
+    queue: int
 
 
 class ServerModelManager:
@@ -207,8 +215,16 @@ class ServerModelManager:
     # FIXME: use "adding server" string
     @call_on_thread(dialog.querying)
     def add_by_record(self, record: Servers.Record) -> None:
+        """
+        Record as shown in server browser may resolve to a different IP
+        """
         res = Servers.query_by_record(record)
         self._parse_single_record(res)
+
+    @call_on_thread(dialog.querying)
+    def remove_by_record(self, record: Servers.Record) -> None:
+        res = Servers.query_by_record(record)
+        self._parse_single_record(res, delete=True)
 
     def add_by_str(self, addr: str) -> None:
         if addr.isdigit():
@@ -216,41 +232,48 @@ class ServerModelManager:
         else:
             self.add_by_ip(addr)
 
-    def _parse_single_record(self, response: dict) -> None:
+    @call_on_thread(dialog.querying)
+    def update_playercount(self, treeiter: Gtk.TreeIter, record: Servers.Record) -> None:
+        proxy_man = self._get_proxy_man()
+        res = Servers.query_playercount(record)
+        if res is None:
+            return
+        players, queue = res
+
+        self.playercount = NewPlayerCount(treeiter, players, queue)
+        self.thread_man.set_cleanup_func(StoredFunc(self._push_playercount))
+
+    def _push_playercount(self) -> None:
+        proxy_man = self._get_proxy_man()
+        proxy_man.update_playercount(self.playercount)
+
+    def _parse_single_record(self, response: dict, delete: bool = False) -> None:
         if response is None:
             self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
             return
 
+        # NOTE: expected to only contain one item
         records = Servers.parse_json([response])
         record = records[0]
 
         proxy_man = self._get_proxy_man()
-        raw_model = proxy_man.get_control()
-
         fqip = Servers.response_to_fq_ip(response)
         config_man = self.controller.get_config_man()
-        config_man.add_saved_server(fqip)
 
-        # NOTE: abort early if Saved Servers tab was not loaded yet
-        if raw_model is None:
-            return
+        if delete:
+            # NOTE: abort early if Saved Servers tab was not loaded yet
+            config_man.remove_saved_server(fqip)
+            if proxy_man.has_control_model() is False:
+                return
+            proxy_man.remove_row_from_control(record)
+        else:
+            config_man.add_saved_server(fqip)
+            if proxy_man.has_control_model() is False:
+                return
+            proxy_man.append_row_to_control(record)
 
-        # NOTE: expected to only contain one item
-        raw_model.append(record)
-
-        # TODO: if all filters are already applied, strange behavior may occur
-        # -> need to insert and reupdate tree per current filters
-        # for example, non-empty will only show up in empty because it is not cached
-
-        # FIXME: new results are not being shown when tabbing over to Saved Servers
-        proxy_man.filter(FilterMode.INITIAL, skip_cache=True)
-
-        filter_man = self.tv.get_filter_man()
-        old_maps = filter_man.get_unique_maps()
-        cur_map = record[1]
-        if cur_map not in old_maps:
-            old_maps.append(cur_map)
-        self._set_new_maps(old_maps)
+        control_model = proxy_man.get_control()
+        self._sort_unique_maps(control_model)
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_single_ip))
 
     def _dump_history(self) -> None:
@@ -295,8 +318,8 @@ class ServerModelManager:
         # TODO: animate saved servers tab if we are on other tab
         self.emitter.emit("servers_loaded", self.enum)
 
-        # TODO: consolidate methods and handle multi/single map addition
         filter_man = self.tv.get_filter_man()
+        # NOTE: maps are set outside of thread because it triggers map changed signals
         maps = self._get_new_maps()
         filter_man.set_unique_maps(maps)
 
@@ -314,8 +337,6 @@ class ServerModelManager:
         self.tv.set_model(proxy)
 
         # TODO: make sure control model len is N + 1
-        # inserting a row serializes file on disk, updates control model for that tab, and updates model
-        # NOTE: when inserting new rows, the entire control model is wiped and rebuilt, then proxy model is swapped in
         # TODO: signals or other approach to deferring map
         # model insertion after thread closes
         # cf. servers_loaded signal

@@ -66,7 +66,10 @@ class ContextMenuManager:
 
             case ContextMenu.REFRESH_PLAYERS:
                 print("DEBUG: unimplemented")
-                # get record
+                record = self.treeview.get_record()
+                self.controller.refresh_players(record)
+                 
+                # TODO: just updates proxy model, this info is ephemeral
                 # call a2s on thread
                 pass
             case ContextMenu.REMOVE_HISTORY:
@@ -75,9 +78,8 @@ class ContextMenuManager:
                 # see dq.py
                 pass
             case ContextMenu.REMOVE_SERVER:
-                print("DEBUG: unimplemented")
-                # reverse of ADD_SERVER
-                pass
+                record = self.treeview.get_record()
+                self.controller.remove_by_record(record)
             case ContextMenu.SHOW_DETAILS:
                 record = self.treeview.get_record()
                 self.controller.get_details(record)
