@@ -4,7 +4,7 @@ import threading
 from concurrent.futures import as_completed
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import dzgui.api.servers as Servers
 from dzgui.const.enum import FilterMode, Preferences, ServerTab
@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 # TODO: failure should spawn error dialog
 # TODO: non failure with empty model: updates statusbar with help text
 
+
 @dataclass
 class NewPlayerCount:
     treeiter: Gtk.TreeIter
@@ -55,9 +56,7 @@ class ServerModelManager:
 
         # NOTE: store filter man for access inside thread
         self.proxy_man = tv.get_proxy_man()
-
-        # FIXME: change WaitDialog to use parent window only
-        self.thread_man = ThreadingManager(parent=controller)
+        self.thread_man = ThreadingManager(self.controller)
 
         # TODO: if first iteration, clear filter man control model
         # literal first load: iteration 1
@@ -233,7 +232,9 @@ class ServerModelManager:
             self.add_by_ip(addr)
 
     @call_on_thread(dialog.querying)
-    def update_playercount(self, treeiter: Gtk.TreeIter, record: Servers.Record) -> None:
+    def update_playercount(
+        self, treeiter: Gtk.TreeIter, record: Servers.Record
+    ) -> None:
         proxy_man = self._get_proxy_man()
         res = Servers.query_playercount(record)
         if res is None:
@@ -265,16 +266,22 @@ class ServerModelManager:
             # NOTE: abort early if Saved Servers tab was not loaded yet
             config_man.remove_saved_server(fqip)
             if proxy_man.has_control_model() is False:
-                self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_when_no_model))
+                self.thread_man.set_cleanup_func(
+                    StoredFunc(self._cleanup_when_no_model)
+                )
                 return
             proxy_man.remove_row_from_control(record)
         else:
             if config_man.is_in_favs(fqip):
-                self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_when_no_model))
+                self.thread_man.set_cleanup_func(
+                    StoredFunc(self._cleanup_when_no_model)
+                )
                 return
             config_man.add_saved_server(fqip)
             if proxy_man.has_control_model() is False:
-                self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_when_no_model))
+                self.thread_man.set_cleanup_func(
+                    StoredFunc(self._cleanup_when_no_model)
+                )
                 return
             proxy_man.append_row_to_control(record)
 
@@ -377,16 +384,9 @@ class ServerModelManager:
             dialog = ExceptionDialog(self.controller, api_warn_msg)
             dialog.run()
 
-    def _push_data(self, data: list) -> None:
-        # TODO: consolidate these methods
-        manager = self._get_proxy_man()
-        manager.wipe_cache()
-        manager.set_control(data)
-        manager.filter(FilterMode.INITIAL)
-
-        # TODO: abstract for all methods
+    def _push_data(self, data: list[Any]) -> None:
+        self._get_proxy_man().push(data)
         self._sort_unique_maps(data)
-
         self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_success))
 
     def _sort_unique_maps(self, data: list) -> None:

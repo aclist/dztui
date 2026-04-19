@@ -1,6 +1,6 @@
 import re
 
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 from warnings import deprecated
 
 from dzgui.const.enum import FilterMode
@@ -16,6 +16,7 @@ import gi
 
 gi.require_version("Gtk", "3.0")
 from gi.repository.Gtk import TreeIter
+
 
 class ProxyModelManager:
     """
@@ -291,3 +292,8 @@ class ProxyModelManager:
         self.ping_cache = {}
         # if full:
         # self.control_model = None
+
+    def push(self, data: list[Any]) -> None:
+        self.wipe_cache()
+        self.set_control(data)
+        self.filter(FilterMode.INITIAL)

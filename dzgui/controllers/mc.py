@@ -663,3 +663,6 @@ class Controller(GObject.GObject):
         treeview = self.get_active_treeview()
         model, treeiter = treeview.get_selection().get_selected()
         ServerModelManager(self, treeview).update_playercount(treeiter, record)
+
+    def get_window(self) -> "OuterWindow":
+        return self.mediator.window

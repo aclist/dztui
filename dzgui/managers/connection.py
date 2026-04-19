@@ -22,7 +22,7 @@ class ConnectionManager:
     def __init__(self, controller: "Controller") -> None:
 
         self.controller = controller
-        self.thread_man = ThreadingManager(parent=controller)
+        self.thread_man = ThreadingManager(controller)
 
     @call_on_thread(dialog.querying)
     def connect_by_id(self, addr: str, key: str) -> None:

@@ -215,9 +215,8 @@ def query_direct(ip: str, qport: int, TIMEOUT: float = 3.0) -> dict | None:
         res["gameport"] = gameport
         res["ping"] = ping
         return res
-    except TimeoutError:
-        return None
-    except KeyError:
+    except Exception as e:
+        logger.critical(e)
         return None
 
 

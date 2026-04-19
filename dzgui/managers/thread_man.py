@@ -29,9 +29,7 @@ def call_on_thread(dialog_str: str) -> Callable:
                     "Attribute 'thread_man' must be of type 'ThreadingManager'"
                 )
             self.thread_man.call_on_thread(dialog_str, stored)
-
         return wrapper
-
     return decorator
 
 
@@ -46,20 +44,18 @@ class StoredFunc:
 
 
 class ThreadingManager:
-    def __init__(self, parent: Gtk.Window) -> None:
-        self.parent = parent
+    def __init__(self, controller: "Controller") -> None:
+        self.controller = controller
         self.jobs = 1
         self.cleanup_func = None
         self.destroy_first = False
-
-        # self.alternate_statusbar = None
 
     def call_on_thread(self, dialog_str: str, func: StoredFunc) -> None:
         def callback() -> None:
             func.call()
             GLib.idle_add(self._destroy_on_idle)
 
-        self.wait_dialog = WaitDialog(self.parent, dialog_str, jobs=self.jobs)
+        self.wait_dialog = WaitDialog(self.controller, dialog_str, jobs=self.jobs)
         self.wait_dialog.show_all()
         thread = threading.Thread(target=callback)
         thread.start()
@@ -72,13 +68,6 @@ class ThreadingManager:
 
     def increment_dialog_with_str(self, text: str) -> None:
         GLib.idle_add(lambda: self.wait_dialog.increment(text))
-
-    # TODO: this should not be delegated here, set in cleanup func
-    # def set_alternate_statusbar(self, msg: str) -> None:
-    #     self.alternate_statusbar = msg
-
-    # def get_alternate_statusbar(self) -> Optional[str]:
-    #     return self.alternate_statusbar
 
     def set_cleanup_func(self, func: StoredFunc, destroy_first: bool = False) -> None:
         if type(func) not in (StoredFunc, type(None)):

@@ -6,8 +6,8 @@ from typing import Any, Optional, Self
 from warnings import deprecated
 
 from dzgui.views.mixins.context_mixin import ContextMixin
-from dzgui.const.enum import ContextMenu, ContextMenuGroup, ServerTab
-from dzgui.api.servers import Record
+from dzgui.const.enum import ContextMenu, ContextMenuGroup, Preferences, ServerTab
+from dzgui.api.servers import ping, Record
 from dzgui.managers.filter_man import FilterManager
 from dzgui.model.proxy_model import ProxyModelManager
 from dzgui.util.dist import CalcDist
@@ -96,21 +96,7 @@ class ServerTreeView(ContextMixin, TreeView):
                 w = width_map[column_title]
                 column.set_fixed_width(w)
             if column_title == "Ping":
-                # self.fancy_col = column
-                # self.fancy_rend = renderer
                 column.set_cell_data_func(renderer, self._get_ping)
-            # if column_title == "Name":
-            #    column.set_fixed_width(800)
-            # if column_title == "Map":
-            #    column.set_fixed_width(300)
-
-            # TODO: standardize widths based on column title and longest content
-            # if column_title == "Name":
-            #    column.set_fixed_width(500)
-            # if column_title == "Map":
-            #    column.set_fixed_width(200)
-            # if column_title == "IP":
-            #    column.set_fixed_width(240)
 
             column.connect("notify::fixed-width", self._on_col_width_changed)
             self.append_column(column)
@@ -166,28 +152,6 @@ class ServerTreeView(ContextMixin, TreeView):
 
     def get_proxy_man(self) -> ProxyModelManager:
         return self.proxy_man
-
-    # def shrink_to_fit(self) -> None:
-    #    cols = self.get_columns()
-    #    # TODO: run on only one treeview and propagate results
-    #    # TODO: does not shrink name, map, ip fields to fit
-    #    # TODO: col width changed signal is buggy on current treeview
-    #    for col in cols:
-    #        title = col.get_title()
-    #        if title == "Name":
-    #            continue
-    #        if title == "Map":
-    #            continue
-    #        if title == "IP":
-    #            continue
-    #        label = Gtk.Label(label=title)
-    #        pango = label.get_layout()
-    #        size = pango.get_pixel_size()
-    #        if size.width > 50:
-    #            width = size.width * 1.30
-    #        else:
-    #            width = size.width * 1.65
-    #        col.set_fixed_width(width)
 
     def get_enum(self) -> None:
         return self.enum
@@ -306,8 +270,6 @@ class ServerTreeView(ContextMixin, TreeView):
         return sels[0]
 
     def is_in_favs(self) -> bool:
-        from dzgui.const.enum import Preferences
-
         record = self.get_record_string()
         ips = self.controller.get_config_man().lookup(Preferences.IP_LIST)
         if record in ips:
@@ -353,6 +315,11 @@ class ServerTreeView(ContextMixin, TreeView):
     def set_loaded(self, status: bool) -> None:
         self.loaded = status
 
+    @staticmethod
+    def ping_server(model, _iter: Gtk.TreeIter, ip: str, qport: int, ping_column: int):
+        _ping = ping(ip, qport)
+        GLib.idle_add(lambda: model.set(_iter, ping_column, _ping))
+
     def _get_ping(
         self,
         column: Gtk.TreeViewColumn,
@@ -361,11 +328,6 @@ class ServerTreeView(ContextMixin, TreeView):
         _iter: Gtk.TreeIter,
         data: Any,
     ):
-        def ping_server(model, _iter: Gtk.TreeIter, ip: str, qport: int):
-            from dzgui.api.servers import ping
-
-            _ping = ping(ip, qport)
-            GLib.idle_add(lambda: model.set(_iter, ping_column, _ping))
 
         addr_column = 7
         qport_column = 8
@@ -375,18 +337,16 @@ class ServerTreeView(ContextMixin, TreeView):
         ip = addr[0]
         gameport = addr[1]
         qport = model.get_value(_iter, qport_column)
-        # ping = model.get_value(_iter, ping_column)
         record = f"{addr}:{gameport}:{qport}"
 
         if record in self.seen_cache:
             return
         self.seen_cache.append(record)
 
-        # TODO: use thread manager
         thread = threading.Thread(
             daemon=True,
-            target=ping_server,
-            args=(model, _iter, ip, qport),
+            target=self.ping_server,
+            args=(model, _iter, ip, qport, ping_column),
         )
         thread.start()
 
