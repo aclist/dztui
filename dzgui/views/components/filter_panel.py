@@ -5,6 +5,7 @@ from dzgui.const.enum import FilterMode
 from dzgui.const.constants import EXPAND, NO_EXPAND, NO_FILL, NO_PADDING, SEARCH_ICON
 from dzgui.model.servers import ServerModelManager
 from dzgui.util.strings import all_maps
+from dzgui.views.components.maps_combo import MapsCombo
 from dzgui.views.components.labels import BoldLabel
 
 import gi
@@ -170,10 +171,7 @@ class FilterPanel(Gtk.Box):
         self.emitter.connect("check_button_pressed", self.toggle_check_by_key)
         self.emitter.connect("load_maps", self._on_maps_loaded)
 
-        # TODO: break into MapsCombo class
-        completion = Gtk.EntryCompletion(inline_completion=True)
-        completion.set_text_column(0)
-        completion.set_minimum_key_length(1)
+        completion = MapsCombo()
         completion.connect("match_selected", self._on_completer_match)
 
         renderer_text = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
@@ -256,8 +254,6 @@ class FilterPanel(Gtk.Box):
         store = self.controller.get_map_store()
         if len(text) >= completion.get_minimum_key_length():
             completion.set_model(store)
-        # ind = self.get_active_combo()
-        # self.controller.set_active_map(ind)
 
     def restore_focus_to_treeview(self) -> Literal[False]:
         view = self.controller.get_active_treeview()

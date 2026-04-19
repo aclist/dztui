@@ -254,7 +254,6 @@ class ServerTreeView(ContextMixin, TreeView):
                 case _:
                     self.emitter.emit("check_button_pressed", event.keyval)
 
-    # TODO: unimplemented
     def is_modded(self) -> bool:
         select = self.get_selection()
         sels = select.get_selected_rows()

@@ -442,6 +442,7 @@ class Controller(GObject.GObject):
         self.mediator.modtreeview.set_cursor(0)
 
     def get_filter_man(self) -> "FilterManager":
+        """Each ServerTreeView has an atomic FilterManager"""
         return self.get_active_treeview().get_filter_man()
 
     def highlight_stale_cleanup(self, stale_mods: list) -> None:
