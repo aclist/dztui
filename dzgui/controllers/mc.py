@@ -5,7 +5,7 @@ import threading
 
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Union, TYPE_CHECKING
+from typing import Any, Callable, TYPE_CHECKING
 from warnings import deprecated
 
 import dzgui.api.pefile as PeFile
@@ -160,34 +160,6 @@ class Controller(GObject.GObject):
     def is_auto_install(self) -> bool:
         return self.query_config(Preferences.INSTALL)
 
-    # def unblock_signals(self) -> None:
-    #    self.block_signals(False)
-
-    # @deprecated("Currently unused")
-    # def block_signals(self, state: bool = True) -> None:
-    #    self.suppress_signal(
-    #        self.mediator.filters,
-    #        self.mediator.filters.maps_combo,
-    #        "_on_map_changed",
-    #        state,
-    #    )
-    #    self.suppress_signal(
-    #        self.mediator.menu,
-    #        self.mediator.menu.selected_row,
-    #        "_on_tree_selection_changed",
-    #        state,
-    #    )
-    #    self.suppress_signal(
-    #        self.mediator.menu, self.mediator.menu, "_on_keypress", state
-    #    )
-    #    for check in self.mediator.filters.checks:
-    #        self.suppress_signal(
-    #            self.mediator.filters,
-    #            check,
-    #            "_on_check_toggled",
-    #            state,
-    #        )
-
     def suppress_signal(
         self, owner: Gtk.Widget, widget: Gtk.Widget, func_name: str, state: bool
     ) -> None:
@@ -199,7 +171,6 @@ class Controller(GObject.GObject):
             widget.handler_unblock_by_func(func)
 
     def toggle_debug_mode(self) -> None:
-        # self.config_man().toggle_config(Preferences.DEBUG)
         self.toggle_config(Preferences.DEBUG)
 
     def get_active_context(self) -> Gtk.TreeView:
@@ -211,7 +182,6 @@ class Controller(GObject.GObject):
     def grab_active_treeview(self) -> None:
         self.get_active_treeview().grab_focus()
 
-    # TODO: resolution manager or config manager
     def save_res_and_quit(self, *args: Any) -> None:
         treeview = self.get_active_treeview()
         window = self.get_window()
@@ -223,6 +193,7 @@ class Controller(GObject.GObject):
         self.mediator.statusbar.statusbar.pop(c)
 
     # TODO: refactor any modules using this
+    # cf. eventbox.py
     @deprecated("use set_by_context")
     def set_statusbar(self, text: str, context: str) -> int:
         msg_id = self.mediator.statusbar.set_text(text, context)

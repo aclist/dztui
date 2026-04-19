@@ -443,8 +443,10 @@ def response_to_fq_ip(res: dict) -> str:
     return f"{ip}:{gameport}:{qport}"
 
 
-# NOTE: Battlemetrics
 def query_by_id(addr: str, key: str) -> Optional[dict]:
+    """
+    Used with numeric Battlemetrics IDs
+    """
     try:
         resolved = map_id_to_record(key, addr)
         return query_direct(resolved.ip, resolved.qport)

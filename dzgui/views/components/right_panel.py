@@ -74,28 +74,3 @@ class RightPanel(Gtk.Box):
         self.version_label.set_text("Copied!")
         copy_clipboard(version)
         GLib.timeout_add_seconds(0.5, revert)
-
-    # TODO: reference for ping pass
-    # def _on_ping_clicked(self, button: Gtk.Button) -> None:
-    #    block_signals()
-    #    def _update_pings():
-    #        rows = ModelManager.get_filtered()
-    #        with ThreadPoolExecutor(100) as executor:
-    #            futures = [
-    #                executor.submit(Servers.ping, i, row)
-    #                for i, row in enumerate(rows)
-    #            ]
-    #            wait(futures)
-    #            for future in futures:
-    #                res = future.result()
-    #                path = Gtk.TreePath.new_from_indices([res.iteration])
-    #                temp_model[path][9] = res.ping
-    #                ModelManager.ping_cache[res.addr] = res.ping
-    #        treeview.set_model(temp_model)
-    #        treeview.wait_dialog.destroy()
-    #        treeview.grab_focus()
-    #        unblock_signals()
-    #    temp_model = self.AppNav.treeview.get_model()
-    #    treeview.set_model(None)
-    #    thread = threading.Thread(target=_update_pings, args=())
-    #    thread.start()
