@@ -94,6 +94,13 @@ class KeywordEntry(Gtk.Entry):
         self.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, SEARCH_ICON)
         self.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
 
+        self.emitter.connect("load_maps", self._on_maps_loaded)
+
+    def _on_maps_loaded(self, emitter: "Emitter", store: Gtk.ListStore) -> None:
+        kw = self.controller.get_active_keyword()
+        self.keyword = kw
+        self.set_text(kw)
+
     def _on_keypress(self, entry: Gtk.Entry, event: Gdk.EventKey) -> bool:
         match event.keyval:
             case Gdk.KEY_Up:
@@ -111,9 +118,6 @@ class KeywordEntry(Gtk.Entry):
         return False
 
     def _on_activated(self, entry: Gtk.Entry) -> None:
-        # TODO: investigate this method
-        # self.controller.mediator.window.set_keep_below(False)
-
         keyword = entry.get_text().lower()
         if keyword == self.keyword:
             return
@@ -121,11 +125,7 @@ class KeywordEntry(Gtk.Entry):
             return
 
         self.keyword = keyword
-        # TODO: delegate to controller
-        tv = self.controller.get_active_treeview()
-        filter_man = tv.get_filter_man()
-        filter_man.set_active_keyword(keyword)
-
+        self.controller.set_active_keyword(keyword)
         logger.info(f"User filtered by keyword '{keyword}'")
 
         ServerModelManager(
@@ -208,7 +208,6 @@ class FilterPanel(Gtk.Box):
             if text == row[0]:
                 self.maps_combo.set_active(i)
 
-    # TODO: use same sort of signal to reinitialize keyword and checks
     def _on_maps_loaded(self, emitter: "Emitter", store: Gtk.ListStore) -> None:
         self.maps_combo.set_model(store)
         tv = self.controller.get_active_treeview()

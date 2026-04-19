@@ -205,9 +205,6 @@ class Controller(GObject.GObject):
     def get_active_context(self) -> Gtk.TreeView:
         return self.get_active_treeview().get_enum()
 
-    def get_active_filterman(self) -> "FilterManager":
-        return self.get_active_treeview().get_filter_man()
-
     def get_active_treeview(self) -> "ServerTreeView":
         return self.mediator.notebook.servers.get_active_treeview()
 
@@ -665,5 +662,8 @@ class Controller(GObject.GObject):
         model, treeiter = treeview.get_selection().get_selected()
         ServerModelManager(self, treeview).update_playercount(treeiter, record)
 
-    def get_window(self) -> "OuterWindow":
-        return self.mediator.window
+    def get_active_keyword(self) -> str:
+        return self.get_filter_man().get_active_keyword()
+
+    def set_active_keyword(self, keyword: str) -> None:
+        self.get_filter_man().set_active_keyword(keyword)
