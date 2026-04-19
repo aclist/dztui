@@ -37,6 +37,7 @@ from dzgui.views.base import App
 from dzgui.views.dialogs.early_alert import EarlyAlertDialog, EarlyIgnoreDialog
 
 logger = logging.getLogger(__name__)
+
 parser = argparse.ArgumentParser(description=flags.description)
 
 parser.add_argument("-v", "--version", action="store_true", help=flags.version)

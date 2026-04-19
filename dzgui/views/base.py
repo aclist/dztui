@@ -4,7 +4,6 @@ import warnings
 
 from typing import TYPE_CHECKING, Literal
 
-# TODO: import notebook only and add components there?
 from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, STEAM_ICON
 from dzgui.const.enum import NotebookPage
 from dzgui.controllers.emitter import Emitter
@@ -15,6 +14,8 @@ from dzgui.views.components.crumbs import Breadcrumbs
 from dzgui.views.components.right_panel import RightPanel
 from dzgui.views.components.statusbar import Statusbar
 from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
+
+# TODO: import notebook only and add components there?
 from dzgui.views.pages.changelog import Changelog
 from dzgui.views.pages.devs import Developers
 from dzgui.views.pages.help import Help
@@ -38,10 +39,6 @@ logger = logging.getLogger(__name__)
 warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 
 
-# TODO: move to controller
-# kilometer cache; note, user may change measurement it partway through, flush cache
-# cache: dict[str, int] = {}
-
 ## TODO: move to configs/servers
 # def query_history() -> list | None:
 #    history_file = MainController.get_prefs().paths.history
@@ -51,38 +48,6 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 #    except OSError:
 #        rows = None
 #    return rows
-#
-# def process_tree_option(choice: RowType) -> None:
-#    # server tables
-#    if command == RowType.RESOLVE_IP:
-#        record = treeview.get_record()
-#        wait_msg = command.dict["wait_msg"]
-#        show_wait_dialog = True
-#
-#        # TODO: needs threading, this is a slow process
-#        # TODO: needs saving into config
-#        # TODO: used by add/remove servers
-#        real_ip = ip.resolve_ip(record)
-#        #call_on_thread(
-#        #    show_wait_dialog, cmd_string, wait_msg, record, choice=choice
-#        #)
-#        return
-#
-#    if command == RowType.QUICK_CONNECT:
-#        record = MainController.query_config(Preferences.FAV_SRV)
-#        if record == "":
-#            spawn_dialog("No favorite server currently set", Popup.NOTIFY)
-#            return
-#
-#        record = str_to_record(record)
-#        thread_new_with_dialog(
-#            treeview.prepare_connection,
-#            parse_shell_output,
-#            "Querying server",
-#            command,
-#            [record],
-#        )
-#        return
 #
 ## TODO: belongs in model
 # def str_to_record(record: str) -> Record | None:
@@ -96,44 +61,6 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 #    return f"{record.ip}:{record.gameport}:{record.qport}"
 #
 #
-# def connect_by_ip(enum: RowType, response: str) -> None:
-#    def _prep(response: str) -> None:
-#        record = Servers.validate_ip(response)
-#        proc = treeview.prepare_connection(record)
-#        return proc
-#
-#    thread_new_with_dialog(
-#        _prep, parse_shell_output, "Querying IP", enum, [response]
-#    )
-#    return
-#
-#
-# def connect_by_id(enum: RowType, uid: str, key: str) -> None:
-#    def _prep(key: str, response: str) -> None:
-#        # TODO: if response is non numeric, raise dialog
-#        if response.isnumeric() is False:
-#            pass
-#            # raise error
-#            # raise BmIdError("ID must be numeric only")
-#            # return
-#        from dzgui.api.bm import map_id_to_record
-#        try:
-#            record = map_id_to_record(config, uid)
-#        except Exception as e:
-#            logger.critical(e)
-#            # raise dialog
-#            return
-#    #    proc = treeview.prepare_connection(record)
-#    #    return proc
-#
-#    #thread_new_with_dialog(
-#    #    _prep, parse_shell_output, "Querying API", enum, [key, response]
-#    #)
-#    #return
-#
-#
-
-
 class OuterWindow(Gtk.Window):
     def __init__(self) -> None:
         super().__init__(title=APP_NAME, border_width=10, icon_name=APP_NAME_LOWER)
@@ -303,10 +230,6 @@ class Grid(Gtk.Grid):
         SINGLE_COL = 1
 
         MainController.register_widget("grid", self)
-
-        # self.bu = Gtk.Button(label="Shrink to fit", halign=Gtk.Align.END)
-        # self.bu.connect("clicked", self._shrink)
-        # self.crumb_box.add(self.bu)
 
         self.emitter = MainController.get_emitter()
 

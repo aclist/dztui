@@ -21,9 +21,10 @@ import dayzquery
 
 
 logger = logging.getLogger(__name__)
+logging.getLogger("a2s").setLevel(logging.ERROR)
 
 # TODO: confirm that patches from testing are incorporated here
-# particularly around malformed values. check commit log
+# particularly around malformed values in JSON response. check commit log
 
 params = [
     r"\nor\1\map\chernarusplus\nor\1\map\sakhal\nor\1\map\enoch\empty\1\nor\1\map\namalsk",  # noqa
@@ -467,9 +468,11 @@ def query_playercount(record: Record) -> Optional[tuple[int]]:
         logger.critical(e)
         return None
 
+
 def query_by_ip(addr: str) -> Optional[dict]:
     record = short_ip_to_record(addr)
     return query_by_record(record)
+
 
 def query_by_record(record: Record) -> Optional[dict]:
     try:
