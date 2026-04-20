@@ -12,11 +12,6 @@ if TYPE_CHECKING:
     from dzgui.model.model_factory import FastInsertListStore
     from dzgui.model.servers import NewPlayerCount
 
-import gi
-
-gi.require_version("Gtk", "3.0")
-from gi.repository.Gtk import TreeIter
-
 
 class ProxyModelManager:
     """
@@ -32,7 +27,6 @@ class ProxyModelManager:
 
     def __init__(self, filter_man: "FilterManager") -> None:
         self.filter_cache = {}
-        self.ping_cache: dict[str, int] = {}
 
         self.proxy_model: "FastInsertListStore" = None
         self.filter_man = filter_man
@@ -102,17 +96,6 @@ class ProxyModelManager:
                 for f in filters[2:]:
                     self.set_filtered(self.filter_toggle_off(filters, f))
                 rows = self.filtered
-
-            # case FilterMode.TOGGLE_ON:
-            #     rows = self.filter_toggle_on(filters)
-            #     # rows = self.filter_toggle_on(filters, *args)
-
-        # TODO: unimplemented
-        # just write pings into control model instead
-        # if mode is not FilterMode.INITIAL:
-        #    for row in rows:
-        #        if row[7] in self.ping_cache:
-        #            row[9] = self.ping_cache[row[7]]
 
         # NOTE: this FastInsertListStore manipulation must remain local to the thread
         clone = ModelFactory().make_server_store()
@@ -273,25 +256,9 @@ class ProxyModelManager:
     def get_control(self) -> list:
         return self.control_model
 
-    # @deprecated("Legacy code")
-    # def set_success(self, result: bool) -> None:
-    #    self.success = result
-
-    # @deprecated("Legacy code")
-    # def get_success(self) -> bool:
-    #    return self.success
-
-    # NOTE: used when adding/removing rows in-situ in the proxy model
-    # and syncing changes to control model, but ignored for player count/ping updates
-    # cf. remove_from_history(), remove_server()
-    # NOTE: this can most likely be simplified for v7
     def wipe_cache(self, full=False) -> None:
-        # self.set_success(True)
         self.filtered = None
         self.filter_cache = {}
-        self.ping_cache = {}
-        # if full:
-        # self.control_model = None
 
     def push(self, data: list[Any]) -> None:
         self.wipe_cache()

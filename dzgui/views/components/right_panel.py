@@ -6,7 +6,7 @@ from dzgui.views.components.buttonbox import ButtonBox
 from dzgui.views.components.filter_panel import FilterPanel
 from dzgui.views.components.mod_panel import ModSelectionPanel
 from dzgui.views.components.buttons import RefreshButton, KeysButton
-from dzgui.const.constants import EXPAND, NO_EXPAND, NO_FILL, FILL, NO_PADDING
+from dzgui.const.constants import NO_EXPAND, NO_FILL, FILL, NO_PADDING
 
 import gi
 
@@ -58,7 +58,9 @@ class RightPanel(Gtk.Box):
         self.pack_start(self.sel_panel, NO_EXPAND, NO_FILL, NO_PADDING)
         self.pack_start(eb, NO_EXPAND, FILL, NO_PADDING)
 
-    def _on_server_page_changed(self, emitter: "Emitter", page: "ServerTreeView") -> None:
+    def _on_server_page_changed(
+        self, emitter: "Emitter", page: "ServerTreeView"
+    ) -> None:
         """Initially set filter area to disabled"""
         if page.loaded is True:
             return
@@ -66,7 +68,7 @@ class RightPanel(Gtk.Box):
 
     def _on_servers_loaded(self, emitter: "Emitter", context: "ServerTab") -> None:
         # TODO: similar logic on notebook page change
-        print('servers loaded')
+        print("servers loaded")
         state = self.controller.has_server_model()
         for widget in (self.refresh_button, self.filters_vbox):
             widget.set_sensitive(state)
