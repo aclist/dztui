@@ -52,20 +52,6 @@ class LogTreeView(ContextMixin, TreeView):
         if event.button == Gdk.BUTTON_SECONDARY:
             self.present_menu(widget, event)
             return True
-            #selection = self.get_selection()
-            #model, selected_paths = selection.get_selected_rows()
-            #if len(selected_paths) > 1:
-            #    for path in selected_paths:
-            #        selection.select_path(path)
-        #    path, col, x, y = self.get_path_at_pos(int(event.x), int(event.y))
-        #    if path:
-        #        selection = self.get_selection()
-        #        model, selected_paths = selection.get_selected_rows()
-        #        if path not in selected_paths:
-        #            selection.select_path(path)
-        #    self.present_menu(widget, event)
-        #    return True
-        #return False
 
     def _on_log_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
         self.present_menu(widget, event)

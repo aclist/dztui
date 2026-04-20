@@ -18,6 +18,17 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Emitter
 
 
+class ScrollableTree(Gtk.ScrolledWindow):
+    def __init__(self, tree: "ServerTreeView") -> None:
+        super().__init__()
+
+        self.tree = tree
+        self.add(tree)
+
+    def get_tree(self) -> "ServerTreeView":
+        return self.tree
+
+
 class ServerNotebook(Gtk.ScrolledWindow):
     def __init__(self, controller: "Controller"):
         super().__init__()
@@ -45,8 +56,7 @@ class ServerNotebook(Gtk.ScrolledWindow):
         ]
 
         for tree, label in tabs:
-            scrolled = Gtk.ScrolledWindow()
-            scrolled.add(tree)
+            scrolled = ScrollableTree(tree)
             self.notebook.append_page(scrolled, Gtk.Label(label=label))
 
         self.add(self.notebook)
@@ -77,9 +87,6 @@ class ServerNotebook(Gtk.ScrolledWindow):
 
     def _on_map(self, widget: Self) -> None:
         self.emitter.emit("server_page_toggled", True)
-        # FIXME: only applies to server notebook, not atomic page
-        # this can be delegated to the map/unmap signal of the ServerTreeView itself
-        # self.get_active_treeview().start_timeout()
 
     def _on_unmap(self, widget: Self) -> None:
         self.emitter.emit("server_page_toggled", False)
@@ -105,7 +112,7 @@ class ServerNotebook(Gtk.ScrolledWindow):
         return self.notebook.get_tab_label_text(child)
 
     def _on_page_changed(
-        self, notebook: Gtk.Notebook, child: Gtk.Widget, index: int
+        self, notebook: Gtk.Notebook, child: ScrollableTree, index: int
     ) -> None:
         if self.controller.loaded is False:
             return
@@ -114,6 +121,9 @@ class ServerNotebook(Gtk.ScrolledWindow):
         # TODO: strings
         text = label.strip("*")
         self.notebook.set_tab_label_text(child, text)
+
+        tree = child.get_tree()
+        self.emitter.emit("server_page_changed", tree)
 
         # NOTE: spawns a thread
         self.controller.populate_model(self.get_active_treeview())

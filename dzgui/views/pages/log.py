@@ -17,7 +17,19 @@ class Log(CursorMixin, HelpMenuMixin, Gtk.ScrolledWindow):  # type: ignore
     def __init__(self, controller: "Controller") -> None:
         super().__init__()
         self.treeview = LogTreeView(controller)
-        self.add(self.treeview)
+        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.box.add(self.treeview)
+
+        #self.add(self.treeview)
+        # TODO proxymodel into this
+
+        self.check_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        for check in ("Warning", "Critical", "Debug", "Info"):
+            c = Gtk.CheckButton(label=check)
+            self.check_bar.pack_start(c, False, False, 0)
+            # c.set_active(True)
+        self.box.add(self.check_bar)
+        self.add(self.box)
 
         self.controller = controller
         self.controller.register_widget("logtreeview", self.treeview)

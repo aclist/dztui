@@ -16,6 +16,7 @@ from gi.repository import Gtk, Gdk, GLib  # noqa E402
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.controllers.emitter import Emitter
+    from dzgui.controllers.views.trees.tree_servers import ServerTreeView
 
 
 class RightPanel(Gtk.Box):
@@ -27,6 +28,7 @@ class RightPanel(Gtk.Box):
 
         emitter = controller.get_emitter()
         emitter.connect("servers_loaded", self._on_servers_loaded)
+        emitter.connect("server_page_changed", self._on_server_page_changed)
 
         self.button_vbox = ButtonBox(controller)
         self.filters_vbox = FilterPanel(controller)
@@ -56,7 +58,15 @@ class RightPanel(Gtk.Box):
         self.pack_start(self.sel_panel, NO_EXPAND, NO_FILL, NO_PADDING)
         self.pack_start(eb, NO_EXPAND, FILL, NO_PADDING)
 
+    def _on_server_page_changed(self, emitter: "Emitter", page: "ServerTreeView") -> None:
+        """Initially set filter area to disabled"""
+        if page.loaded is True:
+            return
+        self.filters_vbox.set_sensitive(False)
+
     def _on_servers_loaded(self, emitter: "Emitter", context: "ServerTab") -> None:
+        # TODO: similar logic on notebook page change
+        print('servers loaded')
         state = self.controller.has_server_model()
         for widget in (self.refresh_button, self.filters_vbox):
             widget.set_sensitive(state)
