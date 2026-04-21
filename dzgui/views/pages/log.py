@@ -13,28 +13,33 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
 
-class Log(CursorMixin, HelpMenuMixin, Gtk.ScrolledWindow):  # type: ignore
+class Log(CursorMixin, HelpMenuMixin, Gtk.Box):  # type: ignore
     def __init__(self, controller: "Controller") -> None:
-        super().__init__()
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+        self.scrolled = Gtk.ScrolledWindow()
         self.treeview = LogTreeView(controller)
-        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.box.add(self.treeview)
-
-        #self.add(self.treeview)
-        # TODO proxymodel into this
+        self.scrolled.add(self.treeview)
 
         self.check_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        for check in ("Warning", "Critical", "Debug", "Info"):
+        # TODO: strings
+        active = ("WARNING", "CRITICAL", "INFO")
+        for check in ("WARNING", "CRITICAL", "INFO", "DEBUG"):
             c = Gtk.CheckButton(label=check)
             self.check_bar.pack_start(c, False, False, 0)
-            # c.set_active(True)
-        self.box.add(self.check_bar)
-        self.add(self.box)
+            if check in active:
+                c.set_active(True)
+            c.connect("clicked", self._on_checkbox_clicked)
+        self.add(self.scrolled)
+        self.add(self.check_bar)
 
         self.controller = controller
         self.controller.register_widget("logtreeview", self.treeview)
 
         self.connect("key-press-event", self._on_esc_keypress)
+
+    def _on_checkbox_clicked(self, checkbox: Gtk.CheckButton) -> None:
+        label = checkbox.get_label()
+        self.treeview.toggle_filter(label)
 
     def get_treeview(self) -> LogTreeView:
         return self.treeview

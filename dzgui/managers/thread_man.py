@@ -1,12 +1,14 @@
 import inspect
 import logging
 import threading
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from functools import wraps
 from typing import Callable
 from dzgui.views.dialogs.generic import WaitDialog
 
+if TYPE_CHECKING:
+    from dzgui.controllers.mc import Controller
 
 import gi
 
@@ -29,7 +31,9 @@ def call_on_thread(dialog_str: str) -> Callable:
                     "Attribute 'thread_man' must be of type 'ThreadingManager'"
                 )
             self.thread_man.call_on_thread(dialog_str, stored)
+
         return wrapper
+
     return decorator
 
 

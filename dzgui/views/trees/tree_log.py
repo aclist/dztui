@@ -1,6 +1,6 @@
 import logging
 
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from dzgui.const.enum import ContextMenuGroup
 from dzgui.model.model_factory import ModelFactory
@@ -28,9 +28,13 @@ class LogTreeView(ContextMixin, TreeView):
 
         self.set_headers_visible(True)
         self.set_fixed_height_mode(True)
+        self.set_vexpand(True)
         self.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
 
         self.set_model(None)
+        self.filter: Gtk.TreeModelFilter
+        # TODO: strings
+        self.filters = ["INFO", "CRITICAL", "WARNING"]
 
         for i, column_title in enumerate(strings.log_cols):
             renderer = Gtk.CellRendererText()
@@ -45,8 +49,25 @@ class LogTreeView(ContextMixin, TreeView):
 
     def populate_log(self, filepath: str) -> None:
         model = ModelFactory().new_model_from_logfile(filepath)
-        self.set_model(model)
+        self.filter = model.filter_new()
+        self.filter.set_visible_func(self._filter_rows)
+        self.set_model(self.filter)
+        self.filter.refilter()
         self.set_cursor(0)
+
+    def toggle_filter(self, _filter: str) -> None:
+        if _filter in self.filters:
+            self.filters.remove(_filter)
+        else:
+            self.filters.append(_filter)
+        self.filter.refilter()
+
+    def _filter_rows(
+        self, model: Gtk.ListStore, _iter: Gtk.TreeIter, data: Any
+    ) -> None:
+        if len(self.filters) < 1:
+            return False
+        return model[_iter][1] in self.filters
 
     def _on_log_buttonpress(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
         if event.button == Gdk.BUTTON_SECONDARY:
