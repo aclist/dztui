@@ -28,6 +28,8 @@
 - Copy version by clicking label
 - Add server name to server mod dialogs
 - Lazy load ping cell data func
+- Refresh servers button
+- Early load alerts button
 
 ## Changed
 - Reduce padding on keys button
