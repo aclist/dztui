@@ -2,6 +2,7 @@ from typing import Self, Union, TYPE_CHECKING
 
 from dzgui.const.enum import NotebookPage, ServerTab
 from dzgui.util.strings import esc_to_return, question_to_return
+from dzgui.views.components.buttons import LoggerAlertsButton
 
 import gi
 
@@ -32,13 +33,22 @@ class Statusbar(Gtk.Grid):
         self.attach(self.statusbar, 0, 0, 3, 1)
         self.attach_next_to(self.spinner, self.statusbar, Gtk.PositionType.RIGHT, 3, 1)
 
+        warnings, errors = self.controller.get_alerts()
+
+        if warnings + errors > 0:
+            alert_button = LoggerAlertsButton(warnings, errors)
+            self.attach_next_to(
+                alert_button, self.spinner, Gtk.PositionType.RIGHT, 3, 1
+            )
+            alert_button.connect("clicked", self._on_alerts_clicked)
+
         # TODO: pack version event box in right panel into hbox with update button
         # TODO: spawns a modal or just jumps right to install page
-        #from dzgui.views.components.buttons import IconTextButton
-        #b = IconTextButton("dialog-information-symbolic", label="Updates available")
-        #b.set_halign(Gtk.Align.END)
-        #b.set_hexpand(True)
-        #self.attach_next_to(b, self.spinner, Gtk.PositionType.RIGHT, 3, 1)
+        # from dzgui.views.components.buttons import IconTextButton
+        # b = IconTextButton("dialog-information-symbolic", label="Updates available")
+        # b.set_halign(Gtk.Align.END)
+        # b.set_hexpand(True)
+        # self.attach_next_to(b, self.spinner, Gtk.PositionType.RIGHT, 3, 1)
 
         self.players = ""
 
@@ -51,6 +61,12 @@ class Statusbar(Gtk.Grid):
         self.emitter.connect("distcalc_ended", self._on_distcalc_ended)
         self.emitter.connect("servers_loaded", self._on_servers_loaded)
         self.emitter.connect("mod_page_loaded", self._on_mod_page_loaded)
+
+    def _on_alerts_clicked(self, button: LoggerAlertsButton) -> None:
+        button.hide()
+        # FIXME: hitting ESC from here goes to help list instead of main menu
+        # need some kind of flag
+        self.controller.populate_log()
 
     def _on_mod_page_loaded(self, emitter: "Emitter") -> None:
         msg = self.controller.format_mod_statusbar()
@@ -80,13 +96,6 @@ class Statusbar(Gtk.Grid):
         match enum:
             case NotebookPage.HELP:
                 bar = self.controller.get_help_row()
-            # TODO: drop
-            # case NotebookPage.MODS:
-            #    return
-            # case NotebookPage.SERVERS:
-            #    context = self.controller.get_active_context()
-            #    # self.emitter.emit("servers_loaded", context)
-            #    return
             case NotebookPage.KEYS:
                 bar = question_to_return
             case _:

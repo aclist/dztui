@@ -36,6 +36,7 @@ from dzgui.const.enum import (
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.controllers.emitter import Emitter
+from dzgui.managers.log import LogManager
 from dzgui.managers.config import ConfigManager
 from dzgui.managers.connection import ConnectionManager
 from dzgui.managers.contextmenu import ContextMenuManager
@@ -638,3 +639,11 @@ class Controller(GObject.GObject):
 
     def set_active_keyword(self, keyword: str) -> None:
         self.get_filter_man().set_active_keyword(keyword)
+
+    def set_alerts(self, count: tuple[int]) -> None:
+        self.alerts = count
+
+    def get_alerts(self) -> tuple[int]:
+        log_man = LogManager()
+        alerts = log_man.get_alerts(self.prefs.paths.debug)
+        return alerts

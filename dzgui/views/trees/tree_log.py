@@ -33,15 +33,18 @@ class LogTreeView(ContextMixin, TreeView):
 
         self.set_model(None)
         self.filter: Gtk.TreeModelFilter
-        # TODO: strings
-        self.filters = ["INFO", "CRITICAL", "WARNING"]
 
+        # TODO: strings
+        # NOTE: default filters that should be shown on startup
+        self.filters = ["CRITICAL", "WARNING"]
         for i, column_title in enumerate(strings.log_cols):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             column.set_resizable(True)
             column.set_sort_column_id(i)
+            if i == 1:
+                column.set_fixed_width(100)
             self.append_column(column)
 
         self.connect("button-press-event", self._on_log_buttonpress)

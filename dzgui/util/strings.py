@@ -613,3 +613,5 @@ steam_icon_missing = "Steam icon not found in IconTheme"
 missing_changelog = "Error: failed to read changelog"
 esc_to_return = "Press ESC to return"
 question_to_return = "Press ? to return"
+
+alert_button_tooltip = "Click to open debug log"

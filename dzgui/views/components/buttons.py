@@ -1,13 +1,15 @@
 from typing import Callable, Literal, Self, TYPE_CHECKING
 
 from dzgui.util.clip import copy_clipboard
-from dzgui.util.strings import atomic_buttons, connect_panel
+from dzgui.util.format import pluralize
+from dzgui.util.strings import alert_button_tooltip, atomic_buttons, connect_panel
 from dzgui.const.constants import (
     CLIPBOARD,
     INPUT_KEYBOARD,
     LIST_ADD,
     REFRESH_ICON,
     STEAM_ICON,
+    WARNING,
     WEB_BROWSER,
 )
 
@@ -157,3 +159,26 @@ class AddButton(IconTextButton):
     def __init__(self) -> None:
         super().__init__(icon=LIST_ADD, label=connect_panel.add)
         self.set_tooltip_text(connect_panel.add_tooltip)
+
+
+class LoggerAlertsButton(IconTextButton):
+    def __init__(self, warnings: int, errors: int) -> None:
+        warnings_text = ""
+        errors_text = ""
+        separator = ""
+        if warnings > 0:
+            warnings_plural = pluralize("warnings", warnings)
+            warnings_text = f"{warnings} {warnings_plural}"
+        if errors > 0:
+            errors_plural = pluralize("errors", errors)
+            errors_text = f" {errors} {errors_plural}"
+        if warnings + errors > 1:
+            separator = ","
+        concat = warnings_text + separator + errors_text
+        super().__init__(
+            icon=WARNING,
+            label=f"Loaded with{concat}",
+        )
+        self.set_halign(Gtk.Align.END)
+        self.set_hexpand(True)
+        self.set_tooltip_text(alert_button_tooltip)
