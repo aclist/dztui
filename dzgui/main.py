@@ -143,4 +143,5 @@ def main() -> None:
         use_miles,
     )
     print("All OK. Loading UI...")
+    logger.critical("TEST")
     App(prefs)

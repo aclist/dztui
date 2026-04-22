@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 class Log(CursorMixin, HelpMenuMixin, Gtk.Box):  # type: ignore
     def __init__(self, controller: "Controller") -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
+        # NOTE: LogTreeView is kept in a separate ScrolledWindow so that
+        # checkboxes will be flush on bottom
         self.scrolled = Gtk.ScrolledWindow()
         self.treeview = LogTreeView(controller)
         self.scrolled.add(self.treeview)

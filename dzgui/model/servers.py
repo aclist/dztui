@@ -87,8 +87,6 @@ class ServerModelManager:
     def refresh(self) -> None:
         self.preserve_on_fail = True
         self.load()
-        # TODO: if refresh is active, callback to button decrement signal
-        # and do not mark refresh as sensitive
 
     @call_on_thread(dialog.fetching)
     def _dump_api(self) -> None:

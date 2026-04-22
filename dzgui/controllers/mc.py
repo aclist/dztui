@@ -526,6 +526,7 @@ class Controller(GObject.GObject):
 
     # TODO: rename
     def _on_servers_loaded_init(self, emitter: "Emitter") -> None:
+        """Triggered after servers load but prior to maps loading"""
         # FIXME: wipe maps store when changing tabs if model is none
         tv = self.get_active_treeview()
         if tv.loaded is False:

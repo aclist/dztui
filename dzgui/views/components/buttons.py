@@ -21,6 +21,8 @@ from gi.repository import Gtk, GLib  # noqa E402
 if TYPE_CHECKING:
     from gi.repository import GLib
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
+    from dzgui.const.enum import ServerTab
 
 
 class Icon(Gtk.Image):
@@ -88,6 +90,9 @@ class RefreshButton(IconTextButton):
             label=atomic_buttons.refresh,
         )
         self.controller = controller
+        emitter = self.controller.get_emitter()
+        self.loading = False
+
         self.time = 30
 
         self.set_margin_top(10)
@@ -96,18 +101,21 @@ class RefreshButton(IconTextButton):
         self.set_tooltip_text(atomic_buttons.refresh_tooltip)
 
         self.connect("clicked", self._on_refresh_clicked)
+        emitter.connect("servers_loaded", self.start_decrement)
 
     def _on_refresh_clicked(self, button: Self) -> None:
+        """Spawned in a thread"""
+        self.loading = True
+        self.controller.refresh_tree()
         # TODO: get server tab enum
         # if LAN tab, reload existing entries in place
-        self.set_sensitive(False)
-        self.show_time(True)
-        # FIXME: do this after threaded call fully finishes
-        # FIXME: other signals cause refresh button to become sensitive
-        # after model is loaded
-        # TODO: put in smm cleanup func, use signal
-        GLib.timeout_add_seconds(1, self.decrement)
-        self.controller.refresh_tree()
+
+    def start_decrement(self, emitter: "Emitter", tab: "ServerTab") -> None:
+        if self.loading:
+            self.set_sensitive(False)
+            self.loading = False
+            self.show_time(True)
+            GLib.timeout_add_seconds(1, self.decrement)
 
     def decrement(self) -> "GLib.SOURCE_REMOVE" | Literal[True]:
         self.time -= 1
