@@ -549,7 +549,7 @@ connect_panel = ConnectPanel(
         "- IP: format as IP:Query port\ne.g. 192.168.1.1:27016\n"
         "- Battlemetrics: numeric server ID\ne.g. 123456"
     ),
-    add_tooltip="Add to my servers",
+    add_tooltip="Add to Saved Servers",
     connect_tooltip="Connect to this server",
 )
 
