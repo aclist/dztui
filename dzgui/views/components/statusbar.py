@@ -36,11 +36,11 @@ class Statusbar(Gtk.Grid):
         warnings, errors = self.controller.get_alerts()
 
         if warnings + errors > 0:
-            alert_button = LoggerAlertsButton(warnings, errors)
+            self.alert_button = LoggerAlertsButton(warnings, errors)
             self.attach_next_to(
-                alert_button, self.spinner, Gtk.PositionType.RIGHT, 3, 1
+                self.alert_button, self.spinner, Gtk.PositionType.RIGHT, 3, 1
             )
-            alert_button.connect("clicked", self._on_alerts_clicked)
+            self.alert_button.connect("clicked", self._on_alerts_clicked)
 
         # TODO: pack version event box in right panel into hbox with update button
         # TODO: spawns a modal or just jumps right to install page
@@ -61,12 +61,13 @@ class Statusbar(Gtk.Grid):
         self.emitter.connect("distcalc_ended", self._on_distcalc_ended)
         self.emitter.connect("servers_loaded", self._on_servers_loaded)
         self.emitter.connect("mod_page_loaded", self._on_mod_page_loaded)
+        self.emitter.connect("log_page_loaded", self._on_log_page_loaded)
 
     def _on_alerts_clicked(self, button: LoggerAlertsButton) -> None:
-        button.hide()
-        # FIXME: hitting ESC from here goes to help list instead of main menu
-        # need some kind of flag
         self.controller.populate_log()
+
+    def _on_log_page_loaded(self, emitter: "Emitter") -> None:
+        self.alert_button.hide()
 
     def _on_mod_page_loaded(self, emitter: "Emitter") -> None:
         msg = self.controller.format_mod_statusbar()

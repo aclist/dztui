@@ -78,7 +78,7 @@ class LanPanel(Gtk.Frame):
 
         self.entry.set_sensitive(False)
 
-    def _on_lan_keypress(self, widget: Gtk.Entry, event: Gdk.EventKey) -> None:
+    def _on_lan_keypress(self, widget: Gtk.Entry, event: Gdk.EventKey) -> bool:
         if event.state & Gdk.ModifierType.CONTROL_MASK:
             if event.keyval == Gdk.KEY_d:
                 self.default_radio.set_active(True)

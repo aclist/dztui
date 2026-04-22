@@ -13,5 +13,6 @@ class HelpMenuMixin:
         self, widget: Gtk.Widget, event: Gdk.EventKey
     ) -> Literal[True]:
         if event.keyval == Gdk.KEY_Escape:
-            self.controller.open_page(NotebookPage.HELP)  # type: ignore
+            prior = self.controller.get_prior_page()
+            self.controller.open_page(prior)  # type: ignore
             return True

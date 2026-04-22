@@ -180,6 +180,9 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
             return
         self.set_page_by_enum(self.prior_page)
 
+    def get_prior_page(self) -> NotebookPage:
+        return self.prior_page
+
     def get_page_by_enum(self) -> NotebookPage | None:
         for k, v in self.indexes.items():
             if v == self.get_current_page():

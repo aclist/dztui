@@ -554,6 +554,9 @@ class Controller(GObject.GObject):
     def get_notebook(self) -> "Notebook":
         return self.mediator.notebook
 
+    def get_prior_page(self) -> NotebookPage:
+        return self.mediator.notebook.get_prior_page()
+
     def get_servers(self) -> "Notebook":
         return self.mediator.servers
 

@@ -32,7 +32,7 @@ class LogTreeView(ContextMixin, TreeView):
         self.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
 
         self.set_model(None)
-        self.filter: Gtk.TreeModelFilter
+        # self.filter: Gtk.TreeModelFilter
 
         # TODO: strings
         # NOTE: default filters that should be shown on startup
@@ -52,10 +52,11 @@ class LogTreeView(ContextMixin, TreeView):
 
     def populate_log(self, filepath: str) -> None:
         model = ModelFactory().new_model_from_logfile(filepath)
-        self.filter = model.filter_new()
-        self.filter.set_visible_func(self._filter_rows)
-        self.set_model(self.filter)
-        self.filter.refilter()
+        _filter = model.filter_new()
+        _filter.set_visible_func(self._filter_rows)
+        sortable = Gtk.TreeModelSort(_filter)
+        self.set_model(sortable)
+        _filter.refilter()
         self.set_cursor(0)
 
     def toggle_filter(self, _filter: str) -> None:
@@ -63,7 +64,8 @@ class LogTreeView(ContextMixin, TreeView):
             self.filters.remove(_filter)
         else:
             self.filters.append(_filter)
-        self.filter.refilter()
+        # NOTE: unwrap TreeModelSort and TreeModelFilter
+        self.get_model().get_model().refilter()
 
     def _filter_rows(
         self, model: Gtk.ListStore, _iter: Gtk.TreeIter, data: Any

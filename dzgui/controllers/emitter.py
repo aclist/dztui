@@ -140,4 +140,8 @@ class Emitter(GObject.GObject):
     def keyword_set(self, keyword: str) -> None:
         pass
 
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def log_page_loaded(self) -> None:
+        pass
+
     # TODO: if servers fail to load, may leave dangling widgets waiting for a signal

@@ -39,8 +39,10 @@ class Log(CursorMixin, HelpMenuMixin, Gtk.Box):  # type: ignore
 
         self.controller = controller
         self.controller.register_widget("logtreeview", self.treeview)
+        self.emitter = controller.get_emitter()
 
         self.connect("key-press-event", self._on_esc_keypress)
+        self.connect("map", lambda _: self.emitter.emit("log_page_loaded"))
 
     def _on_checkbox_clicked(self, checkbox: Gtk.CheckButton) -> None:
         label = checkbox.get_label()

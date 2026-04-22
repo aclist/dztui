@@ -216,7 +216,7 @@ def query_direct(ip: str, qport: int, TIMEOUT: float = 3.0) -> dict | None:
         res["ping"] = ping
         return res
     except Exception as e:
-        logger.critical(e)
+        logger.critical(f"{type(e).__name__}: {e}")
         return None
 
 
