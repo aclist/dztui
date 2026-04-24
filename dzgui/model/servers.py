@@ -240,6 +240,7 @@ class ServerModelManager:
         proxy_man.update_playercount(self.playercount)
 
     def _parse_single_record(self, response: dict, delete: bool = False) -> None:
+        self.preserve_on_fail = True
         if response is None:
             self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
             return
@@ -264,17 +265,12 @@ class ServerModelManager:
             proxy_man.remove_row_from_control(record)
         else:
             if config_man.is_in_favs(fqip):
-                self.thread_man.set_cleanup_func(
-                    StoredFunc(self._cleanup_when_no_model)
-                )
                 return
             config_man.add_saved_server(fqip)
             if proxy_man.has_control_model() is False:
-                self.thread_man.set_cleanup_func(
-                    StoredFunc(self._cleanup_when_no_model)
-                )
-                return
-            proxy_man.append_row_to_control(record)
+                self._get_proxy_man().push(records)
+            else:
+                proxy_man.append_row_to_control(record)
 
         control_model = proxy_man.get_control()
         self._sort_unique_maps(control_model)
@@ -359,8 +355,7 @@ class ServerModelManager:
         # TODO: disable map, keyword, and filter widgets if model is None
         # -> signal driven (servers_empty, servers_failed_to_load)
 
-        # NOTE: used by refresh button action
-        if not self.preserve_on_fail:
+        if self.preserve_on_fail is False:
             self.tv.set_model(None)
             filter_man = self.tv.get_filter_man()
             filter_man.set_unique_maps(None)

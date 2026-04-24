@@ -69,8 +69,10 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.emitter.connect("saved_servers_changed", self._on_saved_servers_changed)
 
     def _on_saved_servers_changed(self, emitter: "Emitter") -> None:
+        # TODO: can be dropped/consolidated?
         saved = 1
-        if self.notebook.get_current_page() == saved:
+        cur_page = self.notebook.get_current_page()
+        if cur_page == saved:
             return
         page = self.notebook.get_nth_page(saved)
         label = self.notebook.get_tab_label(page)
