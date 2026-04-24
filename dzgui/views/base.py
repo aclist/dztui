@@ -32,7 +32,8 @@ if TYPE_CHECKING:
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
+gi.require_version("GLibUnix", "2.0")
+from gi.repository import Gtk, GLib, GLibUnix, Gdk, GObject, Pango  # noqa E402
 
 logger = logging.getLogger(__name__)
 # https://bugzilla.gnome.org/show_bug.cgi?id=708676
@@ -300,8 +301,22 @@ class App(Gtk.Application):
         )
         self.win.add_accel_group(accel)
 
-        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self._catch_sigint)
+        self.setup_signals()
         Gtk.main()
+
+        def _setup_signals(self) -> None:
+            SIGNAL_ADD = "signal_add"
+            SIGNAL_ADD_FULL = "signal_add_full"
+            try:
+                if SIGNAL_ADD in dir(GLibUnix):
+                    func = GLibUnix.signal_add
+                elif SIGNAL_ADD_FULL in dir(GLibUnix):
+                    func = GLibUnix.signal_add_full
+                else:
+                    func = GLib.unix_signal_add
+                func(GLib.PRIORITY_DEFAULT, signal.SIGINT, self._catch_sigint)
+            except Exception as e:
+                logger.critical(e)
 
     def _catch_sigint(self) -> Literal[True]:
         self.win.halt_proc_and_quit()
