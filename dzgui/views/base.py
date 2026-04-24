@@ -277,10 +277,6 @@ class Grid(Gtk.Grid):
         self.conpan.set_lan_visible(False)
         self.right_panel.sel_panel.hide()
 
-    def _shrink(self, button: Gtk.Button) -> None:
-        tv = MainController.get_active_treeview()
-        tv.shrink_to_fit()
-
     def toggle_filter_panels(self, emitter: "Emitter", state: bool) -> None:
         self.right_panel.filters_vbox.set_visible(state)
         self.conpan.set_visible(state)

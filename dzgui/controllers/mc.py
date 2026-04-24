@@ -490,13 +490,13 @@ class Controller(GObject.GObject):
         count = format_player_count(model, control_model)
         return count
 
-    def get_statusbar(self) -> None:
+    def get_statusbar(self) -> "Statusbar":
         return self.mediator.statusbar
 
     def get_proxy_man(self) -> "ProxyModelManager":
         return self.proxy_man
 
-    def populate_model(self, tv: Gtk.TreeView) -> None:
+    def populate_model(self, tv: "ServerTreeView") -> None:
         # NOTE: skip on previously loaded tabs
         if tv.is_loaded():
             self.emitter.emit("servers_loaded", tv.get_enum())
@@ -557,7 +557,7 @@ class Controller(GObject.GObject):
     def get_prior_page(self) -> NotebookPage:
         return self.mediator.notebook.get_prior_page()
 
-    def get_servers(self) -> "Notebook":
+    def get_servers(self) -> "ServerNotebook":
         return self.mediator.servers
 
     def get_server_notebook(self) -> "Notebook":
