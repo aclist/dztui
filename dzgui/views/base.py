@@ -304,19 +304,19 @@ class App(Gtk.Application):
         self._setup_signals()
         Gtk.main()
 
-        def _setup_signals(self) -> None:
-            SIGNAL_ADD = "signal_add"
-            SIGNAL_ADD_FULL = "signal_add_full"
-            try:
-                if SIGNAL_ADD in dir(GLibUnix):
-                    func = GLibUnix.signal_add
-                elif SIGNAL_ADD_FULL in dir(GLibUnix):
-                    func = GLibUnix.signal_add_full
-                else:
-                    func = GLib.unix_signal_add
-                func(GLib.PRIORITY_DEFAULT, signal.SIGINT, self._catch_sigint)
-            except Exception as e:
-                logger.critical(e)
+    def _setup_signals(self) -> None:
+        SIGNAL_ADD = "signal_add"
+        SIGNAL_ADD_FULL = "signal_add_full"
+        try:
+            if SIGNAL_ADD in dir(GLibUnix):
+                func = GLibUnix.signal_add
+            elif SIGNAL_ADD_FULL in dir(GLibUnix):
+                func = GLibUnix.signal_add_full
+            else:
+                func = GLib.unix_signal_add
+            func(GLib.PRIORITY_DEFAULT, signal.SIGINT, self._catch_sigint)
+        except Exception as e:
+            logger.critical(e)
 
     def _catch_sigint(self) -> Literal[True]:
         self.win.halt_proc_and_quit()

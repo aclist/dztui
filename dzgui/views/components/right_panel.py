@@ -69,7 +69,7 @@ class RightPanel(Gtk.Box):
     def _on_servers_loaded(self, emitter: "Emitter", context: "ServerTab") -> None:
         # TODO: similar logic on notebook page change
         state = self.controller.has_server_model()
-        for widget in (self.refresh_button, self.filters_vbox):
+        for widget in self.filters_vbox:
             widget.set_sensitive(state)
 
     def _on_version_clicked(self, widget: Gtk.EventBox, event: Gdk.EventButton) -> None:
