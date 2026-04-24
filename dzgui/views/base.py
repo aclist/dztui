@@ -301,7 +301,7 @@ class App(Gtk.Application):
         )
         self.win.add_accel_group(accel)
 
-        self.setup_signals()
+        self._setup_signals()
         Gtk.main()
 
         def _setup_signals(self) -> None:
