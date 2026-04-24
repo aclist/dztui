@@ -569,6 +569,9 @@ class Controller(GObject.GObject):
     def get_menu(self) -> "MenuTreeView":
         return self.mediator.menu
 
+    def is_in_favs(self) -> bool:
+        return self.config_man.is_in_favs()
+
     def get_config_man(self) -> ConfigManager:
         return self.config_man
 

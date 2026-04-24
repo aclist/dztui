@@ -265,6 +265,7 @@ class ServerModelManager:
             proxy_man.remove_row_from_control(record)
         else:
             if config_man.is_in_favs(fqip):
+                self.emitter.emit("already_saved_server")
                 return
             config_man.add_saved_server(fqip)
             if proxy_man.has_control_model() is False:

@@ -204,6 +204,7 @@ class AddPanel(Gtk.Frame):
         self.emitter.connect(
             "request_ip_entry_focus", lambda _: self.entry.grab_focus()
         )
+        self.emitter.connect("already_saved_server", self._on_duplicate_server)
 
         self.grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
         self.grid.attach(self.entry, 0, 0, COLS, ROWS)
@@ -216,6 +217,21 @@ class AddPanel(Gtk.Frame):
 
         self.add(self.grid)
 
+        # TODO: dynamic popover text
+        self.pop = Gtk.Popover()
+        self.pop_label = Gtk.Label(
+            label="This address is already in your Saved Servers",
+            margin_start=10,
+            margin_end=10,
+        )
+        self.pop.add(self.pop_label)
+        self.pop.show_all()
+        self.pop.set_margin_start(10)
+        self.pop.set_relative_to(self.entry)
+
+    def _on_duplicate_server(self, emitter: "Emitter") -> None:
+        self.pop.popup()
+
     def _on_connect_clicked(self, button: Gtk.Button) -> None:
         addr = self.entry.get_text()
         self.controller.connect_by_str(addr)
@@ -226,9 +242,7 @@ class AddPanel(Gtk.Frame):
 
     def _on_activate(self, entry: Gtk.Entry) -> None:
         # NOTE: default action is to add a record, not connect
-        if not self.add_server.is_sensitive():
-            return
-        self._add_server()
+        self.add_server.emit("clicked")
 
     def _on_add_clicked(self, button: Gtk.Button) -> None:
         self._add_server()
