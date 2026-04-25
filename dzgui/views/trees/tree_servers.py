@@ -37,7 +37,7 @@ class ServerTreeView(ContextMixin, TreeView):
     def __init__(
         self, controller: "Controller", enum: ServerTab, menu: ContextMenuGroup
     ) -> None:
-        super().__init__(controller, menu=ContextMenuGroup.SERVER_BROWSER)
+        super().__init__(controller, menu=menu)
 
         self.controller = controller
         self.emitter = controller.get_emitter()
