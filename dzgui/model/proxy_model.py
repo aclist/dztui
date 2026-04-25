@@ -1,6 +1,5 @@
 import re
 
-from collections import deque
 from typing import Any, Optional, TYPE_CHECKING
 from warnings import deprecated
 
@@ -97,7 +96,6 @@ class ProxyModelManager:
 
         if skip_cache is False:
             if filters in self.filter_cache:
-                print("already in cache, not updating proxy model")
                 cache = self.filter_cache[filters]
                 self.set_proxy_model(cache[0])
                 self.set_filtered(cache[1])
@@ -106,17 +104,14 @@ class ProxyModelManager:
         match mode:
             case FilterMode.INITIAL:
                 rows = self.filter_initial(filters)
-
-            # TODO: consolidate into one enum
             case FilterMode.TOGGLE_ON:
                 rows = self.filter_toggle_on(filters)
-
             case FilterMode.TOGGLE_OFF:
                 for f in filters[2:]:
                     self.set_filtered(self.filter_toggle_off(filters, f))
                 rows = self.filtered
 
-        # NOTE: this FastInsertListStore manipulation must remain local to the thread
+        # NOTE: FastInsertListStore manipulation must remain local to the thread
         clone = ModelFactory().make_server_store()
         if len(rows) > 0:
             rows = self.sort_rows(rows)

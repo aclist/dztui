@@ -1,7 +1,5 @@
 from typing import Literal
 
-from dzgui.const.enum import NotebookPage
-
 import gi
 
 gi.require_version("Gtk", "3.0")

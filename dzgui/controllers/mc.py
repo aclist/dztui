@@ -147,7 +147,6 @@ class Controller(GObject.GObject):
             logger.critical(f"{attr} is not a valid AppNavigation attribute.")
 
     def get_prefs(self) -> UserPrefs:
-        # return self.config_man.get_prefs()
         return self.prefs
 
     def set_prefs(self, prefs: UserPrefs) -> None:
@@ -200,7 +199,7 @@ class Controller(GObject.GObject):
         msg_id = self.mediator.statusbar.set_text(text, context)
         return msg_id
 
-    # TODO: StatusBarManager
+    # TODO: StatusBarManager, move out of here
     def set_statusbar_dist(self, haversine: "Haversine", enum: "ServerTab") -> None:
         """
         NOTE: prevents race condition when server tab changed,
@@ -229,30 +228,6 @@ class Controller(GObject.GObject):
                 dist = str(separated) + " km"
 
         self.emitter.emit("distcalc_ended", dist, context)
-
-    def delete_multiple_mods(self) -> None:
-        sel = self.mediator.modtreeview.get_selection()
-        model, pathlist = sel.get_selected_rows()
-        # NOTE: reverse when multiple selection
-        for path in reversed(pathlist):
-            self.delete_single_mod(path)
-
-        total_mods, total_size = self.calc_mod_size()
-        self.update_mod_statusbar()
-
-    def load_mods_cleanup(self, model: Gtk.ListStore) -> None:
-        self.mediator.modtreeview.set_model(model)
-        self.emitter.emit("mod_page_loaded")
-
-    # TODO: delegate to threadmanager
-    @call_on_thread(strings.dialog.modlist)
-    def load_mods(self) -> None:
-        model = ModelFactory().make_mod_store()
-        path = self.query_config(Preferences.DEFAULT)
-        mods = get_delimited_mods(Path(path))
-        model.extend(mods)
-
-        self.cleanup_func = StoredFunc(self.load_mods_cleanup, model)
 
     def toggle_config(self, key: Preferences) -> None:
         # NOTE: Preferences.DIST is dynamic
@@ -303,6 +278,80 @@ class Controller(GObject.GObject):
         client = self.query_config(Preferences.CLIENT)
         open_user_workshop(uid, client)
 
+    ### START LOAD MODS LOGIC
+
+    def uncolorize_mods(self) -> None:
+        model = self.get_mod_store()
+        for mod in model:
+            it = mod.iter
+            path = model.get_path(it)
+            model[path][4] = None
+        self.mediator.modtreeview.set_cursor(0)
+
+    def highlight_stale_cleanup(self, stale_mods: list) -> None:
+        """Manipulates attached ListStore in the main event loop"""
+        model = self.get_mod_store()
+        for mod in model:
+            it = mod.iter
+            path = model.get_path(it)
+            if int(mod[2]) in stale_mods:
+                model[path][4] = True
+        self.emitter.emit("mods_highlighted")
+
+    # TODO: delegate to mod manager
+    @call_on_thread(strings.dialog.working)
+    def highlight_stale(self) -> None:
+        # TODO: set progress bar for number of mods
+        stale = find_stale_mods(self.prefs.paths.config)
+        self.cleanup_func = StoredFunc(self.highlight_stale_cleanup, stale)
+
+    def set_cleanup_func(self, func: StoredFunc) -> None:
+        self.cleanup_func = func
+
+    def get_cleanup_func(self) -> StoredFunc:
+        return self.cleanup_func
+
+    def _destroy_on_idle(self) -> None:
+        self.wait_dialog.destroy()
+        func = self.get_cleanup_func()
+        if func is not None:
+            func.call()
+            self.set_cleanup_func(None)
+        self.mediator.window.set_sensitive(True)
+
+    def toggle_mod_selection(self, state: bool) -> None:
+        sel = self.mediator.modtreeview.get_selection()
+        if state:
+            sel.select_all()
+        else:
+            sel.unselect_all()
+        # TODO: signal
+        self.mediator.modtreeview.grab_focus()
+
+    def load_mods_cleanup(self, model: Gtk.ListStore) -> None:
+        self.mediator.modtreeview.set_model(model)
+        self.emitter.emit("mod_page_loaded")
+
+    # TODO: delegate to threadmanager
+    @call_on_thread(strings.dialog.modlist)
+    def load_mods(self) -> None:
+        model = ModelFactory().make_mod_store()
+        path = self.query_config(Preferences.DEFAULT)
+        mods = get_delimited_mods(Path(path))
+        model.extend(mods)
+
+        self.cleanup_func = StoredFunc(self.load_mods_cleanup, model)
+
+    def delete_multiple_mods(self) -> None:
+        sel = self.mediator.modtreeview.get_selection()
+        model, pathlist = sel.get_selected_rows()
+        # NOTE: reverse when multiple selection
+        for path in reversed(pathlist):
+            self.delete_single_mod(path)
+
+        total_mods, total_size = self.calc_mod_size()
+        self.update_mod_statusbar()
+
     def delete_single_mod_cleanup(self, _iter: Gtk.TreeIter) -> None:
         self.get_mod_store().remove(_iter)
         remove_stale_signatures(self.prefs.paths.config, self.prefs.paths.version)
@@ -335,9 +384,6 @@ class Controller(GObject.GObject):
 
         self.cleanup_func = StoredFunc(self.delete_single_mod_cleanup, _iter)
 
-    def get_mod_store(self) -> Gtk.ListStore:
-        return self.mediator.modtreeview.get_model()
-
     def format_mod_statusbar(self) -> str:
         total_mods, total_size = self.calc_mod_size()
         msg = format_mods(total_size, total_mods)
@@ -352,6 +398,11 @@ class Controller(GObject.GObject):
         for mod in model:
             total_size += mod[3]
         return total_mods, total_size
+
+    ### END LOAD MODS LOGIC
+
+    def get_mod_store(self) -> Gtk.ListStore:
+        return self.mediator.modtreeview.get_model()
 
     def set_fav(self) -> None:
         treeview = self.get_active_treeview()
@@ -373,15 +424,6 @@ class Controller(GObject.GObject):
         context_man = ContextMenuManager(tree, self)
         context_man.process(action)
 
-    def toggle_mod_selection(self, state: bool) -> None:
-        sel = self.mediator.modtreeview.get_selection()
-        if state:
-            sel.select_all()
-        else:
-            sel.unselect_all()
-        # TODO: signal
-        self.mediator.modtreeview.grab_focus()
-
     def populate_log(self) -> None:
         log = self.prefs.paths.debug
         try:
@@ -400,50 +442,9 @@ class Controller(GObject.GObject):
             if mod[4] == HEX_RED:
                 sel.select_path(path)
 
-    # TODO: make as method of tree?
-    # TODO: could have a LocalModManager that accepts button enums
-    def uncolorize_mods(self) -> None:
-        model = self.get_mod_store()
-        for mod in model:
-            it = mod.iter
-            path = model.get_path(it)
-            model[path][4] = None
-        self.mediator.modtreeview.set_cursor(0)
-
     def get_filter_man(self) -> "FilterManager":
         """Each ServerTreeView has an atomic FilterManager"""
         return self.get_active_treeview().get_filter_man()
-
-    def highlight_stale_cleanup(self, stale_mods: list) -> None:
-        """Manipulates attached ListStore in the main event loop"""
-        model = self.get_mod_store()
-        for mod in model:
-            it = mod.iter
-            path = model.get_path(it)
-            if int(mod[2]) in stale_mods:
-                model[path][4] = True
-        self.emitter.emit("mods_highlighted")
-
-    # TODO: delegate to mod manager
-    @call_on_thread(strings.dialog.working)
-    def highlight_stale(self) -> None:
-        # TODO: set progress bar for number of mods
-        stale = find_stale_mods(self.prefs.paths.config)
-        self.cleanup_func = StoredFunc(self.highlight_stale_cleanup, stale)
-
-    def set_cleanup_func(self, func: StoredFunc) -> None:
-        self.cleanup_func = func
-
-    def get_cleanup_func(self) -> StoredFunc:
-        return self.cleanup_func
-
-    def _destroy_on_idle(self) -> None:
-        self.wait_dialog.destroy()
-        func = self.get_cleanup_func()
-        if func is not None:
-            func.call()
-            self.set_cleanup_func(None)
-        self.mediator.window.set_sensitive(True)
 
     def dump_diagnostics(self) -> None:
         picker = FilePicker(self.mediator.window)
@@ -511,7 +512,6 @@ class Controller(GObject.GObject):
     def get_filters(self) -> list:
         return self.mediator.filters.get_filters()
 
-    # TODO: clean up routes between controller and filter panel
     def get_map_store(self) -> Gtk.ListStore:
         filter_man = self.get_filter_man()
         return filter_man.get_map_store()

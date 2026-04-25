@@ -31,10 +31,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-# TODO: failure should spawn error dialog
-# TODO: non failure with empty model: updates statusbar with help text
-
-
 @dataclass
 class NewPlayerCount:
     treeiter: Gtk.TreeIter
@@ -356,11 +352,6 @@ class ServerModelManager:
     def _cleanup_on_success(self) -> None:
         proxy = self._get_proxy_man().get_proxy_model()
         self.tv.set_model(proxy)
-
-        # TODO: make sure control model len is N + 1
-        # TODO: signals or other approach to deferring map
-        # model insertion after thread closes
-        # cf. servers_loaded signal
 
         # TODO: servers_loaded vs servers_reloaded
         self.emitter.emit("servers_loaded", self.enum)
