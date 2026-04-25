@@ -1,5 +1,6 @@
 import re
 
+from collections import deque
 from typing import Any, Optional, TYPE_CHECKING
 from warnings import deprecated
 
@@ -51,6 +52,7 @@ class ProxyModelManager:
         for record in self.control_model:
             if row[7] == record[7] and row[8] == record[8]:
                 self.control_model.remove(record)
+                break
         self.wipe_cache()
         self.filter(FilterMode.INITIAL, skip_cache=True)
 
@@ -58,6 +60,23 @@ class ProxyModelManager:
         treeiter = playercount.treeiter
         self.proxy_model[treeiter][4] = playercount.players
         self.proxy_model[treeiter][6] = playercount.queue
+
+    # def append_to_history(self, row: list) -> None:
+    #    if len(self.control_model) == 10:
+    #        del self.control_model[0]
+    #    self.control_model.append(row)
+
+    # TODO: consolidate with remove_row_from_control()
+    def remove_from_history(self, record: "Record") -> None:
+        print(record)
+        addr = f"{record.ip}:{record.gameport}"
+        qport = record.qport
+        for record in self.control_model:
+            if addr == record[7] and qport == record[8]:
+                self.control_model.remove(record)
+                break
+        self.wipe_cache()
+        self.filter(FilterMode.INITIAL, skip_cache=True)
 
     def clear_proxy_model(self) -> None:
         self.proxy_model.clear()

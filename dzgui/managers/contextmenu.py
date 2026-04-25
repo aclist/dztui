@@ -68,10 +68,8 @@ class ContextMenuManager:
                 record = self.treeview.get_record()
                 self.controller.refresh_players(record)
             case ContextMenu.REMOVE_HISTORY:
-                print("DEBUG: unimplemented")
-                # update history model, update tab label, pop off of queue, write new list into file
-                # see dq.py
-                pass
+                record = self.treeview.get_record()
+                self.controller.remove_from_history(record)
             case ContextMenu.REMOVE_SERVER:
                 record = self.treeview.get_record()
                 self.controller.remove_by_record(record)

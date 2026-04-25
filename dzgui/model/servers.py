@@ -211,6 +211,33 @@ class ServerModelManager:
         res = Servers.query_by_record(record)
         self._parse_single_record(res, delete=True)
 
+    def remove_from_history(self, record: Servers.Record) -> None:
+        """Fully unthreaded, just removes a row"""
+        port = record.ip
+        gport = record.gameport
+        qport = record.qport
+
+        fqip = f"{port}:{gport}:{qport}"
+        config_man = self.controller.get_config_man()
+        config_man.remove_history_server(fqip)
+
+        proxy_man = self._get_proxy_man()
+        proxy_man.remove_from_history(record)
+        control_model = proxy_man.get_control()
+
+        self._sort_unique_maps(control_model)
+        proxy = proxy_man.get_proxy_model()
+        self.tv.set_model(proxy)
+
+        self.emitter.emit("servers_loaded", self.enum)
+
+        filter_man = self.tv.get_filter_man()
+        maps = self._get_new_maps()
+        filter_man.set_unique_maps(maps)
+
+        self.first_iteration = False
+        self.emitter.emit("servers_loaded_init")
+
     def add_by_str(self, addr: str) -> None:
         if addr.isdigit():
             self.add_by_id(addr)

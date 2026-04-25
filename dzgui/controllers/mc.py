@@ -597,6 +597,10 @@ class Controller(GObject.GObject):
         saved_tree = self.get_servers().get_saved()
         ServerModelManager(self, saved_tree).remove_by_record(record)
 
+    def remove_from_history(self, record: "Record") -> None:
+        tv = self.get_active_treeview()
+        ServerModelManager(self, tv).remove_from_history(record)
+
     def connect_by_str(self, addr: str) -> None:
         if addr.isdigit():
             config_man = self.get_config_man()
