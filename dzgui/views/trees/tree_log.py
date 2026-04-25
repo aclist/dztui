@@ -81,3 +81,17 @@ class LogTreeView(ContextMixin, TreeView):
 
     def _on_log_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
         self.present_menu(widget, event)
+
+    def concatenate_rows(self) -> str | None:
+        # NOTE: LogTreeView uses Gtk.SelectionMode.MULTIPLE
+        final = []
+        model, records = self.get_selection().get_selected_rows()
+        if len(records) < 1:
+            return None
+        for record in records:
+            raw_record = model[record]
+            r = [el for el in raw_record]
+            concat = strings.delimiter.join(r)
+            final.append(concat)
+        text = "\n".join(final)
+        return text

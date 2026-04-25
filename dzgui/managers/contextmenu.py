@@ -63,7 +63,6 @@ class ContextMenuManager:
             case ContextMenu.CONNECT:
                 record = self.treeview.get_record()
                 self.controller.connect_by_record(record)
-
             case ContextMenu.REFRESH_PLAYERS:
                 record = self.treeview.get_record()
                 self.controller.refresh_players(record)
@@ -97,16 +96,8 @@ class ContextMenuManager:
         cmd = self.controller.query_config(Preferences.CLIENT)
         open_workshop_page(mod, cmd)
 
-    def copy_log(self) -> str:
-        # NOTE: ModTreeView uses Gtk.SelectionMode.MULTIPLE
-        model, records = self.treeview.get_selection().get_selected_rows()
-        if len(records) < 1:
+    def copy_log(self) -> None:
+        log = self.treeview.concatenate_rows()
+        if log is None:
             return
-        final = []
-        for record in records:
-            record = self.treeview.get_model()[record]
-            r = [el for el in record]
-            concat = strings.delimiter.join(r)
-            final.append(concat)
-        text = "\n".join(final)
-        copy_clipboard(text)
+        copy_clipboard(log)
