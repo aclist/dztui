@@ -51,6 +51,7 @@ class ProxyModelManager:
         for record in self.control_model:
             if row[7] == record[7] and row[8] == record[8]:
                 self.control_model.remove(record)
+        self.wipe_cache()
         self.filter(FilterMode.INITIAL, skip_cache=True)
 
     def update_playercount(self, playercount: "NewPlayerCount") -> None:
@@ -214,6 +215,7 @@ class ProxyModelManager:
     ) -> None:
         self.filter_cache[filters] = (model, rows)
 
+    @deprecated("legacy logic")
     def resync_model(self, addr: str, qport: int) -> None:
         """
         Handle in-situ updates to model during

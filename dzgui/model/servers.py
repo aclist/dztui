@@ -54,14 +54,8 @@ class ServerModelManager:
         self.preserve_on_fail = False
         self.jobs = 1
 
-        # NOTE: store filter man for access inside thread
         self.proxy_man = tv.get_proxy_man()
         self.thread_man = ThreadingManager(self.controller)
-
-        # TODO: if first iteration, clear filter man control model
-        # literal first load: iteration 1
-        # refresh: should be functionally identical to iteration 1
-        # filter: iteration N+1
 
     def load(self) -> None:
         """
@@ -327,8 +321,8 @@ class ServerModelManager:
         maps = self._get_new_maps()
         filter_man.set_unique_maps(maps)
 
-        self.emitter.emit("servers_loaded_init")
         self.first_iteration = False
+        self.emitter.emit("servers_loaded_init")
         self.emitter.emit("saved_servers_changed")
 
     def _update_maps(self) -> None:

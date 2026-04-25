@@ -536,10 +536,15 @@ class Controller(GObject.GObject):
 
     def has_server_model(self) -> bool:
         treeview = self.get_active_treeview()
-        return treeview.get_model() is not None
+        proxy_man = treeview.get_proxy_man()
+        control = proxy_man.get_control()
+        if control is None:
+            return False
+        if len(control) < 1:
+            return False
+        return True
 
     def _on_check_toggled(self, emitter: Emitter, label: str, state: bool) -> None:
-        print("DEBUG: check toggled, refiltering")
         filter_man = self.get_filter_man()
         filter_man.set_filter(label, state)
 
@@ -547,7 +552,6 @@ class Controller(GObject.GObject):
         ServerModelManager(self, self.get_active_treeview()).refilter(mode)
 
     def _on_map_selection_changed(self, emitter: Emitter, selection: str) -> None:
-        print("DEBUG: map sel changed, refiltering")
         smm = ServerModelManager(self, self.get_active_treeview())
         smm.refilter(FilterMode.MAP)
 
@@ -568,6 +572,12 @@ class Controller(GObject.GObject):
 
     def get_menu(self) -> "MenuTreeView":
         return self.mediator.menu
+
+    def has_favorites(self) -> bool:
+        favs = self.config_man.get_favorites()
+        if len(favs) < 1:
+            return False
+        return True
 
     def is_in_favs(self) -> bool:
         return self.config_man.is_in_favs()

@@ -67,6 +67,7 @@ class Statusbar(Gtk.Grid):
         self.controller.populate_log()
 
     def _on_log_page_loaded(self, emitter: "Emitter") -> None:
+        # FIXME: fails if button was not previously drawn
         self.alert_button.hide()
 
     def _on_mod_page_loaded(self, emitter: "Emitter") -> None:

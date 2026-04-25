@@ -105,8 +105,9 @@ class RefreshButton(IconTextButton):
 
     def _on_refresh_clicked(self, button: Self) -> None:
         """Spawned in a thread"""
-        self.loading = True
-        self.controller.refresh_tree()
+        if self.controller.has_favorites():
+            self.loading = True
+            self.controller.refresh_tree()
         # TODO: get server tab enum
         # if LAN tab, reload existing entries in place
 

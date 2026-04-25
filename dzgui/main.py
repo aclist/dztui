@@ -143,5 +143,4 @@ def main() -> None:
         use_miles,
     )
     print("All OK. Loading UI...")
-    logger.critical("e")
     App(prefs)
