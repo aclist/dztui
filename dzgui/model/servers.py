@@ -213,17 +213,12 @@ class ServerModelManager:
 
     def remove_from_history(self, record: Servers.Record) -> None:
         """Fully unthreaded, just removes a row"""
-        port = record.ip
-        gport = record.gameport
-        qport = record.qport
-
-        fqip = f"{port}:{gport}:{qport}"
-        config_man = self.controller.get_config_man()
-        config_man.remove_history_server(fqip)
-
         proxy_man = self._get_proxy_man()
         proxy_man.remove_from_history(record)
         control_model = proxy_man.get_control()
+
+        config_man = self.controller.get_config_man()
+        config_man.update_history_file(control_model)
 
         self._sort_unique_maps(control_model)
         proxy = proxy_man.get_proxy_model()

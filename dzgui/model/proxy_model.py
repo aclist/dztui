@@ -11,6 +11,7 @@ from dzgui.util import strings
 if TYPE_CHECKING:
     from dzgui.managers.filter_man import FilterManager
     from dzgui.model.model_factory import FastInsertListStore
+    from dzgui.api.servers import Record
     from dzgui.model.servers import NewPlayerCount
 
 
@@ -68,7 +69,6 @@ class ProxyModelManager:
 
     # TODO: consolidate with remove_row_from_control()
     def remove_from_history(self, record: "Record") -> None:
-        print(record)
         addr = f"{record.ip}:{record.gameport}"
         qport = record.qport
         for record in self.control_model:
@@ -85,7 +85,6 @@ class ProxyModelManager:
         return self.proxy_model
 
     def filter(self, mode: FilterMode, skip_cache: bool = False) -> None:
-        # TODO: proxy model can fetch args directly from filter man, no need to process extra input
         """
         Native Gtk.TreeView.refilter() method was not performant enough
         when running in the main loop with 40k+ records
@@ -109,7 +108,7 @@ class ProxyModelManager:
                 rows = self.filter_initial(filters)
 
             # TODO: consolidate into one enum
-            case FilterMode.MAP | FilterMode.KEYWORD | FilterMode.TOGGLE_ON:
+            case FilterMode.TOGGLE_ON:
                 rows = self.filter_toggle_on(filters)
 
             case FilterMode.TOGGLE_OFF:

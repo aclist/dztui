@@ -34,8 +34,6 @@ class ConfigManager:
         self.config = prefs.paths.config
 
     def lookup(self, enum: Preferences) -> Any:
-        # if path.is_file() is False:
-        #    raise ConfigFileError("Not a valid file")
         key = self.enum_to_key(enum)
         config = self.get_config()
         try:
@@ -48,9 +46,11 @@ class ConfigManager:
         ips.append(record)
         self.update_config(Preferences.IP_LIST, ips)
 
-    def remove_history_server(self, record: str) -> None:
-        print(record)
-        pass
+    def update_history_file(self, records: list[Any]) -> None:
+        with open(self.prefs.paths.history, "w") as f:
+            for record in records:
+                addr = f"{record[7]}:{record[8]}"
+                f.write(f"{addr}\n")
 
     def remove_saved_server(self, record: str) -> None:
         ips = self.lookup(Preferences.IP_LIST)

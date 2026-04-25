@@ -41,11 +41,9 @@ class CursorPosition(Enum):
 
 
 class FilterMode(Enum):
-    KEYWORD = 1
-    MAP = 2
-    INITIAL = 3
-    TOGGLE_OFF = 4
-    TOGGLE_ON = 5
+    INITIAL = 1
+    TOGGLE_OFF = 2
+    TOGGLE_ON = 3
 
 
 class EnumWithAttrs(Enum):

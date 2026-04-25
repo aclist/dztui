@@ -553,7 +553,7 @@ class Controller(GObject.GObject):
 
     def _on_map_selection_changed(self, emitter: Emitter, selection: str) -> None:
         smm = ServerModelManager(self, self.get_active_treeview())
-        smm.refilter(FilterMode.MAP)
+        smm.refilter(FilterMode.TOGGLE_ON)
 
     def get_notebook(self) -> "Notebook":
         return self.mediator.notebook
