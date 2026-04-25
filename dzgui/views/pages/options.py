@@ -6,7 +6,7 @@ from dzgui.api.steam import find_user_id
 from dzgui.config import query
 from dzgui.util import strings, css, open_links
 
-from dzgui.views.components.label import LeftLabel
+from dzgui.views.components.labels import LeftLabel
 from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.buttons import WebButton
 from dzgui.views.dialogs.generic import ExceptionDialog

@@ -215,22 +215,6 @@ class ProxyModelManager:
     ) -> None:
         self.filter_cache[filters] = (model, rows)
 
-    @deprecated("legacy logic")
-    def resync_model(self, addr: str, qport: int) -> None:
-        """
-        Handle in-situ updates to model during
-        row deletion/insertion actions. Skipped for ephemeral
-        actions like player count/ping updates
-        """
-        for row in self.control_model:
-            if row[7] == addr and row[8] == qport:
-                self.control_model.remove(row)
-
-        self.wipe_cache()
-        filters = self.get_filters()
-        refiltered = self.filter_toggle_on(filters)
-        self.set_filtered(refiltered)
-
     @deprecated("Currently unused")
     def convert_model_to_list(self, model: "FastInsertListStore") -> list:
         return [[el for el in row] for row in model]
