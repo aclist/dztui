@@ -436,13 +436,6 @@ def get_rules(record: Record) -> list[int]:
         return []
 
 
-def response_to_fq_ip(res: dict) -> str:
-    ip = res["addr"].split(":")[0]
-    gameport = res["gameport"]
-    qport = res["addr"].split(":")[1]
-    return f"{ip}:{gameport}:{qport}"
-
-
 def query_by_id(addr: str, key: str) -> Optional[dict]:
     """
     Used with numeric Battlemetrics IDs
@@ -495,3 +488,17 @@ def fqip_to_record(addr: str) -> Optional[Record]:
     if len(r) != 3:
         return None
     return Record(r[0], int(r[1]), int(r[2]))
+
+
+def response_to_fqip(res: dict) -> str:
+    ip = res["addr"].split(":")[0]
+    gameport = res["gameport"]
+    qport = res["addr"].split(":")[1]
+    return f"{ip}:{gameport}:{qport}"
+
+
+def response_to_record(res: dict) -> Record:
+    ip = res["addr"].split(":")[0]
+    gameport = res["gameport"]
+    qport = res["addr"].split(":")[1]
+    return Record(ip, gameport, qport)

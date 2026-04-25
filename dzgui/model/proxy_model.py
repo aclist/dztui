@@ -48,14 +48,6 @@ class ProxyModelManager:
         self.control_model.append(row)
         self.filter(FilterMode.INITIAL, skip_cache=True)
 
-    def remove_row_from_control(self, row: list) -> None:
-        for record in self.control_model:
-            if row[7] == record[7] and row[8] == record[8]:
-                self.control_model.remove(record)
-                break
-        self.wipe_cache()
-        self.filter(FilterMode.INITIAL, skip_cache=True)
-
     def update_playercount(self, playercount: "NewPlayerCount") -> None:
         treeiter = playercount.treeiter
         self.proxy_model[treeiter][4] = playercount.players
@@ -66,8 +58,7 @@ class ProxyModelManager:
     #        del self.control_model[0]
     #    self.control_model.append(row)
 
-    # TODO: consolidate with remove_row_from_control()
-    def remove_from_history(self, record: "Record") -> None:
+    def remove_row_from_control(self, record: "Record") -> None:
         addr = f"{record.ip}:{record.gameport}"
         qport = record.qport
         for record in self.control_model:

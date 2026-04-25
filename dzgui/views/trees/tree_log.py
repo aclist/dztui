@@ -32,7 +32,6 @@ class LogTreeView(ContextMixin, TreeView):
         self.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
 
         self.set_model(None)
-        # self.filter: Gtk.TreeModelFilter
 
         # TODO: strings
         # NOTE: default filters that should be shown on startup

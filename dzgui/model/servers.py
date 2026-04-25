@@ -210,7 +210,7 @@ class ServerModelManager:
     def remove_from_history(self, record: Servers.Record) -> None:
         """Fully unthreaded, just removes a row"""
         proxy_man = self._get_proxy_man()
-        proxy_man.remove_from_history(record)
+        proxy_man.remove_row_from_control(record)
         control_model = proxy_man.get_control()
 
         config_man = self.controller.get_config_man()
@@ -259,10 +259,12 @@ class ServerModelManager:
 
         # NOTE: expected to only contain one item
         records = Servers.parse_json([response])
-        record = records[0]
+        server = records[0]
 
         proxy_man = self._get_proxy_man()
-        fqip = Servers.response_to_fq_ip(response)
+        fqip = Servers.response_to_fqip(response)
+        record = Servers.response_to_record(response)
+
         config_man = self.controller.get_config_man()
 
         # TODO: less convoluted
@@ -283,7 +285,7 @@ class ServerModelManager:
             if proxy_man.has_control_model() is False:
                 self._get_proxy_man().push(records)
             else:
-                proxy_man.append_row_to_control(record)
+                proxy_man.append_row_to_control(server)
 
         control_model = proxy_man.get_control()
         self._sort_unique_maps(control_model)
