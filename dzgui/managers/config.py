@@ -10,7 +10,9 @@ from dzgui.const.constants import (
     WINDOW_DEFAULT_X,
     WINDOW_DEFAULT_Y,
 )
+from dzgui.api.probe import test_steam_api, test_bm_api
 from dzgui.const.enum import Preferences
+from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.views.dialogs.generic import ExceptionDialog
 from dzgui.util._json import read_json, write_json
 
@@ -22,6 +24,7 @@ from gi.repository.Gtk import main_quit  # noqa E402
 # import dzgui.api.servers as Servers
 if TYPE_CHECKING:
     from dzgui.config.userprefs import UserPrefs
+    from dzgui.controllers.mc import Controller
     from dzgui.views.base import OuterWindow
     from dzgui.views.trees.tree_servers import ServerTreeView
 
@@ -29,9 +32,11 @@ logger = logging.getLogger(__name__)
 
 
 class ConfigManager:
-    def __init__(self, prefs: "UserPrefs") -> None:
+    def __init__(self, prefs: "UserPrefs", controller: "Controller") -> None:
         self.prefs = prefs
         self.config = prefs.paths.config
+        self.emitter = controller.get_emitter()
+        self.thread_man = ThreadingManager(controller)
 
     def lookup(self, enum: Preferences) -> Any:
         key = self.enum_to_key(enum)
@@ -72,6 +77,21 @@ class ConfigManager:
         except Exception as e:
             logger.critical(e)
             raise e
+
+    # TODO: strings
+    @call_on_thread("checking api")
+    def update_api_key(self, key: Preferences, text: str) -> None:
+        if key is Preferences.STEAM:
+            res = test_steam_api(text)
+        else:
+            res = test_bm_api(text)
+        if res is True:
+            self.update_config(key, text)
+        else:
+            self.thread_man.set_cleanup_func(StoredFunc(
+                lambda: self.emitter.emit("api_change_failed")
+            ))
+        return
 
     def get_favorites(self) -> list[str]:
         return self.lookup(Preferences.IP_LIST)

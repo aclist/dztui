@@ -150,7 +150,7 @@ class Controller(GObject.GObject):
         return self.prefs
 
     def set_prefs(self, prefs: UserPrefs) -> None:
-        self.config_man = ConfigManager(prefs)
+        self.config_man = ConfigManager(prefs, self)
         self.notes_man = NoteManager(self, prefs.paths.notes)
         self.prefs = prefs
 
@@ -404,6 +404,7 @@ class Controller(GObject.GObject):
     def get_mod_store(self) -> Gtk.ListStore:
         return self.mediator.modtreeview.get_model()
 
+    # TODO: delegate to configman
     def set_fav(self) -> None:
         treeview = self.get_active_treeview()
         name = treeview.get_value_at_index(0)
@@ -456,20 +457,8 @@ class Controller(GObject.GObject):
                 dialog = ExceptionDialog(self, str(e))
                 dialog.run()
 
-    # TODO: move to ConfigMan
-    @call_on_thread(strings.dialog.working)
-    def update_api_key(self, text: str, key: Preferences) -> None:
-        if key is Preferences.STEAM:
-            res = test_steam_api(text)
-        else:
-            res = test_bm_api(text)
-
-        if res is True:
-            self.update_config(key, text)
-        else:
-            self.cleanup_func = StoredFunc(
-                lambda: self.emitter.emit("api_change_failed")
-            )
+    def update_api_key(self, key: Preferences, text: str) -> None:
+        self.config_man.update_api_key(key, text)
 
     def set_resolution(self, window: "OuterWindow") -> None:
         self.config_man.set_resolution(window)

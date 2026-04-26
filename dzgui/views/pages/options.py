@@ -281,10 +281,11 @@ class Options(Gtk.Box):
                 self.controller.update_config(enum, value)
             case Preferences.BM | Preferences.STEAM:
                 text = "".join(entry.get_text().split())
-                self.controller.update_api_key(text, enum)
+                self.controller.update_api_key(enum, text)
 
     def _on_api_change_failed(self, emitter: "Emitter") -> None:
         self.old_entry.set_text(self.old_text)
+        # FIXME: ambiguous error message
         dialog = ExceptionDialog(self.controller, strings.api_error)
         dialog.run()
 
