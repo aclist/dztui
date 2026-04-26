@@ -12,7 +12,7 @@ from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
 )
-from dzgui.managers.thread_man import call_on_thread, StoredFunc, ThreadingManager
+from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.util.strings import api_warn_msg, dialog
 from dzgui.views.dialogs.generic import ExceptionDialog
 
