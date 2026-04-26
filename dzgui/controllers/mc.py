@@ -62,7 +62,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from dzgui.api.servers import Record
     from dzgui.const.enum import ServerTab
-    from dzgui.managers.filter_man import FilterManager
+    from dzgui.managers.filter import FilterManager
     from dzgui.util.dist import Haversine
     from dzgui.views.base import Notebook, Grid, OuterWindow
     from dzgui.views.components.buttonbox import ContextualButton

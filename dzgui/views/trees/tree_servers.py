@@ -8,7 +8,7 @@ from warnings import deprecated
 from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.const.enum import ContextMenu, ContextMenuGroup, Preferences, ServerTab
 from dzgui.api.servers import ping, Record
-from dzgui.managers.filter_man import FilterManager
+from dzgui.managers.filter import FilterManager
 from dzgui.model.proxy_model import ProxyModelManager
 from dzgui.util.dist import CalcDist
 from dzgui.util import strings

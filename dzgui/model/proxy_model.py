@@ -8,7 +8,7 @@ from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
 
 if TYPE_CHECKING:
-    from dzgui.managers.filter_man import FilterManager
+    from dzgui.managers.filter import FilterManager
     from dzgui.model.model_factory import FastInsertListStore
     from dzgui.api.servers import Record
     from dzgui.model.servers import NewPlayerCount
