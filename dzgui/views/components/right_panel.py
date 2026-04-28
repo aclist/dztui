@@ -16,7 +16,7 @@ from gi.repository import Gtk, Gdk, GLib  # noqa E402
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.controllers.emitter import Emitter
-    from dzgui.controllers.views.trees.tree_servers import ServerTreeView
+    from dzgui.views.trees.tree_servers import ServerTreeView
 
 
 class RightPanel(Gtk.Box):

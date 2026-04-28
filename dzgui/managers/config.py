@@ -88,9 +88,9 @@ class ConfigManager:
         if res is True:
             self.update_config(key, text)
         else:
-            self.thread_man.set_cleanup_func(StoredFunc(
-                lambda: self.emitter.emit("api_change_failed")
-            ))
+            self.thread_man.set_cleanup_func(
+                StoredFunc(lambda: self.emitter.emit("api_change_failed"))
+            )
         return
 
     def get_favorites(self) -> list[str]:
@@ -113,7 +113,7 @@ class ConfigManager:
     def enum_to_key(self, enum: Preferences) -> str:
         return enum.dict["key"]
 
-    def get_client_index(client: str) -> int:
+    def get_client_index(self, client: str) -> int:
         if client == STEAM_CMD:
             return 0
         if client == FLATPAK_RUN_CMD:

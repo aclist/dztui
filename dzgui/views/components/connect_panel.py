@@ -102,10 +102,10 @@ class LanPanel(Gtk.Frame):
         if self.default_radio.get_active():
             port = 27016
         else:
-            port = self.entry.get_text()
+            port = int(self.entry.get_text())
         abort = self.early_abort.get_active()
         smm = ServerModelManager(self.controller, self.controller.get_active_treeview())
-        smm.dump_lan(int(port), abort)
+        smm.dump_lan(port, abort)
 
     def _on_radio_toggled(self, button: Gtk.RadioButton) -> None:
         state = button.get_active()
@@ -132,6 +132,7 @@ class FavPanel(Gtk.Frame):
         emitter = self.controller.get_emitter()
         emitter.connect("fav_server_changed", self._on_fav_server_changed)
 
+        # TODO: do not return a None, None tuple
         self.server_name, self.server_ip = (
             self.controller.get_config_man().get_favorite()
         )

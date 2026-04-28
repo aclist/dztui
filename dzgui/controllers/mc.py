@@ -104,7 +104,7 @@ class StoredFunc:
 
 class Controller(GObject.GObject):
     def __init__(self) -> None:
-        self.dist_cache: dict[str, "Haversine", "ServerTab"] = {}
+        self.dist_cache: dict[str, "Haversine"] = {}
         self.mediator = AppNavigation()
 
         self.prefs: UserPrefs
@@ -154,7 +154,7 @@ class Controller(GObject.GObject):
         self.notes_man = NoteManager(self, prefs.paths.notes)
         self.prefs = prefs
 
-    def query_config(self, key: Preferences) -> str | bool | list:
+    def query_config(self, key: Preferences) -> Any:
         return self.config_man.lookup(key)
 
     def is_auto_install(self) -> bool:
@@ -286,7 +286,8 @@ class Controller(GObject.GObject):
             it = mod.iter
             path = model.get_path(it)
             model[path][4] = None
-        self.mediator.modtreeview.set_cursor(0)
+        path = Gtk.TreePath.new_from_indices([0])
+        self.mediator.modtreeview.set_cursor(path)
 
     def highlight_stale_cleanup(self, stale_mods: list) -> None:
         """Manipulates attached ListStore in the main event loop"""
@@ -401,7 +402,7 @@ class Controller(GObject.GObject):
 
     ### END LOAD MODS LOGIC
 
-    def get_mod_store(self) -> Gtk.ListStore:
+    def get_mod_store(self) -> Gtk.TreeModel | None:
         return self.mediator.modtreeview.get_model()
 
     # TODO: delegate to configman
@@ -483,8 +484,8 @@ class Controller(GObject.GObject):
     def get_statusbar(self) -> "Statusbar":
         return self.mediator.statusbar
 
-    def get_proxy_man(self) -> "ProxyModelManager":
-        return self.proxy_man
+    #def get_proxy_man(self) -> "ProxyModelManager":
+    #    return self.proxy_man
 
     def populate_model(self, tv: "ServerTreeView") -> None:
         # NOTE: skip on previously loaded tabs
@@ -495,19 +496,16 @@ class Controller(GObject.GObject):
         self.mediator.statusbar.set_text("", "")
         ServerModelManager(self, tv).load()
 
-    def get_dist_cache(self) -> dict[str, "Haversine", "ServerTab"]:
+    def get_dist_cache(self) -> dict[str, "Haversine"]:
         return self.dist_cache
-
-    def get_filters(self) -> list:
-        return self.mediator.filters.get_filters()
 
     def get_map_store(self) -> Gtk.ListStore:
         filter_man = self.get_filter_man()
         return filter_man.get_map_store()
 
-    def get_selected_map(self) -> str:
-        filter_man = self.get_filter_man()
-        return filter_man.get_selected_map()
+    #def get_selected_map(self) -> str:
+    #    filter_man = self.get_filter_man()
+    #    return filter_man.get_selected_map()
 
     def get_enabled_filters(self) -> dict:
         filter_man = self.get_filter_man()
@@ -553,7 +551,7 @@ class Controller(GObject.GObject):
     def get_servers(self) -> "ServerNotebook":
         return self.mediator.servers
 
-    def get_server_notebook(self) -> "Notebook":
+    def get_server_notebook(self) -> Gtk.Notebook:
         return self.mediator.servers.notebook
 
     def get_window(self) -> "OuterWindow":
@@ -568,8 +566,8 @@ class Controller(GObject.GObject):
             return False
         return True
 
-    def is_in_favs(self) -> bool:
-        return self.config_man.is_in_favs()
+    #def is_in_favs(self) -> bool:
+    #    return self.config_man.is_in_favs()
 
     def get_config_man(self) -> ConfigManager:
         return self.config_man

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import Any, Sequence, TYPE_CHECKING
 
 from dzgui.const.enum import HELP_MENU_ROWS
 from dzgui.util.redact import redact_log
@@ -15,6 +15,10 @@ GTYPE_TO_PYTHON = {
     GObject.type_from_name(GObject.type_name(ptype)): ptype
     for ptype in (int, float, str, bool, object)
 }
+
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @dataclass(slots=True, frozen=True)
@@ -120,7 +124,7 @@ class ModelFactory:
     def __init__(self) -> None:
         pass
 
-    def new_model_from_logfile(self, path: str) -> FastInsertListStore:
+    def new_model_from_logfile(self, path: "Path") -> FastInsertListStore:
         store = self.make_log_store()
         with open(path, "r") as f:
             lines = [line.split(delimiter) for line in f.read().splitlines()]

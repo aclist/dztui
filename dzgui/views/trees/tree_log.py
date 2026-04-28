@@ -14,6 +14,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from dzgui.controllers.mc import Controller
 
 logger = logging.getLogger(__name__)
@@ -49,7 +50,7 @@ class LogTreeView(ContextMixin, TreeView):
         self.connect("button-press-event", self._on_log_buttonpress)
         self.connect("key-press-event", self._on_log_keypress)
 
-    def populate_log(self, filepath: str) -> None:
+    def populate_log(self, filepath: "Path") -> None:
         model = ModelFactory().new_model_from_logfile(filepath)
         _filter = model.filter_new()
         _filter.set_visible_func(self._filter_rows)

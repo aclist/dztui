@@ -113,7 +113,7 @@ class ServerTreeView(ContextMixin, TreeView):
         self.connect("query-tooltip", self._on_tooltip)
 
         # TODO: why is this being saved?
-        self.thread = None
+        # self.thread = None
 
     def _on_tooltip(
         self,
@@ -153,7 +153,7 @@ class ServerTreeView(ContextMixin, TreeView):
     def get_proxy_man(self) -> ProxyModelManager:
         return self.proxy_man
 
-    def get_enum(self) -> None:
+    def get_enum(self) -> ServerTab:
         return self.enum
 
     def _on_map(self, widget: Self) -> None:
@@ -202,12 +202,12 @@ class ServerTreeView(ContextMixin, TreeView):
             return
 
         enum = self.get_enum()
-        self.thread = threading.Thread(
+        thread = threading.Thread(
             daemon=True,
             target=CalcDist,
             args=(record.ip, enum, self.queue, self.controller),
         )
-        self.thread.start()
+        thread.start()
 
     def _check_result_queue(self) -> Literal[True]:
         latest_result = None
@@ -281,7 +281,7 @@ class ServerTreeView(ContextMixin, TreeView):
         record = self.get_record()
         self.controller.connect_by_record(record)
 
-    def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
+    def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection) -> None:
         if self.loaded is False:
             return
         self.start_distcalc()
@@ -315,7 +315,7 @@ class ServerTreeView(ContextMixin, TreeView):
         self.loaded = status
 
     @staticmethod
-    def ping_server(model, _iter: Gtk.TreeIter, ip: str, qport: int, ping_column: int):
+    def ping_server(model, _iter: Gtk.TreeIter, ip: str, qport: int, ping_column: int) -> None:
         _ping = ping(ip, qport)
         GLib.idle_add(lambda: model.set(_iter, ping_column, _ping))
 
@@ -326,7 +326,7 @@ class ServerTreeView(ContextMixin, TreeView):
         model: Gtk.TreeModel,
         _iter: Gtk.TreeIter,
         data: Any,
-    ):
+    ) -> None:
 
         addr_column = 7
         qport_column = 8

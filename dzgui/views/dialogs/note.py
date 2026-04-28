@@ -62,7 +62,7 @@ class NoteDialog(GenericDialog):
         if len(entry.get_text()) == 0:
             self.ok.set_sensitive(False)
 
-    def validate(self, text: str) -> None:
+    def validate(self, text: str) -> bool:
         if text.isspace():
             sensitive = False
         else:

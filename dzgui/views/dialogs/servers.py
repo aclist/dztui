@@ -47,7 +47,7 @@ class ServerDialog(GenericDialog):
     # def pack(self, widget: Gtk.Widget) -> None:
     #     self.content.pack_start(widget, EXPAND, FILL, NO_PADDING)
 
-    def _on_keypress(self, view: Gtk.TreeView, event: Gdk.EventKey) -> None:
+    def _on_keypress(self, view: Gtk.TreeView, event: Gdk.EventKey) -> bool:
         # NOTE: ESC normally unfocuses treeview instead of destroying dialog
         if event.keyval == Gdk.KEY_Escape:
             self.destroy()

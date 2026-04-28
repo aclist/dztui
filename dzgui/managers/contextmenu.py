@@ -19,12 +19,13 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+    from dzgui.views.trees.tree_servers import ServerTreeView
 
 
 class ContextMenuManager:
     def __init__(
         self,
-        treeview: Gtk.TreeView,
+        treeview: "ServerTreeView",
         controller: "Controller",
     ) -> None:
         self.controller = controller

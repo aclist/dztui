@@ -251,7 +251,9 @@ class ServerModelManager:
         proxy_man = self._get_proxy_man()
         proxy_man.update_playercount(self.playercount)
 
-    def _parse_single_record(self, response: dict, delete: bool = False) -> None:
+    def _parse_single_record(
+        self, response: dict[Any, Any] | None, delete: bool = False
+    ) -> None:
         self.preserve_on_fail = True
         if response is None:
             self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))

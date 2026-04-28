@@ -9,7 +9,7 @@ import subprocess
 import threading
 
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional, TYPE_CHECKING, Union
 
 from dzgui.api.bm import map_id_to_record
 from dzgui.const.constants import REQUEST_TIMEOUT
@@ -19,6 +19,8 @@ from dzgui.util import strings
 import a2s
 import dayzquery
 
+if TYPE_CHECKING:
+    from dayzquery import DayzMod
 
 logger = logging.getLogger(__name__)
 logging.getLogger("a2s").setLevel(logging.ERROR)
@@ -425,7 +427,7 @@ def validate_ip(addr: str) -> Record:
     return record
 
 
-def get_rules(record: Record) -> list[int]:
+def get_rules(record: Record) -> list["DayzMod"]:
     ip = record.ip
     qport = record.qport
     try:

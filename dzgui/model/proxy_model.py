@@ -246,7 +246,7 @@ class ProxyModelManager:
     def get_control(self) -> list:
         return self.control_model
 
-    def wipe_cache(self, full=False) -> None:
+    def wipe_cache(self, full: bool = False) -> None:
         self.filtered = None
         self.filter_cache = {}
 
