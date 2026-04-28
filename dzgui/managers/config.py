@@ -132,6 +132,13 @@ class ConfigManager:
             logger.critical(e)
             raise e
 
+    def set_fav(self, name: str, record: str) -> None:
+        try:
+            self.write_config(Preferences.FAV_LBL, name)
+            self.write_config(Preferences.FAV_SRV, record)
+        except Exception:
+            return
+
     def write_config(self, key: Preferences, value: str) -> None:
         try:
             real_key = self.enum_to_key(key)

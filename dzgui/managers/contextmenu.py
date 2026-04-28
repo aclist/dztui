@@ -55,7 +55,10 @@ class ContextMenuManager:
             case ContextMenu.OPEN_WORKSHOP:
                 self.open_mod_page()
             case ContextMenu.SET_FAV:
-                self.controller.set_fav()
+                name = self.treeview.get_value_at_index(0)
+                record = self.treeview.get_record_string()
+                simple = self.treeview.get_simplified_ip()
+                self.controller.set_fav(name, record, simple)
 
             # THREADED
             case ContextMenu.ADD_SERVER:

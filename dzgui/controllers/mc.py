@@ -19,7 +19,6 @@ from dzgui.api.mods import (
     _hash,
     remove_stale_signatures,
 )
-from dzgui.api.probe import test_steam_api, test_bm_api
 from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
@@ -122,6 +121,7 @@ class Controller(GObject.GObject):
     def get_emitter(self) -> Emitter:
         return self.emitter
 
+    @deprecated("depends on load mods logic")
     def call_on_thread(dialog_str: str) -> Callable:
         def decorator(func: Callable) -> Callable:
             @wraps(func)
@@ -187,6 +187,7 @@ class Controller(GObject.GObject):
         window = self.get_window()
         self.config_man.save_res_and_quit(treeview, window)
 
+    ## START STATUSBAR LOGIC
     @deprecated("use statusbar internal contexts")
     def remove_statusbar(self, context: str) -> None:
         c = self.mediator.statusbar.statusbar.get_context_id(context)
@@ -228,6 +229,8 @@ class Controller(GObject.GObject):
                 dist = str(separated) + " km"
 
         self.emitter.emit("distcalc_ended", dist, context)
+
+    ## END STATUSBAR LOGIC
 
     def toggle_config(self, key: Preferences) -> None:
         # NOTE: Preferences.DIST is dynamic
@@ -333,6 +336,10 @@ class Controller(GObject.GObject):
         self.mediator.modtreeview.set_model(model)
         self.emitter.emit("mod_page_loaded")
 
+    # def load_mods(self) -> None:
+    #     path = self.query_config(Preferences.DEFAULT)
+    #     ModManager(path)
+
     # TODO: delegate to threadmanager
     @call_on_thread(strings.dialog.modlist)
     def load_mods(self) -> None:
@@ -405,22 +412,13 @@ class Controller(GObject.GObject):
     def get_mod_store(self) -> Gtk.TreeModel | None:
         return self.mediator.modtreeview.get_model()
 
-    # TODO: delegate to configman
-    def set_fav(self) -> None:
-        treeview = self.get_active_treeview()
-        name = treeview.get_value_at_index(0)
-        record = treeview.get_record_string()
-
+    def set_fav(self, name: str, record: str, simple_ip: str) -> None:
         try:
-            self.config_man.write_config(Preferences.FAV_LBL, name)
-            self.config_man.write_config(Preferences.FAV_SRV, record)
+            self.config_man.set_fav(name, record)
+            self.emitter.emit("fav_server_changed", name, simple_ip)
         except Exception as e:
             logger.critical(e)
-            # TODO: add a failure dialog here
             return
-
-        simple_ip = treeview.get_simplified_ip()
-        self.emitter.emit("fav_server_changed", name, simple_ip)
 
     def menu_action(self, action: ContextMenu, tree: Gtk.TreeView) -> None:
         context_man = ContextMenuManager(tree, self)
