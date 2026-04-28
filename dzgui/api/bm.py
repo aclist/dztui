@@ -1,13 +1,10 @@
 import logging
 import requests
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 
 from dzgui.const.endpoints import BM_SERVERS
 
 logger = logging.getLogger(__name__)
-
-if TYPE_CHECKING:
-    from dzgui.api.servers import Record
 
 
 def get_attributes(key: str, uid: int) -> str:

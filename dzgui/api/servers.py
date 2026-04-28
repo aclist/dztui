@@ -503,4 +503,4 @@ def response_to_record(res: dict) -> Record:
     ip = res["addr"].split(":")[0]
     gameport = res["gameport"]
     qport = res["addr"].split(":")[1]
-    return Record(ip, gameport, qport)
+    return Record(ip, int(gameport), int(qport))
