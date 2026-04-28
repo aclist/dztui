@@ -54,7 +54,9 @@ def enum_to_key(enum: Preferences) -> str:
 def get_client_index(client: str) -> int:
     if client == STEAM_CMD:
         return 0
-    if client == FLATPAK_RUN_CMD:
+    elif client == FLATPAK_RUN_CMD:
         return 1
-    if client == FLATPAK_SANDBOX:
+    elif client == FLATPAK_SANDBOX:
         return 2
+    else:
+        return 0

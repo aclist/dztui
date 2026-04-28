@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import Literal, TYPE_CHECKING
 
 from dzgui.const.enum import ServerTab
 from dzgui.util.clip import copy_clipboard
@@ -72,10 +72,10 @@ class RightPanel(Gtk.Box):
         self.filters_vbox.set_sensitive(state)
 
     def _on_version_clicked(self, widget: Gtk.EventBox, event: Gdk.EventButton) -> None:
-        def revert() -> GLib.SOURCE_REMOVE:
+        def revert() -> Literal[False]:
             self.copying = False
             self.version_label.set_text(version)
-            return GLib.SOURCE_REMOVE
+            return False
 
         if self.copying:
             return
