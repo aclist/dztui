@@ -158,7 +158,7 @@ class Controller(GObject.GObject):
         return self.config_man.lookup(key)
 
     def is_auto_install(self) -> bool:
-        return self.query_config(Preferences.INSTALL)
+        return bool(self.query_config(Preferences.INSTALL))
 
     def suppress_signal(
         self, owner: Gtk.Widget, widget: Gtk.Widget, func_name: str, state: bool
@@ -173,7 +173,7 @@ class Controller(GObject.GObject):
     def toggle_debug_mode(self) -> None:
         self.toggle_config(Preferences.DEBUG)
 
-    def get_active_context(self) -> Gtk.TreeView:
+    def get_active_context(self) -> "ServerTab":
         return self.get_active_treeview().get_enum()
 
     def get_active_treeview(self) -> "ServerTreeView":
@@ -295,6 +295,8 @@ class Controller(GObject.GObject):
     def highlight_stale_cleanup(self, stale_mods: list) -> None:
         """Manipulates attached ListStore in the main event loop"""
         model = self.get_mod_store()
+        if model is None:
+            return
         for mod in model:
             it = mod.iter
             path = model.get_path(it)
@@ -358,7 +360,7 @@ class Controller(GObject.GObject):
             self.delete_single_mod(path)
 
         total_mods, total_size = self.calc_mod_size()
-        self.update_mod_statusbar()
+        self.format_mod_statusbar()
 
     def delete_single_mod_cleanup(self, _iter: Gtk.TreeIter) -> None:
         self.get_mod_store().remove(_iter)
@@ -420,7 +422,7 @@ class Controller(GObject.GObject):
             logger.critical(e)
             return
 
-    def menu_action(self, action: ContextMenu, tree: Gtk.TreeView) -> None:
+    def menu_action(self, action: ContextMenu, tree: "ServerTreeView") -> None:
         context_man = ContextMenuManager(tree, self)
         context_man.process(action)
 

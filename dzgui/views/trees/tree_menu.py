@@ -70,7 +70,7 @@ class MenuTreeView(TreeView):
         if row_type in docs:
             open_link_by_rowtype(row_type)
 
-    def get_row_enum(self) -> Any:
+    def get_row_enum(self) -> str:
         # NOTE: col 1 contains a RowType enum
         model = self.get_model()
         _iter = self.get_focused_row_iter()

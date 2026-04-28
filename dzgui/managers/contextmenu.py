@@ -3,7 +3,6 @@ import logging
 from typing import TYPE_CHECKING
 
 from dzgui.const.enum import ContextMenu, Preferences
-from dzgui.util import strings
 from dzgui.util.clip import copy_clipboard
 from dzgui.util.open_links import open_workshop_page
 

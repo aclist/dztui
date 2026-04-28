@@ -227,7 +227,7 @@ class FilterPanel(Gtk.Box):
     #        state = self.default_filters[label]
     #        check.set_active(state)
 
-    def _on_map_entry_keypress(self, entry: Gtk.Entry, event: Gdk.EventKey) -> None:
+    def _on_map_entry_keypress(self, entry: Gtk.Entry, event: Gdk.EventKey) -> bool:
         match event.keyval:
             case Gdk.KEY_Escape:
                 GLib.idle_add(self.restore_focus_to_treeview)
@@ -237,6 +237,7 @@ class FilterPanel(Gtk.Box):
                 """
                 text = self.maps_entry.get_text()
                 self.maps_entry.set_position(len(text))
+                return True
             case _:
                 return False
 

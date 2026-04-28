@@ -94,16 +94,20 @@ class ServerNotebook(Gtk.ScrolledWindow):
         self.emitter.emit("server_page_toggled", False)
 
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> Optional[False]:
-        if event.state is Gdk.ModifierType.CONTROL_MASK:
+        # NOTE: abort if modifier mask is active
+        if event.state != 0:
             return False
         match event.keyval:
             case Gdk.KEY_n:
                 self.notebook.next_page()
+                self.grab_content_area()
+                return True
             case Gdk.KEY_p:
                 self.notebook.prev_page()
+                self.grab_content_area()
+                return True
             case _:
-                return
-        self.grab_content_area()
+                return False
 
     def grab_content_area(self) -> None:
         self.get_active_treeview().grab_focus()

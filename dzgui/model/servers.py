@@ -27,6 +27,7 @@ API_TIMEOUT = 3
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.model.proxy_model import ProxyModelManager
+    from dzgui.views.trees.tree_servers import ServerTreeView
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class NewPlayerCount:
 
 
 class ServerModelManager:
-    def __init__(self, controller: "Controller", tv: Gtk.TreeView) -> None:
+    def __init__(self, controller: "Controller", tv: "ServerTreeView") -> None:
 
         self.tv = tv
         self.enum = tv.get_enum()
