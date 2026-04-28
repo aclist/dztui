@@ -36,8 +36,9 @@ class ButtonGrid(Gtk.Grid):
         # TODO: use enumerated checks
         for check in defaults.keys():
             checkbox = Gtk.CheckButton(label=check)
-            label = checkbox.get_children()
-            label[0].set_ellipsize(Pango.EllipsizeMode.END)
+            label = checkbox.get_child()
+            if label is not None:
+                label.set_ellipsize(Pango.EllipsizeMode.END)
 
             if defaults[check]:
                 checkbox.set_active(True)

@@ -79,7 +79,7 @@ class ConfigManager:
             raise e
 
     # TODO: strings
-    @call_on_thread("checking api")
+    @call_on_thread("Checking api")
     def update_api_key(self, key: Preferences, text: str) -> None:
         if key is Preferences.STEAM:
             res = test_steam_api(text)

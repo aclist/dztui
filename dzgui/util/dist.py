@@ -1,7 +1,7 @@
 import logging
 
 from math import radians, cos, sin, asin, sqrt
-from typing import TYPE_CHECKING
+from typing import Self, TYPE_CHECKING
 
 from dzgui.util.ip import GeolocationError, get_coords
 
@@ -47,6 +47,7 @@ class CalcDist:
         enum: "ServerTab",
         result_queue: "Queue",
         controller: "Controller",
+        cache: dict[str, Haversine],
     ) -> None:
         super().__init__()
 
@@ -56,17 +57,10 @@ class CalcDist:
         self.addr = addr
         self.ip = self.addr
 
-        cache = self.controller.get_dist_cache()
-        if self.addr in cache:
-            logger.info(f"Address '{self.addr}' already in cache")
-            self.result_queue.put([self.addr, cache[self.addr], self.enum])
-            return
-
         dist = self.compare(self.ip)
         self.result_queue.put([self.addr, dist, self.enum])
 
     def compare(self, remote: str) -> int | None:
-        # TODO: cache this
         prefs = self.controller.get_prefs()
         local = prefs.coords
         if local is None:

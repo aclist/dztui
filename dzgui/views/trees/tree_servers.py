@@ -205,7 +205,7 @@ class ServerTreeView(ContextMixin, TreeView):
         thread = threading.Thread(
             daemon=True,
             target=CalcDist,
-            args=(record.ip, enum, self.queue, self.controller),
+            args=(record.ip, enum, self.queue, self.controller, cache),
         )
         thread.start()
 
@@ -218,10 +218,9 @@ class ServerTreeView(ContextMixin, TreeView):
         cache = self.controller.get_dist_cache()
 
         if latest_result:
-            addr = latest_result[0]
-            haversine = latest_result[1]
+            addr, haversine, tab = latest_result
             if addr not in cache:
-                cache[addr] = haversine
+                self.controller.set_dist_cache(addr, haversine)
             # TODO: should be emitting a statusbar signal here instead?
             self.controller.set_statusbar_dist(haversine, self.get_enum())
         return True
@@ -281,7 +280,9 @@ class ServerTreeView(ContextMixin, TreeView):
         record = self.get_record()
         self.controller.connect_by_record(record)
 
-    def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection) -> None:
+    def _parent_selection_changed(
+        self, base_class: TreeView, sel: Gtk.TreeSelection
+    ) -> None:
         if self.loaded is False:
             return
         self.start_distcalc()
@@ -315,7 +316,9 @@ class ServerTreeView(ContextMixin, TreeView):
         self.loaded = status
 
     @staticmethod
-    def ping_server(model, _iter: Gtk.TreeIter, ip: str, qport: int, ping_column: int) -> None:
+    def ping_server(
+        model, _iter: Gtk.TreeIter, ip: str, qport: int, ping_column: int
+    ) -> None:
         _ping = ping(ip, qport)
         GLib.idle_add(lambda: model.set(_iter, ping_column, _ping))
 

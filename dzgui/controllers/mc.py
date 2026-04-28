@@ -484,9 +484,6 @@ class Controller(GObject.GObject):
     def get_statusbar(self) -> "Statusbar":
         return self.mediator.statusbar
 
-    #def get_proxy_man(self) -> "ProxyModelManager":
-    #    return self.proxy_man
-
     def populate_model(self, tv: "ServerTreeView") -> None:
         # NOTE: skip on previously loaded tabs
         if tv.is_loaded():
@@ -499,13 +496,12 @@ class Controller(GObject.GObject):
     def get_dist_cache(self) -> dict[str, "Haversine"]:
         return self.dist_cache
 
+    def set_dist_cache(self, addr: str, haversine: "Haversine") -> None:
+        self.dist_cache[addr] = haversine
+
     def get_map_store(self) -> Gtk.ListStore:
         filter_man = self.get_filter_man()
         return filter_man.get_map_store()
-
-    #def get_selected_map(self) -> str:
-    #    filter_man = self.get_filter_man()
-    #    return filter_man.get_selected_map()
 
     def get_enabled_filters(self) -> dict:
         filter_man = self.get_filter_man()
@@ -566,7 +562,7 @@ class Controller(GObject.GObject):
             return False
         return True
 
-    #def is_in_favs(self) -> bool:
+    # def is_in_favs(self) -> bool:
     #    return self.config_man.is_in_favs()
 
     def get_config_man(self) -> ConfigManager:
