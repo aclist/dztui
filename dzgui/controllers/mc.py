@@ -1,29 +1,12 @@
 import inspect
 import logging
-import shutil
-import threading
 
-from functools import wraps
-from pathlib import Path
 from typing import Any, Callable, TYPE_CHECKING
 from warnings import deprecated
 
-import dzgui.api.pefile as PeFile
 import dzgui.util._json as JSON  # noqa
 
 
-from dzgui.api.mods import (
-    get_delimited_mods,
-    get_local_mod_path,
-    find_stale_mods,
-    _hash,
-    remove_stale_signatures,
-)
-from dzgui.const.constants import (
-    APPID_DAYZ,
-    APPID_DAYZ_EXP,
-    HEX_RED,
-)
 from dzgui.const.enum import (
     FilterMode,
     Preferences,
@@ -32,7 +15,6 @@ from dzgui.const.enum import (
     ContextMenu,
 )
 
-from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.const.constants import APP_NAME
 from dzgui.controllers.emitter import Emitter
@@ -42,14 +24,12 @@ from dzgui.managers.connection import ConnectionManager
 from dzgui.managers.contextmenu import ContextMenuManager
 from dzgui.managers.notes import NoteManager
 from dzgui.model.servers import ServerModelManager
-from dzgui.model.model_factory import ModelFactory
-from dzgui.util import strings
 from dzgui.util.diag import write_diagnostic
-from dzgui.util.format import format_mods, format_player_count
+from dzgui.util.format import format_player_count
 from dzgui.util.localize import number
 from dzgui.util.open_links import open_user_workshop, open_workshop_page
 from dzgui.views.dialogs.filepicker import FilePicker
-from dzgui.views.dialogs.generic import ExceptionDialog, WaitDialog
+from dzgui.views.dialogs.generic import ExceptionDialog
 
 import gi
 
@@ -150,9 +130,6 @@ class Controller(GObject.GObject):
             widget.handler_block_by_func(func)
         else:
             widget.handler_unblock_by_func(func)
-
-    def toggle_debug_mode(self) -> None:
-        self.toggle_config(Preferences.DEBUG)
 
     def get_active_context(self) -> "ServerTab":
         return self.get_active_treeview().get_enum()
@@ -304,13 +281,7 @@ class Controller(GObject.GObject):
             dialog.run()
 
     def select_colorized(self) -> None:
-        model = self.get_mod_store()
-        sel = self.mediator.modtreeview.get_selection()
-        for mod in model:
-            it = mod.iter
-            path = model.get_path(it)
-            if mod[4] == HEX_RED:
-                sel.select_path(path)
+        self.mod_man.select_colorized()
 
     def get_filter_man(self) -> "FilterManager":
         """Each ServerTreeView has an atomic FilterManager"""

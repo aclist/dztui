@@ -67,6 +67,8 @@ class ModSelectionPanel(Gtk.Box):
         for child in self.stale_panel.get_children():
             if child.enum == ModButton.UNHIGHLIGHT_STALE:
                 child.set_sensitive(False)
+            elif child.enum == ModButton.SELECT_STALE:
+                child.set_sensitive(False)
             else:
                 child.set_sensitive(True)
 
