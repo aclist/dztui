@@ -2,6 +2,7 @@ import logging
 
 from typing import Optional, Self, TYPE_CHECKING
 
+from dzgui.cosnt.constants import APP_NAME
 from dzgui.const.enum import ContextMenuGroup, ServerTab
 from dzgui.views.trees.tree_servers import ServerTreeView
 from dzgui.util.strings import server_labels
@@ -11,7 +12,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib  # noqa E402
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller

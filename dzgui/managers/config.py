@@ -4,9 +4,10 @@ import traceback
 from typing import Any, TYPE_CHECKING
 
 from dzgui.const.constants import (
-    STEAM_CMD,
+    APP_NAME,
     FLATPAK_RUN_CMD,
     FLATPAK_SANDBOX,
+    STEAM_CMD,
     WINDOW_DEFAULT_X,
     WINDOW_DEFAULT_Y,
 )
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
     from dzgui.views.base import OuterWindow
     from dzgui.views.trees.tree_servers import ServerTreeView
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 class ConfigManager:

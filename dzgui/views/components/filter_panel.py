@@ -1,8 +1,15 @@
 import logging
 from typing import Literal, TYPE_CHECKING
 
+from dzgui.const.constants import (
+    APP_NAME,
+    EXPAND,
+    NO_EXPAND,
+    NO_FILL,
+    NO_PADDING,
+    SEARCH_ICON,
+)
 from dzgui.const.enum import FilterMode
-from dzgui.const.constants import EXPAND, NO_EXPAND, NO_FILL, NO_PADDING, SEARCH_ICON
 from dzgui.model.servers import ServerModelManager
 from dzgui.util.strings import all_maps
 from dzgui.views.components.maps_combo import MapsCombo
@@ -13,7 +20,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, Pango, GLib  # noqa E402
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller

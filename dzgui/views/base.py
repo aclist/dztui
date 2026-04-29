@@ -35,7 +35,7 @@ gi.require_version("Gtk", "3.0")
 gi.require_version("GLibUnix", "2.0")
 from gi.repository import Gtk, GLib, GLibUnix, Gdk, GObject, Pango  # noqa E402
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 # https://bugzilla.gnome.org/show_bug.cgi?id=708676
 warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 

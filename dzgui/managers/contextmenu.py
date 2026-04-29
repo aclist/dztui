@@ -2,6 +2,7 @@ import gi
 import logging
 from typing import TYPE_CHECKING
 
+from dzgui.const.constants import APP_NAME
 from dzgui.const.enum import ContextMenu, Preferences
 from dzgui.util.clip import copy_clipboard
 from dzgui.util.open_links import open_workshop_page
@@ -14,7 +15,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib, GObject  # noqa E402
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller

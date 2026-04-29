@@ -7,6 +7,7 @@ import warnings
 from typing import TYPE_CHECKING
 
 from dzgui.api.mods import remove_stale_signatures
+from dzgui.const.constants import APP_NAME
 from dzgui.const.enum import Preferences
 from dzgui.config.ipdb import get_ipdb
 from dzgui.config.query import lookup
@@ -36,17 +37,16 @@ from dzgui.util.strings import init, flags
 from dzgui.views.base import App
 from dzgui.views.dialogs.early_alert import EarlyAlertDialog, EarlyIgnoreDialog
 
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from pathlib import Path
+
+logger = logging.getLogger(APP_NAME)
 
 parser = argparse.ArgumentParser(description=flags.description)
-
 parser.add_argument("-v", "--version", action="store_true", help=flags.version)
 parser.add_argument("-u", "--uninstall", action="store_true", help=flags.uninstall)
 parser.add_argument("-d", "--debug", action="store_true", help=flags.debug)
 args = parser.parse_args()
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 # TODO: profile load time
@@ -61,6 +61,18 @@ def uninstall() -> None:
     # XDG_STATE_HOME/dzgui
     # XDG_DATA_HOME/dzgui
     pass
+
+
+def setup_logger(log_path: "Path") -> None:
+    _format = (
+        "%(asctime)s␞%(levelname)s␞%(filename)s::%(funcName)s::%(lineno)s␞%(message)s"
+    )
+    fh = logging.FileHandler(log_path)
+    formatter = logging.Formatter(_format)
+    fh.setFormatter(formatter)
+    fh.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
 
 
 def main() -> None:
@@ -95,10 +107,7 @@ def main() -> None:
         # TODO: copy notes file
         copy_state_files(xdg_paths["XDG_STATE_HOME"])
 
-    _format = (
-        "%(asctime)s␞%(levelname)s␞%(filename)s::%(funcName)s::%(lineno)s␞%(message)s"
-    )
-    logging.basicConfig(filename=XDG.debug, format=_format, level=logging.DEBUG)
+    setup_logger(XDG.debug)
     with open(XDG.debug, "w") as f:
         f.truncate(0)
 

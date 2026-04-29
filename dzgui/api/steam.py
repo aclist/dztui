@@ -5,10 +5,11 @@ import subprocess
 from shlex import shlex
 from pathlib import Path
 
+from dzgui.const.constants import APP_NAME
 from dzgui.util.bash import concat_bash_args
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 def query_defunct() -> None:

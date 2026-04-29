@@ -7,11 +7,12 @@ from dataclasses import dataclass
 from typing import Any, TYPE_CHECKING
 
 import dzgui.api.servers as Servers
-from dzgui.const.enum import FilterMode, Preferences, ServerTab
 from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
+    APP_NAME,
 )
+from dzgui.const.enum import FilterMode, Preferences, ServerTab
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.util.strings import api_warn_msg, dialog
 from dzgui.views.dialogs.generic import ExceptionDialog
@@ -21,15 +22,14 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
-LAN_TIMEOUT = 0.5
-API_TIMEOUT = 3
-
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.model.proxy_model import ProxyModelManager
     from dzgui.views.trees.tree_servers import ServerTreeView
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
+LAN_TIMEOUT = 0.5
+API_TIMEOUT = 3
 
 
 @dataclass
@@ -336,7 +336,6 @@ class ServerModelManager:
         proxy = self._get_proxy_man().get_proxy_model()
         self.tv.set_model(proxy)
 
-        # TODO: animate saved servers tab if we are on other tab
         self.emitter.emit("servers_loaded", self.enum)
 
         filter_man = self.tv.get_filter_man()

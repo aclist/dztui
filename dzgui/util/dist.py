@@ -1,9 +1,10 @@
 import logging
 
 from math import radians, cos, sin, asin, sqrt
-from typing import Self, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
-from dzgui.util.ip import GeolocationError, get_coords
+from dzgui.const.constants import APP_NAME
+from dzgui.util.ip import get_coords
 
 import gi
 
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from queue import Queue
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 class Haversine:

@@ -4,13 +4,13 @@ import sys
 from pathlib import Path
 
 from dzgui.config.query import lookup
-from dzgui.const.constants import LIBRARYFOLDERS_PATH, APPID_DAYZ
+from dzgui.const.constants import APPID_DAYZ, APP_NAME, LIBRARYFOLDERS_PATH
 from dzgui.const.enum import Preferences
 from dzgui.views.dialogs.early_alert import EarlyAlertDialog
 
 import dzgui.api.pefile as PeFile
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 def is_dayz_installed(config: Path) -> None:

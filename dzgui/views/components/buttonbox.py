@@ -1,15 +1,15 @@
 import logging
 from typing import TYPE_CHECKING
 
+from dzgui.const.constants import APP_NAME, NO_EXPAND, NO_FILL, NO_PADDING
 from dzgui.const.enum import ButtonType
-from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
 
 import gi
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk  # noqa E402
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.controllers.emitter import Emitter

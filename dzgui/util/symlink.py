@@ -2,13 +2,14 @@ import logging
 from pathlib import Path
 
 from dzgui.api.mods import get_local_mod_path, get_local_mod_ids, _hash
-from dzgui.const.constants import APPID_DAYZ, APPID_DAYZ_EXP
+from dzgui.const.constants import APPID_DAYZ, APPID_DAYZ_EXP, APP_NAME
 from dzgui.const.enum import Preferences
 from dzgui.config.query import lookup
 
 import dzgui.api.pefile as PeFile
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
+
 
 def rebuild_symlinks(config: Path) -> None:
     path = lookup(config, Preferences.DEFAULT)

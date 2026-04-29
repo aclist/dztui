@@ -2,6 +2,8 @@ import json
 import logging
 
 from typing import TYPE_CHECKING
+
+from dzgui.const.constants import APP_NAME
 from dzgui.util._json import read_json
 
 import gi
@@ -12,7 +14,7 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from pathlib import Path
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 class NoteManager:

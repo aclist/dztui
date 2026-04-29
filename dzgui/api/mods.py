@@ -11,6 +11,7 @@ from pathlib import Path
 import dzgui.api.pefile as PeFile
 from dzgui.api.servers import Record, get_rules
 from dzgui.const.constants import (
+    APP_NAME,
     APPID_DAYZ,
     LIBRARYFOLDERS_PATH,
     WORKSHOP_PATH,
@@ -22,7 +23,7 @@ from dzgui.const.enum import Preferences
 
 from typing import Any
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 @dataclass

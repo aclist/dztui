@@ -1,8 +1,10 @@
 import logging
 from pathlib import Path
+
+from dzgui.const.constants import APP_NAME
 from dzgui.util.strings import delimiter
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 class LogManager:

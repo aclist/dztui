@@ -3,7 +3,7 @@ import logging
 from typing import Any, Optional, TYPE_CHECKING
 from warnings import deprecated
 
-from dzgui.const.constants import SEPARATOR
+from dzgui.const.constants import APP_NAME, SEPARATOR
 from dzgui.util.keys import is_navkey
 from dzgui.views.mixins.cursor_mixin import CursorMixin
 
@@ -12,7 +12,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller

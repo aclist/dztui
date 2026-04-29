@@ -3,10 +3,10 @@ import requests
 
 from typing import Union, TYPE_CHECKING
 
-from dzgui.const.constants import APPID_DAYZ, REQUEST_TIMEOUT
+from dzgui.const.constants import APPID_DAYZ, APP_NAME, REQUEST_TIMEOUT
 from dzgui.const import endpoints
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 if TYPE_CHECKING:

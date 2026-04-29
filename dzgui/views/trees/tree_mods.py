@@ -1,7 +1,7 @@
 import logging
 from typing import Any, TYPE_CHECKING
 
-from dzgui.const.constants import HEX_RED
+from dzgui.const.constants import APP_NAME, HEX_RED
 from dzgui.const.enum import ContextMenuGroup
 from dzgui.util import strings, localize
 from dzgui.views.mixins.context_mixin import ContextMixin
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.controllers.emitter import Emitter
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 class ModTreeView(ModsMixin, ContextMixin, TreeView):

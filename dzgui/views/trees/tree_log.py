@@ -2,6 +2,7 @@ import logging
 
 from typing import Any, TYPE_CHECKING
 
+from dzgui.const.cosntants import APP_NAME
 from dzgui.const.enum import ContextMenuGroup
 from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from dzgui.controllers.mc import Controller
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 class LogTreeView(ContextMixin, TreeView):

@@ -3,7 +3,7 @@ import logging
 from typing import TYPE_CHECKING
 from importlib import resources
 
-from dzgui.const.constants import APP_NAME_LOWER, CHANGELOG_PATH
+from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, CHANGELOG_PATH
 from dzgui.util.strings import missing_changelog
 from dzgui.util.format import format_pango
 from dzgui.views.mixins.help_menu_mixin import HelpMenuMixin
@@ -14,7 +14,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller

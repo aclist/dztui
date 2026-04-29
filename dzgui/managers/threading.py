@@ -5,6 +5,8 @@ from typing import Any, TYPE_CHECKING
 
 from functools import wraps
 from typing import Callable
+
+from dzgui.const.constants import APP_NAME
 from dzgui.views.dialogs.generic import WaitDialog
 
 if TYPE_CHECKING:
@@ -15,7 +17,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib  # noqa E402
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 def call_on_thread(dialog_str: str) -> Callable:

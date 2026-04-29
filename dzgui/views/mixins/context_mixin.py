@@ -1,4 +1,6 @@
 import logging
+
+from dzgui.const.constants import APP_NAME
 from dzgui.const.enum import ContextMenu
 from dzgui.util.keys import is_navkey
 from dzgui.util.strings import edit_note
@@ -9,8 +11,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 
-
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 class ContextMixin(TreeView):

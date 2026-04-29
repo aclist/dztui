@@ -2,9 +2,9 @@ import logging
 import shutil
 import subprocess
 
-from dzgui.const.constants import STEAM_CMD, FLATPAK_APPID, FLATPAK_CMD
+from dzgui.const.constants import APP_NAME, FLATPAK_APPID, FLATPAK_CMD, STEAM_CMD
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 def has_steam_client() -> bool:
@@ -14,10 +14,7 @@ def has_steam_client() -> bool:
         return False
     try:
         res = subprocess.run(
-            [FLATPAK_CMD, "list"],
-            capture_output=True,
-            text=True,
-            check=True
+            [FLATPAK_CMD, "list"], capture_output=True, text=True, check=True
         )
         if FLATPAK_APPID in res.stdout:
             return True

@@ -5,13 +5,14 @@ from queue import Queue
 from typing import Any, Optional, Self
 from warnings import deprecated
 
-from dzgui.views.mixins.context_mixin import ContextMixin
-from dzgui.const.enum import ContextMenu, ContextMenuGroup, Preferences, ServerTab
 from dzgui.api.servers import ping, Record
+from dzgui.const.constants import APP_NAME
+from dzgui.const.enum import ContextMenu, ContextMenuGroup, Preferences, ServerTab
 from dzgui.managers.filter import FilterManager
 from dzgui.model.proxy_model import ProxyModelManager
-from dzgui.util.dist import CalcDist
 from dzgui.util import strings
+from dzgui.util.dist import CalcDist
+from dzgui.views.mixins.context_mixin import ContextMixin
 from typing import Literal, TYPE_CHECKING
 
 
@@ -24,7 +25,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller

@@ -25,10 +25,10 @@ class Log(CursorMixin, HelpMenuMixin, Gtk.Box):  # type: ignore
         self.check_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         # TODO: strings
         active = (
-            "WARNING",
+            "WARN",
             "CRITICAL",
         )
-        for check in ("WARNING", "CRITICAL", "INFO", "DEBUG"):
+        for check in ("WARN", "CRITICAL", "INFO", "DEBUG"):
             c = Gtk.CheckButton(label=check)
             self.check_bar.pack_start(c, False, False, 0)
             if check in active:

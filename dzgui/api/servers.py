@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING, Union
 
 from dzgui.api.bm import map_id_to_record
-from dzgui.const.constants import REQUEST_TIMEOUT
+from dzgui.const.constants import APP_NAME, REQUEST_TIMEOUT
 from dzgui.const.endpoints import STEAM_SERVERS
 from dzgui.util import strings
 
@@ -22,8 +22,7 @@ import dayzquery
 if TYPE_CHECKING:
     from dayzquery import DayzMod
 
-logger = logging.getLogger(__name__)
-logging.getLogger("a2s").setLevel(logging.ERROR)
+logger = logging.getLogger(APP_NAME)
 
 # TODO: confirm that patches from testing are incorporated here
 # particularly around malformed values in JSON response. check commit log
@@ -63,7 +62,7 @@ def get_netmask() -> str:
 # TODO: rename
 def test_ip(suffix: int, port: int, event: threading.Event) -> dict | None:
     if event.is_set():
-        return
+        return None
     netmask = get_netmask()
     hostname = f"{netmask}.{str(suffix)}"
     ping = ["ping", "-c1", "-i", "0.1", "-w", "1"]
@@ -74,6 +73,9 @@ def test_ip(suffix: int, port: int, event: threading.Event) -> dict | None:
 
 
 def sanitize(name: str) -> str:
+    """
+    Strips extraneous padding and spammy junk chars in server names
+    """
     name = re.sub(r"\r", r"", name)
     name = re.sub(r"\n", r"", name)
     name = re.sub(r"\x01", r"", name)
@@ -189,9 +191,9 @@ def parse_json(json: list) -> list:
     return rows
 
 
-def query_direct(ip: str, qport: int, TIMEOUT: float = 3.0) -> dict | None:
+def query_direct(ip: str, qport: int, timeout: float = 3.0) -> dict | None:
     try:
-        info = a2s.info((ip, qport), TIMEOUT)
+        info = a2s.info((ip, qport), timeout)
 
         name = info.server_name
         mapname = info.map_name
@@ -218,7 +220,7 @@ def query_direct(ip: str, qport: int, TIMEOUT: float = 3.0) -> dict | None:
         res["ping"] = ping
         return res
     except Exception as e:
-        logger.critical(f"{type(e).__name__}: {e}")
+        logger.critical(f"{type(e).__name__}: {e} ({ip}:{qport})")
         return None
 
 

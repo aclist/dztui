@@ -78,6 +78,10 @@ class ServerDetailsDialog(ServerDialog):
             column.set_sort_column_id(i)
             column.set_expand(True)
 
+        # NOTE: constrain tree area to logical height of metadata
+        # leaving room for server message
+        self.scrollable_tree.set_size_request(700, 150)
+
         # TODO: make "Server message" text boldface
         scrollable_message = Gtk.ScrolledWindow()
         desc = Gtk.Label(label=strings.server_message, valign=Gtk.Align.START)

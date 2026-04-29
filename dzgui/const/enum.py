@@ -112,39 +112,6 @@ class NotebookPage(EnumWithAttrs):
 
 
 class RowType(EnumWithAttrs):
-    @classmethod
-    def str2rowtype(cls, string: str) -> "RowType":
-        for member in cls:
-            if string == member.dict["label"]:
-                return member
-
-    # TODO: add to notebook tab tooltips
-    # SERVER_BROWSER = {
-    #     "label": "Server browser",
-    #     "tooltip": "Used to browse the global server list",
-    #     "type": "server",
-    # }
-    # SAVED_SERVERS = {
-    #     "label": "My saved servers",
-    #     "tooltip": "Browse your saved servers. Unreachable servers will be excluded",
-    #     "type": "server",
-    # }
-    # RECENT_SERVERS = {
-    #     "label": "Recent servers",
-    #     "tooltip": "Shows the last 10 servers you connected to (includes attempts)",
-    #     "type": "server",
-    # }
-    # SCAN_LAN = {
-    #     "label": "Scan LAN servers",
-    #     "tooltip": "Search for servers on your local network",
-    #     "type": "server",
-    # }
-    # LIST_MODS = {
-    #     "label": "Mods",
-    #     "tooltip": "Browse a list of locally-installed mods",
-    #     "quad_label": "Mods",
-    #     "type": "mods",
-    # }
     # TODO: strings
     CHANGELOG = {
         "label": "View changelog",

@@ -2,9 +2,10 @@ import logging
 import requests
 from typing import Optional
 
+from dzgui.const.constants import APP_NAME
 from dzgui.const.endpoints import BM_SERVERS
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 
 def get_attributes(key: str, uid: int) -> str:

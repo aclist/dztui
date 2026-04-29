@@ -34,6 +34,7 @@ from dzgui.const.enum import (
 
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
+from dzgui.const.constants import APP_NAME
 from dzgui.controllers.emitter import Emitter
 from dzgui.managers.log import LogManager
 from dzgui.managers.config import ConfigManager
@@ -56,7 +57,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib, GObject  # noqa E402
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.api.servers import Record
