@@ -61,6 +61,15 @@ class ModSelectionPanel(Gtk.Box):
         for el in header, self.main_panel, self.stale_panel:
             self.pack_start(el, NO_EXPAND, FILL, NO_PADDING)
 
+        self.connect("map", self._reinit_button)
+
+    def _reinit_button(self, s) -> None:
+        for child in self.stale_panel.get_children():
+            if child.enum == ModButton.UNHIGHLIGHT_STALE:
+                child.set_sensitive(False)
+            else:
+                child.set_sensitive(True)
+
     def _on_mods_highlighted(self, emitter: "Emitter") -> None:
         self.swap_sensitive(True)
 
