@@ -70,7 +70,7 @@ class Statusbar(Gtk.Grid):
         # FIXME: fails if button was not previously drawn
         self.alert_button.hide()
 
-    def _on_mods_updated(self, emitter: "Emitter", msg: str) -> None:
+    def _on_mods_updated(self, emitter: "Emitter", msg: str, mods: int) -> None:
         self.set_by_context(NotebookPage.MODS, msg)
 
     def _on_notebook_page_changed(

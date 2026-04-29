@@ -61,8 +61,9 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
     def _on_mods_highlighted(self, emitter: "Emitter") -> None:
         self.get_selection().unselect_all()
 
-    # TODO: test loading with no mods
-    def _on_mods_updated(self, emitter: "Emitter", msg: str) -> None:
+    def _on_mods_updated(self, emitter: "Emitter", msg: str, mods: int) -> None:
+        if mods < 1:
+            return
         self.set_cursor(0)
 
     def get_selected_mod(self) -> str:

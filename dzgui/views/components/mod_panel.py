@@ -31,6 +31,7 @@ class ModSelectionPanel(Gtk.Box):
         emitter = controller.get_emitter()
         emitter.connect("mod_page_toggled", self._on_mod_page_toggled)
         emitter.connect("mods_highlighted", self._on_mods_highlighted)
+        emitter.connect("mods_updated", self._on_mods_updated)
 
         header = BoldLabel(mod_panel.header)
 
@@ -71,6 +72,11 @@ class ModSelectionPanel(Gtk.Box):
                 child.set_sensitive(False)
             else:
                 child.set_sensitive(True)
+
+    def _on_mods_updated(self, emitter: "Emitter", msg: str, mods: int) -> None:
+        if mods < 1:
+            self.main_panel.set_sensitive(False)
+            self.stale_panel.set_sensitive(False)
 
     def _on_mods_highlighted(self, emitter: "Emitter") -> None:
         self.swap_sensitive(True)

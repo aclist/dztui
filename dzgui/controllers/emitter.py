@@ -124,8 +124,14 @@ class Emitter(GObject.GObject):
     def load_maps(self, store: ListStore) -> None:
         pass
 
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(str,))
-    def mods_updated(self, msg: str) -> None:
+    @GObject.Signal(
+        flags=GObject.SignalFlags.RUN_LAST,
+        arg_types=(
+            str,
+            int,
+        ),
+    )
+    def mods_updated(self, msg: str, mods: int) -> None:
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
