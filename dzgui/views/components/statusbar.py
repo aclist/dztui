@@ -60,7 +60,7 @@ class Statusbar(Gtk.Grid):
         self.emitter.connect("distcalc_started", self._on_distcalc_started)
         self.emitter.connect("distcalc_ended", self._on_distcalc_ended)
         self.emitter.connect("servers_loaded", self._on_servers_loaded)
-        self.emitter.connect("mod_page_loaded", self._on_mod_page_loaded)
+        self.emitter.connect("mods_updated", self._on_mods_updated)
         self.emitter.connect("log_page_loaded", self._on_log_page_loaded)
 
     def _on_alerts_clicked(self, button: LoggerAlertsButton) -> None:
@@ -70,8 +70,7 @@ class Statusbar(Gtk.Grid):
         # FIXME: fails if button was not previously drawn
         self.alert_button.hide()
 
-    def _on_mod_page_loaded(self, emitter: "Emitter") -> None:
-        msg = self.controller.format_mod_statusbar()
+    def _on_mods_updated(self, emitter: "Emitter", msg: str) -> None:
         self.set_by_context(NotebookPage.MODS, msg)
 
     def _on_notebook_page_changed(

@@ -41,7 +41,6 @@ from dzgui.managers.config import ConfigManager
 from dzgui.managers.connection import ConnectionManager
 from dzgui.managers.contextmenu import ContextMenuManager
 from dzgui.managers.notes import NoteManager
-from dzgui.model.proxy_model import ProxyModelManager
 from dzgui.model.servers import ServerModelManager
 from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
@@ -121,25 +120,6 @@ class Controller(GObject.GObject):
 
     def get_emitter(self) -> Emitter:
         return self.emitter
-
-    @deprecated("depends on load mods logic")
-    def call_on_thread(dialog_str: str) -> Callable:
-        def decorator(func: Callable) -> Callable:
-            @wraps(func)
-            def wrapper(*args, **kwargs):
-                def callback() -> None:
-                    func(*args, **kwargs)
-                    GLib.idle_add(self._destroy_on_idle)
-
-                self = args[0]
-                self.wait_dialog = WaitDialog(self, dialog_str, jobs=self.pending_jobs)
-                self.wait_dialog.show_all()
-                thread = threading.Thread(target=callback)
-                thread.start()
-
-            return wrapper
-
-        return decorator
 
     def register_widget(self, attr: str, widget: Gtk.Widget) -> None:
         try:
@@ -282,135 +262,22 @@ class Controller(GObject.GObject):
         client = self.query_config(Preferences.CLIENT)
         open_user_workshop(uid, client)
 
-    ### START LOAD MODS LOGIC
+    def load_mods(self) -> None:
+        from dzgui.managers.mods import ModManager
+
+        self.mod_man = ModManager(self)
 
     def uncolorize_mods(self) -> None:
-        model = self.get_mod_store()
-        for mod in model:
-            it = mod.iter
-            path = model.get_path(it)
-            model[path][4] = None
-        path = Gtk.TreePath.new_from_indices([0])
-        self.mediator.modtreeview.set_cursor(path)
+        self.mod_man.uncolorize_mods()
 
-    def highlight_stale_cleanup(self, stale_mods: list) -> None:
-        """Manipulates attached ListStore in the main event loop"""
-        model = self.get_mod_store()
-        if model is None:
-            return
-        for mod in model:
-            it = mod.iter
-            path = model.get_path(it)
-            if int(mod[2]) in stale_mods:
-                model[path][4] = True
-        self.emitter.emit("mods_highlighted")
-
-    # TODO: delegate to mod manager
-    @call_on_thread(strings.dialog.working)
     def highlight_stale(self) -> None:
-        # TODO: set progress bar for number of mods
-        stale = find_stale_mods(self.prefs.paths.config)
-        self.cleanup_func = StoredFunc(self.highlight_stale_cleanup, stale)
-
-    def set_cleanup_func(self, func: StoredFunc) -> None:
-        self.cleanup_func = func
-
-    def get_cleanup_func(self) -> StoredFunc:
-        return self.cleanup_func
-
-    def _destroy_on_idle(self) -> None:
-        self.wait_dialog.destroy()
-        func = self.get_cleanup_func()
-        if func is not None:
-            func.call()
-            self.set_cleanup_func(None)
-        self.mediator.window.set_sensitive(True)
+        self.mod_man.highlight_stale()
 
     def toggle_mod_selection(self, state: bool) -> None:
-        sel = self.mediator.modtreeview.get_selection()
-        if state:
-            sel.select_all()
-        else:
-            sel.unselect_all()
-        # TODO: signal
-        self.mediator.modtreeview.grab_focus()
+        self.mod_man.toggle_mod_selection(state)
 
-    def load_mods_cleanup(self, model: Gtk.ListStore) -> None:
-        self.mediator.modtreeview.set_model(model)
-        self.emitter.emit("mod_page_loaded")
-
-    # def load_mods(self) -> None:
-    #     path = self.query_config(Preferences.DEFAULT)
-    #     ModManager(path)
-
-    # TODO: delegate to threadmanager
-    @call_on_thread(strings.dialog.modlist)
-    def load_mods(self) -> None:
-        model = ModelFactory().make_mod_store()
-        path = self.query_config(Preferences.DEFAULT)
-        mods = get_delimited_mods(Path(path))
-        model.extend(mods)
-
-        self.cleanup_func = StoredFunc(self.load_mods_cleanup, model)
-
-    def delete_multiple_mods(self) -> None:
-        sel = self.mediator.modtreeview.get_selection()
-        model, pathlist = sel.get_selected_rows()
-        # NOTE: reverse when multiple selection
-        for path in reversed(pathlist):
-            self.delete_single_mod(path)
-
-        total_mods, total_size = self.calc_mod_size()
-        self.format_mod_statusbar()
-
-    def delete_single_mod_cleanup(self, _iter: Gtk.TreeIter) -> None:
-        self.get_mod_store().remove(_iter)
-        remove_stale_signatures(self.prefs.paths.config, self.prefs.paths.version)
-
-    # TODO: strings
-    # TODO: delegate to LocalModManager or api/mods.py
-    @call_on_thread("deleting mod")
-    def delete_single_mod(self, tree_path: Gtk.TreePath) -> None:
-        config = self.prefs.paths.config
-        mod, _iter = self.get_mod_from_tree_path(tree_path)
-
-        path = lookup(config, Preferences.DEFAULT)
-        steam_path = Path(path)
-        mods_path = get_local_mod_path(steam_path)
-        app_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
-
-        md5 = _hash(mod)
-        symlink = app_path / md5
-        symlink.unlink()
-        shutil.rmtree(mods_path / mod)
-
-        # NOTE: second pass to unlink DAYZ_EXP mods
-        # TODO: test this with working APPID_DAYZ_EXP installation
-        try:
-            app_path_exp = PeFile.get_nested_app_path(steam_path, APPID_DAYZ_EXP)
-            symlink = app_path_exp / md5
-            symlink.unlink()
-        except PeFile.AppNotInstalledError:
-            pass
-
-        self.cleanup_func = StoredFunc(self.delete_single_mod_cleanup, _iter)
-
-    def format_mod_statusbar(self) -> str:
-        total_mods, total_size = self.calc_mod_size()
-        msg = format_mods(total_size, total_mods)
-        return msg
-
-    def calc_mod_size(self) -> tuple[int, int]:
-        model = self.get_mod_store()
-        if model is None:
-            return 0, 0
-        total_mods = len(model)
-        total_size = 0
-        for mod in model:
-            total_size += mod[3]
-        return total_mods, total_size
-
-    ### END LOAD MODS LOGIC
+    def delete_mods(self) -> None:
+        self.mod_man.delete_mods()
 
     def get_mod_store(self) -> Gtk.TreeModel | None:
         return self.mediator.modtreeview.get_model()
@@ -652,3 +519,6 @@ class Controller(GObject.GObject):
         log_man = LogManager()
         alerts = log_man.get_alerts(self.prefs.paths.debug)
         return alerts
+
+    def get_modtreeview(self) -> "ModTreeView":
+        return self.mediator.modtreeview

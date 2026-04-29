@@ -26,7 +26,7 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
         super().__init__(controller, menu=ContextMenuGroup.MOD)
         self.controller = controller
         emitter = self.controller.get_emitter()
-        emitter.connect("mod_page_loaded", self._on_mod_page_loaded)
+        emitter.connect("mods_updated", self._on_mods_updated)
         emitter.connect("mods_highlighted", self._on_mods_highlighted)
 
         self.set_fixed_height_mode(True)
@@ -62,7 +62,7 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
         self.get_selection().unselect_all()
 
     # TODO: test loading with no mods
-    def _on_mod_page_loaded(self, emitter: "Emitter") -> None:
+    def _on_mods_updated(self, emitter: "Emitter", msg: str) -> None:
         self.set_cursor(0)
 
     def get_selected_mod(self) -> str:

@@ -44,14 +44,7 @@ class ContextMenuManager:
             case ContextMenu.COPY_SERVER_NAME:
                 self.copy_server_name()
             case ContextMenu.DELETE_MOD:
-                print("DEBUG: unimplemented")
-                # self.delete_single_mod()
-                # TODO: connect to emitter automatically
-                # Gtk.TreeModel, row-inserted/row-deleted
-                # updates statusbar
-                # FIXME: signal should instead be emitted off of treeview when rows added/inserted
-                # self.update_mod_statusbar()
-                pass
+                self.controller.delete_mods()
             case ContextMenu.OPEN_WORKSHOP:
                 self.open_mod_page()
             case ContextMenu.SET_FAV:

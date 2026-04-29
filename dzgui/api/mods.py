@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import dzgui.api.pefile as PeFile
-from dzgui.api.servers import Record, get_rules
+from dzgui.api.servers import Record, get_rules, fqip_to_record
 from dzgui.const.constants import (
     APP_NAME,
     APPID_DAYZ,
@@ -153,10 +153,8 @@ def remove_stale_signatures(config: Path, versions: Path) -> None:
 
 def find_stale_mods(config: Path) -> list[int]:
     def push_record(rec: str) -> list:
-        add = rec.split(":")
-        ip = add[0]
-        qport = add[2]
-        return get_rules(ip, qport)
+        record = fqip_to_record(rec)
+        return [mod.workshop_id for mod in get_rules(record)]
 
     steam = lookup(config, Preferences.DEFAULT)
     steam_path = Path(steam)
@@ -171,7 +169,8 @@ def find_stale_mods(config: Path) -> list[int]:
         wait(futures)
         for future in futures:
             res = future.result()
-            remote_mods += res
+            remote_mods.extend(res)
 
-    stale = [mod for mod in local if mod not in remote_mods]
+    unique_mods = set(remote_mods)
+    stale = [mod for mod in local if mod not in unique_mods]
     return stale

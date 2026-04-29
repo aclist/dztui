@@ -81,7 +81,7 @@ class ModSelectionPanel(Gtk.Box):
             case ModButton.UNSELECT_ALL:
                 self.controller.toggle_mod_selection(False)
             case ModButton.DELETE_SELECTED:
-                self.controller.delete_multiple_mods()
+                self.controller.delete_mods()
             case ModButton.HIGHLIGHT_STALE:
                 self.controller.highlight_stale()
             case ModButton.UNHIGHLIGHT_STALE:
