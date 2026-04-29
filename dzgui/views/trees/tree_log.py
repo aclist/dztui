@@ -2,7 +2,7 @@ import logging
 
 from typing import Any, TYPE_CHECKING
 
-from dzgui.const.cosntants import APP_NAME
+from dzgui.const.constants import APP_NAME
 from dzgui.const.enum import ContextMenuGroup
 from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
