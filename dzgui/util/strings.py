@@ -135,6 +135,8 @@ servers = {
     "Ctrl-d": "select default LAN port",
     "Ctrl-n": "select custom LAN port",
     "Ctrl-i": "jump to IP insert field",
+    "n": "navigate to next tab",
+    "p": "navigate to previous tab",
     "ESC": "return to table",
     "1-9": "toggle filter 1-9 on/off",
     "0": "toggle filter 10",
