@@ -2,7 +2,7 @@ import logging
 
 from typing import Optional, Self, TYPE_CHECKING
 
-from dzgui.cosnt.constants import APP_NAME
+from dzgui.const.constants import APP_NAME
 from dzgui.const.enum import ContextMenuGroup, ServerTab
 from dzgui.views.trees.tree_servers import ServerTreeView
 from dzgui.util.strings import server_labels
