@@ -40,6 +40,7 @@ class RightPanel(Gtk.Box):
 
         self.copying = False
 
+        # TODO: strings
         version = self.controller.get_prefs().version
         self.version_label = Gtk.Label(
             label=version,
@@ -47,6 +48,7 @@ class RightPanel(Gtk.Box):
             vexpand=True,
             halign=Gtk.Align.END,
             valign=Gtk.Align.END,
+            tooltip_text="Click to copy to clipboard",
         )
         eb = Gtk.EventBox(halign=Gtk.Align.END, valign=Gtk.Align.END)
         eb.add(self.version_label)
