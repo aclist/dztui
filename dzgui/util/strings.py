@@ -161,8 +161,6 @@ label_main_menu = "Main menu"
 
 # buttons
 ping_servers = "Ping servers"
-debug_mode = "Debug mode"
-debug_tooltip = "Used to perform a dry run without\n" "actually connecting to a server"
 ping_tooltip = (
     "Refresh the ping for visible servers.\n" "Available once per unique filter context"
 )

@@ -36,8 +36,8 @@ def rc2json(file: Path) -> str:
     d = {}
     ips: list[str] = []
 
-    toggles = ["auto_install", "debug", "fullscreen"]
-    deprecated = ["staging_dir", "src_path", "steam_path"]
+    toggles = ["auto_install", "fullscreen"]
+    deprecated = ["staging_dir", "src_path", "steam_path", "debug", "branch"]
 
     while True:
         tok = lex.get_token()
