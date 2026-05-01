@@ -429,6 +429,7 @@ def validate_ip(addr: str) -> Record:
     return record
 
 
+# TODO: do not return empty list in event of failure
 def get_rules(record: Record) -> list["DayzMod"]:
     ip = record.ip
     qport = record.qport

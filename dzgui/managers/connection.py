@@ -55,10 +55,11 @@ class ConnectionManager:
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._server_timeout), destroy_first=True
             )
+        rules = Servers.get_rules(record)
 
         # TODO: add to history if successful
-        print("UNIMPLEMENTED: get rules")
         print(res)
+        print(rules)
 
     @call_on_thread(dialog.querying)
     def query_details(self, record: Servers.Record) -> None:
@@ -74,7 +75,6 @@ class ConnectionManager:
 
     @call_on_thread(dialog.querying)
     def query_modlist(self, record: Servers.Record) -> None:
-
         mods = Servers.get_rules(record)
         steam_path = self.controller.query_config(Preferences.DEFAULT)
         local = get_local_mod_ids(steam_path)
