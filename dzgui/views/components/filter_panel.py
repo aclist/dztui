@@ -212,6 +212,9 @@ class FilterPanel(Gtk.Box):
             return
         if text == self.sel_map:
             return
+
+        i: int
+        row: Gtk.TreeModelRow
         for i, row in enumerate(model):
             if text == row[0]:
                 self.maps_combo.set_active(i)
@@ -219,6 +222,9 @@ class FilterPanel(Gtk.Box):
     def _on_maps_loaded(self, emitter: "Emitter", store: Gtk.ListStore) -> None:
         self.maps_combo.set_model(store)
         tv = self.controller.get_active_treeview()
+
+        ind: int
+        name: str
         ind, name = tv.filter_man.get_active_map()
         # NOTE: setting active index triggers a 'changed' signal on self.maps_combo
         self.block_map_change_propagation = True
@@ -256,7 +262,7 @@ class FilterPanel(Gtk.Box):
     ) -> None:
         self.maps_combo.set_active_iter(it)
 
-    def _on_map_completion(self, entry, editable):
+    def _on_map_completion(self, entry: Gtk.Entry, editable: Literal[True]):
         text = entry.get_text()
         completion = entry.get_completion()
         store = self.controller.get_map_store()

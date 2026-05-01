@@ -177,7 +177,6 @@ class Controller(GObject.GObject):
         self.open_page(NotebookPage.DEVELOPERS)
 
     def open_page(self, page: NotebookPage) -> None:
-        print(page)
         self.mediator.grid.notebook.set_page_by_enum(page)
 
     def open_page_by_button(self, button: "ContextualButton") -> None:
@@ -449,5 +448,5 @@ class Controller(GObject.GObject):
     def set_exit_event(self) -> None:
         self.exit_event.set()
 
-    def get_exit_event(self) -> None:
+    def get_exit_event(self) -> threading.Event:
         return self.exit_event
