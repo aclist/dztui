@@ -91,6 +91,12 @@ class ServerModelManager:
             futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
             for future in as_completed(futures):
                 try:
+
+                    # NOTE: faciliate early aborting on boot via sigint
+                    # this logic not available outside of initial boot
+                    if self.controller.get_exit_event().is_set():
+                        return
+
                     self.thread_man.increment_dialog()
                     res = future.result(timeout=API_TIMEOUT)
                     if res.status != 200 or not res.parsed:
@@ -101,7 +107,6 @@ class ServerModelManager:
                     j = res.json
                     servers += j["response"]["servers"]
                 except Exception as e:
-                    # TODO: could store exception in cleanup func
                     logger.critical(e)
                     self.thread_man.set_cleanup_func(
                         StoredFunc(self._cleanup_on_failure)

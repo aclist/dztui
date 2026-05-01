@@ -94,7 +94,6 @@ class OuterWindow(Gtk.Window):
         self.halt_proc_and_quit()
 
     def halt_proc_and_quit(self) -> None:
-        # MainController.terminate_process()
         MainController.save_res_and_quit()
 
 
@@ -319,6 +318,7 @@ class App(Gtk.Application):
             logger.critical(e)
 
     def _catch_sigint(self) -> Literal[True]:
+        MainController.set_exit_event()
         self.win.halt_proc_and_quit()
         return True
 

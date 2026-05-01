@@ -1,7 +1,7 @@
-import inspect
 import logging
+import threading
 
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import dzgui.util._json as JSON  # noqa
 
@@ -83,6 +83,8 @@ class Controller(GObject.GObject):
         # NOTE: suppress requests until entire UI is loaded
         self.loaded = False
         self.pending_jobs = 1
+
+        self.exit_event = threading.Event()
 
     def get_emitter(self) -> Emitter:
         return self.emitter
@@ -442,3 +444,9 @@ class Controller(GObject.GObject):
 
     def get_modtreeview(self) -> "ModTreeView":
         return self.mediator.modtreeview
+
+    def set_exit_event(self) -> None:
+        self.exit_event.set()
+
+    def get_exit_event(self) -> None:
+        return self.exit_event
