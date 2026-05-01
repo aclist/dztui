@@ -7,6 +7,7 @@ from pathlib import Path
 Convert legacy dztuirc to config.json
 """
 
+
 class UnsupportedKey(Exception):
     pass
 
@@ -59,7 +60,10 @@ def rc2json(file: Path) -> str:
                 ntok = lex.get_token().strip('""')
                 if ntok == ")":
                     break
-                ips.append(ntok)
+                # TODO: make test for this
+                # NOTE: strip malformed records from ancient config file versions
+                if len(ntok.split(":")) == 3 and ntok.split(":")[2] != "":
+                    ips.append(ntok)
             continue
 
         if not tok:

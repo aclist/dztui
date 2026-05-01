@@ -152,10 +152,6 @@ class ServerModelManager:
 
     @call_on_thread(dialog.fetching)
     def _dump_ips(self, ips: list[str]) -> None:
-        # NOTE: block malformed records (TODO: add github issue no.)
-        # TODO: sanitize ip list at config time and drop this
-        # TODO: make test for this
-        ips = [ip for ip in ips if len(ip.split(":")) == 3 and ip.split(":")[2] != ""]
         job = Servers.query_direct
         servers = []
         with ThreadPoolExecutor() as executor:
