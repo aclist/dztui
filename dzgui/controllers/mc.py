@@ -68,23 +68,12 @@ class AppNavigation:
     filters: "FilterPanel"
 
 
-class StoredFunc:
-    def __init__(self, func: Callable, *args, **kwargs) -> None:
-        sig = inspect.signature(func)
-        self.func = func
-        self.bindings = sig.bind(*args, **kwargs)
-
-    def call(self) -> None:
-        self.func(*self.bindings.args, *self.bindings.kwargs)
-
-
 class Controller(GObject.GObject):
     def __init__(self) -> None:
         self.dist_cache: dict[str, "Haversine"] = {}
         self.mediator = AppNavigation()
 
         self.prefs: UserPrefs
-        self.cleanup_func: StoredFunc = None
 
         self.emitter = Emitter()
         self.emitter.connect("map_selection_changed", self._on_map_selection_changed)
