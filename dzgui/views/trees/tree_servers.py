@@ -7,7 +7,7 @@ from warnings import deprecated
 
 from dzgui.api.servers import ping, Record
 from dzgui.const.constants import APP_NAME
-from dzgui.const.enum import ContextMenu, ContextMenuGroup, Preferences, ServerTab
+from dzgui.const.enum import ContextMenu, ContextMenuGroup, ServerTab
 from dzgui.managers.filter import FilterManager
 from dzgui.model.proxy_model import ProxyModelManager
 from dzgui.util import strings

@@ -19,7 +19,6 @@ from dzgui.const.constants import (
     APPID_DAYZ_EXP,
     APPNAME_DAYZ,
     APPNAME_DAYZ_EXP,
-    BETA_REPO,
     FLATPAK_RUN_CMD,
     FLATPAK_SANDBOX,
     NO_EXPAND,
@@ -130,17 +129,17 @@ class Options(Gtk.Box):
         self.dayz_version_label = Gtk.Label(label=strings.null)
         self.dayz_exp_version_label = Gtk.Label(label=strings.null)
 
-        #self.branch_combo = Gtk.ComboBoxText()
-        #self.branch_combo.append_text(strings.options.stable)
-        #self.branch_combo.append_text(strings.options.testing)
-        #self.branch_combo.set_active(0)
-        #self.branch_combo.connect("changed", self._on_branch_changed)
-        #self.branch_eb = InfoEventBox("", controller)
+        # self.branch_combo = Gtk.ComboBoxText()
+        # self.branch_combo.append_text(strings.options.stable)
+        # self.branch_combo.append_text(strings.options.testing)
+        # self.branch_combo.set_active(0)
+        # self.branch_combo.connect("changed", self._on_branch_changed)
+        # self.branch_eb = InfoEventBox("", controller)
 
         version_rows = [
             [LeftLabel(APPNAME_DAYZ), self.dayz_version_label],
             [LeftLabel(APPNAME_DAYZ_EXP), self.dayz_exp_version_label],
-            #[LeftLabel(strings.options.branch), self.branch_combo, self.branch_eb],
+            # [LeftLabel(strings.options.branch), self.branch_combo, self.branch_eb],
         ]
 
         api_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -489,22 +488,22 @@ class Options(Gtk.Box):
         self.client_combo.set_active(active_combo)
         active_combo = 0
 
-        #active_combo = 1 if config["branch"] == BETA_REPO else 0
+        # active_combo = 1 if config["branch"] == BETA_REPO else 0
 
-        #self.controller.suppress_signal(
+        # self.controller.suppress_signal(
         #    self, self.branch_combo, "_on_branch_changed", True
-        #)
-        #self.branch_combo.set_active(active_combo)
-        #self.branch_combo.set_sensitive(prefs.allow_updates)
-        #self.controller.suppress_signal(
+        # )
+        # self.branch_combo.set_active(active_combo)
+        # self.branch_combo.set_sensitive(prefs.allow_updates)
+        # self.controller.suppress_signal(
         #    self, self.branch_combo, "_on_branch_changed", False
-        #)
+        # )
 
-        #if prefs.allow_updates is True:
+        # if prefs.allow_updates is True:
         #    msg = strings.options.self_update
-        #else:
+        # else:
         #    msg = strings.options.no_self_update
-        #self.branch_eb.set_text(msg)
+        # self.branch_eb.set_text(msg)
 
     def _suppress_toggles(self, state: bool) -> None:
         for toggle in [
