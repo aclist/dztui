@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from dzgui.const.constants import APP_NAME
 from dzgui.util.ip import get_coords
+from dzgui.util.localize import number
 
 import gi
 
@@ -39,6 +40,18 @@ class Haversine:
 
     def as_miles(self) -> float:
         return self.dist / 1609.344
+
+    def get_rounded(self, use_miles: bool) -> str:
+        if self is None:
+            return "Unknown"
+        if use_miles:
+            raw = round(self.as_miles())
+            separated = number(raw)
+            return str(separated) + " mi"
+        else:
+            raw = round(self.as_kilometers())
+            separated = number(raw)
+            return str(separated) + " km"
 
 
 class CalcDist:

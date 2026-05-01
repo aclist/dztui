@@ -25,7 +25,6 @@ from dzgui.managers.notes import NoteManager
 from dzgui.model.servers import ServerModelManager
 from dzgui.util.diag import write_diagnostic
 from dzgui.util.format import format_player_count
-from dzgui.util.localize import number
 from dzgui.util.open_links import open_user_workshop, open_workshop_page
 from dzgui.views.dialogs.filepicker import FilePicker
 from dzgui.views.dialogs.generic import ExceptionDialog
@@ -150,7 +149,6 @@ class Controller(GObject.GObject):
     def remove_statusbar(self, context: "NotebookPage | ServerTab") -> None:
         self.mediator.statusbar.pop(context)
 
-    # TODO: StatusBarManager, move out of here
     def set_statusbar_dist(self, haversine: "Haversine", enum: "ServerTab") -> None:
         """
         NOTE: prevents race condition when server tab changed,
@@ -165,19 +163,7 @@ class Controller(GObject.GObject):
             self.emitter.emit("distcalc_ended", None, context)
             return
 
-        dist: str
-        if haversine is None:
-            dist = "Unknown"
-        else:
-            if self.prefs.use_miles:
-                raw = round(haversine.as_miles())
-                separated = number(raw)
-                dist = str(separated) + " mi"
-            else:
-                raw = round(haversine.as_kilometers())
-                separated = number(raw)
-                dist = str(separated) + " km"
-
+        dist = haversine.get_rounded(self.prefs.use_miles)
         self.emitter.emit("distcalc_ended", dist, context)
 
     def toggle_config(self, key: Preferences) -> None:
@@ -301,13 +287,10 @@ class Controller(GObject.GObject):
         treeview.set_loaded(False)
         ServerModelManager(self, treeview).refresh()
 
-    # TODO: move to servermodelman
     def get_player_count(self) -> str:
         treeview = self.get_active_treeview()
-        model = treeview.get_model()
-        proxy_man = treeview.get_proxy_man()
-        control_model = proxy_man.get_control()
-        count = format_player_count(model, control_model)
+        model, control = treeview.get_model_and_control_model()
+        count = format_player_count(model, control)
         return count
 
     def get_statusbar(self) -> "Statusbar":
@@ -318,8 +301,7 @@ class Controller(GObject.GObject):
         if tv.is_loaded():
             self.emitter.emit("servers_loaded", tv.get_enum())
             return
-        # TODO: placeholder logic, wipe statusbar when changing page
-        self.mediator.statusbar.set_text("", "")
+        self.mediator.statusbar.set_by_context(tv.get_enum(), "")
         ServerModelManager(self, tv).load()
 
     def get_dist_cache(self) -> dict[str, "Haversine"]:

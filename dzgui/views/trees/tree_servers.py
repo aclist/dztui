@@ -30,6 +30,7 @@ logger = logging.getLogger(APP_NAME)
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.controllers.emitter import Emitter
+    from dzgui.model.model_factory import FastInsertListStore
 
 QUEUE_CHECK_DELAY = 200
 
@@ -315,6 +316,11 @@ class ServerTreeView(ContextMixin, TreeView):
 
     def set_loaded(self, status: bool) -> None:
         self.loaded = status
+
+    def get_model_and_control_model(self) -> tuple["FastInsertListStore", list[Any]]:
+        model = self.get_model()
+        control = self.proxy_man.get_control()
+        return model, control
 
     @staticmethod
     def ping_server(
