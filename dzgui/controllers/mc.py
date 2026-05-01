@@ -18,7 +18,6 @@ from dzgui.const.enum import (
 from dzgui.config.userprefs import UserPrefs
 from dzgui.const.constants import APP_NAME
 from dzgui.controllers.emitter import Emitter
-from dzgui.managers.log import LogManager
 from dzgui.managers.config import ConfigManager
 from dzgui.managers.connection import ConnectionManager
 from dzgui.managers.contextmenu import ContextMenuManager
@@ -145,18 +144,11 @@ class Controller(GObject.GObject):
         window = self.get_window()
         self.config_man.save_res_and_quit(treeview, window)
 
-    ## START STATUSBAR LOGIC
-    @deprecated("use statusbar internal contexts")
-    def remove_statusbar(self, context: str) -> None:
-        c = self.mediator.statusbar.statusbar.get_context_id(context)
-        self.mediator.statusbar.statusbar.pop(c)
+    def set_statusbar(self, enum: "NotebookPage | ServerTab", text: str) -> None:
+        self.mediator.statusbar.set_by_context(enum, text)
 
-    # TODO: refactor any modules using this
-    # cf. eventbox.py
-    @deprecated("use set_by_context")
-    def set_statusbar(self, text: str, context: str) -> int:
-        msg_id = self.mediator.statusbar.set_text(text, context)
-        return msg_id
+    def remove_statusbar(self, context: "NotebookPage | ServerTab") -> None:
+        self.mediator.statusbar.pop(context)
 
     # TODO: StatusBarManager, move out of here
     def set_statusbar_dist(self, haversine: "Haversine", enum: "ServerTab") -> None:
@@ -187,8 +179,6 @@ class Controller(GObject.GObject):
                 dist = str(separated) + " km"
 
         self.emitter.emit("distcalc_ended", dist, context)
-
-    ## END STATUSBAR LOGIC
 
     def toggle_config(self, key: Preferences) -> None:
         # NOTE: Preferences.DIST is dynamic

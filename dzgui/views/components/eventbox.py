@@ -1,4 +1,6 @@
 from typing import TYPE_CHECKING
+
+from dzgui.const.enum import NotebookPage
 from dzgui.const.constants import HELP_BUBBLE
 
 import gi
@@ -32,14 +34,13 @@ class InfoEventBox(Gtk.EventBox):
         self, eventbox: Gtk.EventBox, eventcrossing: Gdk.EventCrossing
     ) -> None:
         self.icon.set_opacity(1)
-        self.controller.set_statusbar(self.text, "Options")
+        self.controller.set_statusbar(NotebookPage.OPTIONS, self.text)
 
     def _on_leave_tooltip(
         self, eventbox: Gtk.EventBox, eventcrossing: Gdk.EventCrossing
     ) -> None:
         self.icon.set_opacity(0.8)
-        # self.parent.controller.set_statusbar("", "Options")
-        self.controller.remove_statusbar("Options")
+        self.controller.remove_statusbar(NotebookPage.OPTIONS)
 
     def set_text(self, text: str) -> None:
         self.text = text
