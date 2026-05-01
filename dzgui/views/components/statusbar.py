@@ -33,15 +33,6 @@ class Statusbar(Gtk.Grid):
         self.attach(self.statusbar, 0, 0, 3, 1)
         self.attach_next_to(self.spinner, self.statusbar, Gtk.PositionType.RIGHT, 3, 1)
 
-        warnings, errors = self.controller.get_alerts()
-
-        if warnings + errors > 0:
-            self.alert_button = LoggerAlertsButton(warnings, errors)
-            self.attach_next_to(
-                self.alert_button, self.spinner, Gtk.PositionType.RIGHT, 3, 1
-            )
-            self.alert_button.connect("clicked", self._on_alerts_clicked)
-
         # TODO: pack version event box in right panel into hbox with update button
         # TODO: spawns a modal or just jumps right to install page
         # from dzgui.views.components.buttons import IconTextButton
@@ -61,14 +52,9 @@ class Statusbar(Gtk.Grid):
         self.emitter.connect("distcalc_ended", self._on_distcalc_ended)
         self.emitter.connect("servers_loaded", self._on_servers_loaded)
         self.emitter.connect("mods_updated", self._on_mods_updated)
-        self.emitter.connect("log_page_loaded", self._on_log_page_loaded)
 
     def _on_alerts_clicked(self, button: LoggerAlertsButton) -> None:
         self.controller.populate_log()
-
-    def _on_log_page_loaded(self, emitter: "Emitter") -> None:
-        # FIXME: fails if button was not previously drawn
-        self.alert_button.hide()
 
     def _on_mods_updated(self, emitter: "Emitter", msg: str, mods: int) -> None:
         self.set_by_context(NotebookPage.MODS, msg)

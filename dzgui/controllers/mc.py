@@ -483,13 +483,5 @@ class Controller(GObject.GObject):
     def set_active_keyword(self, keyword: str) -> None:
         self.get_filter_man().set_active_keyword(keyword)
 
-    def set_alerts(self, count: tuple[int]) -> None:
-        self.alerts = count
-
-    def get_alerts(self) -> tuple[int]:
-        log_man = LogManager()
-        alerts = log_man.get_alerts(self.prefs.paths.debug)
-        return alerts
-
     def get_modtreeview(self) -> "ModTreeView":
         return self.mediator.modtreeview
