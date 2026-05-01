@@ -1,4 +1,4 @@
-from typing import Union, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import gi
 
@@ -94,7 +94,7 @@ class Emitter(GObject.GObject):
         ),
     )
     def distcalc_ended(
-        self, dist: Union[str, None], context: Union["ServerTab", "NotebookPage"]
+        self, dist: str | None, context: "ServerTab | NotebookPage"
     ) -> None:
         pass
 
