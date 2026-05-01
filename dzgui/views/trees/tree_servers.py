@@ -271,8 +271,7 @@ class ServerTreeView(ContextMixin, TreeView):
 
     def is_in_favs(self) -> bool:
         record = self.get_record_string()
-        ips = self.controller.get_config_man().lookup(Preferences.IP_LIST)
-        if record in ips:
+        if self.controller.get_config_man().is_in_favs(record):
             return True
         return False
 

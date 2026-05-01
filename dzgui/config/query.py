@@ -40,11 +40,11 @@ def get_favorites(path: Path) -> list[str]:
     return conf["ip_list"]
 
 
-def is_in_favs(record: str, path: Path) -> bool:
-    favs = get_favorites(path)
-    if record in favs:
-        return True
-    return False
+# def is_in_favs(record: str, path: Path) -> bool:
+#    favs = get_favorites(path)
+#    if record in favs:
+#        return True
+#    return False
 
 
 def enum_to_key(enum: Preferences) -> str:

@@ -2,7 +2,6 @@ import inspect
 import logging
 
 from typing import Any, Callable, TYPE_CHECKING
-from warnings import deprecated
 
 import dzgui.util._json as JSON  # noqa
 
@@ -372,9 +371,6 @@ class Controller(GObject.GObject):
         if len(favs) < 1:
             return False
         return True
-
-    # def is_in_favs(self) -> bool:
-    #    return self.config_man.is_in_favs()
 
     def get_config_man(self) -> ConfigManager:
         return self.config_man
