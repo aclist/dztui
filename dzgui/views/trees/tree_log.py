@@ -2,7 +2,7 @@ import logging
 
 from typing import Any, TYPE_CHECKING
 
-from dzgui.const.constants import APP_NAME
+from dzgui.const.constants import APP_NAME, LOG_FILTERS
 from dzgui.const.enum import ContextMenuGroup
 from dzgui.model.model_factory import ModelFactory
 from dzgui.util import strings
@@ -35,9 +35,7 @@ class LogTreeView(ContextMixin, TreeView):
 
         self.set_model(None)
 
-        # TODO: strings
-        # NOTE: default filters that should be shown on startup
-        self.filters = ["CRITICAL", "WARNING"]
+        self.filters = list(LOG_FILTERS)
         for i, column_title in enumerate(strings.log_cols):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
