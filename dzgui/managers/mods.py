@@ -36,6 +36,7 @@ class ModManager:
     this manager is instantiated each time the Mods page is opened
     and persists until the next time the page is opened
     """
+
     def __init__(self, controller: "Controller") -> None:
 
         self.controller = controller
@@ -89,7 +90,6 @@ class ModManager:
             return None
         tree_iter = model.get_iter(tree_path)
         mod = model.get_value(tree_iter, 2)[0]
-        print(mod)
         return mod, tree_iter
 
     def delete_single_mod(self, tree_path: Gtk.TreePath) -> Gtk.TreeIter | None:
@@ -120,9 +120,6 @@ class ModManager:
     def _on_mods_deleted(self, iters: list[Gtk.TreeIter]) -> None:
         for _iter in iters:
             self.store.remove(_iter)
-            #model = self.treeview.get_model()
-            #if model:
-            #    model.remove(_iter) # FIXME: do not remove from model interface directly
         remove_stale_signatures(self.prefs.paths.config, self.prefs.paths.version)
         model = self.treeview.get_model()
         if model is None:

@@ -301,7 +301,6 @@ class Options(Gtk.Box):
     def _on_force_update_clicked(self, button: Gtk.Button) -> None:
         # TODO: unimplemented
         print("UNIMPLEMENTED")
-        # wait_msg = strings.dialog.updating_mods
 
     def _on_client_changed(self, combo: Gtk.ComboBoxText) -> None:
         # TODO: use two columns or constants here, not strings

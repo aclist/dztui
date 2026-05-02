@@ -33,7 +33,7 @@ import gi
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("GLibUnix", "2.0")
-from gi.repository import Gtk, GLib, GLibUnix, Gdk # type: ignore # noqa E402
+from gi.repository import Gtk, GLib, GLibUnix, Gdk  # type: ignore # noqa E402
 
 logger = logging.getLogger(APP_NAME)
 # https://bugzilla.gnome.org/show_bug.cgi?id=708676
@@ -87,7 +87,6 @@ class OuterWindow(Gtk.Window):
 
         # TODO: POC, trigger page change here
         MainController.loaded = True
-
         MainController.populate_model(MainController.get_active_treeview())
 
     def _on_delete_event(self, window: "OuterWindow", event: Gdk.EventKey) -> None:
