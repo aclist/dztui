@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Self
+from typing import Any, Self
 
 from dzgui.util import strings
 
@@ -47,7 +47,7 @@ class FilterMode(Enum):
 
 
 class EnumWithAttrs(Enum):
-    def __new__(cls, *args, **kwargs) -> Self:
+    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)
         obj._value_ = value

@@ -102,7 +102,7 @@ def get_delimited_mods(steam_path: Path) -> list[Any]:
         size = get_mod_size(mod)
         # NOTE: final col is cell renderer highlight toggle
         clean.append([meta.name, symlink, mod_dir, size, False])
-    clean.sort(key=lambda row: row[0])
+    clean.sort(key=lambda row: row[0].casefold())
     return clean
 
 

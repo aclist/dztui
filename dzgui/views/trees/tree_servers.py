@@ -2,7 +2,7 @@ import logging
 import threading
 
 from queue import Queue
-from typing import Any, Optional, Self
+from typing import Any, Optional, Self, Union
 from warnings import deprecated
 
 from dzgui.api.servers import ping, Record
@@ -321,7 +321,7 @@ class ServerTreeView(ContextMixin, TreeView):
     def set_loaded(self, status: bool) -> None:
         self.loaded = status
 
-    def get_model_and_control_model(self) -> tuple["FastInsertListStore", list[Any]]:
+    def get_model_and_control_model(self) -> tuple[Union["FastInsertListStore", None], list[Any]]:
         model = self.get_model()
         control = self.proxy_man.get_control()
         return model, control

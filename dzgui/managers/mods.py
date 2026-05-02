@@ -14,7 +14,7 @@ from dzgui.api.mods import (
 from dzgui.const.constants import APP_NAME, APPID_DAYZ, APPID_DAYZ_EXP
 from dzgui.const.enum import Preferences
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
-from dzgui.model.model_factory import ModelFactory
+from dzgui.model.model_factory import FastInsertListStore, ModelFactory
 from dzgui.util.format import format_mods
 
 import dzgui.api.pefile as PeFile
@@ -44,11 +44,13 @@ class ModManager:
         self.path = controller.query_config(Preferences.DEFAULT)
         self.treeview = self.controller.get_modtreeview()
 
+        self.store: FastInsertListStore
+
         self.thread_man = ThreadingManager(controller)
         self._get_mods()
 
     @call_on_thread("getting mods")
-    def _get_mods(self) -> list:
+    def _get_mods(self) -> None:
         mods = get_delimited_mods(self.path)
         if len(mods) < 1:
             msg = self.format_mod_statusbar()
@@ -58,13 +60,13 @@ class ModManager:
         func = StoredFunc(self._on_mods_loaded, mods)
         self.thread_man.set_cleanup_func(func)
 
-    def _on_mods_loaded(self, mods: list[int]) -> None:
-        model = ModelFactory().make_mod_store()
-        model.extend(mods)
-        self.treeview.set_model(model)
+    def _on_mods_loaded(self, mods: list[list[str, str, str, float, bool]]) -> None:
+        self.store = ModelFactory().make_mod_store()
+        self.store.extend(mods)
+        self.treeview.set_model(self.store)
         msg = self.format_mod_statusbar()
-        mods = len(model)
-        self.emitter.emit("mods_updated", msg, mods)
+        total_mods = len(self.store)
+        self.emitter.emit("mods_updated", msg, total_mods)
 
     @call_on_thread("deleting mods")
     def delete_mods(self) -> None:
@@ -87,7 +89,7 @@ class ModManager:
         mod = model.get(tree_iter, 2)[0]
         return mod, tree_iter
 
-    def delete_single_mod(self, tree_path: Gtk.TreePath) -> None:
+    def delete_single_mod(self, tree_path: Gtk.TreePath) -> Gtk.TreeIter:
         mod, _iter = self.get_mod_from_tree_path(tree_path)
 
         steam_path = Path(self.path)
@@ -111,7 +113,10 @@ class ModManager:
 
     def _on_mods_deleted(self, iters: list[Gtk.TreeIter]) -> None:
         for _iter in iters:
-            self.treeview.get_model().remove(_iter)
+            self.store.remove(_iter)
+            #model = self.treeview.get_model()
+            #if model:
+            #    model.remove(_iter) # FIXME: do not remove from model interface directly
         remove_stale_signatures(self.prefs.paths.config, self.prefs.paths.version)
         mods = len(self.treeview.get_model())
         msg = self.format_mod_statusbar()
