@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING
 
+from dzgui.const.constants import UDP_PORT
 from dzgui.model.servers import ServerModelManager
-from dzgui.util.strings import connect_panel, fav_panel, lan_panel
+from dzgui.strings import connect_panel
 from dzgui.views.components.buttons import (
     AddButton,
     ClipboardButton,
@@ -29,26 +30,24 @@ class LanPanel(Gtk.Frame):
         self.controller = controller
         self.emitter = controller.get_emitter()
 
-        label = BoldLabel(lan_panel.heading)
+        label = BoldLabel(connect_panel.lan_heading)
         self.set_label_widget(label)
 
         self.default_radio = Gtk.RadioButton.new_with_label(
-            None, lan_panel.default_button
+            None, connect_panel.lan_default_button
         )
         self.custom_radio = Gtk.RadioButton.new_with_label_from_widget(
-            self.default_radio, lan_panel.custom_button
+            self.default_radio, connect_panel.lan_custom_button
         )
 
         self.entry = PortEntry(controller)
-        self.scan = Gtk.Button(label=lan_panel.scan_button)
+        self.scan = Gtk.Button(label=connect_panel.lan_scan_button)
         self.scan.connect("clicked", self._on_scan_clicked)
 
         # TODO: strings
-        self.early_abort = Gtk.CheckButton(label="Stop scanning on first hit")
+        self.early_abort = Gtk.CheckButton(label=connect_panel.lan_checkbox)
         self.early_abort.set_active(True)
-        self.early_abort.set_tooltip_text(
-            "Unless you have multiple DayZ servers on your LAN,\nleave this checked to get results faster"
-        )
+        self.early_abort.set_tooltip_text(connect_panel.lan_abort_tooltip)
 
         self.entry.connect("activate", self._on_entry_activated)
         self.entry.connect("string_validated", self._on_port_validated)
@@ -100,7 +99,7 @@ class LanPanel(Gtk.Frame):
 
     def scan_ports(self) -> None:
         if self.default_radio.get_active():
-            port = 27016
+            port = UDP_PORT
         else:
             port = int(self.entry.get_text())
         abort = self.early_abort.get_active()
@@ -125,47 +124,50 @@ class FavPanel(Gtk.Frame):
     def __init__(self, controller: "Controller") -> None:
         super().__init__(margin_top=10, margin_bottom=5)
 
-        label = BoldLabel(fav_panel.heading)
+        label = BoldLabel(connect_panel.fav_heading)
         self.set_label_widget(label)
 
         self.controller = controller
         emitter = self.controller.get_emitter()
         emitter.connect("fav_server_changed", self._on_fav_server_changed)
 
-        # TODO: do not return a None, None tuple
-        self.server_name: str
-        self.server_ip: str
+        self.server_name = ""
+        self.server_ip = ""
 
-        self.server_name, self.server_ip = (
-            self.controller.get_config_man().get_favorite()
-        )
-        server_name = (
-            f"{self.server_name} ({self.server_ip})"
-            if self.server_name is not None
-            else connect_panel.no_fav
-        )
+        favorite = self.controller.get_config_man().get_favorite()
+        if favorite is None:
+            server_name = connect_panel.favs_empty
+        else:
+            self.server_name, self.server_ip = favorite
+            server_name = f"{self.server_name} ({self.server_ip})"
+
         self.fav_label = Gtk.Label(
             label=server_name,
             track_visited_links=False,
             halign=Gtk.Align.START,
             hexpand=True,
         )
+
+        self.fav_button = SteamConnectButton()
+        self.fav_button.connect("clicked", self._on_connect_clicked)
+        self.copy_button = ClipboardButton(self.controller, self.get_fav_ip)
+        if favorite is None:
+            self.toggle_buttons(False)
+
         # NOTE: disable vscrollbar to prevent layout jumping behavior
         scrollable_label = Gtk.ScrolledWindow(vscrollbar_policy=Gtk.PolicyType.NEVER)
         scrollable_label.add(self.fav_label)
 
-        self.fav_button = SteamConnectButton()
-        self.fav_button.connect("clicked", self._on_connect_clicked)
-        if server_name is None:
-            self.fav_button.set_sensitive(False)
-        copy = ClipboardButton(self.controller, self.get_fav_ip)
-
         grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
         grid.attach(scrollable_label, 0, 0, 3, ROWS)
-        grid.attach_next_to(copy, scrollable_label, Gtk.PositionType.RIGHT, COLS, ROWS)
-        grid.attach_next_to(self.fav_button, copy, Gtk.PositionType.RIGHT, COLS, ROWS)
+        grid.attach_next_to(self.copy_button, scrollable_label, Gtk.PositionType.RIGHT, COLS, ROWS)
+        grid.attach_next_to(self.fav_button, self.copy_button, Gtk.PositionType.RIGHT, COLS, ROWS)
 
         self.add(grid)
+
+    def toggle_buttons(self, state: bool) -> None:
+        for button in self.fav_button, self.copy_button:
+            button.set_sensitive(state)
 
     def _on_connect_clicked(self, button: Gtk.Button) -> None:
         self.controller.connect_by_str(self.server_ip)
@@ -173,14 +175,14 @@ class FavPanel(Gtk.Frame):
     def get_fav_ip(self) -> str:
         return self.server_ip
 
-    from dzgui.api.servers import Record
-
     def _on_fav_server_changed(
         self, emitter: "Emitter", name: str, record: str
     ) -> None:
         self.server_name = name
         self.server_ip = record
         self.fav_label.set_text(f"{name} ({record})")
+        if self.server_name != "":
+            self.toggle_buttons(True)
 
 
 class AddPanel(Gtk.Frame):
@@ -221,10 +223,9 @@ class AddPanel(Gtk.Frame):
 
         self.add(self.grid)
 
-        # TODO: dynamic popover text
         self.pop = Gtk.Popover()
         self.pop_label = Gtk.Label(
-            label="This address is already in your Saved Servers",
+            label=connect_panel.add_popover,
             margin_start=10,
             margin_end=10,
         )

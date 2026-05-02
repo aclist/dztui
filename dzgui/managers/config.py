@@ -98,10 +98,10 @@ class ConfigManager:
     def get_favorites(self) -> list[str]:
         return list(self.lookup(Preferences.IP_LIST))
 
-    def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
+    def get_favorite(self) -> tuple[str, str] | None:
         fav = str(self.lookup(Preferences.FAV_LBL))
         if len(fav) < 1:
-            return None, None
+            return None
         ip = str(self.lookup(Preferences.FAV_SRV))
         addr = ip.split(":")
         return fav, f"{addr[0]}:{addr[2]}"
