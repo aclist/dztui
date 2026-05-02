@@ -133,6 +133,9 @@ class FavPanel(Gtk.Frame):
         emitter.connect("fav_server_changed", self._on_fav_server_changed)
 
         # TODO: do not return a None, None tuple
+        self.server_name: str
+        self.server_ip: str
+
         self.server_name, self.server_ip = (
             self.controller.get_config_man().get_favorite()
         )

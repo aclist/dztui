@@ -45,7 +45,7 @@ class ButtonGrid(Gtk.Grid):
             checkbox = Gtk.CheckButton(label=check)
             label = checkbox.get_child()
             if label is not None:
-                label.set_ellipsize(Pango.EllipsizeMode.END)
+                label.set_ellipsize(Pango.EllipsizeMode.END) # type: ignore
 
             if defaults[check]:
                 checkbox.set_active(True)
@@ -186,7 +186,7 @@ class FilterPanel(Gtk.Box):
         self.maps_combo = Gtk.ComboBox.new_with_model_and_entry(self.map_store)
         self.maps_combo.set_entry_text_column(0)
 
-        self.maps_entry = self.maps_combo.get_child()
+        self.maps_entry: Gtk.Entry = self.maps_combo.get_child()  # type: ignore
         self.maps_entry.set_completion(completion)
         self.maps_entry.set_placeholder_text("Filter by map")
         self.maps_entry.connect("changed", self._on_map_completion, True)
@@ -215,9 +215,10 @@ class FilterPanel(Gtk.Box):
 
         i: int
         row: Gtk.TreeModelRow
-        for i, row in enumerate(model):
-            if text == row[0]:
+        for i, row in enumerate(model):  # type: ignore
+            if text == row[0]:  # type: ignore
                 self.maps_combo.set_active(i)
+                return
 
     def _on_maps_loaded(self, emitter: "Emitter", store: Gtk.ListStore) -> None:
         self.maps_combo.set_model(store)
@@ -262,7 +263,7 @@ class FilterPanel(Gtk.Box):
     ) -> None:
         self.maps_combo.set_active_iter(it)
 
-    def _on_map_completion(self, entry: Gtk.Entry, editable: Literal[True]):
+    def _on_map_completion(self, entry: Gtk.Entry, editable: Literal[True]) -> None:
         text = entry.get_text()
         completion = entry.get_completion()
         store = self.controller.get_map_store()

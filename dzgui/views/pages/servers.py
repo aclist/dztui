@@ -1,6 +1,6 @@
 import logging
 
-from typing import Optional, Self, TYPE_CHECKING
+from typing import Self, TYPE_CHECKING
 
 from dzgui.const.constants import APP_NAME
 from dzgui.const.enum import ContextMenuGroup, ServerTab
@@ -77,6 +77,8 @@ class ServerNotebook(Gtk.ScrolledWindow):
             return
         page = self.notebook.get_nth_page(saved)
         label = self.notebook.get_tab_label(page)
+        if label is None:
+            return
         label.set_text(f"{server_labels.saved}*")
 
     def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
@@ -86,6 +88,7 @@ class ServerNotebook(Gtk.ScrolledWindow):
         state = False if tv.get_model() is None else True
         tv.set_headers_visible(state)
         tv.set_loaded(True)
+        tv.focus_first_row()
         tv.grab_focus()
 
     def _on_map(self, widget: Self) -> None:
@@ -94,7 +97,7 @@ class ServerNotebook(Gtk.ScrolledWindow):
     def _on_unmap(self, widget: Self) -> None:
         self.emitter.emit("server_page_toggled", False)
 
-    def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> Optional[False]:
+    def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> bool:
         # NOTE: abort if modifier mask is active
         if event.state != 0:
             return False
@@ -116,6 +119,8 @@ class ServerNotebook(Gtk.ScrolledWindow):
     def get_current_tab_text(self) -> str:
         ind = self.notebook.get_current_page()
         child = self.notebook.get_nth_page(ind)
+        if child is None:
+            return ""
         return self.notebook.get_tab_label_text(child)
 
     def _on_page_changed(

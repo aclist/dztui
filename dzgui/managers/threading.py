@@ -1,7 +1,7 @@
 import inspect
 import logging
 import threading
-from typing import Any, TYPE_CHECKING
+from typing import Any, Literal, TYPE_CHECKING
 
 from functools import wraps
 from typing import Callable
@@ -23,7 +23,7 @@ logger = logging.getLogger(APP_NAME)
 def call_on_thread(dialog_str: str) -> Callable:
     def decorator(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Callable:
+        def wrapper(*args: Any, **kwargs: Any) -> None:
             self = args[0]
             stored = StoredFunc(func, *args, **kwargs)
             if not hasattr(self, "thread_man"):
@@ -40,7 +40,7 @@ def call_on_thread(dialog_str: str) -> Callable:
 
 
 class StoredFunc:
-    def __init__(self, func: Callable, *args, **kwargs) -> None:
+    def __init__(self, func: Callable, *args: Any, **kwargs: Any) -> None:
         sig = inspect.signature(func)
         self.func = func
         self.bindings = sig.bind(*args, **kwargs)
@@ -53,7 +53,7 @@ class ThreadingManager:
     def __init__(self, controller: "Controller") -> None:
         self.controller = controller
         self.jobs = 1
-        self.cleanup_func = None
+        self.cleanup_func: StoredFunc | None
         self.destroy_first = False
 
     def call_on_thread(self, dialog_str: str, func: StoredFunc) -> None:
@@ -75,7 +75,7 @@ class ThreadingManager:
     def increment_dialog_with_str(self, text: str) -> None:
         GLib.idle_add(lambda: self.wait_dialog.increment(text))
 
-    def set_cleanup_func(self, func: StoredFunc, destroy_first: bool = False) -> None:
+    def set_cleanup_func(self, func: StoredFunc | None, destroy_first: bool = False) -> None:
         if type(func) not in (StoredFunc, type(None)):
             msg = f"Callback function '{func}' is not of type StoredFunc or None"
             logger.critical(msg)
@@ -83,10 +83,10 @@ class ThreadingManager:
         self.destroy_first = destroy_first
         self.cleanup_func = func
 
-    def get_cleanup_func(self) -> StoredFunc:
+    def get_cleanup_func(self) -> StoredFunc | None:
         return self.cleanup_func
 
-    def _destroy_on_idle(self) -> GLib.SOURCE_REMOVE:
+    def _destroy_on_idle(self) -> Literal[False]:
         if self.destroy_first:
             self.wait_dialog.destroy()
 
@@ -97,7 +97,7 @@ class ThreadingManager:
         if not self.destroy_first:
             self.wait_dialog.destroy()
 
-        return GLib.SOURCE_REMOVE
+        return False
 
     def get_wait_dialog(self) -> WaitDialog:
         return self.wait_dialog

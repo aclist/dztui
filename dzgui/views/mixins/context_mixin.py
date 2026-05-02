@@ -19,7 +19,7 @@ class ContextMixin(TreeView):
         self,
         widget: Gtk.Widget,
         event: Gdk.EventButton | Gdk.EventKey,
-    ) -> None:
+    ) -> bool:
 
         if self.is_selection_empty():
             return False
@@ -56,6 +56,7 @@ class ContextMixin(TreeView):
                 self.context_menu.popup_at_pointer(event)
 
         self.context_menu.select_first(False)
+        return True
 
     def _process_dynamic_row(self, row: ContextMenu) -> Gtk.MenuItem:
         if row == ContextMenu.ADD_SERVER and self.is_in_favs():  # type: ignore

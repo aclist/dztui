@@ -33,7 +33,7 @@ import gi
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("GLibUnix", "2.0")
-from gi.repository import Gtk, GLib, GLibUnix, Gdk, GObject, Pango  # noqa E402
+from gi.repository import Gtk, GLib, GLibUnix, Gdk # type: ignore # noqa E402
 
 logger = logging.getLogger(APP_NAME)
 # https://bugzilla.gnome.org/show_bug.cgi?id=708676
@@ -201,7 +201,8 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
         if widget is None:
             return
 
-        widget.grab_content_area()
+        if hasattr(widget, "grab_content_area"):
+            widget.grab_content_area()
 
     def get_page(self) -> Gtk.Widget | None:
         ind = self.get_current_page()

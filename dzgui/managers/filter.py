@@ -42,7 +42,7 @@ class FilterManager:
     def get_active_map_name(self) -> str:
         return self.active_map[1]
 
-    def get_active_map(self) -> int:
+    def get_active_map(self) -> tuple[int, str]:
         return self.active_map
 
     def set_active_map(self, ind: int, name: str) -> None:

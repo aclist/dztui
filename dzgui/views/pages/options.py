@@ -59,8 +59,8 @@ class Options(Gtk.Box):
         css.add_class(label, "page-heading")
         self.add(label)
 
-        self.steam_entry: Gtk.Entry = None
-        self.bm_entry: Gtk.Entry = None
+        self.steam_entry: Gtk.Entry
+        self.bm_entry: Gtk.Entry
 
         self.steam = WebButton(label=strings.options.steam_web)
         self.steam.connect("clicked", self._on_link_button_clicked, STEAM_API_SETUP)
@@ -436,7 +436,8 @@ class Options(Gtk.Box):
         install = config["auto_install"]
 
         steam_path = Path(default_steam_path)
-        self.uid = find_user_id(steam_path)
+        uid = find_user_id(steam_path)
+        self.uid = "" if uid is None else uid
 
         self.old_steam = steam
         self.old_bm = bm
@@ -444,7 +445,9 @@ class Options(Gtk.Box):
 
         self.steam_entry.set_text(steam)
         self.bm_entry.set_text(bm)
-        self.player_box.get_children()[0].set_text(name)
+        p = self.player_box.get_children()[0]
+        if hasattr(p, "set_text"):
+            p.set_text(name)
 
         # NOTE: suppress toggle signal until radios are built
         self._suppress_toggles(True)

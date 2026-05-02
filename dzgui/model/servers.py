@@ -86,7 +86,7 @@ class ServerModelManager:
         key = config_man.lookup(Preferences.STEAM)
         job = Servers.query_api
         params = Servers.params
-        servers = []
+        servers: list[dict[Any, Any]] = []
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
             for future in as_completed(futures):

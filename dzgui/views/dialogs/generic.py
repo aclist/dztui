@@ -44,7 +44,7 @@ class GenericDialog(Gtk.MessageDialog):
 
         self.set_default_response(Gtk.ResponseType.OK)
 
-        self.get_action_area().set_layout(Gtk.ButtonBoxStyle.CENTER)
+        self.get_action_area().set_layout(Gtk.ButtonBoxStyle.CENTER)  # type: ignore
         self.get_action_area().set_margin_bottom(20)
         self.outer = self.get_content_area()
         self.outer.set_margin_start(30)
@@ -76,7 +76,10 @@ class IgnoreDialog(GenericDialog):
             secondary=secondary,
         )
         cancel = self.get_widget_for_response(Gtk.ResponseType.CANCEL)
-        cancel.set_label("Ignore")
+        if cancel is None:
+            return
+        if hasattr(cancel, "set_label"):
+            cancel.set_label("Ignore")
 
 
 class NotifyDialog(GenericDialog):
@@ -199,7 +202,11 @@ class ExceptionDialog(GenericDialog):
         match response:
             case Gtk.ResponseType.OK:
                 self.destroy()
+                return None
             case Gtk.ResponseType.NONE:
                 return True
             case Gtk.ResponseType.DELETE_EVENT:
                 self.destroy()
+                return None
+            case _:
+                return None

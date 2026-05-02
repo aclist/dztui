@@ -36,6 +36,7 @@ class ConfigManager:
     def __init__(self, prefs: "UserPrefs", controller: "Controller") -> None:
         self.prefs = prefs
         self.config = prefs.paths.config
+        self.controller = controller
         self.emitter = controller.get_emitter()
         self.thread_man = ThreadingManager(controller)
 
@@ -95,7 +96,7 @@ class ConfigManager:
         return
 
     def get_favorites(self) -> list[str]:
-        return self.lookup(Preferences.IP_LIST)
+        return list(self.lookup(Preferences.IP_LIST))
 
     def get_favorite(self) -> tuple[str, str] | tuple[None, None]:
         fav = str(self.lookup(Preferences.FAV_LBL))
@@ -112,7 +113,7 @@ class ConfigManager:
         return False
 
     def enum_to_key(self, enum: Preferences) -> str:
-        return enum.dict["key"]
+        return str(enum.dict["key"])
 
     def get_client_index(self, client: str) -> int:
         if client == STEAM_CMD:
@@ -121,6 +122,7 @@ class ConfigManager:
             return 1
         if client == FLATPAK_SANDBOX:
             return 2
+        return 0
 
     def toggle_config(self, key: Preferences) -> None:
         try:
@@ -149,7 +151,7 @@ class ConfigManager:
         except Exception as e:
             logger.critical(e)
             trace = traceback.format_exc()
-            dialog = ExceptionDialog(self, trace)
+            dialog = ExceptionDialog(self.controller, trace)
             dialog.run()
             raise e
 

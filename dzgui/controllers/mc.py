@@ -1,7 +1,7 @@
 import logging
 import threading
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, Union
 
 import dzgui.util._json as JSON  # noqa
 
@@ -110,14 +110,14 @@ class Controller(GObject.GObject):
         return bool(self.query_config(Preferences.INSTALL))
 
     def suppress_signal(
-        self, owner: Gtk.Widget, widget: Gtk.Widget, func_name: str, state: bool
+        self, owner: Any, child: Any, func_name: str, state: bool
     ) -> None:
 
         func = getattr(owner, func_name)
         if state:
-            widget.handler_block_by_func(func)
+            child.handler_block_by_func(func)
         else:
-            widget.handler_unblock_by_func(func)
+            child.handler_unblock_by_func(func)
 
     def get_active_context(self) -> "ServerTab":
         return self.get_active_treeview().get_enum()
@@ -139,7 +139,7 @@ class Controller(GObject.GObject):
     def remove_statusbar(self, context: "NotebookPage | ServerTab") -> None:
         self.mediator.statusbar.pop(context)
 
-    def set_statusbar_dist(self, haversine: "Haversine", enum: "ServerTab") -> None:
+    def set_statusbar_dist(self, haversine: Union["Haversine", None], enum: "ServerTab") -> None:
         """
         NOTE: prevents race condition when server tab changed,
         but allows caching the distance in the background
@@ -153,6 +153,9 @@ class Controller(GObject.GObject):
             self.emitter.emit("distcalc_ended", None, context)
             return
 
+        if haversine is None:
+            self.emitter.emit("distcalc_ended", None, context)
+            return
         dist = haversine.get_rounded(self.prefs.use_miles)
         self.emitter.emit("distcalc_ended", dist, context)
 

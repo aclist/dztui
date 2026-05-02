@@ -51,7 +51,7 @@ def query_defunct() -> None:
 
 def concat_mods(mods: list[str]) -> str:
     for mod in mods:
-        mods[mod] = "@" + mod
+        mods[mod] = f"@{mod}"
     return ";".join(mods)
 
 

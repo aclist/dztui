@@ -98,7 +98,7 @@ class Statusbar(Gtk.Grid):
     def _on_server_row_changed(self, statusbar: Self) -> None:
         self.spinner.start()
 
-    def _on_distcalc_started(self, e) -> None:
+    def _on_distcalc_started(self, emitter: "Emitter") -> None:
         self.spinner.start()
 
     def _on_distcalc_ended(

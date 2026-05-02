@@ -172,7 +172,7 @@ class ServerTreeView(ContextMixin, TreeView):
         self.start_queue_checker()
         self.start_distcalc()
 
-    def _on_unmap(self, a) -> None:
+    def _on_unmap(self, tree: Self) -> None:
         # NOTE: removes queue checker for this tab
         GLib.Source.remove(self.queue_id)
         self.emitter.disconnect(self.handler_id)
@@ -229,7 +229,7 @@ class ServerTreeView(ContextMixin, TreeView):
 
     def _on_server_keypress(
         self, treeview: Gtk.TreeView, event: Gdk.EventKey
-    ) -> bool | None:
+    ) -> None:
         if event.state is Gdk.ModifierType.CONTROL_MASK:
             match event.keyval:
                 case Gdk.KEY_f:
@@ -248,10 +248,14 @@ class ServerTreeView(ContextMixin, TreeView):
                 case Gdk.KEY_r:
                     # TODO: unimplemented, needs threading
                     self.controller.menu_action(ContextMenu.REFRESH_PLAYERS, self)
+                case _:
+                    return False
+            return True
         else:
             match event.keyval:
                 case Gdk.KEY_l | Gdk.KEY_Right:
                     self.emitter.emit("request_button_box_focus")
+                    return True
                 case _:
                     self.emitter.emit("check_button_pressed", event.keyval)
 
@@ -307,7 +311,8 @@ class ServerTreeView(ContextMixin, TreeView):
         try:
             ip, gameport, qport = r.split(":")
             return Record(ip, int(gameport), int(qport))
-        except ValueError:
+        except ValueError as e:
+            logger.critical(e)
             return None
 
     def is_loaded(self) -> bool:
