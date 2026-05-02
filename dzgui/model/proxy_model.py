@@ -32,8 +32,9 @@ class ProxyModelManager:
         self.proxy_model: "FastInsertListStore" = None
         self.filter_man = filter_man
 
-        self.control_model: list = None
-        self.filtered: list = None
+        # TODO: list typehints
+        self.control_model: list | None = None
+        self.filtered: list | None = None
         self.success = True
 
     def has_control_model(self) -> bool:
@@ -61,9 +62,9 @@ class ProxyModelManager:
     def remove_row_from_control(self, record: "Record") -> None:
         addr = f"{record.ip}:{record.gameport}"
         qport = record.qport
-        for record in self.control_model:
-            if addr == record[7] and qport == record[8]:
-                self.control_model.remove(record)
+        for row in self.control_model:
+            if addr == row[7] and qport == row[8]:
+                self.control_model.remove(row)
                 break
         self.wipe_cache()
         self.filter(FilterMode.INITIAL, skip_cache=True)

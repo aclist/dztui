@@ -76,15 +76,20 @@ class ServerNotebook(Gtk.ScrolledWindow):
         if cur_page == saved:
             return
         page = self.notebook.get_nth_page(saved)
+        if not page:
+            return
         label = self.notebook.get_tab_label(page)
         if label is None:
             return
-        label.set_text(f"{server_labels.saved}*")
+        if hasattr(label, "set_text"):
+            label.set_text(f"{server_labels.saved}*")
 
     def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
         # NOTE: workaround for GTK bug where fullscreen causes headers to vanish when model is None
         # TODO: this should be internal to servers page
         tv = self.get_active_treeview()
+        if tv is None:
+            return
         state = False if tv.get_model() is None else True
         tv.set_headers_visible(state)
         tv.set_loaded(True)
@@ -114,14 +119,19 @@ class ServerNotebook(Gtk.ScrolledWindow):
                 return False
 
     def grab_content_area(self) -> None:
-        self.get_active_treeview().grab_focus()
+        tv = self.get_active_treeview()
+        if tv is not None:
+            tv.grab_focus()
 
     def get_current_tab_text(self) -> str:
         ind = self.notebook.get_current_page()
         child = self.notebook.get_nth_page(ind)
         if child is None:
             return ""
-        return self.notebook.get_tab_label_text(child)
+        text = self.notebook.get_tab_label_text(child)
+        if text is None:
+            return ""
+        return text
 
     def _on_page_changed(
         self, notebook: Gtk.Notebook, child: ScrollableTree, index: int
@@ -130,21 +140,27 @@ class ServerNotebook(Gtk.ScrolledWindow):
             return
 
         label = self.notebook.get_tab_label_text(child)
-        # TODO: strings
-        text = label.strip("*")
-        self.notebook.set_tab_label_text(child, text)
+        if label is not None:
+            # TODO: strings
+            text = label.strip("*")
+            self.notebook.set_tab_label_text(child, text)
 
         tree = child.get_tree()
         self.emitter.emit("server_page_changed", tree)
 
         # NOTE: spawns a thread
-        self.controller.populate_model(self.get_active_treeview())
+        tv = self.get_active_treeview()
+        if tv is not None:
+            self.controller.populate_model(tv)
 
-    def get_active_treeview(self) -> ServerTreeView:
+    def get_active_treeview(self) -> ServerTreeView | None:
         index = self.notebook.get_current_page()
         scrollable = self.notebook.get_nth_page(index)
-        treeview = scrollable.get_children()[0]
-        return treeview
+        if scrollable is not None and hasattr(scrollable, "get_children"):
+            tv = scrollable.get_children()[0]
+            if isinstance(tv, ServerTreeView):
+                return tv
+        return None
 
     def add_notification(self) -> None:
         saved = self.notebook.get_nth_page(1)

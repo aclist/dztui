@@ -9,7 +9,7 @@ import subprocess
 import threading
 
 from dataclasses import dataclass
-from typing import Optional, TYPE_CHECKING, Union
+from typing import Any, Optional, TYPE_CHECKING, Union
 
 from dzgui.api.bm import map_id_to_record
 from dzgui.const.constants import APP_NAME, REQUEST_TIMEOUT
@@ -228,7 +228,7 @@ def query_direct(ip: str, qport: int, timeout: float = 3.0) -> dict | None:
 class Res:
     status: int
     parsed: bool
-    json: Union[str, None]
+    json: Union[dict[str, Any], None]
 
 
 @dataclass(slots=True, frozen=True)
@@ -393,13 +393,13 @@ def query_api(key: str, appid: int, param: str) -> Res:
         res.raise_for_status()
         parsed = True
         status = 200
-        data = res.json()
+        json = res.json()
     except Exception:
         parsed = False
-        data = None
+        json = None
         status = 403
     finally:
-        return Res(status, parsed, data)
+        return Res(status, parsed, json)
 
 
 def validate_ip(addr: str) -> Record:
@@ -453,7 +453,7 @@ def query_by_id(addr: str, key: str) -> Optional[dict]:
         return None
 
 
-def query_playercount(record: Record) -> Optional[tuple[int]]:
+def query_playercount(record: Record) -> tuple[int, int] | None:
     try:
         res = query_direct(record.ip, record.qport)
         players = int(res["players"])
@@ -462,7 +462,7 @@ def query_playercount(record: Record) -> Optional[tuple[int]]:
             queue = int(r[1].split(",")[0])
         except IndexError:
             queue = 0
-        return (players, queue)
+        return players, queue
     except Exception as e:
         logger.critical(e)
         return None

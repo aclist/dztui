@@ -59,7 +59,7 @@ class ServerDialog(GenericDialog):
 
 
 class ServerDetailsDialog(ServerDialog):
-    def __init__(self, controller, details: "Details"):
+    def __init__(self, controller: "Controller", details: "Details"):
         name = controller.get_server_name()
         super().__init__(controller, strings.server_details, name)
 
@@ -96,6 +96,9 @@ class ServerDetailsDialog(ServerDialog):
 
         self.pack(scrollable_message)
 
+        if details.data is None:
+            return
+
         for row in details.data:
             self.store.append(row + [Pango.Weight.BOLD])
         self.view.set_model(self.store)
@@ -115,7 +118,7 @@ class ServerDetailsDialog(ServerDialog):
 
 
 class ServerModDialog(ServerDialog):
-    def __init__(self, controller, mods: list[str]):
+    def __init__(self, controller: "Controller", mods: list[list[str]]):
 
         name = controller.get_server_name()
         super().__init__(controller, strings.modlist, name)

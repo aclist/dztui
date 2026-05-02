@@ -72,7 +72,7 @@ class ConfigManager:
         # TODO: do this on demand if/when in options page
         # self.mediator.grid.notebook.settings.populate_settings()
 
-    def get_config(self) -> dict:
+    def get_config(self) -> Any:
         # TODO: is this being called twice?
         try:
             return read_json(self.config)

@@ -86,7 +86,7 @@ class ServerModelManager:
         key = config_man.lookup(Preferences.STEAM)
         job = Servers.query_api
         params = Servers.params
-        servers: list[dict[Any, Any]] = []
+        servers = []
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
             for future in as_completed(futures):
@@ -105,7 +105,8 @@ class ServerModelManager:
                         )
                         return
                     j = res.json
-                    servers += j["response"]["servers"]
+                    if j is not None:
+                        servers.extend(j["response"]["servers"])
                 except Exception as e:
                     logger.critical(e)
                     self.thread_man.set_cleanup_func(
@@ -117,7 +118,8 @@ class ServerModelManager:
         res = Servers.query_api(key, APPID_DAYZ_EXP, "")
         if res.status == 200 and res.parsed is True:
             j = res.json
-            servers += j["response"]["servers"]
+            if j is not None:
+                servers.extend(j["response"]["servers"])
 
         parsed = Servers.parse_json(servers)
         self._push_data(parsed)
@@ -364,14 +366,15 @@ class ServerModelManager:
         if self.first_iteration:
             self._update_maps()
 
-    def _cleanup_on_failure(self, show_dialog=True) -> None:
+    def _cleanup_on_failure(self, show_dialog: bool = True) -> None:
         # TODO: disable map, keyword, and filter widgets if model is None
         # -> signal driven (servers_empty, servers_failed_to_load)
 
         if self.preserve_on_fail is False:
+            # CHORE: test if maps are cleared on failure
             self.tv.set_model(None)
-            filter_man = self.tv.get_filter_man()
-            filter_man.set_unique_maps(None)
+            #filter_man = self.tv.get_filter_man()
+            #filter_man.set_unique_maps([])
             # TODO: emit signal to not disable widget sensitivity
 
         # TODO: distinguish signals, e.g. "servers_failed_to_load", "servers_loaded_empty"

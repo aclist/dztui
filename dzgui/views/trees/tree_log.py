@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(APP_NAME)
 
 
-class LogTreeView(ContextMixin, TreeView):
+class LogTreeView(ContextMixin, TreeView):  # type: ignore
     def __init__(self, controller: "Controller") -> None:
         super().__init__(controller, menu=ContextMenuGroup.LOG)
 
@@ -56,7 +56,8 @@ class LogTreeView(ContextMixin, TreeView):
         sortable = Gtk.TreeModelSort(_filter)
         self.set_model(sortable)
         _filter.refilter()
-        self.set_cursor(0)
+        path = Gtk.TreePath.new_from_indices([0])
+        self.set_cursor(path)
 
     def toggle_filter(self, _filter: str) -> None:
         if _filter in self.filters:
@@ -64,19 +65,20 @@ class LogTreeView(ContextMixin, TreeView):
         else:
             self.filters.append(_filter)
         # NOTE: unwrap TreeModelSort and TreeModelFilter
-        self.get_model().get_model().refilter()
+        self.get_model().get_model().refilter()  # type: ignore
 
     def _filter_rows(
-        self, model: Gtk.ListStore, _iter: Gtk.TreeIter, data: Any
-    ) -> None:
+        self, filter_model: Gtk.TreeModelFilter, _iter: Gtk.TreeIter, data: Any
+    ) -> bool:
         if len(self.filters) < 1:
             return False
-        return model[_iter][1] in self.filters
+        return filter_model[_iter][1] in self.filters
 
-    def _on_log_buttonpress(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
+    def _on_log_buttonpress(self, widget: Gtk.Widget, event: Gdk.EventButton) -> bool:
         if event.button == Gdk.BUTTON_SECONDARY:
             self.present_menu(widget, event)
             return True
+        return False
 
     def _on_log_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
         self.present_menu(widget, event)

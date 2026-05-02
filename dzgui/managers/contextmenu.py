@@ -33,61 +33,55 @@ class ContextMenuManager:
         self.treeview = treeview
 
     def process(self, action: ContextMenu) -> None:
-        match action:
-            # UNTHREADED
-            case ContextMenu.ADD_NOTE:
-                dialog = NoteDialog(self.controller)
-                dialog.run()
-            case ContextMenu.COPY_LOG_CLIPBOARD:
-                self.copy_log()
-            case ContextMenu.COPY_SERVER_IP:
-                self.copy_server_ip()
-            case ContextMenu.COPY_SERVER_NAME:
-                self.copy_server_name()
-            case ContextMenu.DELETE_MOD:
-                self.controller.delete_mods()
-            case ContextMenu.OPEN_WORKSHOP:
-                self.open_mod_page()
-            case ContextMenu.SET_FAV:
-                name = self.treeview.get_value_at_index(0)
-                record_str = self.treeview.get_record_string()
-                simple = self.treeview.get_simplified_ip()
-                self.controller.set_fav(name, record_str, simple)
+        if isinstance(self.treeview, ServerTreeView):
+            record = self.treeview.get_record()
+            if record is None:
+                return
 
-            # THREADED
-            case ContextMenu.ADD_SERVER:
-                record = self.treeview.get_record()
-                if record is None:
-                    return
-                self.controller.add_by_record(record)
-            case ContextMenu.CONNECT:
-                record = self.treeview.get_record()
-                if record is None:
-                    return
-                self.controller.connect_by_record(record)
-            case ContextMenu.REFRESH_PLAYERS:
-                record = self.treeview.get_record()
-                if record is None:
-                    return
-                self.controller.refresh_players(record)
-            case ContextMenu.REMOVE_HISTORY:
-                record = self.treeview.get_record()
-                if record is None:
-                    return
-                self.controller.remove_from_history(record)
-            case ContextMenu.REMOVE_SERVER:
-                record = self.treeview.get_record()
-                if record is None:
-                    return
-                self.controller.remove_by_record(record)
-            case ContextMenu.SHOW_DETAILS:
-                record = self.treeview.get_record()
-                if record is None:
-                    return
-                self.controller.get_details(record)
-            case ContextMenu.SHOW_MODS:
-                record = self.treeview.get_record()
-                self.controller.get_modlist(record)
+            match action:
+                # UNTHREADED
+                case ContextMenu.ADD_NOTE:
+                    dialog = NoteDialog(self.controller)
+                    dialog.run()
+                case ContextMenu.COPY_SERVER_IP:
+                    self.copy_server_ip()
+                case ContextMenu.COPY_SERVER_NAME:
+                    self.copy_server_name()
+                case ContextMenu.SET_FAV:
+                    name = self.treeview.get_value_at_index(0)
+                    # NOTE: fully qualified ip
+                    fqip = self.treeview.get_record_string()
+                    # NOTE: short ip for display purposes
+                    simple = self.treeview.get_simplified_ip()
+                    self.controller.set_fav(name, fqip, simple)
+
+                # THREADED
+                case ContextMenu.ADD_SERVER:
+                    self.controller.add_by_record(record)
+                case ContextMenu.CONNECT:
+                    self.controller.connect_by_record(record)
+                case ContextMenu.REFRESH_PLAYERS:
+                    self.controller.refresh_players(record)
+                case ContextMenu.REMOVE_HISTORY:
+                    self.controller.remove_from_history(record)
+                case ContextMenu.REMOVE_SERVER:
+                    self.controller.remove_by_record(record)
+                case ContextMenu.SHOW_DETAILS:
+                    self.controller.get_details(record)
+                case ContextMenu.SHOW_MODS:
+                    self.controller.get_modlist(record)
+
+        if isinstance(self.treeview, ModTreeView):
+            match action:
+                case ContextMenu.DELETE_MOD:
+                    self.controller.delete_mods()
+                case ContextMenu.OPEN_WORKSHOP:
+                    self.open_mod_page()
+
+        if isinstance(self.treeview, LogTreeView):
+            match action:
+                case ContextMenu.COPY_LOG_CLIPBOARD:
+                    self.copy_log()
 
     def copy_server_ip(self) -> None:
         if not isinstance(self.treeview, ServerTreeView):

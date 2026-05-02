@@ -2,7 +2,7 @@ import logging
 import shutil
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from dzgui.api.mods import (
     get_delimited_mods,
@@ -60,7 +60,7 @@ class ModManager:
         func = StoredFunc(self._on_mods_loaded, mods)
         self.thread_man.set_cleanup_func(func)
 
-    def _on_mods_loaded(self, mods: list[list[str, str, str, float, bool]]) -> None:
+    def _on_mods_loaded(self, mods: list[list[Any]]) -> None:
         self.store = ModelFactory().make_mod_store()
         self.store.extend(mods)
         self.treeview.set_model(self.store)
@@ -83,14 +83,20 @@ class ModManager:
 
     def get_mod_from_tree_path(
         self, tree_path: Gtk.TreePath
-    ) -> tuple[str, Gtk.TreeIter]:
+    ) -> tuple[str, Gtk.TreeIter] | None:
         model = self.treeview.get_model()
+        if model is None:
+            return None
         tree_iter = model.get_iter(tree_path)
-        mod = model.get(tree_iter, 2)[0]
+        mod = model.get_value(tree_iter, 2)[0]
+        print(mod)
         return mod, tree_iter
 
-    def delete_single_mod(self, tree_path: Gtk.TreePath) -> Gtk.TreeIter:
-        mod, _iter = self.get_mod_from_tree_path(tree_path)
+    def delete_single_mod(self, tree_path: Gtk.TreePath) -> Gtk.TreeIter | None:
+        res = self.get_mod_from_tree_path(tree_path)
+        if res is None:
+            return None
+        mod, _iter = res
 
         steam_path = Path(self.path)
         mods_path = get_local_mod_path(steam_path)
@@ -118,12 +124,17 @@ class ModManager:
             #if model:
             #    model.remove(_iter) # FIXME: do not remove from model interface directly
         remove_stale_signatures(self.prefs.paths.config, self.prefs.paths.version)
-        mods = len(self.treeview.get_model())
+        model = self.treeview.get_model()
+        if model is None:
+            return
+        mods = len(model)
         msg = self.format_mod_statusbar()
         self.emitter.emit("mods_updated", msg, mods)
 
     def uncolorize_mods(self) -> None:
         model = self.treeview.get_model()
+        if model is None:
+            return
         for mod in model:
             _iter = mod.iter
             path = model.get_path(_iter)
@@ -175,6 +186,8 @@ class ModManager:
 
     def select_colorized(self) -> None:
         model = self.treeview.get_model()
+        if model is None:
+            return
         sel = self.treeview.get_selection()
         for mod in model:
             it = mod.iter

@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 QUEUE_CHECK_DELAY = 200
 
 
-class ServerTreeView(ContextMixin, TreeView):
+class ServerTreeView(ContextMixin, TreeView):  # type: ignore
     def __init__(
         self, controller: "Controller", enum: ServerTab, menu: ContextMenuGroup
     ) -> None:
@@ -58,9 +58,9 @@ class ServerTreeView(ContextMixin, TreeView):
 
         self.queue_id: int
         self.handler_id: int
-        self.queue = Queue()
+        self.queue: Queue = Queue()
 
-        self.seen_cache = []
+        self.seen_cache: list[str] = []
 
         prefs = self.controller.get_prefs()
         columns = prefs.paths.columns
@@ -119,7 +119,7 @@ class ServerTreeView(ContextMixin, TreeView):
 
     def _on_tooltip(
         self,
-        widget: Gtk.Widget,
+        treeview: Self,
         x: int,
         y: int,
         keyboard_mode: bool,
@@ -128,12 +128,13 @@ class ServerTreeView(ContextMixin, TreeView):
         """
         Present record data for the hovered row even if it is unfocused
         """
-        coords = widget.convert_widget_to_bin_window_coords(x, y)
-        path = self.get_path_at_pos(coords.bx, coords.by)
-        if path is None:
+        coords_x, coords_y = treeview.convert_widget_to_bin_window_coords(x, y)
+        path = self.get_path_at_pos(coords_x, coords_y)
+        if path is None or path[0] is None:
             return False
-
         model = self.get_model()
+        if model is None:
+            return False
         tree_iter = model.get_iter(path[0])
         ip = model.get_value(tree_iter, 7)
         qport = model.get_value(tree_iter, 8)
@@ -188,7 +189,7 @@ class ServerTreeView(ContextMixin, TreeView):
         # NOTE: get final width after drag action completes
         GLib.idle_add(self.controller.propagate_column_width, col)
 
-    def start_distcalc(self, emitter: Optional["Emitter"] = None):
+    def start_distcalc(self, emitter: Union["Emitter", None] = None) -> None:
         self.emitter.emit("distcalc_started")
         record = self.get_record()
         if record is None:
@@ -248,14 +249,10 @@ class ServerTreeView(ContextMixin, TreeView):
                 case Gdk.KEY_r:
                     # TODO: unimplemented, needs threading
                     self.controller.menu_action(ContextMenu.REFRESH_PLAYERS, self)
-                case _:
-                    return False
-            return True
         else:
             match event.keyval:
                 case Gdk.KEY_l | Gdk.KEY_Right:
                     self.emitter.emit("request_button_box_focus")
-                    return True
                 case _:
                     self.emitter.emit("check_button_pressed", event.keyval)
 
@@ -266,12 +263,13 @@ class ServerTreeView(ContextMixin, TreeView):
         path = pathlist[0]
         tree_iter = model.get_iter(path)
         has_mods = model.get_value(tree_iter, 11)
-        return has_mods
+        return bool(has_mods)
 
-    def get_selected_row(self) -> Gtk.TreeModelRow:
-        sel = self.get_selection()
-        sels = sel.get_selected_rows()
-        return sels[0]
+    #def get_selected_row(self) -> Gtk.TreeModelRow:
+    #    sel = self.get_selection()
+    #    sels = sel.get_selected_rows()
+    #    print(type(sels[0]))
+    #    return sels[0]
 
     def is_in_favs(self) -> bool:
         record = self.get_record_string()
@@ -283,6 +281,8 @@ class ServerTreeView(ContextMixin, TreeView):
         self, tree: TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn
     ) -> None:
         record = self.get_record()
+        if record is None:
+            return
         self.controller.connect_by_record(record)
 
     def _parent_selection_changed(
@@ -321,14 +321,14 @@ class ServerTreeView(ContextMixin, TreeView):
     def set_loaded(self, status: bool) -> None:
         self.loaded = status
 
-    def get_model_and_control_model(self) -> tuple[Union["FastInsertListStore", None], list[Any]]:
+    def get_model_and_control_model(self) -> tuple[Union[Gtk.TreeModel, None], list[Any]]:
         model = self.get_model()
         control = self.proxy_man.get_control()
         return model, control
 
     @staticmethod
     def ping_server(
-        model, _iter: Gtk.TreeIter, ip: str, qport: int, ping_column: int
+            model: "FastInsertListStore", _iter: Gtk.TreeIter, ip: str, qport: int, ping_column: int
     ) -> None:
         _ping = ping(ip, qport)
         GLib.idle_add(lambda: model.set(_iter, ping_column, _ping))

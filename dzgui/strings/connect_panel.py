@@ -13,7 +13,7 @@ connect_entry_placeholder="Enter IP (IP:Query port) or Battlemetrics ID (numeric
 fav_heading="Favorite server"
 favs_empty="None set. Right click a server and select 'Set favorite' to set."
 
-lan_heading="LAN query port",
+lan_heading="LAN query port"
 lan_default_button="Default port (27016)"
 lan_custom_button="Custom port"
 lan_scan_button="Scan"

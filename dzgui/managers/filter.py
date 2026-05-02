@@ -76,7 +76,7 @@ class FilterManager:
     def append_map(self, row: list[str]) -> None:
         self.map_store.append(row)
 
-    def set_unique_maps(self, maps: list) -> None:
+    def set_unique_maps(self, maps: list[str]) -> None:
         if maps is None:
             return
         if len(maps) < 1:

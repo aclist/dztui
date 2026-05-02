@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(APP_NAME)
 
 
-class ModTreeView(ModsMixin, ContextMixin, TreeView):
+class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
     def __init__(self, controller: "Controller") -> None:
         super().__init__(controller, menu=ContextMenuGroup.MOD)
         self.controller = controller
@@ -64,31 +64,17 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):
     def _on_mods_updated(self, emitter: "Emitter", msg: str, mods: int) -> None:
         if mods < 1:
             return
-        self.set_cursor(0)
+        path = Gtk.TreePath.new_from_indices([0])
+        self.set_cursor(path)
 
     def get_selected_mod(self) -> str:
         path = self.get_focused_row_path()
         model = self.get_model()
         tree_iter = model.get_iter(path)
         mod = model.get(tree_iter, 2)[0]
-        return mod
-        # return mod, tree_iter
+        return str(mod)
 
-    # def _on_mods_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:
-    #     # TODO: multiselect
-    #     # if event.keyval is Gdk.KEY_space:
-    #     #    it = self.get_focused_row_iter()
-    #     #    self.get_selection().select_iter(it)
-    #     #    path = self.get_focused_row_path()
-    #     #    self.set_cursor(path)
-    #     #    return False
-    #     self.present_menu(widget, event)
-
-    # def _on_mods_button_press(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
-    #     if event.button == 3:
-    #         self.present_menu(widget, event)
-
-    def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
+    def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection) -> None:
         pass
 
     def _format_color(
