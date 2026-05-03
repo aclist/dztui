@@ -617,5 +617,5 @@ question_to_return = "Press ? to return"
 alert_button_tooltip = "Click to open debug log"
 
 address_already_saved = "This address is already in your Saved Servers"
-stop_scanning = "Stop scanning on first_hit"
+stop_scanning = "Stop scanning on first hit"
 abort_tooltip = "Unless you have multiple DayZ servers on your LAN,\nleave this checked to get results faster"
