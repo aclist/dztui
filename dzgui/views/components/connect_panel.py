@@ -160,8 +160,12 @@ class FavPanel(Gtk.Frame):
 
         grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
         grid.attach(scrollable_label, 0, 0, 3, ROWS)
-        grid.attach_next_to(self.copy_button, scrollable_label, Gtk.PositionType.RIGHT, COLS, ROWS)
-        grid.attach_next_to(self.fav_button, self.copy_button, Gtk.PositionType.RIGHT, COLS, ROWS)
+        grid.attach_next_to(
+            self.copy_button, scrollable_label, Gtk.PositionType.RIGHT, COLS, ROWS
+        )
+        grid.attach_next_to(
+            self.fav_button, self.copy_button, Gtk.PositionType.RIGHT, COLS, ROWS
+        )
 
         self.add(grid)
 
@@ -230,9 +234,11 @@ class AddPanel(Gtk.Frame):
             margin_end=10,
         )
         self.pop.add(self.pop_label)
+        # NOTE: render once to draw text in bubble
         self.pop.show_all()
         self.pop.set_margin_start(10)
         self.pop.set_relative_to(self.entry)
+        self.pop.popdown()
 
     def _on_duplicate_server(self, emitter: "Emitter") -> None:
         self.pop.popup()
