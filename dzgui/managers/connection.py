@@ -27,19 +27,19 @@ class ConnectionManager:
     @call_on_thread(dialog.querying)
     def connect_by_id(self, addr: str, key: str) -> None:
         res = Servers.query_by_id(addr, key)
-        self.prepare_connection(res)
+        self._prepare_connection(res)
 
     @call_on_thread(dialog.querying)
     def connect_by_ip(self, addr: str) -> None:
         res = Servers.query_by_ip(addr)
-        self.prepare_connection(res)
+        self._prepare_connection(res)
 
     @call_on_thread(dialog.querying)
     def connect_by_record(self, record: Servers.Record) -> None:
         res = Servers.query_by_record(record)
-        self.prepare_connection(res)
+        self._prepare_connection(res)
 
-    def prepare_connection(self, res: dict[Any] | None) -> None:
+    def _prepare_connection(self, res: dict[Any] | None) -> None:
         if res is None:
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._server_timeout), destroy_first=True
@@ -49,11 +49,12 @@ class ConnectionManager:
         record = Servers.response_to_record(res)
         try:
             # TODO: proper error handling (currently returns empty list)
-            mods = self.query_modlist(record)
+            mods = self._query_modlist(record)
         except Exception:
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._server_timeout), destroy_first=True
             )
+            return
         func = StoredFunc(self.controller.open_connection_assistant, res, mods)
         self.thread_man.set_cleanup_func(func, destroy_first=True)
 
@@ -69,7 +70,7 @@ class ConnectionManager:
             StoredFunc(self._present_details_dialog, details), destroy_first=True
         )
 
-    def query_modlist(self, record: Servers.Record) -> None:
+    def _query_modlist(self, record: Servers.Record) -> None:
         mods = Servers.get_rules(record)
         steam_path = self.controller.query_config(Preferences.DEFAULT)
         local = get_local_mod_ids(steam_path)
@@ -94,7 +95,7 @@ class ConnectionManager:
     @call_on_thread(dialog.querying)
     def query_modlist_and_present(self, record: Servers.Record) -> None:
         try:
-            mods = self.query_modlist(record)
+            mods = self._query_modlist(record)
         except Exception:
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._server_timeout), destroy_first=True

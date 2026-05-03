@@ -433,13 +433,14 @@ def validate_ip(addr: str) -> Record:
 def get_rules(record: Record) -> list["DayzMod"]:
     ip = record.ip
     qport = record.qport
-    try:
-        mods = dayzquery.dayz_rules((ip, qport)).mods
-        return [mod for mod in mods]
-    except Exception as e:
-        logger.critical(e)
+    #try:
+    mods = dayzquery.dayz_rules((ip, qport)).mods
+    return [mod for mod in mods]
+    #except Exception as e:
+    #    logger.critical(e)
+    #    raise e
         # TODO: supposed to skip failing servers for highlight action
-        return []
+        #return []
 
 
 def query_by_id(addr: str, key: str) -> dict[Any] | None:

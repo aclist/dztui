@@ -156,7 +156,6 @@ def find_stale_mods(config: Path) -> list[int]:
         record = fqip_to_record(rec)
         try:
             mods = get_rules(record)
-            print(mods)
         except Exception:
             return []
         return [mod.workshop_id for mod in mods]
