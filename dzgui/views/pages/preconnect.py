@@ -9,6 +9,7 @@ from dzgui.const.constants import (
 )
 from dayzquery import DayzMod
 from dzgui.views.components.frame import HeadingFrame
+from dzgui.views.trees.tree_server_mods import ServerModTree
 
 import gi
 
@@ -20,9 +21,10 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
 
+# TODO: pack entire box in scrolled window
 class PreConnectionAssistant(Gtk.Box):
     def __init__(self, controller: "Controller") -> None:
-        super().__init__()
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
         self.controller = controller
 
@@ -31,13 +33,15 @@ class PreConnectionAssistant(Gtk.Box):
             halign=Gtk.Align.END,
             valign=Gtk.Align.END,
             hexpand=True,
+            vexpand=True,
             spacing=10,
         )
 
         self.rules: dict[Any]
         self.mods: list["DayzMod"]
 
-        # TODO: pack in scrolled window
+        self.controller.register_widget("preconnect", self)
+
 
         # TODO: strings
         self.back = Gtk.Button(label="Back")
@@ -53,8 +57,15 @@ class PreConnectionAssistant(Gtk.Box):
         # TODO: populate with strings and icons
         # set visibility if warnings > 1
         frame = HeadingFrame(Gtk.Label(label="ITEM ONE"), "Warnings")
-        self.add(frame)
 
+        self.tree = ServerModTree(self.controller)
+
+        self.scrolled = Gtk.ScrolledWindow()
+        self.scrolled.add(self.tree)
+        self.scrolled.set_size_request(600, 400)
+
+        self.add(self.scrolled)
+        self.add(frame)
         self.add(self.button_box)
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
@@ -67,6 +78,8 @@ class PreConnectionAssistant(Gtk.Box):
         self.controller.open_page(page)
 
     def populate(self, res: dict[Any], mods: list["DayzMod"]) -> None:
+        # TODO: embed tree from dialog, but not dialog itself
+        self.tree.populate(mods)
         # steam_path = self.controller.get_config_man().lookup(Preferences.DEFAULT)
         # dayz_version = PeFile.get_pretty_version(steam_path, APPID_DAYZ)
         # dayz_exp_version = PeFile.get_pretty_version(steam_path, APPID_DAYZ_EXP)
@@ -78,3 +91,6 @@ class PreConnectionAssistant(Gtk.Box):
     def connect(self) -> None:
         # TODO: add to history file and list store
         pass
+
+    # TODO: icon for mod signature issue
+    # or "Update mods and connect"

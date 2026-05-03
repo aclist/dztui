@@ -63,7 +63,8 @@ class ConnectionManager:
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._server_timeout), destroy_first=True
             )
-        self.controller.open_connection_assistant(res, mods)
+        func = StoredFunc(self.controller.open_connection_assistant, res, mods)
+        self.thread_man.set_cleanup_func(func, destroy_first=True)
 
     @call_on_thread(dialog.querying)
     def query_details(self, record: Servers.Record) -> None:

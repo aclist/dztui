@@ -27,7 +27,6 @@ from dzgui.util.format import format_player_count
 from dzgui.util.open_links import open_user_workshop, open_workshop_page
 from dzgui.views.dialogs.filepicker import FilePicker
 from dzgui.views.dialogs.generic import ExceptionDialog
-from dzgui.views.dialogs.servers import ServerModDialog
 
 import gi
 
@@ -68,6 +67,7 @@ class AppNavigation:
     lan: "ServerTreeView"
     logtreeview: "LogTreeView"
     filters: "FilterPanel"
+    preconnect: "PreConnectionAssistant"
 
 
 class Controller(GObject.GObject):
@@ -460,6 +460,7 @@ class Controller(GObject.GObject):
 
     def open_connection_assistant(self, res: dict[Any], mods: list["DayzMod"]) -> None:
         self.open_page(NotebookPage.CONNECTION)
+        self.mediator.preconnect.populate(res, mods)
         # TODO: populate assistant
         # TODO: embed dialogs
         # dialog = ServerModDialog(self, mods)

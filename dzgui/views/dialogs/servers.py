@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 class ServerDialog(GenericDialog):
-    def __init__(self, controller: "Controller", title: str, secondary: str):
+    def __init__(self, controller: "Controller", title: str, secondary: str) -> None:
         super().__init__(
             controller=controller,
             text=title,
