@@ -40,12 +40,12 @@ params = [
 ]
 
 
-class BmAPIError(Exception):
-    pass
-
-
-class BmIdError(Exception):
-    pass
+#class BmAPIError(Exception):
+#    pass
+#
+#
+#class BmIdError(Exception):
+#    pass
 
 
 class InvalidIpError(Exception):

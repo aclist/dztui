@@ -37,6 +37,8 @@ gi.require_version("GLibUnix", "2.0")
 from gi.repository import Gtk, GLib, GLibUnix, Gdk  # type: ignore # noqa E402
 
 logger = logging.getLogger(APP_NAME)
+
+# TODO: drop
 # https://bugzilla.gnome.org/show_bug.cgi?id=708676
 warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 
@@ -86,6 +88,10 @@ class OuterWindow(Gtk.Window):
         css.load_css()
 
         MainController.open_page(NotebookPage.SERVERS)
+        # TODO:
+        # combo box in options could link to same index as pages
+        # or use enum in case page order is changed in future
+        # MainController.get_servers().notebook.set_current_page(3)
         self.grid.hide_widgets_on_init()
 
         # TODO: POC, trigger page change here
