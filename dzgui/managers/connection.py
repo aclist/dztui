@@ -64,9 +64,6 @@ class ConnectionManager:
                 StoredFunc(self._server_timeout), destroy_first=True
             )
         self.controller.open_connection_assistant(res, mods)
-        # TODO: add to history if successful
-        # print(res)
-        # print(rules)
 
     @call_on_thread(dialog.querying)
     def query_details(self, record: Servers.Record) -> None:

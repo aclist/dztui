@@ -130,17 +130,9 @@ class Options(Gtk.Box):
         self.dayz_version_label = Gtk.Label(label=strings.null)
         self.dayz_exp_version_label = Gtk.Label(label=strings.null)
 
-        # self.branch_combo = Gtk.ComboBoxText()
-        # self.branch_combo.append_text(strings.options.stable)
-        # self.branch_combo.append_text(strings.options.testing)
-        # self.branch_combo.set_active(0)
-        # self.branch_combo.connect("changed", self._on_branch_changed)
-        # self.branch_eb = InfoEventBox("", controller)
-
         version_rows = [
             [LeftLabel(APPNAME_DAYZ), self.dayz_version_label],
             [LeftLabel(APPNAME_DAYZ_EXP), self.dayz_exp_version_label],
-            # [LeftLabel(strings.options.branch), self.branch_combo, self.branch_eb],
         ]
 
         api_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -315,15 +307,6 @@ class Options(Gtk.Box):
                 value = FLATPAK_SANDBOX
         self.controller.update_config(Preferences.CLIENT, value)
 
-    def _on_branch_changed(self, combo: Gtk.ComboBoxText) -> None:
-        branch = combo.get_active_text()
-        print("UNIMPLEMENTED: ", branch)
-        ## TODO: needs to trigger download process
-        # self.controller.toggle_branch(branch)
-        # branch = combo.get_active_text().lower()
-        # self.controller.update_config("branch", branch)
-        # scripts/update
-
     def _on_radio_toggled(self, button: Gtk.RadioButton, context: Preferences) -> None:
         try:
             self.controller.toggle_config(context)
@@ -415,6 +398,7 @@ class Options(Gtk.Box):
             raise Exception
 
         config = query.get_config(prefs.paths.config)
+
         # TODO: use newer config enums
         name = config["name"]
         default_steam_path = config["default_steam_path"]
@@ -457,19 +441,12 @@ class Options(Gtk.Box):
             if field[0] == "":
                 field[1].get_children()[1].set_sensitive(False)
 
-        # TODO: abstract this logic
-        try:
-            pe_file_path = PeFile.get_pefile_path(steam_path, APPID_DAYZ)
-            vers = PeFile.get_dayz_version(pe_file_path)
-            dayz_version = PeFile.dayz_version_to_str(vers)
-        except Exception:
+        dayz_version = PeFile.get_pretty_version(steam_path, APPID_DAYZ)
+        if dayz_version is None:
             dayz_version = strings.null
 
-        try:
-            exp_file_path = PeFile.get_pefile_path(steam_path, APPID_DAYZ_EXP)
-            vers = PeFile.get_dayz_version(exp_file_path)
-            dayz_exp_version = PeFile.dayz_version_to_str(vers)
-        except Exception:
+        dayz_exp_version = PeFile.get_pretty_version(steam_path, APPID_DAYZ_EXP)
+        if dayz_exp_version is None:
             dayz_exp_version = strings.null
 
         self.dayz_version_label.set_text(dayz_version)
@@ -478,24 +455,7 @@ class Options(Gtk.Box):
         # TODO: not happy with this
         active_combo = query.get_client_index(config["client"])
         self.client_combo.set_active(active_combo)
-        active_combo = 0
-
-        # active_combo = 1 if config["branch"] == BETA_REPO else 0
-
-        # self.controller.suppress_signal(
-        #    self, self.branch_combo, "_on_branch_changed", True
-        # )
-        # self.branch_combo.set_active(active_combo)
-        # self.branch_combo.set_sensitive(prefs.allow_updates)
-        # self.controller.suppress_signal(
-        #    self, self.branch_combo, "_on_branch_changed", False
-        # )
-
-        # if prefs.allow_updates is True:
-        #    msg = strings.options.self_update
-        # else:
-        #    msg = strings.options.no_self_update
-        # self.branch_eb.set_text(msg)
+        # active_combo = 0
 
     def _suppress_toggles(self, state: bool) -> None:
         for toggle in [

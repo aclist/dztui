@@ -46,8 +46,8 @@ class PreConnectionAssistant(Gtk.Box):
         self.button_box.add(self.back)
         self.button_box.add(self.ok)
 
-        self.ok.connect("clicked", self._on_ok_clicked)
         self.back.connect("clicked", self._on_back_clicked)
+        self.ok.connect("clicked", self._on_ok_clicked)
 
         self.warnings = []
         # TODO: populate with strings and icons
@@ -67,18 +67,14 @@ class PreConnectionAssistant(Gtk.Box):
         self.controller.open_page(page)
 
     def populate(self, res: dict[Any], mods: list["DayzMod"]) -> None:
-        # TODO: compare remote and local build versions
-        # try:
-        #    pe_file_path = PeFile.get_pefile_path(steam_path, APPID_DAYZ)
-        #    vers = PeFile.get_dayz_version(pe_file_path)
-        #    dayz_version = PeFile.dayz_version_to_str(vers)
-        # except Exception:
-        #    dayz_version = strings.null
+        # steam_path = self.controller.get_config_man().lookup(Preferences.DEFAULT)
+        # dayz_version = PeFile.get_pretty_version(steam_path, APPID_DAYZ)
+        # dayz_exp_version = PeFile.get_pretty_version(steam_path, APPID_DAYZ_EXP)
+        pass
 
-        # try:
-        #    exp_file_path = PeFile.get_pefile_path(steam_path, APPID_DAYZ_EXP)
-        #    vers = PeFile.get_dayz_version(exp_file_path)
-        #    dayz_exp_version = PeFile.dayz_version_to_str(vers)
-        # except Exception:
-        #    dayz_exp_version = strings.null
+    def download_mods(self) -> None:
+        pass
+
+    def connect(self) -> None:
+        # TODO: add to history file and list store
         pass

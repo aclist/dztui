@@ -461,3 +461,13 @@ def compare_versions(local: DayZVersion, remote: DayZVersion) -> VersionMatch:
 
     if local_str > remote_str:
         return VersionMatch.LOCAL_NEWER
+
+
+def get_pretty_version(steam_path: Path, appid: int) -> str | None:
+    try:
+        pe_file_path = get_pefile_path(steam_path, appid)
+        vers = get_dayz_version(pe_file_path)
+        dayz_version = dayz_version_to_str(vers)
+        return dayz_version
+    except Exception:
+        return None
