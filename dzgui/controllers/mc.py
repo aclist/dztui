@@ -37,9 +37,9 @@ from gi.repository import Gtk, Gdk, GLib, GObject  # noqa E402
 logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
+    from dayzquery import DayzMod
     from dzgui.api.servers import Record
     from dzgui.const.enum import ServerTab
-    from dzgui.lib.dayzquery import DayzMod
     from dzgui.managers.filter import FilterManager
     from dzgui.util.dist import Haversine
     from dzgui.views.base import Notebook, Grid, OuterWindow

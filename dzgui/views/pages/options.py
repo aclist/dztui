@@ -9,6 +9,7 @@ from dzgui.util import strings, css, open_links
 from dzgui.views.components.labels import LeftLabel
 from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.buttons import WebButton
+from dzgui.views.components.frame import HeadingFrame
 from dzgui.views.dialogs.generic import ExceptionDialog
 from dzgui.views.dialogs.link_dialog import WorkshopLinkDialog
 
@@ -178,10 +179,10 @@ class Options(Gtk.Box):
             grid.attach(developers, 1, 0, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
 
         for frame in [
-            self.make_frame(api_box, strings.options.api_keys),
-            self.make_frame(prefs_grid, strings.options.prefs),
-            self.make_frame(mods_grid, strings.options.mods),
-            self.make_frame(version_grid, strings.options.version),
+            HeadingFrame(api_box, strings.options.api_keys),
+            HeadingFrame(prefs_grid, strings.options.prefs),
+            HeadingFrame(mods_grid, strings.options.mods),
+            HeadingFrame(version_grid, strings.options.version),
         ]:
             grid.attach(frame, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
             row += 1
@@ -405,29 +406,16 @@ class Options(Gtk.Box):
 
         return hbox
 
-    def make_frame(self, widget: Gtk.Widget, text: str) -> Gtk.Box:
-        label = Gtk.Label(label=text)
-        label.set_halign(Gtk.Align.START)
-        css.add_class(label, "settings-subheading")
-
-        frame = Gtk.Frame(hexpand=True)
-        frame.add(widget)
-        frame.set_label_widget(label)
-
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        box.add(frame)
-
-        return box
-
     def populate_settings(self) -> None:
         prefs = self.controller.get_prefs()
+        # NOTE: re-check in case file was removed by user between runs
         if prefs.paths.config.is_file() is False:
-            # NOTE: in case file got deleted locally
             dialog = ExceptionDialog(self.controller, strings.config_not_found)
             dialog.run()
             raise Exception
 
         config = query.get_config(prefs.paths.config)
+        # TODO: use newer config enums
         name = config["name"]
         default_steam_path = config["default_steam_path"]
         steam = config["steam_api"]
@@ -435,6 +423,7 @@ class Options(Gtk.Box):
         install = config["auto_install"]
 
         steam_path = Path(default_steam_path)
+        # NOTE: this is a best effort guess at the most recent user
         uid = find_user_id(steam_path)
         self.uid = "" if uid is None else uid
 
@@ -468,6 +457,7 @@ class Options(Gtk.Box):
             if field[0] == "":
                 field[1].get_children()[1].set_sensitive(False)
 
+        # TODO: abstract this logic
         try:
             pe_file_path = PeFile.get_pefile_path(steam_path, APPID_DAYZ)
             vers = PeFile.get_dayz_version(pe_file_path)
