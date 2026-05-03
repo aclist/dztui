@@ -47,7 +47,7 @@ def format_mods(size: int, mods: int) -> str:
     l_size = number(size)
     plural = pluralize("mods", mods)
     # TODO: strings
-    suffix = "Ctrl-click to select multiple."
+    suffix = "Ctrl-click to select multiple; Shift-click to select a range."
     return f"Found {mods:n} {plural} taking up {l_size} MiB. {suffix}"
 
 

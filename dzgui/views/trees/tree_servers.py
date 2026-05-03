@@ -228,9 +228,7 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
             self.controller.set_statusbar_dist(haversine, self.get_enum())
         return True
 
-    def _on_server_keypress(
-        self, treeview: Gtk.TreeView, event: Gdk.EventKey
-    ) -> None:
+    def _on_server_keypress(self, treeview: Gtk.TreeView, event: Gdk.EventKey) -> None:
         if event.state is Gdk.ModifierType.CONTROL_MASK:
             match event.keyval:
                 case Gdk.KEY_f:
@@ -265,7 +263,7 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
         has_mods = model.get_value(tree_iter, 11)
         return bool(has_mods)
 
-    #def get_selected_row(self) -> Gtk.TreeModelRow:
+    # def get_selected_row(self) -> Gtk.TreeModelRow:
     #    sel = self.get_selection()
     #    sels = sel.get_selected_rows()
     #    print(type(sels[0]))
@@ -307,6 +305,8 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
         return f"{addr}:{qport}"
 
     def get_record(self) -> Record | None:
+        if self.loaded is False:
+            return
         r = self.get_record_string()
         try:
             ip, gameport, qport = r.split(":")
@@ -321,14 +321,20 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
     def set_loaded(self, status: bool) -> None:
         self.loaded = status
 
-    def get_model_and_control_model(self) -> tuple[Union[Gtk.TreeModel, None], list[Any]]:
+    def get_model_and_control_model(
+        self,
+    ) -> tuple[Union[Gtk.TreeModel, None], list[Any]]:
         model = self.get_model()
         control = self.proxy_man.get_control()
         return model, control
 
     @staticmethod
     def ping_server(
-            model: "FastInsertListStore", _iter: Gtk.TreeIter, ip: str, qport: int, ping_column: int
+        model: "FastInsertListStore",
+        _iter: Gtk.TreeIter,
+        ip: str,
+        qport: int,
+        ping_column: int,
     ) -> None:
         _ping = ping(ip, qport)
         GLib.idle_add(lambda: model.set(_iter, ping_column, _ping))
