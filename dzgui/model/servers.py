@@ -92,8 +92,8 @@ class ServerModelManager:
             for future in as_completed(futures):
                 try:
 
-                    # NOTE: faciliate early aborting on boot via sigint
-                    # this logic not available outside of initial boot
+                    # NOTE: faciliates early aborting via sigint
+                    # TODO: make this logic available to all dump contexts
                     if self.controller.get_exit_event().is_set():
                         return
 
@@ -268,10 +268,9 @@ class ServerModelManager:
         server = records[0]
 
         proxy_man = self._get_proxy_man()
+        config_man = self.controller.get_config_man()
         fqip = Servers.response_to_fqip(response)
         record = Servers.response_to_record(response)
-
-        config_man = self.controller.get_config_man()
 
         # TODO: less convoluted
         if delete:
@@ -285,7 +284,8 @@ class ServerModelManager:
             proxy_man.remove_row_from_control(record)
         else:
             if config_man.is_in_favs(fqip):
-                self.emitter.emit("already_saved_server")
+                func = StoredFunc(lambda: self.emitter.emit("already_saved_server"))
+                self.thread_man.set_cleanup_func(func)
                 return
             config_man.add_saved_server(fqip)
             # 2026-05-04
