@@ -154,7 +154,12 @@ def remove_stale_signatures(config: Path, versions: Path) -> None:
 def find_stale_mods(config: Path) -> list[int]:
     def push_record(rec: str) -> list:
         record = fqip_to_record(rec)
-        return [mod.workshop_id for mod in get_rules(record)]
+        try:
+            mods = get_rules(record)
+            print(mods)
+        except Exception:
+            return []
+        return [mod.workshop_id for mod in mods]
 
     steam = lookup(config, Preferences.DEFAULT)
     steam_path = Path(steam)

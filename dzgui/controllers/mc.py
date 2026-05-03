@@ -27,6 +27,7 @@ from dzgui.util.format import format_player_count
 from dzgui.util.open_links import open_user_workshop, open_workshop_page
 from dzgui.views.dialogs.filepicker import FilePicker
 from dzgui.views.dialogs.generic import ExceptionDialog
+from dzgui.views.dialogs.servers import ServerModDialog
 
 import gi
 
@@ -38,6 +39,7 @@ logger = logging.getLogger(APP_NAME)
 if TYPE_CHECKING:
     from dzgui.api.servers import Record
     from dzgui.const.enum import ServerTab
+    from dzgui.lib.dayzquery import DayzMod
     from dzgui.managers.filter import FilterManager
     from dzgui.util.dist import Haversine
     from dzgui.views.base import Notebook, Grid, OuterWindow
@@ -139,7 +141,9 @@ class Controller(GObject.GObject):
     def remove_statusbar(self, context: "NotebookPage | ServerTab") -> None:
         self.mediator.statusbar.pop(context)
 
-    def set_statusbar_dist(self, haversine: Union["Haversine", None], enum: "ServerTab") -> None:
+    def set_statusbar_dist(
+        self, haversine: Union["Haversine", None], enum: "ServerTab"
+    ) -> None:
         """
         NOTE: prevents race condition when server tab changed,
         but allows caching the distance in the background
@@ -400,7 +404,7 @@ class Controller(GObject.GObject):
         ConnectionManager(self).query_details(record)
 
     def get_modlist(self, record: "Record") -> None:
-        ConnectionManager(self).query_modlist(record)
+        ConnectionManager(self).query_modlist_and_present(record)
 
     def get_server_name(self) -> str:
         tv = self.get_active_treeview()
@@ -448,8 +452,14 @@ class Controller(GObject.GObject):
     def get_modtreeview(self) -> "ModTreeView":
         return self.mediator.modtreeview
 
+    def get_exit_event(self) -> None:
+        return self.exit_event
+
     def set_exit_event(self) -> None:
         self.exit_event.set()
 
-    def get_exit_event(self) -> threading.Event:
-        return self.exit_event
+    def open_connection_assistant(self, res: dict[Any], mods: list["DayzMod"]) -> None:
+        self.open_page(NotebookPage.CONNECTION)
+        # TODO: populate assistant
+        # TODO: embed dialogs
+        # dialog = ServerModDialog(self, mods)

@@ -53,7 +53,7 @@ class ThreadingManager:
     def __init__(self, controller: "Controller") -> None:
         self.controller = controller
         self.jobs = 1
-        self.cleanup_func: StoredFunc | None
+        self.cleanup_func: StoredFunc | None = None
         self.destroy_first = False
 
     def call_on_thread(self, dialog_str: str, func: StoredFunc) -> None:
@@ -75,7 +75,9 @@ class ThreadingManager:
     def increment_dialog_with_str(self, text: str) -> None:
         GLib.idle_add(lambda: self.wait_dialog.increment(text))
 
-    def set_cleanup_func(self, func: StoredFunc | None, destroy_first: bool = False) -> None:
+    def set_cleanup_func(
+        self, func: StoredFunc | None, destroy_first: bool = False
+    ) -> None:
         if type(func) not in (StoredFunc, type(None)):
             msg = f"Callback function '{func}' is not of type StoredFunc or None"
             logger.critical(msg)

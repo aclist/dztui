@@ -438,6 +438,7 @@ def get_rules(record: Record) -> list["DayzMod"]:
         return [mod for mod in mods]
     except Exception as e:
         logger.critical(e)
+        # TODO: supposed to skip failing servers for highlight action
         return []
 
 

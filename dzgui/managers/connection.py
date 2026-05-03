@@ -55,11 +55,18 @@ class ConnectionManager:
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._server_timeout), destroy_first=True
             )
-        rules = Servers.get_rules(record)
 
+        # TODO: proper error handling (currently returns empty list)
+        try:
+            mods = self.query_modlist(record)
+        except Exception:
+            self.thread_man.set_cleanup_func(
+                StoredFunc(self._server_timeout), destroy_first=True
+            )
+        self.controller.open_connection_assistant(res, mods)
         # TODO: add to history if successful
-        print(res)
-        print(rules)
+        # print(res)
+        # print(rules)
 
     @call_on_thread(dialog.querying)
     def query_details(self, record: Servers.Record) -> None:
@@ -73,18 +80,17 @@ class ConnectionManager:
             StoredFunc(self._present_details_dialog, details), destroy_first=True
         )
 
-    @call_on_thread(dialog.querying)
     def query_modlist(self, record: Servers.Record) -> None:
         mods = Servers.get_rules(record)
         steam_path = self.controller.query_config(Preferences.DEFAULT)
         local = get_local_mod_ids(steam_path)
-        if len(mods) == 0:
-            # TODO: separate message for no mods
-            # TODO: separate message for actual timeout
-            self.thread_man.set_cleanup_func(
-                StoredFunc(self._server_timeout), destroy_first=True
-            )
-            return
+        # if len(mods) == 0:
+        #    # TODO: separate message for no mods
+        #    # TODO: separate message for actual timeout
+        #    self.thread_man.set_cleanup_func(
+        #        StoredFunc(self._server_timeout), destroy_first=True
+        #    )
+        #    return
         alpha_mods = [
             [
                 mod.name,
@@ -94,9 +100,19 @@ class ConnectionManager:
             for mod in mods
         ]
         alpha_mods.sort(key=lambda x: x[0])
+        return alpha_mods
 
+    @call_on_thread(dialog.querying)
+    def query_modlist_and_present(self, record: Servers.Record) -> None:
+        try:
+            mods = self.query_modlist(record)
+        except Exception:
+            self.thread_man.set_cleanup_func(
+                StoredFunc(self._server_timeout), destroy_first=True
+            )
+            return
         self.thread_man.set_cleanup_func(
-            StoredFunc(self._present_modlist_dialog, alpha_mods),
+            StoredFunc(self._present_modlist_dialog, mods),
             destroy_first=True,
         )
 

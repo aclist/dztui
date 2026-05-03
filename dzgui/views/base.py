@@ -23,6 +23,7 @@ from dzgui.views.pages.keys import Keybindings
 from dzgui.views.pages.log import Log
 from dzgui.views.pages.mods import Mods
 from dzgui.views.pages.options import Options
+from dzgui.views.pages.preconnect import PreConnectionAssistant
 from dzgui.views.pages.servers import ServerNotebook
 from dzgui.views.pages.thanks import Thanks
 
@@ -62,6 +63,8 @@ warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 #    return f"{record.ip}:{record.gameport}:{record.qport}"
 #
 #
+
+
 class OuterWindow(Gtk.Window):
     def __init__(self) -> None:
         super().__init__(title=APP_NAME, border_width=10, icon_name=APP_NAME_LOWER)
@@ -125,6 +128,8 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
         self.log = Log(MainController)
         self.developers = Developers(MainController)
 
+        self.connection = PreConnectionAssistant(MainController)
+
         self.pages = {
             self.help: NotebookPage.HELP,
             self.clog: NotebookPage.CHANGELOG,
@@ -135,6 +140,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
             self.log: NotebookPage.LOG,
             self.thanks: NotebookPage.THANKS,
             self.developers: NotebookPage.DEVELOPERS,
+            self.connection: NotebookPage.CONNECTION,
         }
         self.indexes = {}
 

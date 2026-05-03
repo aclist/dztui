@@ -16,6 +16,9 @@ from dzgui.const.enum import Preferences
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.model.model_factory import FastInsertListStore, ModelFactory
 from dzgui.util.format import format_mods
+from dzgui.util.strings import server_timeout
+from dzgui.views.dialogs.generic import ExceptionDialog
+
 
 import dzgui.api.pefile as PeFile
 
@@ -34,11 +37,9 @@ class ModManager:
     """
     Because mods may be dynamically updated on the system,
     this manager is instantiated each time the Mods page is opened
-    and persists until the next time the page is opened
     """
 
     def __init__(self, controller: "Controller") -> None:
-
         self.controller = controller
         self.emitter = controller.get_emitter()
         self.prefs = controller.get_prefs()
@@ -50,6 +51,7 @@ class ModManager:
         self.thread_man = ThreadingManager(controller)
         self._get_mods()
 
+    # TODO: strings
     @call_on_thread("getting mods")
     def _get_mods(self) -> None:
         mods = get_delimited_mods(self.path)
@@ -69,11 +71,12 @@ class ModManager:
         total_mods = len(self.store)
         self.emitter.emit("mods_updated", msg, total_mods)
 
+    # TODO: strings
     @call_on_thread("deleting mods")
     def delete_mods(self) -> None:
         sel = self.treeview.get_selection()
         model, pathlist = sel.get_selected_rows()
-        # NOTE reverse when multiple selection
+        # NOTE: reverse when multiple selection
         iters = []
         for path in reversed(pathlist):
             _iter = self.delete_single_mod(path)
@@ -174,12 +177,23 @@ class ModManager:
                 model[path][4] = True
         self.emitter.emit("mods_highlighted")
 
+    # TODO: strings
     @call_on_thread("working")
     def highlight_stale(self) -> None:
-        # TODO: set progress bar for number of mods
+        # try:
         stale = find_stale_mods(self.prefs.paths.config)
+        # except Exception:
+        #    # TODO: clearer error message
+        #    func = StoredFunc(self._server_timeout)
+        #    self.thread_man.set_cleanup_func(func)
+        #    return
+
         func = StoredFunc(self._on_stale_mods_found, stale)
         self.thread_man.set_cleanup_func(func)
+
+    def _server_timeout(self) -> None:
+        dialog = ExceptionDialog(self.controller, server_timeout)
+        dialog.run()
 
     def select_colorized(self) -> None:
         model = self.treeview.get_model()
