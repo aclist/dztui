@@ -442,7 +442,7 @@ def get_rules(record: Record) -> list["DayzMod"]:
         return []
 
 
-def query_by_id(addr: str, key: str) -> Optional[dict]:
+def query_by_id(addr: str, key: str) -> dict[Any] | None:
     """
     Used with numeric Battlemetrics IDs
     """
@@ -469,12 +469,12 @@ def query_playercount(record: Record) -> tuple[int, int] | None:
         return None
 
 
-def query_by_ip(addr: str) -> Optional[dict]:
+def query_by_ip(addr: str) -> dict[Any] | None:
     record = short_ip_to_record(addr)
     return query_by_record(record)
 
 
-def query_by_record(record: Record) -> Optional[dict]:
+def query_by_record(record: Record) -> dict[Any] | None:
     try:
         return query_direct(record.ip, record.qport)
     except Exception as e:

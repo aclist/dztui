@@ -11,6 +11,7 @@ from dzgui.views.dialogs.note import NoteDialog
 from dzgui.views.trees.tree_mods import ModTreeView
 from dzgui.views.trees.tree_log import LogTreeView
 from dzgui.views.trees.tree_servers import ServerTreeView
+from dzgui.views.trees.tree_server_mods import ServerModTreeView
 
 
 gi.require_version("Gtk", "3.0")
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
 class ContextMenuManager:
     def __init__(
         self,
-        treeview: LogTreeView | ModTreeView | ServerTreeView,
+        treeview: LogTreeView | ModTreeView | ServerTreeView | ServerModTreeView,
         controller: "Controller",
     ) -> None:
         self.controller = controller
@@ -83,6 +84,11 @@ class ContextMenuManager:
                 case ContextMenu.COPY_LOG_CLIPBOARD:
                     self.copy_log()
 
+        if isinstance(self.treeview, ServerModTreeView):
+            match action:
+                case ContextMenu.OPEN_WORKSHOP:
+                    self.open_mod_page()
+
     def copy_server_ip(self) -> None:
         if not isinstance(self.treeview, ServerTreeView):
             return
@@ -96,7 +102,7 @@ class ContextMenuManager:
         copy_clipboard(name)
 
     def open_mod_page(self) -> None:
-        if not isinstance(self.treeview, ModTreeView):
+        if not hasattr(self.treeview, "get_selected_mod"):
             return
         mod = self.treeview.get_selected_mod()
         cmd = self.controller.query_config(Preferences.CLIENT)

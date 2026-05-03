@@ -9,7 +9,7 @@ from dzgui.const.constants import (
 )
 from dayzquery import DayzMod
 from dzgui.views.components.frame import HeadingFrame
-from dzgui.views.trees.tree_server_mods import ServerModTree
+from dzgui.views.trees.tree_server_mods import ServerModTreeView
 
 import gi
 
@@ -42,7 +42,6 @@ class PreConnectionAssistant(Gtk.Box):
 
         self.controller.register_widget("preconnect", self)
 
-
         # TODO: strings
         self.back = Gtk.Button(label="Back")
         # TODO: dynamic button text if no mods needed
@@ -58,13 +57,22 @@ class PreConnectionAssistant(Gtk.Box):
         # set visibility if warnings > 1
         frame = HeadingFrame(Gtk.Label(label="ITEM ONE"), "Warnings")
 
-        self.tree = ServerModTree(self.controller)
+        self.tree = ServerModTreeView(self.controller)
 
         self.scrolled = Gtk.ScrolledWindow()
         self.scrolled.add(self.tree)
         self.scrolled.set_size_request(600, 400)
 
-        self.add(self.scrolled)
+        self.tree_frame = HeadingFrame(self.scrolled, "Mods")
+
+        # TODO: should form a part of tree_frame above
+        self.mod_count = Gtk.Label(label="")
+
+        self.title = Gtk.Label(label="")
+
+        self.add(self.title)
+        self.add(self.tree_frame)
+        self.add(self.mod_count)
         self.add(frame)
         self.add(self.button_box)
 
@@ -78,8 +86,17 @@ class PreConnectionAssistant(Gtk.Box):
         self.controller.open_page(page)
 
     def populate(self, res: dict[Any], mods: list["DayzMod"]) -> None:
-        # TODO: embed tree from dialog, but not dialog itself
         self.tree.populate(mods)
+        total = len(mods)
+        self.title.set_text(f"Connecting to {res["name"]}")
+        if total < 1:
+            self.tree.set_visible(False)
+            self.mod_count.set_visible(False)
+            return
+        else:
+            self.tree.set_visible(True)
+            self.mod_count.set_visible(True)
+            self.mod_count.set_text(f"Total mods: {str(total)}")
         # steam_path = self.controller.get_config_man().lookup(Preferences.DEFAULT)
         # dayz_version = PeFile.get_pretty_version(steam_path, APPID_DAYZ)
         # dayz_exp_version = PeFile.get_pretty_version(steam_path, APPID_DAYZ_EXP)
@@ -94,3 +111,4 @@ class PreConnectionAssistant(Gtk.Box):
 
     # TODO: icon for mod signature issue
     # or "Update mods and connect"
+    # also handle servers with no mods; do not show tree

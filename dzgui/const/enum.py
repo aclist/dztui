@@ -179,6 +179,7 @@ class ContextMenuGroup(Enum):
     Groupings of context menu items
     """
 
+    SERVER_MOD = (ContextMenu.OPEN_WORKSHOP,)
     MOD = (ContextMenu.OPEN_WORKSHOP, ContextMenu.DELETE_MOD)
     LOG = (ContextMenu.COPY_LOG_CLIPBOARD,)
     SERVER_BROWSER = (

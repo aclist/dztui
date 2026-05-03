@@ -288,6 +288,9 @@ class ServerModelManager:
                 self.emitter.emit("already_saved_server")
                 return
             config_man.add_saved_server(fqip)
+            # 2026-05-04
+            # TODO: this is valid if saved servers tab is already open,
+            # but not if app was just booted
             if proxy_man.has_control_model() is False:
                 self._get_proxy_man().push(records)
             else:
@@ -373,8 +376,8 @@ class ServerModelManager:
         if self.preserve_on_fail is False:
             # CHORE: test if maps are cleared on failure
             self.tv.set_model(None)
-            #filter_man = self.tv.get_filter_man()
-            #filter_man.set_unique_maps([])
+            # filter_man = self.tv.get_filter_man()
+            # filter_man.set_unique_maps([])
             # TODO: emit signal to not disable widget sensitivity
 
         # TODO: distinguish signals, e.g. "servers_failed_to_load", "servers_loaded_empty"

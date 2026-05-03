@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import dzgui.api.servers as Servers
 
@@ -27,37 +27,28 @@ class ConnectionManager:
     @call_on_thread(dialog.querying)
     def connect_by_id(self, addr: str, key: str) -> None:
         res = Servers.query_by_id(addr, key)
-        if res is None:
-            self.thread_man.set_cleanup_func(
-                StoredFunc(self._server_timeout), destroy_first=True
-            )
-
-        # TODO: resolve real ip
-        print("UNIMPLEMENTED: get rules")
-        print(res)
+        self.prepare_connection(res)
 
     @call_on_thread(dialog.querying)
     def connect_by_ip(self, addr: str) -> None:
         res = Servers.query_by_ip(addr)
-        if res is None:
-            self.thread_man.set_cleanup_func(
-                StoredFunc(self._server_timeout), destroy_first=True
-            )
-
-        # TODO: resolve real ip
-        print("UNIMPLEMENTED: get rules")
-        print(res)
+        self.prepare_connection(res)
 
     @call_on_thread(dialog.querying)
     def connect_by_record(self, record: Servers.Record) -> None:
         res = Servers.query_by_record(record)
+        self.prepare_connection(res)
+
+    def prepare_connection(self, res: dict[Any] | None) -> None:
         if res is None:
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._server_timeout), destroy_first=True
             )
+            return
 
-        # TODO: proper error handling (currently returns empty list)
+        record = Servers.response_to_record(res)
         try:
+            # TODO: proper error handling (currently returns empty list)
             mods = self.query_modlist(record)
         except Exception:
             self.thread_man.set_cleanup_func(

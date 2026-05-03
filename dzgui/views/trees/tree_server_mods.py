@@ -1,5 +1,6 @@
+from dzgui.const.enum import ContextMenuGroup
 from dzgui.model.model_factory import ModelFactory
-from dzgui.views.mixins.cursor_mixin import CursorMixin
+from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.views.trees.tree_base import TreeView
 from dzgui.util import strings
 
@@ -14,22 +15,19 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
 
-class ServerModTree(TreeView):  # type: ignore
+class ServerModTreeView(ContextMixin, TreeView):  # type: ignore
     def __init__(self, controller: "Controller") -> None:
-        super().__init__(controller)
+        super().__init__(controller, menu=ContextMenuGroup.SERVER_MOD)
 
-        # self.view = TreeView(controller)
         self.mod_store = ModelFactory().make_server_mod_store()
 
         self.set_fixed_height_mode(True)
         self.set_headers_visible(True)
         self.set_model(self.mod_store)
 
-        # self.scrollable_tree = Gtk.ScrolledWindow()
-        # self.scrollable_tree.add(self.view)
-        # self.scrollable_tree.set_size_request(700, 400)
-
-        # self.view.connect("row-activated", self._on_row_activated)
+        self.connect("button-press-event", self.present_menu)
+        self.connect("key-press-event", self.present_menu)
+        self.connect("row-activated", self._on_row_activated)
 
         for i, column_title in enumerate(strings.server_mod_cols):
             renderer = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
@@ -46,9 +44,26 @@ class ServerModTree(TreeView):  # type: ignore
                 case _:
                     pass
 
-        # mod_count = len(mods)
-        # self._set_footer(mod_count)
+    # TODO: could be problematic if user downloads mods out of band
+    def _on_row_activated(
+        self,
+        treeview: Gtk.TreeView,
+        path: Gtk.TreePath,
+        col: Gtk.TreeViewColumn,
+    ) -> None:
+        mod = self.get_value_at_index(1)
+        self.controller.open_workshop_page(mod)
+
+    def get_selected_mod(self) -> str:
+        path = self.get_focused_row_path()
+        model = self.get_model()
+        tree_iter = model.get_iter(path)
+        mod = model.get(tree_iter, 1)[0]
+        return str(mod)
 
     def populate(self, mods: list[list[str]]) -> None:
+        self.mod_store.clear()
         for mod in mods:
             self.mod_store.append(mod)
+        path = Gtk.TreePath.new_from_indices([0])
+        self.set_cursor(path)
