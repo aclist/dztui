@@ -82,6 +82,10 @@ class Options(Gtk.Box):
         self.player_box = self._make_submit_field(
             strings.options.name_placeholder, Preferences.NAME
         )
+        self.player_box.set_halign(Gtk.Align.START)
+        # TODO: make submit field a standalone class
+        self.player_box.get_children()[0].set_width_chars(30)
+
         self.fullscreen_toggle = self.make_binary_radio(
             strings.options.last_used,
             strings.options.always_fs,
@@ -95,6 +99,7 @@ class Options(Gtk.Box):
         self.client_combo.append_text("Flatpak (container)")
         self.client_combo.set_active(0)
         self.client_combo.connect("changed", self._on_client_changed)
+        # TODO: short hbox class
         client_hbox = Gtk.Box(spacing=5, halign=Gtk.Align.START)
         client_hbox.pack_start(self.client_combo, NO_EXPAND, NO_FILL, NO_PADDING)
 
