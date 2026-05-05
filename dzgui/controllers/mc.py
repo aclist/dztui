@@ -46,6 +46,7 @@ if TYPE_CHECKING:
     from dzgui.views.components.filter_panel import FilterPanel
     from dzgui.views.components.right_panel import RightPanel
     from dzgui.views.components.statusbar import Statusbar
+    from dzgui.views.pages.preconnect import PreConnectionAssistant
     from dzgui.views.pages.servers import ServerNotebook
     from dzgui.views.trees.tree_log import LogTreeView
     from dzgui.views.trees.tree_menu import MenuTreeView
@@ -199,7 +200,6 @@ class Controller(GObject.GObject):
                 except Exception:
                     return
             case ButtonType.MODS:
-                # TODO: reload using refresh button, rather than on demand?
                 self.load_mods()
 
         self.open_page(button.opens)
@@ -393,7 +393,7 @@ class Controller(GObject.GObject):
         if addr.isdigit():
             config_man = self.get_config_man()
             key = config_man.lookup(Preferences.BM)
-            ConnectionManager(self).connect_by_id(addr, key)
+            ConnectionManager(self).connect_by_id(int(addr), key)
         else:
             ConnectionManager(self).connect_by_ip(addr)
 
@@ -452,7 +452,7 @@ class Controller(GObject.GObject):
     def get_modtreeview(self) -> "ModTreeView":
         return self.mediator.modtreeview
 
-    def get_exit_event(self) -> None:
+    def get_exit_event(self) -> threading.Event:
         return self.exit_event
 
     def set_exit_event(self) -> None:
@@ -461,10 +461,7 @@ class Controller(GObject.GObject):
     def open_connection_assistant(self, res: "PreReqs", mods: list["DayzMod"]) -> None:
         self.open_page(NotebookPage.CONNECTION)
         self.mediator.preconnect.populate(res, mods)
-        # TODO: populate assistant
-        # TODO: embed dialogs
-        # dialog = ServerModDialog(self, mods)
 
-    def set_start_tab(self) -> int:
+    def set_start_tab(self) -> None:
         ind = self.config_man.get_start_tab()
         self.get_servers().notebook.set_current_page(ind)

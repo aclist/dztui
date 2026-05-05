@@ -131,7 +131,7 @@ class Statusbar(Gtk.Grid):
     def get_text(self) -> str:
         area = self.statusbar.get_message_area()
         label = area.get_children()[0]
-        return label.get_text()
+        return str(label.get_text())
 
     def set_by_context(
         self, context: Union[NotebookPage, "ServerTab"], string: str

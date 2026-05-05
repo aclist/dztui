@@ -52,8 +52,8 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             spacing=10,
         )
 
-        self.rules: dict[Any]
-        self.mods: list["DayzMod"]
+        # self.rules: dict[Any]
+        # self.mods: list["DayzMod"]
 
         self.controller.register_widget("preconnect", self)
 
@@ -97,7 +97,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
         self.tree_frame = HeadingFrame(self.tree_box, preconnect.mods)
 
-        self.warnings = []
+        self.warnings: list[WarningLabel] = []
         # TODO: populate with strings and icons
         # set visibility if warnings > 1
         # warning category enums with matching strings
@@ -162,7 +162,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
     def download_mods(self) -> None:
         pass
 
-    def connect(self) -> None:
+    def connect_server(self) -> None:
         # TODO: add to history file and list store
         """
         spawn dialog in thread

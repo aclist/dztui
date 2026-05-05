@@ -66,7 +66,7 @@ class ContextMixin(TreeView):
         item.connect("activate", self._on_menu_click, row)
 
         if row == ContextMenu.SHOW_MODS:
-            item.set_sensitive(self.is_modded())
+            item.set_sensitive(self.is_modded())  # type: ignore
 
         if row == ContextMenu.ADD_NOTE:
             if self.controller.has_note():

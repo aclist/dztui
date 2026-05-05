@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import Self, TYPE_CHECKING
 
 from dzgui.const.enum import ModButton
 from dzgui.const.constants import NO_EXPAND, FILL, NO_PADDING
@@ -64,7 +64,7 @@ class ModSelectionPanel(Gtk.Box):
 
         self.connect("map", self._reinit_button)
 
-    def _reinit_button(self, s) -> None:
+    def _reinit_button(self, widget: Self) -> None:
         for child in self.stale_panel.get_children():
             if child.enum == ModButton.UNHIGHLIGHT_STALE:
                 child.set_sensitive(False)

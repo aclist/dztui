@@ -21,13 +21,13 @@ class CursorMixin:
             case Gdk.KEY_l | Gdk.KEY_Right:
                 if event.state is Gdk.ModifierType.CONTROL_MASK:
                     return
-                self.emitter.emit("request_button_box_focus")
+                self.emitter.emit("request_button_box_focus")  # type: ignore
             case _:
                 return False
 
     def _move_cursor(self, position: CursorPosition) -> bool:
-        cur_row = self.get_focused_row_index()
-        model = self.get_model()
+        cur_row = self.get_focused_row_index()  # type: ignore
+        model = self.get_model()  # type: ignore
         if model:
             end = len(model) - 1
         else:
@@ -55,5 +55,5 @@ class CursorMixin:
             dest = end
 
         path = Gtk.TreePath.new_from_indices([dest])
-        self.set_cursor(path)
+        self.set_cursor(path)  # type: ignore
         return True

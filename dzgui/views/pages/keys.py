@@ -5,17 +5,20 @@ from dzgui.util.strings import navigation, servers, vim, key_header, key_context
 from dzgui.util.css import add_class
 
 import gi
+
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk # noqa E402
+from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
-class Keybindings(ScrollableMixin, Gtk.ScrolledWindow):
+
+class Keybindings(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
     """
     Notebook page holding a prearranged grid
     of keybindings and their descriptions
     """
+
     def __init__(self, controller: "Controller") -> None:
         super().__init__()
 
@@ -57,9 +60,7 @@ class Keybindings(ScrollableMixin, Gtk.ScrolledWindow):
                 if not sep:
                     grid.attach(desc, col, row, w, h)
                 else:
-                    grid.attach_next_to(
-                        desc, sep, Gtk.PositionType.BOTTOM, w, h
-                    )
+                    grid.attach_next_to(desc, sep, Gtk.PositionType.BOTTOM, w, h)
                     row += 1
                     sep = None
                 grid.attach_next_to(frame, desc, Gtk.PositionType.RIGHT, w, h)
@@ -67,18 +68,14 @@ class Keybindings(ScrollableMixin, Gtk.ScrolledWindow):
             l_spacer = Gtk.Label(label="")
             r_spacer = Gtk.Label(label="")
             grid.attach(l_spacer, col, row + 1, w, h)
-            grid.attach_next_to(
-                r_spacer, l_spacer, Gtk.PositionType.RIGHT, w, h
-            )
+            grid.attach_next_to(r_spacer, l_spacer, Gtk.PositionType.RIGHT, w, h)
             row += 1
         return grid
 
     def build_sidebar(self, categories: list) -> Gtk.Grid:
         row, col = 0, 0
         w, h = 1, 1
-        sidebar = Gtk.Grid(
-            row_homogeneous=True, orientation=Gtk.Orientation.VERTICAL
-        )
+        sidebar = Gtk.Grid(row_homogeneous=True, orientation=Gtk.Orientation.VERTICAL)
         for cat in categories:
             label = Gtk.Label(label=cat)
             add_class(label, "left-label")
@@ -96,9 +93,7 @@ class Keybindings(ScrollableMixin, Gtk.ScrolledWindow):
 
         row, column = 1, 1
         w, h = 1, 1
-        sidebar = self.build_sidebar(
-            key_contexts
-        )
+        sidebar = self.build_sidebar(key_contexts)
         separator = Gtk.Separator()
         keys_box = self.build_keys(items)
 
@@ -106,6 +101,6 @@ class Keybindings(ScrollableMixin, Gtk.ScrolledWindow):
         grid.attach_next_to(separator, sidebar, Gtk.PositionType.RIGHT, w, h)
         grid.attach_next_to(keys_box, separator, Gtk.PositionType.RIGHT, w, h)
         return grid
-    
+
     def grab_content_area(self) -> None:
         self.box.grab_focus()

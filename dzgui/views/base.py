@@ -194,11 +194,10 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
     def get_prior_page(self) -> NotebookPage:
         return self.prior_page
 
-    def get_page_by_enum(self) -> NotebookPage | None:
+    def get_page_by_enum(self) -> NotebookPage:
         for k, v in self.indexes.items():
             if v == self.get_current_page():
                 return k
-        return None
 
     def toggle_keybindings(self) -> None:
         cur_page = self.get_page_by_enum()

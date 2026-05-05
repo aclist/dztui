@@ -1,7 +1,7 @@
 import shutil
 
 from pathlib import Path
-from typing import Any, Union, TYPE_CHECKING
+from typing import Union, TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers
@@ -30,8 +30,8 @@ class ConnectionManager:
         self.thread_man = ThreadingManager(controller)
 
     @call_on_thread(dialog.querying)
-    def connect_by_id(self, addr: str, key: str) -> None:
-        res = Servers.query_by_id(addr, key, full=True)
+    def connect_by_id(self, _id: int, key: str) -> None:
+        res = Servers.query_by_id(_id, key, full=True)
         self._prepare_connection(res)
 
     @call_on_thread(dialog.querying)
@@ -89,7 +89,7 @@ class ConnectionManager:
             StoredFunc(self._present_details_dialog, details), destroy_first=True
         )
 
-    def _query_modlist(self, record: Servers.Record) -> None:
+    def _query_modlist(self, record: Servers.Record) -> list[list[str]]:
         mods = Servers.get_rules(record)
         steam_path = self.controller.query_config(Preferences.DEFAULT)
         local = get_local_mod_ids(steam_path)

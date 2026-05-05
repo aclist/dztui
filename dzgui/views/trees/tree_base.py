@@ -134,7 +134,8 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
                 self.get_selection().unselect_path(path)
 
     def focus_first_row(self) -> None:
-        self.set_cursor(0)
+        path = Gtk.TreePath.new_from_indices([0])
+        self.set_cursor(path)
 
     def get_value_at_index(self, index: int) -> str:
         (model, pathlist) = self.get_model_and_pathlist()
@@ -143,7 +144,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         path = pathlist[0]
         tree_iter = model.get_iter(path)
         value = model.get_value(tree_iter, index)
-        return value
+        return str(value)
 
     def get_name(self) -> str:
         name = self.get_value_at_index(0)

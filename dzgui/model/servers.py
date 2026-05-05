@@ -187,10 +187,10 @@ class ServerModelManager:
         self._push_data(parsed)
 
     @call_on_thread(dialog.querying)
-    def add_by_id(self, addr: str) -> None:
+    def add_by_id(self, _id: str) -> None:
         config_man = self.controller.get_config_man()
         key = config_man.lookup(Preferences.BM)
-        res = Servers.query_by_id(addr, key)
+        res = Servers.query_by_id(int(_id), key)
         self._parse_single_record(res)
 
     @call_on_thread(dialog.querying)
@@ -266,6 +266,8 @@ class ServerModelManager:
         # NOTE: expected to only contain one item
         records = Servers.parse_json([response])
         server = records[0]
+        if server is None:
+            return
 
         proxy_man = self._get_proxy_man()
         config_man = self.controller.get_config_man()

@@ -62,9 +62,9 @@ def get_coords(ips: "Path", ip: str) -> Coords:
     if proc.returncode != 0:
         raise GeolocationError("Failed to split records")
 
-    ips = proc.stdout.splitlines()
+    ip_list = proc.stdout.splitlines()
 
-    for address in ips:
+    for address in ip_list:
         fields = address.split(",")
         upper = fields[1]
 

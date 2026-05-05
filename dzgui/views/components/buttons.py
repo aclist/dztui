@@ -117,13 +117,13 @@ class RefreshButton(IconTextButton):
             self.show_time(True)
             GLib.timeout_add_seconds(1, self.decrement)
 
-    def decrement(self) -> type[GLib.SOURCE_REMOVE] | Literal[True]:
+    def decrement(self) -> bool:
         self.time -= 1
         if self.time == 0:
             self.time = 30
             self.show_time(False)
             self.set_sensitive(True)
-            return GLib.SOURCE_REMOVE
+            return False
         self.show_time(True)
         return True
 

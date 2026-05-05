@@ -306,7 +306,7 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
 
     def get_record(self) -> Record | None:
         if self.loaded is False:
-            return
+            return None
         r = self.get_record_string()
         try:
             ip, gameport, qport = r.split(":")

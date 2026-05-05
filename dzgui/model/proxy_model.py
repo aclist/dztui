@@ -1,6 +1,6 @@
 import re
 
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING, Union
 from warnings import deprecated
 
 from dzgui.const.enum import FilterMode
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from dzgui.model.servers import NewPlayerCount
 
 
+# TODO: annotate list contents (list[list[Any]])
 class ProxyModelManager:
     """
     Manages access to cached FastInsertListStore resources and
@@ -34,7 +35,7 @@ class ProxyModelManager:
 
         # TODO: list typehints
         self.control_model: list | None = None
-        self.filtered: list | None = None
+        self.filtered: list = []
         self.success = True
 
     def has_control_model(self) -> bool:
@@ -60,6 +61,8 @@ class ProxyModelManager:
     #    self.control_model.append(row)
 
     def remove_row_from_control(self, record: "Record") -> None:
+        if self.control_model is None:
+            return
         addr = f"{record.ip}:{record.gameport}"
         qport = record.qport
         for row in self.control_model:
@@ -75,7 +78,9 @@ class ProxyModelManager:
     def get_proxy_model(self) -> "FastInsertListStore":
         return self.proxy_model
 
-    def filter(self, mode: FilterMode, skip_cache: bool = False) -> None:
+    def filter(
+        self, mode: FilterMode, skip_cache: bool = False
+    ) -> Union["FastInsertListStore", None]:
         """
         Native Gtk.TreeView.refilter() method was not performant enough
         when running in the main loop with 40k+ records
@@ -91,7 +96,7 @@ class ProxyModelManager:
                 cache = self.filter_cache[filters]
                 self.set_proxy_model(cache[0])
                 self.set_filtered(cache[1])
-                return
+                return None
 
         match mode:
             case FilterMode.INITIAL:
@@ -224,10 +229,11 @@ class ProxyModelManager:
     def convert_model_to_list(self, model: "FastInsertListStore") -> list:
         return [[el for el in row] for row in model]
 
-    def set_filtered(self, rows: Optional[list]) -> None:
+    def set_filtered(self, rows: list | None) -> None:
         if rows is None:
-            rows = []
-        self.filtered = rows
+            self.filtered = []
+        else:
+            self.filtered = rows
 
     def get_filtered(self) -> list:
         return self.filtered
@@ -248,7 +254,7 @@ class ProxyModelManager:
         return self.control_model
 
     def wipe_cache(self, full: bool = False) -> None:
-        self.filtered = None
+        self.filtered = []
         self.filter_cache = {}
 
     def push(self, data: list[Any]) -> None:

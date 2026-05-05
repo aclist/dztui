@@ -48,7 +48,7 @@ def get_favorites(path: Path) -> list[str]:
 
 
 def enum_to_key(enum: Preferences) -> str:
-    return enum.dict["key"]
+    return str(enum.dict["key"])
 
 
 def get_client_index(client: str) -> int:

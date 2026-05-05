@@ -443,12 +443,12 @@ def get_rules(record: Record) -> list["DayzMod"]:
     return [mod for mod in mods]
 
 
-def query_by_id(addr: str, key: str, full: bool = False) -> dict[Any] | None:
+def query_by_id(server_id: int, key: str, full: bool = False) -> dict[Any] | None:
     """
     Used with numeric Battlemetrics IDs
     """
     try:
-        resolved = map_id_to_record(key, addr)
+        resolved = map_id_to_record(key, server_id)
         return query_direct(resolved.ip, resolved.qport, full)
     except Exception as e:
         logger.critical(e)
@@ -470,11 +470,11 @@ def query_playercount(record: Record) -> tuple[int, int] | None:
         return None
 
 
-def query_by_ip(addr: str, full: bool = False) -> dict[Any] | None:
+def query_by_ip(addr: str, full: bool = False) -> dict[str, Any] | PreReqs | None:
     record = short_ip_to_record(addr)
     return query_by_record(record, full)
 
-def query_by_record(record: Record, full: bool = False) -> dict[Any] | None:
+def query_by_record(record: Record, full: bool = False) -> dict[str, Any] | PreReqs | None:
     if full:
         try:
             info = a2s.info((record.ip, record.qport), 3.0)
@@ -510,11 +510,6 @@ def response_to_fqip(res: dict) -> str:
     qport = res["addr"].split(":")[1]
     return f"{ip}:{gameport}:{qport}"
 
-
-def source_info_to_record(res: a2s.SourceInfo) -> Record:
-    print(res)
-    return
-    return Record(ip, int(gameport), int(qport))
 
 def response_to_record(res: dict) -> Record:
     ip = res["addr"].split(":")[0]

@@ -1,4 +1,3 @@
-import dayzquery
 import hashlib
 import logging
 import shlex
@@ -9,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import dzgui.api.pefile as PeFile
-from dzgui.api.servers import Record, get_rules, fqip_to_record
+from dzgui.api.servers import get_rules, fqip_to_record
 from dzgui.const.constants import (
     APP_NAME,
     APPID_DAYZ,
@@ -17,7 +16,6 @@ from dzgui.const.constants import (
     WORKSHOP_PATH,
 )
 
-from dzgui.util.strings import checkmark
 from dzgui.config.query import lookup
 from dzgui.const.enum import Preferences
 
@@ -108,23 +106,6 @@ def get_delimited_mods(steam_path: Path) -> list[Any]:
 
 def get_missing_mods(local: list, remote: list) -> list:
     return [mod for mod in remote if mod not in local]
-
-
-# TODO: drop
-# def get_server_modlist(server: Record, steam: Path) -> list:
-#    try:
-#        rules = dayzquery.dayz_rules((server.ip, server.qport))
-#    except Exception as e:
-#        raise e
-#    remote_mods = [[mod.name, mod.workshop_id] for mod in rules.mods]
-#    remote_mods.sort(key=lambda row: row[0])
-#    local_mods = get_local_mod_ids(steam)
-#    for mod in remote_mods:
-#        if mod[1] in local_mods:
-#            mod.append(checkmark)
-#        else:
-#            mod.append("")
-#    return remote_mods
 
 
 def _hash(uid: str) -> str:

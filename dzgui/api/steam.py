@@ -83,7 +83,7 @@ def find_user_id(path: Path) -> str | None:
         j = json.loads(vdf)
         for user in j["users"]:
             if j["users"][user]["MostRecent"] == "1":
-                return user
+                return str(user)
         return None
     except Exception as e:
         logger.warn(e)
@@ -91,7 +91,7 @@ def find_user_id(path: Path) -> str | None:
 
 
 def vdf2json(path: Path) -> str:
-    def _istr(indent, string):
+    def _istr(indent: int, string: str):
         return (indent * "  ") + string
 
     jbuf = "{\n"
