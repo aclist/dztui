@@ -1,0 +1,7 @@
+update_mods = "Update mods and connect"
+back = "Back"
+cancel = "Cancel"
+warnings = "Warnings"
+errors = "Errors"
+mods = "Mods"
+total_mods = "Total mods: "

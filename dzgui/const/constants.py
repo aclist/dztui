@@ -39,6 +39,7 @@ SEARCH_ICON = "system-search-symbolic"
 STEAM_ICON = "steam_tray_mono"
 VIEW_CONCEAL = "view-conceal-symbolic"
 VIEW_REVEAL = "view-reveal-symbolic"
+ERROR = "dialog-error-symbolic"
 WARNING = "dialog-warning-symbolic"
 WEB_BROWSER = "web-browser-symbolic"
 
@@ -61,5 +62,6 @@ LEGACY_IPS_PATH = ".local/share/dzgui/helpers/ips.csv"
 DEBUG_LOG = f"{APP_NAME}_DEBUG.LOG"
 SYSTEM_LOG = f"{APP_NAME}_SYSTEM.LOG"
 CHANGELOG_PATH = "data/CHANGELOG.md"
+CSS_PATH = "data/app.css"
 
 LOG_FILTERS = ("CRITICAL", "WARNING", "INFO", "DEBUG")

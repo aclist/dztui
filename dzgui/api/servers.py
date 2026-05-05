@@ -191,6 +191,7 @@ def parse_json(json: list) -> list:
     return rows
 
 
+
 def query_direct(ip: str, qport: int, timeout: float = 3.0) -> dict | None:
     try:
         info = a2s.info((ip, qport), timeout)
@@ -238,12 +239,12 @@ class Details:
     success: bool
 
 
-@dataclass(slots=True, frozen=True)
-class Prereqs:
-    password: bool
-    gameport: int
-    appid: Union[int, None]
-    version: Union[str, None]
+#@dataclass(slots=True, frozen=True)
+#class Prereqs:
+#    password: bool
+#    gameport: int
+#    appid: Union[int, None]
+#    version: Union[str, None]
 
 
 @dataclass(slots=True)
@@ -256,19 +257,25 @@ class Record:
     gameport: int
     qport: int
 
+@dataclass(frozen=True, slots=True)
+class PreReqs:
+    record: Record
+    source: a2s.SourceInfo
 
-def get_prereqs(ip: str, qport: int) -> Prereqs:
-    try:
-        info = a2s.info((ip, qport))
-    except TimeoutError:
-        return Prereqs(False, 0, None, None)
 
-    gameport = getattr(info, "port", 0)
-    is_password = getattr(info, "password_protected", False)
-    appid = getattr(info, "game_id", None)
-    version = getattr(info, "version", None)
 
-    return Prereqs(is_password, gameport, appid, version)
+#def get_prereqs(ip: str, qport: int) -> Prereqs:
+#    try:
+#        info = a2s.info((ip, qport))
+#    except TimeoutError:
+#        return Prereqs(False, 0, None, None)
+#
+#    gameport = getattr(info, "port", 0)
+#    is_password = getattr(info, "password_protected", False)
+#    appid = getattr(info, "game_id", None)
+#    version = getattr(info, "version", None)
+#
+#    return Prereqs(is_password, gameport, appid, version)
 
 
 def get_details(record: Record) -> Details:
@@ -443,13 +450,13 @@ def get_rules(record: Record) -> list["DayzMod"]:
         #return []
 
 
-def query_by_id(addr: str, key: str) -> dict[Any] | None:
+def query_by_id(addr: str, key: str, full: bool = False) -> dict[Any] | None:
     """
     Used with numeric Battlemetrics IDs
     """
     try:
         resolved = map_id_to_record(key, addr)
-        return query_direct(resolved.ip, resolved.qport)
+        return query_direct(resolved.ip, resolved.qport, full)
     except Exception as e:
         logger.critical(e)
         return None
@@ -470,12 +477,19 @@ def query_playercount(record: Record) -> tuple[int, int] | None:
         return None
 
 
-def query_by_ip(addr: str) -> dict[Any] | None:
+def query_by_ip(addr: str, full: bool = False) -> dict[Any] | None:
     record = short_ip_to_record(addr)
-    return query_by_record(record)
+    return query_by_record(record, full)
 
+def query_by_record(record: Record, full: bool = False) -> dict[Any] | None:
+    if full:
+        try:
+            info = a2s.info((record.ip, record.qport), 3.0)
+            return PreReqs(record, info)
+        except Exception as e:
+            logger.critical(e)
+            return None
 
-def query_by_record(record: Record) -> dict[Any] | None:
     try:
         return query_direct(record.ip, record.qport)
     except Exception as e:
@@ -503,6 +517,11 @@ def response_to_fqip(res: dict) -> str:
     qport = res["addr"].split(":")[1]
     return f"{ip}:{gameport}:{qport}"
 
+
+def source_info_to_record(res: a2s.SourceInfo) -> Record:
+    print(res)
+    return
+    return Record(ip, int(gameport), int(qport))
 
 def response_to_record(res: dict) -> Record:
     ip = res["addr"].split(":")[0]

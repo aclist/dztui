@@ -1,5 +1,9 @@
-from typing import Any, TYPE_CHECKING
+import shutil
 
+from pathlib import Path
+from typing import Any, Union, TYPE_CHECKING
+
+import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers
 
 from dzgui.api.mods import get_local_mod_ids
@@ -15,6 +19,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
+    from dzgui.api.servers import PreReqs
     from dzgui.controllers.mc import Controller
 
 
@@ -26,35 +31,50 @@ class ConnectionManager:
 
     @call_on_thread(dialog.querying)
     def connect_by_id(self, addr: str, key: str) -> None:
-        res = Servers.query_by_id(addr, key)
+        res = Servers.query_by_id(addr, key, full=True)
         self._prepare_connection(res)
 
     @call_on_thread(dialog.querying)
     def connect_by_ip(self, addr: str) -> None:
-        res = Servers.query_by_ip(addr)
+        res = Servers.query_by_ip(addr, full=True)
         self._prepare_connection(res)
 
     @call_on_thread(dialog.querying)
     def connect_by_record(self, record: Servers.Record) -> None:
-        res = Servers.query_by_record(record)
+        res = Servers.query_by_record(record, full=True)
         self._prepare_connection(res)
 
-    def _prepare_connection(self, res: dict[Any] | None) -> None:
+    def _prepare_connection(self, res: Union["PreReqs", None]) -> None:
+        failure_func = StoredFunc(self._server_timeout)
+
         if res is None:
-            self.thread_man.set_cleanup_func(
-                StoredFunc(self._server_timeout), destroy_first=True
-            )
+            self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
             return
 
-        record = Servers.response_to_record(res)
+        record = res.record
+        info = res.source
+
         try:
             # TODO: proper error handling (currently returns empty list)
             mods = self._query_modlist(record)
         except Exception:
-            self.thread_man.set_cleanup_func(
-                StoredFunc(self._server_timeout), destroy_first=True
-            )
+            self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
             return
+
+        # TODO: get missing mod diff
+        # TODO: get missing mod sizes
+
+        try:
+            path = Path(self.controller.query_config(Preferences.DEFAULT))
+            dayz_path = PeFile.get_pefile_path(path, info.game_id)
+            total, used, free = shutil.disk_usage(dayz_path)
+            free_mib = free / (1024**2)
+            print(free_mib)
+        except Exception:
+            # TODO: if this fails, need to show missing build warning
+            # logger.warning(e)
+            self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
+
         func = StoredFunc(self.controller.open_connection_assistant, res, mods)
         self.thread_man.set_cleanup_func(func, destroy_first=True)
 
