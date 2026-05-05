@@ -1,10 +1,11 @@
 from typing import Self, TYPE_CHECKING
 
-from dzgui.const.constants import EXPAND, FILL, NO_PADDING
+from dzgui.const.constants import EXPAND, FILL
 from dzgui.model.model_factory import ModelFactory
 from dzgui.util import css
 from dzgui.util import strings
 from dzgui.util.format import format_hyperlinks, format_server_mods
+from dzgui.strings import server_mods
 from dzgui.views.dialogs.generic import GenericDialog
 from dzgui.views.trees.tree_base import TreeView
 
@@ -121,7 +122,7 @@ class ServerModDialog(ServerDialog):
     def __init__(self, controller: "Controller", mods: list[list[str]]):
 
         name = controller.get_server_name()
-        super().__init__(controller, strings.modlist, name)
+        super().__init__(controller, server_mods.modlist, name)
 
         self.controller = controller
         self.mod_store = ModelFactory().make_server_mod_store()
@@ -130,17 +131,22 @@ class ServerModDialog(ServerDialog):
         self.view.set_model(self.mod_store)
         self.view.connect("row-activated", self._on_row_activated)
 
-        for i, column_title in enumerate(strings.server_mod_cols):
+        # TODO: inherit from ServerModTreeView
+        columns = [
+            server_mods.mod,
+            server_mods.mod_id,
+            server_mods.installed,
+        ]
+        for i, column_title in enumerate(columns):
             renderer = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             self.view.append_column(column)
             column.set_sort_column_id(i)
-            # FIXME: do not recycle generic string vars
             match column_title:
-                case strings.mod:
+                case server_mods.mod:
                     column.set_fixed_width(350)
-                case strings._id:
+                case server_mods.mod_id:
                     column.set_fixed_width(200)
                 case _:
                     pass

@@ -126,7 +126,6 @@ class WaitDialog(GenericDialog):
 
 class QuitDialog(GenericDialog):
     def __init__(self, controller: "Controller", secondary: str):
-        # FIXME: do not pass controller to every dialog
         super().__init__(
             controller=controller,
             text=strings.wait,
@@ -173,6 +172,7 @@ class ExceptionDialog(GenericDialog):
             propagate_natural_height=True, max_content_height=500
         )
         box = Gtk.Box(hexpand=True, vexpand=True, orientation=Gtk.Orientation.VERTICAL)
+        # TODO: wrap/truncate long messages
         textview = Gtk.TextView(
             wrap_mode=Gtk.WrapMode.WORD, editable=False, left_margin=10, right_margin=10
         )
@@ -182,7 +182,7 @@ class ExceptionDialog(GenericDialog):
 
         content = self.get_content_area()
         content.set_spacing(0)
-        # FIXME: padding around top of content area when traceback is long
+        # TODO: padding around top of content area when traceback is long
         content.add(scrollable)
 
         copy_button = ClipboardButton(controller, self.get_trace)

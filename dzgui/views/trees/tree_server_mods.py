@@ -1,8 +1,8 @@
 from dzgui.const.enum import ContextMenuGroup
 from dzgui.model.model_factory import ModelFactory
+from dzgui.strings import server_mods
 from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.views.trees.tree_base import TreeView
-from dzgui.util import strings
 
 from typing import TYPE_CHECKING
 
@@ -29,17 +29,21 @@ class ServerModTreeView(ContextMixin, TreeView):  # type: ignore
         self.connect("key-press-event", self.present_menu)
         self.connect("row-activated", self._on_row_activated)
 
-        for i, column_title in enumerate(strings.server_mod_cols):
+        columns = [
+            server_mods.mod,
+            server_mods.mod_id,
+            server_mods.installed,
+        ]
+        for i, column_title in enumerate(columns):
             renderer = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             self.append_column(column)
             column.set_sort_column_id(i)
-            # FIXME: do not recycle generic string vars
             match column_title:
-                case strings.mod:
+                case server_mods.mod:
                     column.set_fixed_width(350)
-                case strings._id:
+                case server_mods.mod_id:
                     column.set_fixed_width(200)
                 case _:
                     pass

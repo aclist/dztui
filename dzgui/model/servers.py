@@ -328,10 +328,8 @@ class ServerModelManager:
         ips = config_man.lookup(Preferences.IP_LIST)
         self.thread_man.set_job_count(len(ips))
 
-        # TODO: customize statusbar to mention how records can be added via contextmenu
         if len(ips) == 0:
-            # FIXME: this is not a failure, just a quiet exit with custom statusbar
-            # TODO: add custom statusbar parameters
+            # TODO: customize statusbar to mention how records can be added via contextmenu
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._cleanup_on_failure, False)
             )

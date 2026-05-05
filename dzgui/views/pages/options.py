@@ -20,6 +20,7 @@ from dzgui.const.constants import (
 )
 from dzgui.const.endpoints import STEAM_API_SETUP, BM_API_SETUP
 from dzgui.const.enum import Preferences, ServerTab
+from dzgui.strings import errors
 from dzgui.util import strings, css, open_links
 from dzgui.views.components.labels import LeftLabel
 from dzgui.views.components.eventbox import InfoEventBox
@@ -300,8 +301,7 @@ class Options(Gtk.Box):
 
     def _on_api_change_failed(self, emitter: "Emitter") -> None:
         self.old_entry.set_text(self.old_text)
-        # FIXME: ambiguous error message
-        dialog = ExceptionDialog(self.controller, strings.api_error)
+        dialog = ExceptionDialog(self.controller, errors.api_validation_error)
         dialog.run()
 
     def restore_api_text(self, text: str, entry: Gtk.Entry) -> None:

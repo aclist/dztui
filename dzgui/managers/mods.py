@@ -180,14 +180,7 @@ class ModManager:
     # TODO: strings
     @call_on_thread("working")
     def highlight_stale(self) -> None:
-        # try:
         stale = find_stale_mods(self.prefs.paths.config)
-        # except Exception:
-        #    # TODO: clearer error message
-        #    func = StoredFunc(self._server_timeout)
-        #    self.thread_man.set_cleanup_func(func)
-        #    return
-
         func = StoredFunc(self._on_stale_mods_found, stale)
         self.thread_man.set_cleanup_func(func)
 

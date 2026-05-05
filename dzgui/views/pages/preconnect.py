@@ -19,7 +19,7 @@ from dzgui.views.trees.tree_server_mods import ServerModTreeView
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk  # type: ignore # noqa E402
+from gi.repository import Gdk, Gtk  # type: ignore # noqa E402
 
 
 if TYPE_CHECKING:

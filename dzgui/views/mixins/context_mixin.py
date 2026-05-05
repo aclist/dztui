@@ -82,7 +82,6 @@ class ContextMixin(TreeView):
             (path, col, cellx, celly) = pathinfo
             if path is None:
                 return True
-            # return True
             selection = self.get_selection()
             model, selected_paths = selection.get_selected_rows()
             if path not in selected_paths:
@@ -90,7 +89,6 @@ class ContextMixin(TreeView):
                     selection.unselect_path(p)
                 self.set_cursor(path, col, False)
             return True
-            # FIXME: if selection is not multiple, change cursor
         except AttributeError:
             return False
 

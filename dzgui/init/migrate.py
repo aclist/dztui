@@ -11,8 +11,7 @@ def migrate_legacy_conf(config: Path) -> None:
     old_conf = Path.home() / LEGACY_CONFIG_PATH
     if old_conf.is_file():
         j = rc2json(old_conf)
-        # FIXME: superfluous use of Path()
-        Path(config).parent.mkdir(parents=True, exist_ok=True)
+        config.parent.mkdir(parents=True, exist_ok=True)
         config.write_text(j)
     else:
         print("Unimplemented. You must have a working dztuirc.")

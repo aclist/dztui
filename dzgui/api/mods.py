@@ -110,21 +110,21 @@ def get_missing_mods(local: list, remote: list) -> list:
     return [mod for mod in remote if mod not in local]
 
 
-# FIXME: steam path is missing when comparing to local mods
-def get_server_modlist(server: Record, steam: Path) -> list:
-    try:
-        rules = dayzquery.dayz_rules((server.ip, server.qport))
-    except Exception as e:
-        raise e
-    remote_mods = [[mod.name, mod.workshop_id] for mod in rules.mods]
-    remote_mods.sort(key=lambda row: row[0])
-    local_mods = get_local_mod_ids(steam)
-    for mod in remote_mods:
-        if mod[1] in local_mods:
-            mod.append(checkmark)
-        else:
-            mod.append("")
-    return remote_mods
+# TODO: drop
+# def get_server_modlist(server: Record, steam: Path) -> list:
+#    try:
+#        rules = dayzquery.dayz_rules((server.ip, server.qport))
+#    except Exception as e:
+#        raise e
+#    remote_mods = [[mod.name, mod.workshop_id] for mod in rules.mods]
+#    remote_mods.sort(key=lambda row: row[0])
+#    local_mods = get_local_mod_ids(steam)
+#    for mod in remote_mods:
+#        if mod[1] in local_mods:
+#            mod.append(checkmark)
+#        else:
+#            mod.append("")
+#    return remote_mods
 
 
 def _hash(uid: str) -> str:

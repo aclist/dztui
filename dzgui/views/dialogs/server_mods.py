@@ -60,7 +60,7 @@ class ServerModDialog(GenericDialog):
         dialogBox.pack_end(self.scrollable, EXPAND, FILL, 0)
 
         mod_count = len(mods)
-        self.set_markup(f"Modlist ({mod_count} mods")
+        self.set_markup(f"Modlist ({mod_count} mods)")
         for mod in mods:
             self.mod_store.append(mod)
 

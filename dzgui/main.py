@@ -133,6 +133,7 @@ def main() -> None:
     is_dayz_running()
     is_steam_running()
 
+    # NOTE: clear versions file of unlinked mods
     rebuild_symlinks(XDG.config)
     remove_stale_signatures(XDG.config, XDG.version)
 

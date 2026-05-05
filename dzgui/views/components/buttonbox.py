@@ -53,7 +53,6 @@ class ButtonBox(Gtk.Box):
                 context=side_button,
             )
 
-            # FIXME: if debug log fails to load, still opens table
             size = (10, 10) if prefs.is_steam_deck else (50, 50)
             x, y = size
             button.set_size_request(x, y)

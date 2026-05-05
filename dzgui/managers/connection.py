@@ -55,7 +55,6 @@ class ConnectionManager:
         info = res.source
 
         try:
-            # TODO: proper error handling (currently returns empty list)
             mods = self._query_modlist(record)
         except Exception:
             self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
@@ -94,13 +93,6 @@ class ConnectionManager:
         mods = Servers.get_rules(record)
         steam_path = self.controller.query_config(Preferences.DEFAULT)
         local = get_local_mod_ids(steam_path)
-        # if len(mods) == 0:
-        #    # TODO: separate message for no mods
-        #    # TODO: separate message for actual timeout
-        #    self.thread_man.set_cleanup_func(
-        #        StoredFunc(self._server_timeout), destroy_first=True
-        #    )
-        #    return
         alpha_mods = [
             [
                 mod.name,

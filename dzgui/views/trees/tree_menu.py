@@ -47,7 +47,6 @@ class MenuTreeView(TreeView):
     def _parent_row_activated(
         self, tree: TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn
     ) -> None:
-        # FIXME: may be expected to return str, not enum
         row_type = self.get_value_at_index(1)
 
         match row_type:
