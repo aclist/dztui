@@ -20,7 +20,7 @@ from gi.repository import Gtk, GLib  # noqa E402
 logger = logging.getLogger(APP_NAME)
 
 
-def call_on_thread(dialog_str: str) -> Callable:
+def call_on_thread(dialog_str: str, show_dialog: bool = True) -> Callable:
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> None:
@@ -32,7 +32,7 @@ def call_on_thread(dialog_str: str) -> Callable:
                 raise TypeError(
                     "Attribute 'thread_man' must be of type 'ThreadingManager'"
                 )
-            self.thread_man.call_on_thread(dialog_str, stored)
+            self.thread_man.call_on_thread(dialog_str, stored, show_dialog)
 
         return wrapper
 
@@ -56,13 +56,16 @@ class ThreadingManager:
         self.cleanup_func: StoredFunc | None = None
         self.destroy_first = False
 
-    def call_on_thread(self, dialog_str: str, func: StoredFunc) -> None:
+    def call_on_thread(
+        self, dialog_str: str, func: StoredFunc, show_dialog: bool = True
+    ) -> None:
         def callback() -> None:
             func.call()
             GLib.idle_add(self._destroy_on_idle)
 
-        self.wait_dialog = WaitDialog(self.controller, dialog_str, jobs=self.jobs)
-        self.wait_dialog.show_all()
+        if show_dialog:
+            self.wait_dialog = WaitDialog(self.controller, dialog_str, jobs=self.jobs)
+            self.wait_dialog.show_all()
         thread = threading.Thread(target=callback)
         thread.start()
 
@@ -88,16 +91,20 @@ class ThreadingManager:
     def get_cleanup_func(self) -> StoredFunc | None:
         return self.cleanup_func
 
+    def destroy_dialog(self) -> None:
+        if hasattr(self, "wait_dialog"):
+            self.wait_dialog.destroy()
+
     def _destroy_on_idle(self) -> Literal[False]:
         if self.destroy_first:
-            self.wait_dialog.destroy()
+            self.destroy_dialog()
 
         func = self.get_cleanup_func()
         if func is not None:
             func.call()
             self.set_cleanup_func(None)
         if not self.destroy_first:
-            self.wait_dialog.destroy()
+            self.destroy_dialog()
 
         return False
 

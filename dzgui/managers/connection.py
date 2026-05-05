@@ -70,18 +70,19 @@ class ConnectionManager:
         version_file = self.controller.get_prefs().paths.version
         needs_update = get_needs_update(version_file, hashes)
 
-        # TODO: populate version file at boot if nonexistent (after symlinking)
+        # TODO: store mods that need update in class object for referencing later
+        # TODO: store remote destination to connect to
+
         # missing mods should be the totality of all mods with no signature
         # missing = get_missing_mods(local_mod_ids, remote_mod_ids)
         # print(missing)
-
-        # TODO: when updating, create symlinks of everything
-        # contains id and signature
+        # TODO: when downloading mods, create symlinks if missing
 
         # TODO: get missing mod sizes, warn if not enough space
         info = res.source
         try:
             dayz_path = PeFile.get_pefile_path(steam_path, info.game_id)
+            # TODO: handle missing path; do not calculate size if appid is missing
             total, used, free = shutil.disk_usage(dayz_path)
             if len(needs_update) > 0:
                 # TODO: generic mib function
@@ -97,8 +98,9 @@ class ConnectionManager:
             self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
 
         # TODO: number separator func
-        # TODO: pack a final PreReq struct with pre-process values
+        # TODO: pack a final PreReq struct with pre-processed values
 
+        # TODO: connection assistant only receives user-facing warnings and list of mods
         func = StoredFunc(self.controller.open_connection_assistant, res, remote_mods)
         self.thread_man.set_cleanup_func(func, destroy_first=True)
 
@@ -154,3 +156,11 @@ class ConnectionManager:
     def _server_timeout(self) -> None:
         dialog = ExceptionDialog(self.controller, server_timeout)
         dialog.run()
+
+    def update_mods(self) -> None:
+        # self.needs_update
+        pass
+
+    def connect(self) -> None:
+        # steam api, concat mods
+        pass

@@ -1,6 +1,6 @@
-from typing import Any, TYPE_CHECKING
+from dataclasses import dataclass
+from typing import Self, TYPE_CHECKING
 
-from dzgui.api import pefile as PeFile
 from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
@@ -13,7 +13,6 @@ from dayzquery import DayzMod
 from dzgui.util.css import add_class
 from dzgui.strings import preconnect
 from dzgui.views.components.frame import HeadingFrame
-from dzgui.views.components.labels import IconLabel
 from dzgui.views.trees.tree_server_mods import ServerModTreeView
 
 import gi
@@ -27,14 +26,48 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
 
-class WarningLabel(IconLabel):
-    def __init__(self, text: str) -> None:
-        super().__init__(text, WARNING)
+@dataclass
+class Warnings:
+    passworded: bool
+    dayz_running: bool
+    no_steam: bool
+    wrong_version: bool
 
 
-class ErrorLabel(IconLabel):
-    def __init__(self, text: str) -> None:
-        super().__init__(text, ERROR)
+@dataclass
+class Errors:
+    no_space: bool
+    no_dayz_exp: bool
+    no_dayz: bool
+
+
+class MaskedTree(Gtk.TreeView):
+    def __init__(self, icon: str) -> None:
+        super().__init__(headers_visible=False, can_focus=False)
+
+        self.icon = icon
+        self.store = Gtk.ListStore(str, str)
+        self.set_model(self.store)
+        self.get_selection().set_mode(Gtk.SelectionMode.NONE)
+
+        icon_renderer = Gtk.CellRendererPixbuf()
+        # NOTE: adjust vertical offset between columns
+        icon_renderer.set_property("yalign", 0.6)
+        icon_column = Gtk.TreeViewColumn("", icon_renderer)
+        icon_column.add_attribute(icon_renderer, "icon-name", 0)
+        icon_column.set_fixed_width(50)
+
+        text_renderer = Gtk.CellRendererText()
+        text_column = Gtk.TreeViewColumn("", text_renderer, text=1)
+
+        self.append_column(icon_column)
+        self.append_column(text_column)
+        add_class(self, "masked-tree")
+
+    def append(self, items: list[str]) -> None:
+        self.store.clear()
+        for item in items:
+            self.store.append([self.icon, item])
 
 
 class PreConnectionAssistant(Gtk.ScrolledWindow):
@@ -54,7 +87,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
         self.controller.register_widget("preconnect", self)
 
-        # TODO: strings
         # TODO: dynamic button text if no mods needed
         self.back = Gtk.Button(label=preconnect.back, halign=Gtk.Align.START)
         self.cancel = Gtk.Button(
@@ -94,28 +126,12 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
         self.tree_frame = HeadingFrame(self.tree_box, preconnect.mods)
 
-        self.warnings: list[WarningLabel] = []
-        # TODO: populate with strings and icons
-        # set visibility if warnings > 1
-        # warning category enums with matching strings
-        """
-        blocking warning types:
-        - build mismatch
-        - version mismatch
-        - not enough drive space
-        passing warning types:
-        - dayz is running
-        - steam is not running
-        - server has password
-        """
         # TODO: abstract into components
-        warning_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        warning_box.add(WarningLabel("Warning 1"))
-        self.warning_frame = HeadingFrame(warning_box, preconnect.warnings)
+        self.warning_tree = MaskedTree(WARNING)
+        self.warning_frame = HeadingFrame(self.warning_tree, preconnect.warnings)
 
-        error_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        error_box.add(ErrorLabel("Error 1"))
-        self.error_frame = HeadingFrame(error_box, preconnect.errors)
+        self.error_tree = MaskedTree(ERROR)
+        self.error_frame = HeadingFrame(self.error_tree, preconnect.errors)
 
         self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.box.add(self.title)
@@ -125,6 +141,17 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         self.box.add(self.button_box)
 
         self.add(self.box)
+
+        # self.connect("key-press-event", self._on_keypress)
+        self.connect("map", self._on_map)
+
+    def _on_map(self, widget: Self) -> None:
+        self.tree_frame.set_visible(True)
+        self.mod_count.set_visible(True)
+
+    def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
+        if event.keyval == Gdk.KEY_Escape:
+            self.back.emit("clicked")
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
         # TODO: update mod store in place with spinner/toast
@@ -139,6 +166,8 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         self.tree.populate(mods)
         total = len(mods)
 
+        self._set_warnings()
+
         name = res.source.server_name
         self.title.set_text(name)
         if total < 1:
@@ -148,10 +177,26 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         else:
             self.tree.set_visible(True)
             self.mod_count.set_visible(True)
+            # TODO: print no. of mods that need updating
             prefix = preconnect.total_mods
             self.mod_count.set_text(f"{prefix}{str(total)}")
 
-        # TODO: reset warning and error dialogs
+        """
+        blocking warning types:
+        - build mismatch
+        - version mismatch
+        - not enough drive space
+        passing warning types:
+        - dayz is running
+        - steam is not running
+        - server has password
+        """
+        # TODO: if errors > 1, disable buttons
+
+    def _set_warnings(self) -> None:
+        self.warning_tree.append(["Password protected", "Some other error", "Error 3"])
+        self.error_tree.append(["Password protected", "Some other error", "Error 3"])
+        pass
 
     def download_mods(self) -> None:
         pass

@@ -116,7 +116,8 @@ def _hash(uid: str) -> str:
 
 def remove_stale_signatures(config: Path, versions: Path) -> None:
     if versions.is_file() is False:
-        logger.warning("No mod signatures file found")
+        logger.warning("Creating new version signatures file")
+        versions.touch()
         return
     path = lookup(config, Preferences.DEFAULT)
     steam_path = Path(path)
