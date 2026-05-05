@@ -1,3 +1,4 @@
+import logging
 import shutil
 
 from pathlib import Path
@@ -5,8 +6,10 @@ from typing import Union, TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers
+from dzgui.api.steam import get_remote_signatures, get_needs_update
 
 from dzgui.api.mods import get_local_mod_ids
+from dzgui.const.constants import APP_NAME
 from dzgui.const.enum import Preferences
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.util.strings import dialog, server_timeout, checkmark
@@ -21,6 +24,8 @@ from gi.repository import Gtk  # noqa E402
 if TYPE_CHECKING:
     from dzgui.api.servers import PreReqs
     from dzgui.controllers.mc import Controller
+
+logger = logging.getLogger(APP_NAME)
 
 
 class ConnectionManager:
@@ -46,35 +51,55 @@ class ConnectionManager:
 
     def _prepare_connection(self, res: Union["PreReqs", None]) -> None:
         failure_func = StoredFunc(self._server_timeout)
-
         if res is None:
             self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
             return
 
         record = res.record
-        info = res.source
-
         try:
-            mods = self._query_modlist(record)
-        except Exception:
+            remote_mods = self._query_modlist(record)
+            remote_mod_ids = [mod[1] for mod in remote_mods]
+        except Exception as e:
+            print(e)
             self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
             return
 
-        # TODO: get missing mod diff
-        # TODO: get missing mod sizes
+        steam_path = Path(self.controller.query_config(Preferences.DEFAULT))
 
+        hashes = get_remote_signatures(remote_mod_ids)
+        version_file = self.controller.get_prefs().paths.version
+        needs_update = get_needs_update(version_file, hashes)
+
+        # TODO: populate version file at boot if nonexistent (after symlinking)
+        # missing mods should be the totality of all mods with no signature
+        # missing = get_missing_mods(local_mod_ids, remote_mod_ids)
+        # print(missing)
+
+        # TODO: when updating, create symlinks of everything
+        # contains id and signature
+
+        # TODO: get missing mod sizes, warn if not enough space
+        info = res.source
         try:
-            path = Path(self.controller.query_config(Preferences.DEFAULT))
-            dayz_path = PeFile.get_pefile_path(path, info.game_id)
+            dayz_path = PeFile.get_pefile_path(steam_path, info.game_id)
             total, used, free = shutil.disk_usage(dayz_path)
-            free_mib = free / (1024**2)
-            print(free_mib)
+            if len(needs_update) > 0:
+                # TODO: generic mib function
+                required_size = sum(int(row[2]) for row in needs_update)
+                required_mib = round(required_size / (1024**2), 3)
+                free_mib = round(free / (1024**2), 3)
+                print(required_mib)
+                print(free_mib)
         except Exception:
-            # TODO: if this fails, need to show missing build warning
+            # TODO: if this fails, need to show missing build warning, not failure func
+            # build up list of warnings/errors
             # logger.warning(e)
             self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
 
-        func = StoredFunc(self.controller.open_connection_assistant, res, mods)
+        # TODO: number separator func
+        # TODO: pack a final PreReq struct with pre-process values
+
+        func = StoredFunc(self.controller.open_connection_assistant, res, remote_mods)
         self.thread_man.set_cleanup_func(func, destroy_first=True)
 
     @call_on_thread(dialog.querying)

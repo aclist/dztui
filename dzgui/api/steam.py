@@ -1,11 +1,13 @@
 import json
 import logging
+import requests
 import subprocess
 
 from shlex import shlex
 from pathlib import Path
 
 from dzgui.const.constants import APP_NAME
+from dzgui.const.endpoints import STEAM_PUBLISHED_FILES
 from dzgui.util.bash import concat_bash_args
 
 
@@ -49,15 +51,65 @@ def query_defunct() -> None:
 # query_defunct "3576065083"
 
 
-def concat_mods(mods: list[str]) -> str:
+def concat_mods(mods: list[int]) -> str:
     for mod in mods:
         mods[mod] = f"@{mod}"
     return ";".join(mods)
 
 
+def get_local_signatures(version_file: Path) -> dict[str, int]:
+    hashes: dict[str, int] = {}
+    lines = version_file.read_text().splitlines()
+    for line in lines:
+        line = line.split(",")
+        _id = line[0]
+        _hash = line[1]
+        hashes[_id] = _hash
+    return hashes
+
+
+def get_needs_update(
+    version_file: Path, remote_hashes: list[tuple[str, int, str]]
+) -> list[tuple[str, int, str]]:
+    local_hashes = get_local_signatures(version_file)
+    needs_update: list[tuple[str, str]] = []
+    for _id, _hash, size in remote_hashes:
+        if _id not in local_hashes:
+            needs_update.append((_id, _hash, size))
+        elif _hash != local_hashes[_id]:
+            needs_update.append((_id, _hash, size))
+        else:
+            continue
+    return needs_update
+
+
+def get_remote_signatures(mods: list[str]) -> list[tuple[str, int]]:
+    payload: dict[str, str] = {}
+    payload["itemcount"] = len(mods)
+    for i, mod in enumerate(mods):
+        payload[f"publishedfileids[{i}]"] = mod
+    try:
+        r = requests.post(STEAM_PUBLISHED_FILES, payload)
+    except Exception as e:
+        logger.critical(e)
+        return []
+    if r.status_code != 200:
+        return []
+
+    hashes: list[tuple[str, int, str]] = []
+    j = r.json()
+    rows = j["response"]["publishedfiledetails"]
+    for row in rows:
+        _id = row["publishedfileid"]
+        time = row["time_updated"]
+        size = row["file_size"]
+        hashes.append((_id, time, size))
+    return hashes
+
+
 # TEST: set config to name=user, use official server and no mods,
 # ensure that formatted string is identical to fixture
-def connect(addr: str, appid: int, name: str, mods: list) -> None:
+def connect(addr: str, appid: int, name: str, mods: list[int]) -> None:
     # TODO: get name from configs
     # TODO: concat_mods(mods):
     # @<mod>;@<mod>;

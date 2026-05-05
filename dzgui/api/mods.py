@@ -81,7 +81,7 @@ def get_mod_size(path: Path) -> float:
     s = 0
     for f in path.rglob("*"):
         s += f.stat().st_size
-    size = round(s / (1024 * 1024), 3)
+    size = round(s / (1024**2), 3)
     return size
 
 

@@ -12,13 +12,6 @@ from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
-# TODO: reimplement as standalone dialogs
-# NOTE: steam deck prints <2> if dialog title is same as window title
-#    case Popup.MODLIST:
-#        dialog_type = Gtk.MessageType.INFO
-#        button_type = Gtk.ButtonsType.OK
-#        header_text = strings.modlist
-
 
 class GenericDialog(Gtk.MessageDialog):
     def __init__(

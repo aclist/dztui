@@ -27,14 +27,14 @@ from dzgui.views.pages.preconnect import PreConnectionAssistant
 from dzgui.views.pages.servers import ServerNotebook
 from dzgui.views.pages.thanks import Thanks
 
-if TYPE_CHECKING:
-    from dzgui.config.userprefs import UserPrefs
-
 import gi
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("GLibUnix", "2.0")
 from gi.repository import Gtk, GLib, GLibUnix, Gdk  # type: ignore # noqa E402
+
+if TYPE_CHECKING:
+    from dzgui.config.userprefs import UserPrefs
 
 logger = logging.getLogger(APP_NAME)
 

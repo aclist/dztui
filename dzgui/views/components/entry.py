@@ -43,7 +43,6 @@ class ValidatedEntry(Gtk.Entry):
         placeholder_text: str = "",
         tooltip_text: str = "",
     ) -> None:
-        # TODO: tooltip text should not be hardcoded
         super().__init__(
             hexpand=True, placeholder_text=placeholder_text, tooltip_text=tooltip_text
         )

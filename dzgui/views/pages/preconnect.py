@@ -52,9 +52,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             spacing=10,
         )
 
-        # self.rules: dict[Any]
-        # self.mods: list["DayzMod"]
-
         self.controller.register_widget("preconnect", self)
 
         # TODO: strings
@@ -154,24 +151,17 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             prefix = preconnect.total_mods
             self.mod_count.set_text(f"{prefix}{str(total)}")
 
-        # TODO: check which mods need updating
-        # steam_path = self.controller.get_config_man().lookup(Preferences.DEFAULT)
-        # dayz_version = PeFile.get_pretty_version(steam_path, APPID_DAYZ)
-        # dayz_exp_version = PeFile.get_pretty_version(steam_path, APPID_DAYZ_EXP)
+        # TODO: reset warning and error dialogs
 
     def download_mods(self) -> None:
         pass
 
     def connect_server(self) -> None:
         # TODO: add to history file and list store
+        # TODO: concat mods
         """
         spawn dialog in thread
         watch for subprocess
         return to prior page when finished
         """
-        self.back.emit("clicked")
         pass
-
-    # TODO: icon for mod signature issue
-    # or "Update mods and connect"
-    # also handle servers with no mods; do not show tree
