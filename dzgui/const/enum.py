@@ -10,10 +10,10 @@ class Port(Enum):
 
 
 class ServerTab(Enum):
-    BROWSER = 1
-    SAVED = 2
-    RECENT = 3
-    LAN = 4
+    BROWSER = 0
+    SAVED = 1
+    RECENT = 2
+    LAN = 3
 
 
 class Popup(Enum):
@@ -96,6 +96,9 @@ class Preferences(EnumWithAttrs):
     }
     BRANCH = {
         "key": "branch",
+    }
+    START_TAB = {
+        "key": "start_tab",
     }
 
 

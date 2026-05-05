@@ -88,10 +88,7 @@ class OuterWindow(Gtk.Window):
         css.load_css()
 
         MainController.open_page(NotebookPage.SERVERS)
-        # TODO:
-        # combo box in options could link to same index as pages
-        # or use enum in case page order is changed in future
-        # MainController.get_servers().notebook.set_current_page(3)
+        MainController.set_start_tab()
         self.grid.hide_widgets_on_init()
 
         # TODO: POC, trigger page change here

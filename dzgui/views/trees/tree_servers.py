@@ -2,7 +2,7 @@ import logging
 import threading
 
 from queue import Queue
-from typing import Any, Optional, Self, Union
+from typing import Any, Self, Union
 from warnings import deprecated
 
 from dzgui.api.servers import ping, Record

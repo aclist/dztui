@@ -95,6 +95,9 @@ class ConfigManager:
             )
         return
 
+    def get_start_tab(self) -> int:
+        return self.lookup(Preferences.START_TAB)
+
     def get_favorites(self) -> list[str]:
         return list(self.lookup(Preferences.IP_LIST))
 

@@ -34,7 +34,7 @@ def rc2json(file: Path) -> str:
         lex = shlex.shlex(f.read())
         lex.whitespace += "="
 
-    d = {}
+    keys = {}
     ips: list[str] = []
 
     toggles = ["auto_install", "fullscreen"]
@@ -69,8 +69,9 @@ def rc2json(file: Path) -> str:
         if not tok:
             break
 
-        d[tok] = ntok
+        keys[tok] = ntok
 
-    d["ip_list"] = ips
-    d["use_miles"] = False
-    return json.dumps(d, indent=2)
+    keys["ip_list"] = ips
+    keys["use_miles"] = False
+    keys["start_tab"] = 0
+    return json.dumps(keys, indent=2)

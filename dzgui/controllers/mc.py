@@ -464,3 +464,7 @@ class Controller(GObject.GObject):
         # TODO: populate assistant
         # TODO: embed dialogs
         # dialog = ServerModDialog(self, mods)
+
+    def set_start_tab(self) -> int:
+        ind = self.config_man.get_start_tab()
+        self.get_servers().notebook.set_current_page(ind)
