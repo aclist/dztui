@@ -51,6 +51,10 @@ def format_mods(size: int, mods: int) -> str:
     return f"Found {mods:n} {plural} taking up {l_size} MiB. {suffix}"
 
 
+def format_mib(bits: int) -> float:
+    return round(bits / (1024**2), 3)
+
+
 def format_server_mods(mods: int) -> str:
     plural = pluralize("mods", mods)
     return f"Found {mods:n} {plural}. {workshop}"

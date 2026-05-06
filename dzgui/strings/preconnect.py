@@ -1,4 +1,5 @@
 update_mods = "Update mods and connect"
+connect = "Connect"
 back = "Back"
 cancel = "Cancel"
 warnings = "Warnings"

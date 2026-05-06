@@ -84,6 +84,9 @@ def get_needs_update(
 
 
 def get_remote_signatures(mods: list[str]) -> list[tuple[str, int]]:
+    """
+    Attempts to continue connecting even if signatures are empty
+    """
     payload: dict[str, str] = {}
     payload["itemcount"] = len(mods)
     for i, mod in enumerate(mods):

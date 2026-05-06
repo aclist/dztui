@@ -36,9 +36,9 @@ from gi.repository import Gtk, Gdk, GLib, GObject  # noqa E402
 logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
-    from dayzquery import DayzMod
-    from dzgui.api.servers import A2SInfo, Record
+    from dzgui.api.servers import Record
     from dzgui.const.enum import ServerTab
+    from dzgui.managers.connection import Prerequisites
     from dzgui.managers.filter import FilterManager
     from dzgui.util.dist import Haversine
     from dzgui.views.base import Notebook, Grid, OuterWindow
@@ -88,6 +88,7 @@ class Controller(GObject.GObject):
         self.pending_jobs = 1
 
         self.exit_event = threading.Event()
+        self.connection_man: ConnectionManager
 
     def get_emitter(self) -> Emitter:
         return self.emitter
@@ -104,6 +105,7 @@ class Controller(GObject.GObject):
     def set_prefs(self, prefs: UserPrefs) -> None:
         self.config_man = ConfigManager(prefs, self)
         self.notes_man = NoteManager(self, prefs.paths.notes)
+
         self.prefs = prefs
 
     def query_config(self, key: Preferences) -> Any:
@@ -393,12 +395,15 @@ class Controller(GObject.GObject):
         if addr.isdigit():
             config_man = self.get_config_man()
             key = config_man.lookup(Preferences.BM)
-            ConnectionManager(self).connect_by_id(int(addr), key)
+            self.connection_man = ConnectionManager(self)
+            self.connection_man.connect_by_id(int(addr), key)
         else:
-            ConnectionManager(self).connect_by_ip(addr)
+            self.connection_man = ConnectionManager(self)
+            self.connection_man.connect_by_ip(addr)
 
     def connect_by_record(self, record: "Record") -> None:
-        ConnectionManager(self).connect_by_record(record)
+        self.connection_man = ConnectionManager(self)
+        self.connection_man.connect_by_record(record)
 
     def get_details(self, record: "Record") -> None:
         ConnectionManager(self).query_details(record)
@@ -458,10 +463,13 @@ class Controller(GObject.GObject):
     def set_exit_event(self) -> None:
         self.exit_event.set()
 
-    def open_connection_assistant(self, res: "A2SInfo", mods: list["DayzMod"]) -> None:
+    def open_connection_assistant(self, prereqs: "Prerequisites") -> None:
         self.open_page(NotebookPage.CONNECTION)
-        self.mediator.preconnect.populate(res, mods)
+        self.mediator.preconnect.populate(prereqs)
 
     def set_start_tab(self) -> None:
         ind = self.config_man.get_start_tab()
         self.get_servers().notebook.set_current_page(ind)
+
+    def update_and_connect(self) -> None:
+        self.connection_man.update_and_connect()

@@ -130,8 +130,8 @@ def main() -> None:
             EarlyAlertDialog(init.requires_steam)
 
     is_dayz_installed(XDG.config)
-    is_dayz_running()
-    is_steam_running()
+    is_dayz_running(dialog=True)
+    is_steam_running(dialog=True)
 
     # NOTE: clear versions file of unlinked mods
     rebuild_symlinks(XDG.config)

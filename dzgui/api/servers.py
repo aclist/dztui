@@ -88,6 +88,17 @@ class A2SInfo:
         qport = self.record.qport
         return source_info_to_dict(ip, qport, self.info)
 
+    def is_modded(self) -> bool:
+        if self.info is None:
+            raise ValueError("Cannot call this method on Nonetype")
+        try:
+            kw = self.info.keywords.split(",")
+            state = True if "mod" in kw else False
+            return state
+        except Exception as e:
+            logger.warning(e)
+            raise e
+
 
 def get_netmask() -> str:
     hostname = os.uname()[1]

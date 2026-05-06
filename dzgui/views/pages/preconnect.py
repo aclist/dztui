@@ -1,16 +1,12 @@
 from dataclasses import dataclass
-from typing import Self, TYPE_CHECKING
+from typing import Self, Sequence, TYPE_CHECKING
 
 from dzgui.const.constants import (
-    APPID_DAYZ,
-    APPID_DAYZ_EXP,
-    APPNAME_DAYZ,
-    APPNAME_DAYZ_EXP,
     ERROR,
     WARNING,
 )
-from dayzquery import DayzMod
 from dzgui.util.css import add_class
+from dzgui.util.localize import number
 from dzgui.strings import preconnect
 from dzgui.views.components.frame import HeadingFrame
 from dzgui.views.trees.tree_server_mods import ServerModTreeView
@@ -22,7 +18,7 @@ from gi.repository import Gdk, Gtk  # type: ignore # noqa E402
 
 
 if TYPE_CHECKING:
-    from dzgui.api.servers import A2SInfo
+    from dzgui.managers.connection import Prerequisites
     from dzgui.controllers.mc import Controller
 
 
@@ -39,6 +35,17 @@ class Errors:
     no_space: bool
     no_dayz_exp: bool
     no_dayz: bool
+
+
+class Placeholder(Gtk.Label):
+    def __init__(self, text: str) -> None:
+        super().__init__(
+            label=text,
+            halign=Gtk.Align.START,
+            valign=Gtk.Align.START,
+            margin_start=10,
+            margin_bottom=5,
+        )
 
 
 class MaskedTree(Gtk.TreeView):
@@ -64,7 +71,12 @@ class MaskedTree(Gtk.TreeView):
         self.append_column(text_column)
         add_class(self, "masked-tree")
 
-    def append(self, items: list[str]) -> None:
+    def append(self, item: Sequence[str]) -> None:
+        if len(item) > 1:
+            raise ValueError("This method only accepts one item")
+        self.store.append([self.icon, item])
+
+    def extend(self, items: list[str]) -> None:
         self.store.clear()
         for item in items:
             self.store.append([self.icon, item])
@@ -87,11 +99,11 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
         self.controller.register_widget("preconnect", self)
 
-        # TODO: dynamic button text if no mods needed
         self.back = Gtk.Button(label=preconnect.back, halign=Gtk.Align.START)
         self.cancel = Gtk.Button(
             label=preconnect.cancel, halign=Gtk.Align.END, sensitive=False, hexpand=True
         )
+        # TODO: dynamic button text if no mods needed
         self.ok = Gtk.Button(label=preconnect.update_mods, halign=Gtk.Align.END)
 
         self.button_box = Gtk.Box(
@@ -111,7 +123,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
         self.tree = ServerModTreeView(self.controller)
         self.mod_count = Gtk.Label(label="", halign=Gtk.Align.START, margin_start=5)
-
         # TODO: live count of remaining downloads
         # "Steam is downloading: {mod_name}"
         # mention whether manual or auto mod is active
@@ -124,16 +135,30 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         self.tree_box.add(self.scrolled)
         self.tree_box.add(self.mod_count)
 
+        # TODO: strings
+        self.mods_placeholder = Placeholder("This server has no mods.")
+        self.tree_box.add(self.mods_placeholder)
+
         self.tree_frame = HeadingFrame(self.tree_box, preconnect.mods)
 
         # TODO: abstract into components
+        self.warning_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.warning_tree = MaskedTree(WARNING)
-        self.warning_frame = HeadingFrame(self.warning_tree, preconnect.warnings)
+        # TODO: strings
+        self.warning_placeholder = Placeholder("No warnings.")
+        self.warning_box.add(self.warning_tree)
+        self.warning_box.add(self.warning_placeholder)
+        self.warning_frame = HeadingFrame(self.warning_box, preconnect.warnings)
 
+        self.error_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.error_tree = MaskedTree(ERROR)
-        self.error_frame = HeadingFrame(self.error_tree, preconnect.errors)
+        # TODO: strings
+        self.error_placeholder = Placeholder("No errors.")
+        self.error_box.add(self.error_tree)
+        self.error_box.add(self.error_placeholder)
+        self.error_frame = HeadingFrame(self.error_box, preconnect.errors)
 
-        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.box.add(self.title)
         self.box.add(self.tree_frame)
         self.box.add(self.warning_frame)
@@ -146,8 +171,15 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         self.connect("map", self._on_map)
 
     def _on_map(self, widget: Self) -> None:
-        self.tree_frame.set_visible(True)
-        self.mod_count.set_visible(True)
+        widgets = (
+            self.tree_frame,
+            self.mod_count,
+            self.error_placeholder,
+            self.warning_placeholder,
+        )
+        for widget in widgets:
+            widget.set_visible(True)
+        self.ok.set_sensitive(True)
 
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
         if event.keyval == Gdk.KEY_Escape:
@@ -155,59 +187,84 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
         # TODO: update mod store in place with spinner/toast
+        # no dialog
         # TODO: cancel mod downloads
+        # TODO: add to history file and list store
+        # TODO: concat mods
+        self.controller.update_and_connect()
         pass
 
     def _on_back_clicked(self, button: Gtk.Button) -> None:
         page = self.controller.get_prior_page()
         self.controller.open_page(page)
 
-    def populate(self, res: "A2SInfo", mods: list["DayzMod"]) -> None:
+    def _process_warnings(self, prereqs: "Prerequisites") -> None:
+        warnings: list[str] = []
+        errors: list[str] = []
+
+        if prereqs.binary_missing:
+            errors.append(
+                f"Remote server is running the build '{prereqs.build}', but it is not installed"
+            )
+        elif prereqs.local_version != prereqs.remote_version:
+            print("versions do not match")
+            errors.append(
+                f"Local client version '{prereqs.local_version}' does not match remote version '{prereqs.remote_version}'"
+            )
+        if prereqs.required_space > prereqs.available_space:
+            required_pretty = number(prereqs.required_space)
+            available_pretty = number(prereqs.available_space)
+            errors.append(
+                f"Need to update {required_pretty} MiB of mods, but installation path only has {available_pretty} MiB"
+            )
+        if prereqs.passworded:
+            warnings.append(
+                "Protected: you will be prompted for a password when connecting to this server"
+            )
+        if prereqs.dayz_running is True:
+            warnings.append(
+                "It looks like DayZ is already running in the background. Exit DayZ before connecting"
+            )
+        if prereqs.steam_running is False:
+            warnings.append(
+                "It looks like Steam is not running. Launch Steam before connecting"
+            )
+
+        self.add_warnings(warnings)
+        self.add_errors(errors)
+
+        if len(warnings) > 0:
+            self.warning_placeholder.set_visible(False)
+        if len(errors) > 0:
+            self.error_placeholder.set_visible(False)
+            self.ok.set_sensitive(False)
+
+    def populate(self, prereqs: "Prerequisites") -> None:
+        mods = prereqs.mods
         self.tree.populate(mods)
-        total = len(mods)
+        total_mods = len(mods)
 
-        self._set_warnings()
-
-        info = res.get_info()
-        name = info.server_name
+        name = prereqs.name
         self.title.set_text(name)
-        if total < 1:
-            self.tree_frame.set_visible(False)
+
+        if total_mods < 1:
+            self.scrolled.set_visible(False)
             self.mod_count.set_visible(False)
-            return
+            self.mods_placeholder.set_visible(True)
+            self.ok.set_label(preconnect.connect)
         else:
-            self.tree.set_visible(True)
+            self.scrolled.set_visible(True)
             self.mod_count.set_visible(True)
+            self.mods_placeholder.set_visible(False)
+
             # TODO: print no. of mods that need updating
             prefix = preconnect.total_mods
-            self.mod_count.set_text(f"{prefix}{str(total)}")
+            self.mod_count.set_text(f"{prefix}{str(total_mods)}")
 
-        """
-        blocking warning types:
-        - build mismatch
-        - version mismatch
-        - not enough drive space
-        passing warning types:
-        - dayz is running
-        - steam is not running
-        - server has password
-        """
-        # TODO: if errors > 1, disable buttons
+        self._process_warnings(prereqs)
 
-    def _set_warnings(self) -> None:
-        self.warning_tree.append(["Password protected", "Some other error", "Error 3"])
-        self.error_tree.append(["Password protected", "Some other error", "Error 3"])
-        pass
+    def add_errors(self, errors: list[str]) -> None:
+        self.error_tree.extend(errors)
 
-    def download_mods(self) -> None:
-        pass
-
-    def connect_server(self) -> None:
-        # TODO: add to history file and list store
-        # TODO: concat mods
-        """
-        spawn dialog in thread
-        watch for subprocess
-        return to prior page when finished
-        """
-        pass
+    def add_warnings(self, warnings: list[str]) -> None:
+        self.warning_tree.extend(warnings)
