@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers
+import dzgui.api.steam.connect as Connect
+
 from dzgui.api.steam import enqueue_mod, get_remote_signatures, get_needs_update
 
 from dzgui.api.mods import get_mod_dir_size, get_local_mod_ids, get_local_mod_path
@@ -24,6 +26,7 @@ from dzgui.init.proc import is_dayz_running, is_steam_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.util.format import format_mib
 from dzgui.util.strings import dialog, server_timeout, checkmark
+from dzgui.util.symlink import rebuild_symlinks
 from dzgui.views.dialogs.generic import ExceptionDialog
 from dzgui.views.dialogs.servers import ServerDetailsDialog, ServerModDialog
 
@@ -209,14 +212,22 @@ class ConnectionManager:
         print(self.record.ip)
         print(self.record.gameport)
         print(self.appid)
+
+        addr = f"{self.record.ip}:{self.record.gameport}"
+        playername = "test"
+        proc = Connect(addr, self.appid, playername, self.remote_mod_ids)
+        # TODO: test returncode
+        # proc.returncode
+        # TODO: wait for DAYZ_BINARY to load
+
         # TODO: add to history file and list store
-        # steam api, concat mods
 
     @call_on_thread("Waiting for Steam to update mods")
     def update_mods(self) -> None:
         # NOTE: fast enqueue all mods in auto mode
         for title, mod, stamp, size in self.missing_mods:
-            # TODO: check for cancel event
+            # TODO: boolean cancel button on threadman dialog sets event inside threadman
+            # TODO: check for early cancel event via sigint
             enqueue_mod(mod, self.appid)
             time.sleep(2)
 
@@ -227,20 +238,21 @@ class ConnectionManager:
                 time.sleep(1)
             while True:
                 # NOTE: mods will finish at the same time
-                # TODO: check for cancel event
+                # TODO: check for early cancel event
                 cur_size = get_mod_dir_size(mod_path)
                 if cur_size == size:
                     break
                 time.sleep(1)
 
-        # TODO: update tree checkmarks
-        func = StoredFunc(self.controller.update_status, "All mods updated.")
-        self.thread_man.set_cleanup_func(func)
-        # TODO: after downloading mods, create all symlinks (and clone)
-        # GLib.idle_add(self._mark_finished)
+        # TODO: get config path or just push steam path directly
+        rebuild_symlinks(self.controller.get_prefs().paths.config)
+        # TODO: update version file
 
-    # def _mark_finished(self) -> None:
-    #    self.controller.update_status("All mods updated.", mark_finished=True)
+        # TODO: update tree checkmarks
+        func = StoredFunc(
+            self.controller.update_status, "All mods updated.", mark_finished=True
+        )
+        self.thread_man.set_cleanup_func(func)
 
     def update_and_connect(self) -> None:
         if len(self.missing_mods) > 0:

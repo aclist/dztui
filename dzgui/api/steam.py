@@ -99,7 +99,7 @@ def connect(addr: str, appid: int, name: str, mods: list[str]) -> None:
         f"-mod={concat}",
     ]
     proc = subprocess.Popen([*params])
-    # check proc.returncode
+    return proc.returncode
 
 
 def find_user_id(path: Path) -> str | None:

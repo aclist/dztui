@@ -14,7 +14,6 @@ logger = logging.getLogger(APP_NAME)
 def rebuild_symlinks(config: Path) -> None:
     path = lookup(config, Preferences.DEFAULT)
     steam_path = Path(path)
-
     dayz_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
     # NOTE: unlink stale symlinks
     for file in dayz_path.iterdir():
@@ -33,7 +32,7 @@ def rebuild_symlinks(config: Path) -> None:
 
 def clone_symlinks(steam_path: Path) -> None:
     """
-    Used after any symlink operation
+    Shares symlinks between builds. Used after any symlink operation
     """
     try:
         dayz_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)

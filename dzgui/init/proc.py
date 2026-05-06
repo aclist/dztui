@@ -7,7 +7,7 @@ from dzgui.util.strings import init
 
 
 # TODO: simplify
-def is_dayz_running(dialog: bool = False) -> None:
+def is_dayz_running(dialog: bool = False) -> bool | None:
     if dialog is False:
         return is_running(DAYZ_BINARY)
     if is_running(DAYZ_BINARY) is True:
@@ -15,7 +15,7 @@ def is_dayz_running(dialog: bool = False) -> None:
         sys.exit(1)
 
 
-def is_steam_running(dialog: bool = False) -> None:
+def is_steam_running(dialog: bool = False) -> bool | None:
     # TODO: check proc name of flatpak steam
     if dialog is False:
         return is_running(STEAM_CMD)
