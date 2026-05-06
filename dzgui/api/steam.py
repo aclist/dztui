@@ -8,50 +8,12 @@ from pathlib import Path
 
 from dzgui.const.constants import APP_NAME
 from dzgui.const.endpoints import STEAM_PUBLISHED_FILES
-from dzgui.util.bash import concat_bash_args
 
 
 logger = logging.getLogger(APP_NAME)
 
 
-def query_defunct() -> None:
-    pass
-
-
-# TODO: unimplemented
-# cf.
-#!/usr/bin/env bash
-# query_defunct(){
-#    readarray -t modlist <<< "$@"
-#    local max=${#modlist[@]}
-#    concat(){
-#        for ((i=0;i<$max;i++)); do
-#            echo "publishedfileids[$i]=${modlist[$i]}&"
-#        done | awk '{print}' ORS=''
-#    }
-#    payload(){
-#        echo -e "itemcount=${max}&$(concat)"
-#    }
-#    post(){
-#        curl -s \
-#            -X POST \
-#            -H "Content-Type:application/x-www-form-urlencoded"\
-#            -d "$(payload)" 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json'
-#    }
-#    post | jq
-#    return
-#    local result=$(post | jq -r '
-#    .[].publishedfiledetails[]
-#    | select(.result==1)
-#    | select(.filename|contains("screenshot")|not)
-#    | "\(.file_size) \(.publishedfileid)"')
-#    <<< "$result" awk '{print $2}'
-# }
-#
-# query_defunct "3576065083"
-
-
-def concat_mods(mods: list[int]) -> str:
+def concat_mods(mods: list[str]) -> str:
     for mod in mods:
         mods[mod] = f"@{mod}"
     return ";".join(mods)
@@ -68,22 +30,32 @@ def get_local_signatures(version_file: Path) -> dict[str, int]:
     return hashes
 
 
+def enqueue_mod(mod: str, appid: int) -> None:
+    args = [
+        "steam",
+        f"steam://url/CommunityFilePage/{mod}+workshop_download_item",
+        str(appid),
+        mod,
+    ]
+    subprocess.Popen(["/usr/bin/env", "bash", *args])
+
+
 def get_needs_update(
-    version_file: Path, remote_hashes: list[tuple[str, int, str]]
-) -> list[tuple[str, int, str]]:
+    version_file: Path, remote_hashes: list[tuple[str, str, int, int]]
+) -> list[tuple[str, str, int, int]]:
     local_hashes = get_local_signatures(version_file)
     needs_update: list[tuple[str, str]] = []
-    for _id, _hash, size in remote_hashes:
+    for title, _id, _hash, size in remote_hashes:
         if _id not in local_hashes:
-            needs_update.append((_id, _hash, size))
+            needs_update.append((title, _id, _hash, size))
         elif _hash != local_hashes[_id]:
-            needs_update.append((_id, _hash, size))
+            needs_update.append((title, _id, _hash, size))
         else:
             continue
     return needs_update
 
 
-def get_remote_signatures(mods: list[str]) -> list[tuple[str, int]]:
+def get_remote_signatures(mods: list[str]) -> list[tuple[str, str, int, int]]:
     """
     Attempts to continue connecting even if signatures are empty
     """
@@ -99,24 +71,26 @@ def get_remote_signatures(mods: list[str]) -> list[tuple[str, int]]:
     if r.status_code != 200:
         return []
 
-    hashes: list[tuple[str, int, str]] = []
+    hashes: list[tuple[str, int, int]] = []
     j = r.json()
     rows = j["response"]["publishedfiledetails"]
     for row in rows:
+        title = row["title"]
         _id = row["publishedfileid"]
         time = row["time_updated"]
-        size = row["file_size"]
-        hashes.append((_id, time, size))
+        size = int(row["file_size"])
+        hashes.append((title, _id, time, size))
     return hashes
 
 
-# TEST: set config to name=user, use official server and no mods,
-# ensure that formatted string is identical to fixture
-def connect(addr: str, appid: int, name: str, mods: list[int]) -> None:
-    # TODO: get name from configs
-    # TODO: concat_mods(mods):
-    # @<mod>;@<mod>;
+# TODO:: set config to name=user, use official server and no mods,
+# ensure that formatted string is identical to fixture with same hash
+def connect(addr: str, appid: int, name: str, mods: list[str]) -> None:
+    concat = concat_mods(mods)
     params = [
+        "steam",
+        "-applaunch",
+        appid,
         f"-connect={addr}",
         "-nolauncher",
         "-nosplash",
@@ -124,10 +98,7 @@ def connect(addr: str, appid: int, name: str, mods: list[int]) -> None:
         f"-name={name}",
         f"-mod={concat}",
     ]
-    # TODO: get steam launch command from configs
-    # args = concat_bash_args()
-    #
-    proc = subprocess.Popen([*args, "-applaunch", appid, *params])
+    proc = subprocess.Popen([*params])
     # check proc.returncode
 
 

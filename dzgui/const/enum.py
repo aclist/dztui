@@ -112,7 +112,7 @@ class NotebookPage(EnumWithAttrs):
     OPTIONS = {"crumbs": strings.crumbs.options, "statusbar": False}
     SERVERS = {"crumbs": strings.crumbs.servers, "statusbar": True}
     THANKS = {"crumbs": strings.crumbs.thanks, "statusbar": True}
-    CONNECTION = {"crumbs": "Connect", "statusbar": False}
+    CONNECTION = {"crumbs": "Connect", "statusbar": True}
 
 
 class RowType(EnumWithAttrs):

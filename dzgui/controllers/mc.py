@@ -20,6 +20,7 @@ from dzgui.controllers.emitter import Emitter
 from dzgui.managers.config import ConfigManager
 from dzgui.managers.connection import ConnectionManager
 from dzgui.managers.contextmenu import ContextMenuManager
+from dzgui.managers.mods import ModManager
 from dzgui.managers.notes import NoteManager
 from dzgui.model.servers import ServerModelManager
 from dzgui.util.diag import write_diagnostic
@@ -215,8 +216,6 @@ class Controller(GObject.GObject):
         open_user_workshop(uid, client)
 
     def load_mods(self) -> None:
-        from dzgui.managers.mods import ModManager
-
         self.mod_man = ModManager(self)
 
     def uncolorize_mods(self) -> None:
@@ -473,3 +472,6 @@ class Controller(GObject.GObject):
 
     def update_and_connect(self) -> None:
         self.connection_man.update_and_connect()
+
+    def update_status(self, mod: str, mark_finished: bool = False) -> None:
+        self.mediator.preconnect.update_mod(mod, mark_finished)

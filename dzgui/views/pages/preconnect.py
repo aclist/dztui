@@ -5,6 +5,7 @@ from dzgui.const.constants import (
     ERROR,
     WARNING,
 )
+from dzgui.const.enum import NotebookPage
 from dzgui.util.css import add_class
 from dzgui.util.localize import number
 from dzgui.strings import preconnect
@@ -99,20 +100,33 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
         self.controller.register_widget("preconnect", self)
 
-        self.back = Gtk.Button(label=preconnect.back, halign=Gtk.Align.START)
-        self.cancel = Gtk.Button(
-            label=preconnect.cancel, halign=Gtk.Align.END, sensitive=False, hexpand=True
+        self.back = Gtk.Button(
+            label=preconnect.back, halign=Gtk.Align.END, hexpand=True
         )
         self.ok = Gtk.Button(label=preconnect.update_mods, halign=Gtk.Align.END)
 
+        # TODO: abstract
+        self.raise_window = Gtk.CheckButton(
+            label="Foreground DZGUI while downloading",
+            halign=Gtk.Align.END,
+            hexpand=True,
+            valign=Gtk.Align.END,
+            visible=False,
+            has_tooltip=True,
+            sensitive=False,
+            tooltip_text="This option is available if wmctrl or xdotool is installed on the system",
+        )
         self.button_box = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL,
+            orientation=Gtk.Orientation.VERTICAL,
             valign=Gtk.Align.END,
             vexpand=True,
             spacing=5,
         )
-        for button in self.back, self.cancel, self.ok:
-            self.button_box.add(button)
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+        for button in self.back, self.ok:
+            box.add(button)
+        for el in self.raise_window, box:
+            self.button_box.add(el)
 
         self.back.connect("clicked", self._on_back_clicked)
         self.ok.connect("clicked", self._on_ok_clicked)
@@ -128,6 +142,21 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             margin_top=10,
             margin_bottom=10,
         )
+        self.spinner = Gtk.Spinner()
+        self.progress_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
+        self.progress_box.add(self.mod_count)
+        self.progress_box.add(self.spinner)
+        self.cancel = Gtk.Button(
+            label=preconnect.cancel,
+            halign=Gtk.Align.START,
+            hexpand=True,
+            margin_bottom=5,
+            margin_top=5,
+        )
+        self.progress_box.add(self.cancel)
+        self.cancel.connect("clicked", self._on_cancel_clicked)
+        self.cancel.set_visible(False)
+
         # TODO: live count of remaining downloads
         # "Steam is downloading: {mod_name}"
         # mention whether manual or auto mod is active
@@ -138,7 +167,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
         self.tree_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.tree_box.add(self.scrolled)
-        self.tree_box.add(self.mod_count)
+        self.tree_box.add(self.progress_box)
 
         # TODO: strings
         self.mods_placeholder = Placeholder("This server has no mods.")
@@ -180,12 +209,18 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         self.grab_focus()
         widgets = (
             self.tree_frame,
-            self.mod_count,
+            self.progress_box,
             self.error_placeholder,
             self.warning_placeholder,
         )
         for widget in widgets:
             widget.set_visible(True)
+        self.raise_window.set_visible(False)
+
+        # TODO: enable button if wmctrl or xdotool is available
+        # TODO: check this at boot time and pass in via connection manager
+
+        self.cancel.set_visible(False)
         self.ok.set_sensitive(True)
         self.ok.set_label(preconnect.update_mods)
 
@@ -193,18 +228,24 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         if event.keyval == Gdk.KEY_Escape:
             self.back.emit("clicked")
 
+    def _on_cancel_clicked(self, button: Gtk.Button) -> None:
+        print("user canceled")
+
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
-        # TODO: update mod store in place with spinner/toast
-        # no dialog
         # TODO: cancel mod downloads
-        # TODO: add to history file and list store
-        # TODO: concat mods
+        # sets some kind of global event listener
+        if self.mod_count.get_visible():
+            # TODO: set ready mode
+            # TODO: strings
+            self.mod_count.set_label("Enqueuing downloads")
+            self.spinner.start()
+            self.cancel.set_visible(True)
+            self.ok.set_label(preconnect.connect)
         self.controller.update_and_connect()
         pass
 
     def _on_back_clicked(self, button: Gtk.Button) -> None:
-        page = self.controller.get_prior_page()
-        self.controller.open_page(page)
+        self.controller.open_page(NotebookPage.SERVERS)
 
     def _process_warnings(self, prereqs: "Prerequisites") -> None:
         warnings: list[str] = []
@@ -256,16 +297,17 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
         if total_mods < 1:
             self.scrolled.set_visible(False)
-            self.mod_count.set_visible(False)
+            self.progress_box.set_visible(False)
             self.mods_placeholder.set_visible(True)
             self.ok.set_label(preconnect.connect)
         else:
             self.scrolled.set_visible(True)
-            self.mod_count.set_visible(True)
+            self.progress_box.set_visible(True)
+            self.raise_window.set_visible(True)
             self.mods_placeholder.set_visible(False)
 
-            # TODO: print no. of mods that need updating
-            suffix = ""
+            # TODO: strings
+            suffix = "All mods are up to date."
             if prereqs.required_space > 0:
                 pretty = number(prereqs.required_space)
                 suffix = f" Need to download {pretty} MiB of mod updates."
@@ -273,6 +315,12 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             self.mod_count.set_text(f"{prefix}{str(total_mods)}.{suffix}")
 
         self._process_warnings(prereqs)
+
+    def update_mod(self, text: str, mark_finished: bool = False) -> None:
+        self.mod_count.set_label(text)
+        if mark_finished:
+            self.cancel.set_visible(False)
+            self.spinner.stop()
 
     def add_errors(self, errors: list[str]) -> None:
         self.error_tree.extend(errors)

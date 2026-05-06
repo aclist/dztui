@@ -76,6 +76,7 @@ class Statusbar(Gtk.Grid):
             NotebookPage.THANKS,
             NotebookPage.CHANGELOG,
             NotebookPage.LOG,
+            NotebookPage.CONNECTION,
         ):
             self.set_by_context(enum, esc_to_return)
             return

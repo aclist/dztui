@@ -160,3 +160,13 @@ def find_stale_mods(config: Path) -> list[int]:
     unique_mods = set(remote_mods)
     stale = [mod for mod in local if mod not in unique_mods]
     return stale
+
+
+def get_mod_dir_size(path: Path) -> int:
+    size = 0
+    for i in Path(path).iterdir():
+        if i.is_file():
+            size += i.stat().st_size
+        elif i.is_dir():
+            size += get_mod_dir_size(i)
+    return size

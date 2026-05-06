@@ -1,5 +1,6 @@
 import logging
 import shutil
+import time
 
 from dataclasses import dataclass
 from packaging.version import Version
@@ -8,9 +9,9 @@ from typing import TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers
-from dzgui.api.steam import get_remote_signatures, get_needs_update
+from dzgui.api.steam import enqueue_mod, get_remote_signatures, get_needs_update
 
-from dzgui.api.mods import get_local_mod_ids
+from dzgui.api.mods import get_mod_dir_size, get_local_mod_ids, get_local_mod_path
 from dzgui.const.constants import (
     APP_NAME,
     APPID_DAYZ,
@@ -29,7 +30,7 @@ from dzgui.views.dialogs.servers import ServerDetailsDialog, ServerModDialog
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk  # noqa E402
+from gi.repository import Gtk, GLib  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.api.servers import A2SInfo, Record
@@ -62,6 +63,7 @@ class ConnectionManager:
 
         self.appid: int
         self.record: Record
+        self.workshop: Path
 
         self.remote_mod_ids: list[str] = []
         self.missing_mods: list[str] = []
@@ -101,6 +103,7 @@ class ConnectionManager:
         free_mib = 0.0
 
         steam_path = Path(self.controller.query_config(Preferences.DEFAULT))
+        self.workshop = get_local_mod_path(steam_path)
         local_version = PeFile.get_pretty_version(steam_path, info.game_id)
         if local_version is None:
             local_version = "0.0.0"
@@ -124,13 +127,12 @@ class ConnectionManager:
                 pefile_path = PeFile.get_pefile_path(steam_path, info.game_id)
                 total, used, free = shutil.disk_usage(pefile_path)
                 if len(self.missing_mods) > 0:
-                    required_size = sum(int(row[2]) for row in self.missing_mods)
+                    required_size = sum(row[2] for row in self.missing_mods)
                     required_mib = format_mib(required_size)
                     free_mib = format_mib(required_size)
 
         dayz_running = is_dayz_running()
         steam_running = is_steam_running()
-        # TODO: is dayz downloading
 
         prereqs = Prerequisites(
             name=info.server_name,
@@ -207,17 +209,38 @@ class ConnectionManager:
         print(self.record.ip)
         print(self.record.gameport)
         print(self.appid)
-        # TODO: convert mod ids to symlink hashes
+        # TODO: add to history file and list store
         # steam api, concat mods
 
-    # TODO: custom threading with glib idle callback
+    @call_on_thread("Waiting for Steam to update mods")
     def update_mods(self) -> None:
-        print(self.missing_mods)
-        # TODO: when downloading mods, create symlinks if missing
-        # TODO: pack a final PreReq struct with pre-processed values
-        # self.needs_update
-        # then connect
-        pass
+        # NOTE: fast enqueue all mods in auto mode
+        for title, mod, stamp, size in self.missing_mods:
+            # TODO: check for cancel event
+            enqueue_mod(mod, self.appid)
+            time.sleep(2)
+
+        for title, mod, stamp, size in self.missing_mods:
+            mod_path = self.workshop / mod
+
+            while mod_path.is_dir() is False:
+                time.sleep(1)
+            while True:
+                # NOTE: mods will finish at the same time
+                # TODO: check for cancel event
+                cur_size = get_mod_dir_size(mod_path)
+                if cur_size == size:
+                    break
+                time.sleep(1)
+
+        # TODO: update tree checkmarks
+        func = StoredFunc(self.controller.update_status, "All mods updated.")
+        self.thread_man.set_cleanup_func(func)
+        # TODO: after downloading mods, create all symlinks (and clone)
+        # GLib.idle_add(self._mark_finished)
+
+    # def _mark_finished(self) -> None:
+    #    self.controller.update_status("All mods updated.", mark_finished=True)
 
     def update_and_connect(self) -> None:
         if len(self.missing_mods) > 0:
