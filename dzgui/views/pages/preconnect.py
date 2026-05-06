@@ -103,7 +103,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         self.cancel = Gtk.Button(
             label=preconnect.cancel, halign=Gtk.Align.END, sensitive=False, hexpand=True
         )
-        # TODO: dynamic button text if no mods needed
         self.ok = Gtk.Button(label=preconnect.update_mods, halign=Gtk.Align.END)
 
         self.button_box = Gtk.Box(
@@ -122,7 +121,13 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         add_class(self.title, "preconnect-heading")
 
         self.tree = ServerModTreeView(self.controller)
-        self.mod_count = Gtk.Label(label="", halign=Gtk.Align.START, margin_start=5)
+        self.mod_count = Gtk.Label(
+            label="",
+            halign=Gtk.Align.START,
+            margin_start=10,
+            margin_top=10,
+            margin_bottom=10,
+        )
         # TODO: live count of remaining downloads
         # "Steam is downloading: {mod_name}"
         # mention whether manual or auto mod is active
@@ -142,17 +147,18 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         self.tree_frame = HeadingFrame(self.tree_box, preconnect.mods)
 
         # TODO: abstract into components
+
+        # TODO: strings
         self.warning_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.warning_tree = MaskedTree(WARNING)
-        # TODO: strings
         self.warning_placeholder = Placeholder("No warnings.")
         self.warning_box.add(self.warning_tree)
         self.warning_box.add(self.warning_placeholder)
         self.warning_frame = HeadingFrame(self.warning_box, preconnect.warnings)
 
+        # TODO: strings
         self.error_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.error_tree = MaskedTree(ERROR)
-        # TODO: strings
         self.error_placeholder = Placeholder("No errors.")
         self.error_box.add(self.error_tree)
         self.error_box.add(self.error_placeholder)
@@ -171,6 +177,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         self.connect("map", self._on_map)
 
     def _on_map(self, widget: Self) -> None:
+        self.grab_focus()
         widgets = (
             self.tree_frame,
             self.mod_count,
@@ -180,6 +187,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         for widget in widgets:
             widget.set_visible(True)
         self.ok.set_sensitive(True)
+        self.ok.set_label(preconnect.update_mods)
 
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
         if event.keyval == Gdk.KEY_Escape:
@@ -204,30 +212,29 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
         if prereqs.binary_missing:
             errors.append(
-                f"Remote server is running the build '{prereqs.build}', but it is not installed"
+                f"Remote server is running the build '{prereqs.build}', but it is not installed."
             )
         elif prereqs.local_version != prereqs.remote_version:
-            print("versions do not match")
             errors.append(
-                f"Local client version '{prereqs.local_version}' does not match remote version '{prereqs.remote_version}'"
+                f"Local client version '{prereqs.local_version}' does not match remote version '{prereqs.remote_version}'."
             )
         if prereqs.required_space > prereqs.available_space:
             required_pretty = number(prereqs.required_space)
             available_pretty = number(prereqs.available_space)
             errors.append(
-                f"Need to update {required_pretty} MiB of mods, but installation path only has {available_pretty} MiB"
+                f"Need to update {required_pretty} MiB of mods, but installation path only has {available_pretty} MiB."
             )
         if prereqs.passworded:
             warnings.append(
-                "Protected: you will be prompted for a password when connecting to this server"
+                "Protected: you will be prompted for a password when connecting to this server."
             )
         if prereqs.dayz_running is True:
             warnings.append(
-                "It looks like DayZ is already running in the background. Exit DayZ before connecting"
+                "It looks like DayZ is already running in the background. Exit DayZ before connecting."
             )
         if prereqs.steam_running is False:
             warnings.append(
-                "It looks like Steam is not running. Launch Steam before connecting"
+                "It looks like Steam is not running. Launch Steam before connecting."
             )
 
         self.add_warnings(warnings)
@@ -258,8 +265,12 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             self.mods_placeholder.set_visible(False)
 
             # TODO: print no. of mods that need updating
+            suffix = ""
+            if prereqs.required_space > 0:
+                pretty = number(prereqs.required_space)
+                suffix = f" Need to download {pretty} MiB of mod updates."
             prefix = preconnect.total_mods
-            self.mod_count.set_text(f"{prefix}{str(total_mods)}")
+            self.mod_count.set_text(f"{prefix}{str(total_mods)}.{suffix}")
 
         self._process_warnings(prereqs)
 
