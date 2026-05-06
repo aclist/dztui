@@ -2,7 +2,7 @@ import logging
 import shutil
 
 from pathlib import Path
-from typing import Union, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers
@@ -22,7 +22,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
-    from dzgui.api.servers import PreReqs
+    from dzgui.api.servers import A2SInfo
     from dzgui.controllers.mc import Controller
 
 logger = logging.getLogger(APP_NAME)
@@ -36,26 +36,26 @@ class ConnectionManager:
 
     @call_on_thread(dialog.querying)
     def connect_by_id(self, _id: int, key: str) -> None:
-        res = Servers.query_by_id(_id, key, full=True)
+        res = Servers.query_by_id(_id, key)
         self._prepare_connection(res)
 
     @call_on_thread(dialog.querying)
     def connect_by_ip(self, addr: str) -> None:
-        res = Servers.query_by_ip(addr, full=True)
+        res = Servers.query_by_ip(addr)
         self._prepare_connection(res)
 
     @call_on_thread(dialog.querying)
     def connect_by_record(self, record: Servers.Record) -> None:
-        res = Servers.query_by_record(record, full=True)
+        res = Servers.query_by_record(record)
         self._prepare_connection(res)
 
-    def _prepare_connection(self, res: Union["PreReqs", None]) -> None:
+    def _prepare_connection(self, res: "A2SInfo") -> None:
         failure_func = StoredFunc(self._server_timeout)
-        if res is None:
+        if res.get_info() is None:
             self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
             return
 
-        record = res.record
+        record = res.get_record()
         try:
             remote_mods = self._query_modlist(record)
             remote_mod_ids = [mod[1] for mod in remote_mods]
@@ -79,7 +79,7 @@ class ConnectionManager:
         # TODO: when downloading mods, create symlinks if missing
 
         # TODO: get missing mod sizes, warn if not enough space
-        info = res.source
+        info = res.get_info()
         try:
             dayz_path = PeFile.get_pefile_path(steam_path, info.game_id)
             # TODO: handle missing path; do not calculate size if appid is missing

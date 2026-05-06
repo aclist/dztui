@@ -22,7 +22,7 @@ from gi.repository import Gdk, Gtk  # type: ignore # noqa E402
 
 
 if TYPE_CHECKING:
-    from dzgui.api.servers import PreReqs
+    from dzgui.api.servers import A2SInfo
     from dzgui.controllers.mc import Controller
 
 
@@ -142,7 +142,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
         self.add(self.box)
 
-        # self.connect("key-press-event", self._on_keypress)
+        self.connect("key-press-event", self._on_keypress)
         self.connect("map", self._on_map)
 
     def _on_map(self, widget: Self) -> None:
@@ -162,13 +162,14 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         page = self.controller.get_prior_page()
         self.controller.open_page(page)
 
-    def populate(self, res: "PreReqs", mods: list["DayzMod"]) -> None:
+    def populate(self, res: "A2SInfo", mods: list["DayzMod"]) -> None:
         self.tree.populate(mods)
         total = len(mods)
 
         self._set_warnings()
 
-        name = res.source.server_name
+        info = res.get_info()
+        name = info.server_name
         self.title.set_text(name)
         if total < 1:
             self.tree_frame.set_visible(False)

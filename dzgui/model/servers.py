@@ -23,6 +23,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
+    from dzgui.api.servers import A2SInfo
     from dzgui.controllers.mc import Controller
     from dzgui.model.proxy_model import ProxyModelManager
     from dzgui.views.trees.tree_servers import ServerTreeView
@@ -37,6 +38,7 @@ class NewPlayerCount:
     treeiter: Gtk.TreeIter
     players: int
     queue: int
+
 
 
 class ServerModelManager:
@@ -256,23 +258,24 @@ class ServerModelManager:
         proxy_man.update_playercount(self.playercount)
 
     def _parse_single_record(
-        self, response: dict[Any, Any] | None, delete: bool = False
+        self, response: "A2SInfo", delete: bool = False
     ) -> None:
         self.preserve_on_fail = True
-        if response is None:
+        row = response.as_row()
+        if row is None:
             self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
             return
 
         # NOTE: expected to only contain one item
-        records = Servers.parse_json([response])
+        records = Servers.parse_json([row])
         server = records[0]
         if server is None:
             return
 
         proxy_man = self._get_proxy_man()
         config_man = self.controller.get_config_man()
-        fqip = Servers.response_to_fqip(response)
-        record = Servers.response_to_record(response)
+        fqip = Servers.response_to_fqip(row)
+        record = response.get_record() #Servers.response_to_record(row)
 
         # TODO: less convoluted
         if delete:

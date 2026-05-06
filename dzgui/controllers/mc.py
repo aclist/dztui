@@ -37,7 +37,7 @@ logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dayzquery import DayzMod
-    from dzgui.api.servers import PreReqs, Record
+    from dzgui.api.servers import A2SInfo, Record
     from dzgui.const.enum import ServerTab
     from dzgui.managers.filter import FilterManager
     from dzgui.util.dist import Haversine
@@ -458,7 +458,7 @@ class Controller(GObject.GObject):
     def set_exit_event(self) -> None:
         self.exit_event.set()
 
-    def open_connection_assistant(self, res: "PreReqs", mods: list["DayzMod"]) -> None:
+    def open_connection_assistant(self, res: "A2SInfo", mods: list["DayzMod"]) -> None:
         self.open_page(NotebookPage.CONNECTION)
         self.mediator.preconnect.populate(res, mods)
 

@@ -57,7 +57,7 @@ copy_ip = "Copy IP to clipboard"
 copy_log = "Copy record(s) to clipboard"
 add = "Add to Saved Servers"
 add_fav = "Set as favorite"
-remove = "Remove from my servers"
+remove = "Remove from Saved Servers"
 remove_history = "Remove from history"
 connect = "Connect"
 
