@@ -9,9 +9,13 @@ from typing import TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers
-import dzgui.api.steam.connect as Connect
 
-from dzgui.api.steam import enqueue_mod, get_remote_signatures, get_needs_update
+from dzgui.api.steam import (
+    connect,
+    enqueue_mod,
+    get_remote_signatures,
+    get_needs_update,
+)
 
 from dzgui.api.mods import get_mod_dir_size, get_local_mod_ids, get_local_mod_path
 from dzgui.const.constants import (
@@ -208,14 +212,14 @@ class ConnectionManager:
         dialog = ExceptionDialog(self.controller, server_timeout)
         dialog.run()
 
-    def connect(self) -> None:
+    def connect_steam(self) -> None:
         print(self.record.ip)
         print(self.record.gameport)
         print(self.appid)
 
         addr = f"{self.record.ip}:{self.record.gameport}"
         playername = "test"
-        proc = Connect(addr, self.appid, playername, self.remote_mod_ids)
+        proc = connect(addr, self.appid, playername, self.remote_mod_ids)
         # TODO: test returncode
         # proc.returncode
         # TODO: wait for DAYZ_BINARY to load
@@ -258,4 +262,4 @@ class ConnectionManager:
         if len(self.missing_mods) > 0:
             self.update_mods()
         else:
-            self.connect()
+            self.connect_steam()
