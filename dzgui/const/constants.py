@@ -65,4 +65,4 @@ CHANGELOG_PATH = "data/CHANGELOG.md"
 CSS_PATH = "data/app.css"
 
 LOG_FILTERS = ("CRITICAL", "WARNING", "INFO", "DEBUG")
-FOREGROUND_CMDS = ("wmctrlu", "xdotool")
+FOREGROUND_CMDS = ("wmctrl", "xdotool")

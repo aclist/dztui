@@ -43,8 +43,14 @@ def has_cmd(cmd: str) -> bool:
 
 def foreground(cmd: str, pid: int) -> None:
     if cmd == "wmctrl":
-        # TODO: convert wid from hexadecimal
-        args = [cmd, "-a", "DZGUI"]
+        proc = subprocess.run(["wmctrl", "-ilp"], capture_output=True, text=True)
+        lines = proc.stdout.splitlines()
+        for line in lines:
+            els = line.split(" ")
+            if str(pid) in els:
+                wid = els[0]
+                break
+        subprocess.run(["wmctrl", "-ia", wid])
     elif cmd == "xdotool":
         args = [cmd, "search", "--onlyvisible", "--name", "DZGUI", "windowactivate"]
-    subprocess.Popen([*args])
+        subprocess.Popen([*args])
