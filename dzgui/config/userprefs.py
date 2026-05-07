@@ -1,6 +1,9 @@
 from dataclasses import dataclass
-from dzgui.config.xdg import Xdg
-from dzgui.util.ip import Coords
+from typing import TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    from dzgui.config.xdg import Xdg
+    from dzgui.util.ip import Coords
 
 
 # NOTE: mutable dataclass, 'use_miles' key changes on demand
@@ -9,8 +12,9 @@ class UserPrefs:
     is_steam_deck: bool
     is_game_mode: bool
     is_debug: bool
-    coords: Coords | None
+    coords: Union["Coords", None]
     version: str
     allow_updates: bool
-    paths: Xdg
+    paths: "Xdg"
     use_miles: bool
+    foreground_cmd: str | None

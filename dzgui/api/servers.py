@@ -276,7 +276,7 @@ def query_direct(ip: str, qport: int, timeout: float = 3.0) -> dict[str, Any] | 
         info = a2s.info((ip, qport), timeout)
         return source_info_to_dict(ip, qport, info)
     except Exception as e:
-        logger.critical(e)
+        logger.warning(e)
         return None
 
 

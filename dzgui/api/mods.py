@@ -49,7 +49,6 @@ def get_local_mods(workshop_path: Path) -> list[Path]:
     return mods
 
 
-# TODO: TEST: mock bad meta files with fixtures and skip them
 def parse_meta(file: Path) -> ModMeta:
     mod = file / "meta.cpp"
     if mod.exists() is False:
@@ -163,6 +162,10 @@ def find_stale_mods(config: Path) -> list[int]:
 
 
 def get_mod_dir_size(path: Path) -> int:
+    """
+    This is not a guarantee of parity, as user may adjusted contents of local mods,
+    so upstream epoch time is still used
+    """
     size = 0
     for i in Path(path).iterdir():
         if i.is_file():

@@ -43,7 +43,7 @@ class NoteDialog(GenericDialog):
         self.entry.set_text(note)
         if len(note) > 0:
             delete_button.set_sensitive(True)
-            self.format_secondary_text(f"Current note: {note}")
+            self.format_secondary_text(f"Current note: '{note}'")
         elif len(note) == 0:
             self.ok.set_sensitive(False)
 

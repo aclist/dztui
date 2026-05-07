@@ -1,4 +1,5 @@
 import logging
+import os
 import shutil
 import time
 
@@ -26,7 +27,7 @@ from dzgui.const.constants import (
     APPNAME_DAYZ_EXP,
 )
 from dzgui.const.enum import Preferences
-from dzgui.init.proc import is_dayz_running, is_steam_running
+from dzgui.init.proc import foreground, is_dayz_running, is_steam_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.util.format import format_mib
 from dzgui.util.strings import dialog, server_timeout, checkmark
@@ -60,6 +61,7 @@ class Prerequisites:
     dayz_running: bool
     steam_running: bool
     mods: list[str]
+    foreground_cmd: str | None
 
 
 class ConnectionManager:
@@ -141,6 +143,8 @@ class ConnectionManager:
         dayz_running = is_dayz_running()
         steam_running = is_steam_running()
 
+        self.foreground_cmd = self.controller.get_prefs().foreground_cmd
+
         prereqs = Prerequisites(
             name=info.server_name,
             appid=info.game_id,
@@ -154,6 +158,7 @@ class ConnectionManager:
             dayz_running=dayz_running,
             steam_running=steam_running,
             mods=remote_mods,
+            foreground_cmd=self.foreground_cmd,  # TODO: change to bool
         )
 
         func = StoredFunc(self.controller.open_connection_assistant, prereqs)
@@ -227,13 +232,17 @@ class ConnectionManager:
         # TODO: add to history file and list store
 
     @call_on_thread("Waiting for Steam to update mods")
-    def update_mods(self) -> None:
+    def update_mods(self, raise_window: bool) -> None:
         # NOTE: fast enqueue all mods in auto mode
         for title, mod, stamp, size in self.missing_mods:
             # TODO: boolean cancel button on threadman dialog sets event inside threadman
             # TODO: check for early cancel event via sigint
             enqueue_mod(mod, self.appid)
             time.sleep(2)
+
+        if self.foreground_cmd is not None and raise_window is True:
+            pid = os.getpid()
+            foreground(self.foreground_cmd, pid)
 
         for title, mod, stamp, size in self.missing_mods:
             mod_path = self.workshop / mod
@@ -258,8 +267,8 @@ class ConnectionManager:
         )
         self.thread_man.set_cleanup_func(func)
 
-    def update_and_connect(self) -> None:
+    def update_and_connect(self, raise_window: bool) -> None:
         if len(self.missing_mods) > 0:
-            self.update_mods()
+            self.update_mods(raise_window)
         else:
             self.connect_steam()

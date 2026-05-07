@@ -7,7 +7,7 @@ import warnings
 from typing import TYPE_CHECKING
 
 from dzgui.api.mods import remove_stale_signatures
-from dzgui.const.constants import APP_NAME
+from dzgui.const.constants import APP_NAME, FOREGROUND_CMDS
 from dzgui.const.enum import Preferences
 from dzgui.config.ipdb import get_ipdb
 from dzgui.config.query import lookup
@@ -25,7 +25,7 @@ from dzgui.init.migrate import (
 )
 from dzgui.init.prefix import get_version
 from dzgui.init.prereqs import has_steam_client
-from dzgui.init.proc import is_dayz_running, is_steam_running
+from dzgui.init.proc import has_cmd, is_dayz_running, is_steam_running
 from dzgui.init.update import allow_updates, check_updates
 
 from dzgui.util.map_count import get_map_count
@@ -142,15 +142,29 @@ def main() -> None:
     local_coords = get_local_coords(XDG.ips)
     use_miles = lookup(XDG.config, Preferences.DIST)
 
+    tool = None
+    for cmd in FOREGROUND_CMDS:
+        if has_cmd(cmd) is True:
+            tool = cmd
+            break
+
+    print(os.getpid())
+    # TODO: try getting pid on demand later
+    # pid = os.getpid()
+
+    # TODO: push is_game_mode to preconnect dialog
     prefs = UserPrefs(
-        _is_steam_deck,
-        _is_game_mode,
-        args.debug,
-        local_coords,
-        version,
-        allow,
-        XDG,
-        use_miles,
+        is_steam_deck=_is_steam_deck,
+        is_game_mode=_is_game_mode,
+        is_debug=args.debug,
+        coords=local_coords,
+        version=version,
+        allow_updates=allow,
+        paths=XDG,
+        use_miles=use_miles,
+        foreground_cmd=tool,
     )
+    # TODO: drop allow updates
+    # TODO: strings
     print("All OK. Loading UI...")
     App(prefs)

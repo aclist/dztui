@@ -115,6 +115,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             has_tooltip=True,
             sensitive=False,
             tooltip_text="This option is available if wmctrl or xdotool is installed on the system",
+            active=True,
         )
         self.button_box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
@@ -142,20 +143,18 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             margin_top=10,
             margin_bottom=10,
         )
-        self.spinner = Gtk.Spinner()
         self.progress_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
         self.progress_box.add(self.mod_count)
-        self.progress_box.add(self.spinner)
-        self.cancel = Gtk.Button(
-            label=preconnect.cancel,
-            halign=Gtk.Align.START,
-            hexpand=True,
-            margin_bottom=5,
-            margin_top=5,
-        )
-        self.progress_box.add(self.cancel)
-        self.cancel.connect("clicked", self._on_cancel_clicked)
-        self.cancel.set_visible(False)
+        # self.cancel = Gtk.Button(
+        #    label=preconnect.cancel,
+        #    halign=Gtk.Align.START,
+        #    hexpand=True,
+        #    margin_bottom=5,
+        #    margin_top=5,
+        # )
+        # self.progress_box.add(self.cancel)
+        # self.cancel.connect("clicked", self._on_cancel_clicked)
+        # self.cancel.set_visible(False)
 
         # TODO: live count of remaining downloads
         # "Steam is downloading: {mod_name}"
@@ -219,8 +218,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
         # TODO: enable button if wmctrl or xdotool is available
         # TODO: check this at boot time and pass in via connection manager
-
-        self.cancel.set_visible(False)
+        self.raise_window.set_sensitive(False)
         self.ok.set_sensitive(True)
         self.ok.set_label(preconnect.update_mods)
 
@@ -228,8 +226,8 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         if event.keyval == Gdk.KEY_Escape:
             self.back.emit("clicked")
 
-    def _on_cancel_clicked(self, button: Gtk.Button) -> None:
-        print("user canceled")
+    # def _on_cancel_clicked(self, button: Gtk.Button) -> None:
+    #    print("user canceled")
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
         # TODO: cancel mod downloads
@@ -237,11 +235,10 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         if self.mod_count.get_visible():
             # TODO: set ready mode
             # TODO: strings
-            self.mod_count.set_label("Enqueuing downloads")
-            self.spinner.start()
-            self.cancel.set_visible(True)
+            # self.mod_count.set_label("Enqueuing downloads")
+            # self.cancel.set_visible(True)
             self.ok.set_label(preconnect.connect)
-        self.controller.update_and_connect()
+        self.controller.update_and_connect(self.raise_window.get_active())
         pass
 
     def _on_back_clicked(self, button: Gtk.Button) -> None:
@@ -295,6 +292,9 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         name = prereqs.name
         self.title.set_text(name)
 
+        if prereqs.foreground_cmd is not None:
+            self.raise_window.set_sensitive(True)
+
         if total_mods < 1:
             self.scrolled.set_visible(False)
             self.progress_box.set_visible(False)
@@ -318,9 +318,8 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
     def update_mod(self, text: str, mark_finished: bool = False) -> None:
         self.mod_count.set_label(text)
-        if mark_finished:
-            self.cancel.set_visible(False)
-            self.spinner.stop()
+        # if mark_finished:
+        #    self.cancel.set_visible(False)
 
     def add_errors(self, errors: list[str]) -> None:
         self.error_tree.extend(errors)
