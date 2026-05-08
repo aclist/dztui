@@ -38,7 +38,7 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             column.set_cell_data_func(renderer, self._format_color, func_data=None)
-            if i == 4:
+            if i == 3:
                 column.set_cell_data_func(renderer, self._format_float, func_data=None)
 
             if column_title == "Mod":
@@ -74,7 +74,9 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
         mod = model.get(tree_iter, 2)[0]
         return str(mod)
 
-    def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection) -> None:
+    def _parent_selection_changed(
+        self, base_class: TreeView, sel: Gtk.TreeSelection
+    ) -> None:
         pass
 
     def _format_color(
