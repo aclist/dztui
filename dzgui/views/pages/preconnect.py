@@ -305,6 +305,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             self.progress_box.set_visible(True)
             self.raise_window.set_visible(True)
             self.mods_placeholder.set_visible(False)
+            self.tree.grab_focus()
 
             # TODO: strings
             suffix = "All mods are up to date."
