@@ -148,10 +148,6 @@ def main() -> None:
             tool = cmd
             break
 
-    print(os.getpid())
-    # TODO: try getting pid on demand later
-    # pid = os.getpid()
-
     # TODO: push is_game_mode to preconnect dialog
     prefs = UserPrefs(
         is_steam_deck=_is_steam_deck,
