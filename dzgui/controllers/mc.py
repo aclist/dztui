@@ -70,6 +70,7 @@ class AppNavigation:
     logtreeview: "LogTreeView"
     filters: "FilterPanel"
     preconnect: "PreConnectionAssistant"
+    options: "Options"
 
 
 class Controller(GObject.GObject):
@@ -475,3 +476,6 @@ class Controller(GObject.GObject):
 
     def update_status(self, mod: str, mark_finished: bool = False) -> None:
         self.mediator.preconnect.update_mod(mod, mark_finished)
+
+    def get_steam_client_name(self) -> str:
+        return self.mediator.options.get_client_name()
