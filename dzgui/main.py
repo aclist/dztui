@@ -135,7 +135,7 @@ def main() -> None:
     rebuild_symlinks(XDG.config)
     remove_stale_signatures(XDG.config, XDG.version)
 
-    is_dayz_installed()
+    is_dayz_installed(XDG.config)
     # TODO: handle IP DB failure and use coords fallback
     get_ipdb(XDG.ips)
     local_coords = get_local_coords(XDG.ips)
