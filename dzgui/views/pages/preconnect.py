@@ -254,7 +254,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         if prereqs.steam_proc.is_running is False:
             client = prereqs.steam_proc.name
             errors.append(
-                f"'{client}' is set as the default Steam client, but it either not installed or not running."
+                f"'{client}' is set as the default Steam client, but it is either not installed or not running."
             )
 
         """Warnings"""
