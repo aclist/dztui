@@ -145,20 +145,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         )
         self.progress_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
         self.progress_box.add(self.mod_count)
-        # self.cancel = Gtk.Button(
-        #    label=preconnect.cancel,
-        #    halign=Gtk.Align.START,
-        #    hexpand=True,
-        #    margin_bottom=5,
-        #    margin_top=5,
-        # )
-        # self.progress_box.add(self.cancel)
-        # self.cancel.connect("clicked", self._on_cancel_clicked)
-        # self.cancel.set_visible(False)
-
-        # TODO: live count of remaining downloads
-        # "Steam is downloading: {mod_name}"
-        # mention whether manual or auto mod is active
 
         self.scrolled = Gtk.ScrolledWindow()
         self.scrolled.add(self.tree)
@@ -175,7 +161,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         self.tree_frame = HeadingFrame(self.tree_box, preconnect.mods)
 
         # TODO: abstract into components
-
         # TODO: strings
         self.warning_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.warning_tree = MaskedTree(WARNING)
@@ -226,9 +211,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         if event.keyval == Gdk.KEY_Escape:
             self.back.emit("clicked")
 
-    # def _on_cancel_clicked(self, button: Gtk.Button) -> None:
-    #    print("user canceled")
-
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
         # TODO: cancel mod downloads
         # sets some kind of global event listener
@@ -248,6 +230,9 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         warnings: list[str] = []
         errors: list[str] = []
 
+        # TODO: check availability of currently selected steam cmd
+
+        """Errors"""
         if prereqs.binary_missing:
             errors.append(
                 f"Remote server is running the build '{prereqs.build}', but it is not installed."
@@ -262,6 +247,17 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             errors.append(
                 f"Need to update {required_pretty} MiB of mods, but installation path only has {available_pretty} MiB."
             )
+        if len(prereqs.mods) > 0 and prereqs.game_mode:
+            errors.append("Use Desktop Mode to download mods on Steam Deck")
+
+        print(prereqs.steam_proc)
+        if prereqs.steam_proc.is_running is False:
+            client = prereqs.steam_proc.name
+            errors.append(
+                f"'{client}' is set as the default Steam client, but it either not installed or not running."
+            )
+
+        """Warnings"""
         if prereqs.passworded:
             warnings.append(
                 "Protected: you will be prompted for a password when connecting to this server."
@@ -269,10 +265,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         if prereqs.dayz_running is True:
             warnings.append(
                 "It looks like DayZ is already running in the background. Exit DayZ before connecting."
-            )
-        if prereqs.steam_running is False:
-            warnings.append(
-                "It looks like Steam is not running. Launch Steam before connecting."
             )
 
         self.add_warnings(warnings)
@@ -319,8 +311,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
     def update_mod(self, text: str, mark_finished: bool = False) -> None:
         self.mod_count.set_label(text)
-        # if mark_finished:
-        #    self.cancel.set_visible(False)
 
     def add_errors(self, errors: list[str]) -> None:
         self.error_tree.extend(errors)

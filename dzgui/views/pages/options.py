@@ -49,6 +49,7 @@ class Options(Gtk.Box):
         )
 
         self.controller = controller
+        self.controller.register_widget("options", self)
         emitter = controller.get_emitter()
         emitter.connect("api_change_failed", self._on_api_change_failed)
 
@@ -206,6 +207,11 @@ class Options(Gtk.Box):
         self.scrollable = Gtk.ScrolledWindow(vexpand=True)
         self.scrollable.add(grid)
         self.add(self.scrollable)
+
+    def get_client_name(self) -> str:
+        model = self.client_combo.get_model()
+        ind = self.client_combo.get_active()
+        return model[ind][0]
 
     def block_text_entry(self) -> None:
         for entry in self.steam_entry, self.bm_entry:

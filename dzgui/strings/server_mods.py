@@ -1,4 +1,4 @@
 mod = "Mod"
 mod_id = "ID"
-installed = "Installed"
+up_to_date = "Up to date"
 modlist = "Modlist"

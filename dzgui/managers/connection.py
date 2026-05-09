@@ -48,6 +48,12 @@ logger = logging.getLogger(APP_NAME)
 
 
 @dataclass(slots=True, frozen=True)
+class SteamProcess:
+    name: str
+    is_running: bool
+
+
+@dataclass(slots=True, frozen=True)
 class Prerequisites:
     name: str
     appid: int
@@ -59,9 +65,10 @@ class Prerequisites:
     available_space: float
     passworded: bool
     dayz_running: bool
-    steam_running: bool
+    steam_proc: SteamProcess
     mods: list[str]
     foreground_cmd: str | None
+    game_mode: bool
 
 
 class ConnectionManager:
@@ -118,7 +125,8 @@ class ConnectionManager:
             local_version = "0.0.0"
             binary_missing = True
 
-        remote_mods: list[str, str, str] = []
+        prefs = self.controller.get_prefs()
+        remote_mods: list[list[str]] = []
         if res.is_modded():
             try:
                 remote_mods = self._query_modlist(record)
@@ -129,8 +137,13 @@ class ConnectionManager:
                 return
 
             hashes = get_remote_signatures(self.remote_mod_ids)
-            version_file = self.controller.get_prefs().paths.version
+            version_file = prefs.paths.version
             self.missing_mods = get_needs_update(version_file, hashes)
+
+            # TODO: walk through missing mods and update remote_mods store
+            for mod in remote_mods:
+                if any(mod[1] in tuple for tuple in self.missing_mods):
+                    mod[2] = "Needs updating"
 
             if local_version is not None:
                 pefile_path = PeFile.get_pefile_path(steam_path, info.game_id)
@@ -141,9 +154,15 @@ class ConnectionManager:
                     free_mib = format_mib(required_size)
 
         dayz_running = is_dayz_running()
-        steam_running = is_steam_running()
 
-        self.foreground_cmd = self.controller.get_prefs().foreground_cmd
+        client_name = self.controller.get_steam_client_name()
+        client = self.controller.query_config(Preferences.CLIENT)
+        running = is_steam_running(client)
+        steam_proc = SteamProcess(client_name, running)
+        # /home/USER/.var/app/com.valvesoftware.Steam
+
+        self.foreground_cmd = prefs.foreground_cmd
+        game_mode = prefs.is_game_mode
 
         prereqs = Prerequisites(
             name=info.server_name,
@@ -156,9 +175,10 @@ class ConnectionManager:
             available_space=free_mib,
             passworded=info.password_protected,
             dayz_running=dayz_running,
-            steam_running=steam_running,
+            steam_proc=steam_proc,
             mods=remote_mods,
             foreground_cmd=self.foreground_cmd,  # TODO: change to bool
+            game_mode=game_mode,
         )
 
         func = StoredFunc(self.controller.open_connection_assistant, prereqs)
@@ -261,7 +281,7 @@ class ConnectionManager:
         rebuild_symlinks(self.controller.get_prefs().paths.config)
         # TODO: update version file
 
-        # TODO: update tree checkmarks
+        # TODO: update tree checkmarks when finished
         func = StoredFunc(
             self.controller.update_status, "All mods updated.", mark_finished=True
         )
