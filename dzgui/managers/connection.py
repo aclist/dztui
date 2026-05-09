@@ -32,9 +32,10 @@ from dzgui.const.constants import (
     APPNAME_DAYZ_EXP,
     DAYZ_BINARY,
 )
-from dzgui.const.enum import Preferences
+from dzgui.const.enum import NotebookPage, Preferences
 from dzgui.init.proc import foreground, is_dayz_running, is_steam_running, is_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
+from dzgui.strings.dialogs import waiting_for_launch
 from dzgui.strings.server_mods import checkmark, resync
 from dzgui.util.format import format_mib
 from dzgui.util.strings import dialog, server_timeout
@@ -246,16 +247,22 @@ class ConnectionManager:
     def _connect_steam(self) -> None:
         addr = f"{self.record.ip}:{self.record.gameport}"
         playername = self.controller.query_config(Preferences.NAME)
-        proc = connect(addr, self.appid, playername, self.remote_mod_ids)
-        # TODO: test returncode
+        rc = connect(addr, self.appid, playername, self.remote_mod_ids)
+        if rc != 0:
+            # TODO: log/pop the error
+            func = StoredFunc(self.controller.update_status)
+            self.thread_man.set_cleanup_func(func)
+            return
 
-        # self.thread_man.update_dialog("Waiting for DayZ to launch")
-        # while not is_running(DAYZ_BINARY):
-        #    time.sleep(1)
-        # TODO: wait for DAYZ_BINARY to load
-        # on cleanup:
+        self.thread_man.update_dialog(waiting_for_launch)
+        while True:
+            if is_dayz_running():
+                break
+        time.sleep(1)
         # TODO: add to history file and list store
         # proxy_model.append_to_history()
+        func = StoredFunc(self.controller.open_page, NotebookPage.SERVERS)
+        self.thread_man.set_cleanup_func(func)
 
     def _update_mods(self, raise_window: bool) -> None:
         # NOTE: fast enqueue all mods in auto mode
@@ -294,7 +301,7 @@ class ConnectionManager:
     def update_and_connect(self, raise_window: bool) -> None:
         if len(self.missing_mods) > 0:
             self._update_mods(raise_window)
+            self._connect_steam()
         else:
             self._connect_steam()
-        func = StoredFunc(self.controller.update_status)
-        self.thread_man.set_cleanup_func(func)
+        # TODO: use this only if going back before launching

@@ -102,7 +102,7 @@ def connect(addr: str, appid: int, name: str, mods: list[str]) -> None:
         f"-name={name}",
         f"-mod={concat}",
     ]
-    proc = subprocess.Popen([*params])
+    proc = subprocess.run([*params])
     return proc.returncode
 
 

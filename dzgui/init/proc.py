@@ -16,7 +16,14 @@ from dzgui.util.strings import init
 
 # TODO: move to util.proc
 def is_dayz_running() -> bool:
-    return is_running(DAYZ_BINARY)
+    procs = []
+    substring = DAYZ_BINARY
+    for proc in psutil.process_iter():
+        try:
+            procs.append(proc.cmdline())
+        except Exception as e:
+            continue
+    return any(substring in item for sublist in procs for item in sublist)
 
 
 def is_steam_running(cmd: str) -> bool:
