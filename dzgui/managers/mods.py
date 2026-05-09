@@ -92,7 +92,7 @@ class ModManager:
         if model is None:
             return None
         tree_iter = model.get_iter(tree_path)
-        mod = model.get_value(tree_iter, 2)[0]
+        mod = model.get_value(tree_iter, 2)
         return mod, tree_iter
 
     def delete_single_mod(self, tree_path: Gtk.TreePath) -> Gtk.TreeIter | None:

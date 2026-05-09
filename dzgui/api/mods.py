@@ -173,3 +173,30 @@ def get_mod_dir_size(path: Path) -> int:
         elif i.is_dir():
             size += get_mod_dir_size(i)
     return size
+
+
+def version_file_to_dict(file: Path) -> dict[str, str]:
+    versions = file.read_text().splitlines()
+    d: dict[str, str] = {}
+    for version in versions:
+        line = version.split(",")
+        mod = line[0]
+        stamp = line[1]
+        d[mod] = stamp
+    return d
+
+
+def update_signatures(
+    mods: list[tuple[str, str, int, int]], version_file: Path
+) -> None:
+    d = version_file_to_dict(version_file)
+    for _title, mod, stamp, size in mods:
+        d[mod] = str(stamp)
+    versions: list[str] = []
+    for k, v in d.items():
+        row = ",".join([k, v])
+        versions.append(row)
+
+    with open(version_file, "w") as f:
+        for version in versions:
+            f.write(f"{version}\n")

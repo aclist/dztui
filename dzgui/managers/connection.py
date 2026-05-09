@@ -18,7 +18,12 @@ from dzgui.api.steam import (
     get_needs_update,
 )
 
-from dzgui.api.mods import get_mod_dir_size, get_local_mod_ids, get_local_mod_path
+from dzgui.api.mods import (
+    get_mod_dir_size,
+    get_local_mod_ids,
+    get_local_mod_path,
+    update_signatures,
+)
 from dzgui.const.constants import (
     APP_NAME,
     APPID_DAYZ,
@@ -236,7 +241,7 @@ class ConnectionManager:
         dialog = ExceptionDialog(self.controller, server_timeout)
         dialog.run()
 
-    def connect_steam(self) -> None:
+    def _connect_steam(self) -> None:
         print(self.record.ip)
         print(self.record.gameport)
         print(self.appid)
@@ -250,8 +255,9 @@ class ConnectionManager:
         # TODO: add to history file and list store
 
     @call_on_thread("Waiting for Steam to update mods")
-    def update_mods(self, raise_window: bool) -> None:
+    def _update_mods(self, raise_window: bool) -> None:
         # NOTE: fast enqueue all mods in auto mode
+        prefs = self.controller.get_prefs()
         for title, mod, stamp, size in self.missing_mods:
             # TODO: boolean cancel button on threadman dialog sets event inside threadman
             # TODO: check for early cancel event via sigint
@@ -277,8 +283,10 @@ class ConnectionManager:
                 time.sleep(1)
 
         # TODO: update version file
+        update_signatures(self.missing_mods, prefs.paths.version)
+
         # TODO: get config path or just push steam path directly
-        rebuild_symlinks(self.controller.get_prefs().paths.config)
+        rebuild_symlinks(prefs.paths.config)
         # TODO: update tree checkmarks when finished
         # TODO: make this internal to preconnect page
         func = StoredFunc(self.controller.update_status)
@@ -286,6 +294,6 @@ class ConnectionManager:
 
     def update_and_connect(self, raise_window: bool) -> None:
         if len(self.missing_mods) > 0:
-            self.update_mods(raise_window)
+            self._update_mods(raise_window)
         else:
-            self.connect_steam()
+            self._connect_steam()

@@ -25,7 +25,7 @@ def get_local_signatures(version_file: Path) -> dict[str, int]:
     for line in lines:
         line = line.split(",")
         _id = line[0]
-        _hash = line[1]
+        _hash = int(line[1])
         hashes[_id] = _hash
     return hashes
 
