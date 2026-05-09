@@ -40,7 +40,6 @@ class NewPlayerCount:
     queue: int
 
 
-
 class ServerModelManager:
     def __init__(self, controller: "Controller", tv: "ServerTreeView") -> None:
 
@@ -174,9 +173,11 @@ class ServerModelManager:
             ]
             for future in as_completed(futures):
                 res = future.result(timeout=API_TIMEOUT)
+
                 self.thread_man.increment_dialog()
                 # NOTE: failing entries are culled
                 if res is None:
+                    # TODO: log which servers failed
                     continue
                 servers.append(res)
                 if len(servers) == 0:
@@ -257,9 +258,7 @@ class ServerModelManager:
         proxy_man = self._get_proxy_man()
         proxy_man.update_playercount(self.playercount)
 
-    def _parse_single_record(
-        self, response: "A2SInfo", delete: bool = False
-    ) -> None:
+    def _parse_single_record(self, response: "A2SInfo", delete: bool = False) -> None:
         self.preserve_on_fail = True
         row = response.as_row()
         if row is None:
@@ -275,7 +274,7 @@ class ServerModelManager:
         proxy_man = self._get_proxy_man()
         config_man = self.controller.get_config_man()
         fqip = Servers.response_to_fqip(row)
-        record = response.get_record() #Servers.response_to_record(row)
+        record = response.get_record()  # Servers.response_to_record(row)
 
         # TODO: less convoluted
         if delete:

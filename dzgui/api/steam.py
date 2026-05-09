@@ -14,9 +14,13 @@ logger = logging.getLogger(APP_NAME)
 
 
 def concat_mods(mods: list[str]) -> str:
+    from dzgui.util.symlink import _hash
+
+    hashes = []
     for mod in mods:
-        mods[mod] = f"@{mod}"
-    return ";".join(mods)
+        md5sum = _hash(mod)
+        hashes.append(md5sum)
+    return ";".join(hashes)
 
 
 def get_local_signatures(version_file: Path) -> dict[str, int]:

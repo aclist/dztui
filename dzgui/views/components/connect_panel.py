@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from dzgui.const.constants import UDP_PORT
 from dzgui.model.servers import ServerModelManager
 from dzgui.strings import connect_panel
+from dzgui.util.keys import is_ctrl_mask
 from dzgui.views.components.buttons import (
     AddButton,
     ClipboardButton,
@@ -78,7 +79,7 @@ class LanPanel(Gtk.Frame):
         self.entry.set_sensitive(False)
 
     def _on_lan_keypress(self, widget: Gtk.Entry, event: Gdk.EventKey) -> bool:
-        if event.state & Gdk.ModifierType.CONTROL_MASK:
+        if is_ctrl_mask(event):
             if event.keyval == Gdk.KEY_d:
                 self.default_radio.set_active(True)
                 self.controller.grab_active_treeview()

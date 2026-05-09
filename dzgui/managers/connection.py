@@ -30,9 +30,10 @@ from dzgui.const.constants import (
     APPID_DAYZ_EXP,
     APPNAME_DAYZ,
     APPNAME_DAYZ_EXP,
+    DAYZ_BINARY,
 )
 from dzgui.const.enum import Preferences
-from dzgui.init.proc import foreground, is_dayz_running, is_steam_running
+from dzgui.init.proc import foreground, is_dayz_running, is_steam_running, is_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings.server_mods import checkmark, resync
 from dzgui.util.format import format_mib
@@ -241,26 +242,29 @@ class ConnectionManager:
         dialog = ExceptionDialog(self.controller, server_timeout)
         dialog.run()
 
+    # TODO: threading
     def _connect_steam(self) -> None:
-        print(self.record.ip)
-        print(self.record.gameport)
-        print(self.appid)
-
         addr = f"{self.record.ip}:{self.record.gameport}"
-        playername = "test"
+        playername = self.controller.query_config(Preferences.NAME)
         proc = connect(addr, self.appid, playername, self.remote_mod_ids)
         # TODO: test returncode
-        # proc.returncode
-        # TODO: wait for DAYZ_BINARY to load
-        # TODO: add to history file and list store
 
-    @call_on_thread("Waiting for Steam to update mods")
+        # self.thread_man.update_dialog("Waiting for DayZ to launch")
+        # while not is_running(DAYZ_BINARY):
+        #    time.sleep(1)
+        # TODO: wait for DAYZ_BINARY to load
+        # on cleanup:
+        # TODO: add to history file and list store
+        # proxy_model.append_to_history()
+
     def _update_mods(self, raise_window: bool) -> None:
         # NOTE: fast enqueue all mods in auto mode
         prefs = self.controller.get_prefs()
+
+        # TODO: increment dialog progress message
         for title, mod, stamp, size in self.missing_mods:
             # TODO: boolean cancel button on threadman dialog sets event inside threadman
-            # TODO: check for early cancel event via sigint
+            # check for early cancel event via sigint
             enqueue_mod(mod, self.appid)
             time.sleep(2)
 
@@ -282,18 +286,15 @@ class ConnectionManager:
                     break
                 time.sleep(1)
 
-        # TODO: update version file
         update_signatures(self.missing_mods, prefs.paths.version)
-
         # TODO: get config path or just push steam path directly
         rebuild_symlinks(prefs.paths.config)
-        # TODO: update tree checkmarks when finished
-        # TODO: make this internal to preconnect page
-        func = StoredFunc(self.controller.update_status)
-        self.thread_man.set_cleanup_func(func)
 
+    @call_on_thread("Waiting for Steam to update mods")
     def update_and_connect(self, raise_window: bool) -> None:
         if len(self.missing_mods) > 0:
             self._update_mods(raise_window)
         else:
             self._connect_steam()
+        func = StoredFunc(self.controller.update_status)
+        self.thread_man.set_cleanup_func(func)

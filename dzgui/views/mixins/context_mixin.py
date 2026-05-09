@@ -2,7 +2,7 @@ import logging
 
 from dzgui.const.constants import APP_NAME
 from dzgui.const.enum import ContextMenu
-from dzgui.util.keys import is_navkey
+from dzgui.util.keys import is_ctrl_mask, is_navkey
 from dzgui.util.strings import edit_note
 from dzgui.views.trees.tree_base import TreeView
 
@@ -30,7 +30,7 @@ class ContextMixin(TreeView):
                     return False
                 self._process_button_event(event)
             case Gdk.EventType.KEY_PRESS:
-                if event.state is not Gdk.ModifierType.CONTROL_MASK:
+                if not is_ctrl_mask(event):
                     return False
                 if event.keyval is not Gdk.KEY_l:
                     return False

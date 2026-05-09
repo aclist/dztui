@@ -7,6 +7,7 @@ from dzgui.const.constants import (
 )
 from dzgui.const.enum import NotebookPage
 from dzgui.util.css import add_class
+from dzgui.util.keys import is_ctrl_mask
 from dzgui.util.localize import number
 from dzgui.strings.server_mods import checkmark
 from dzgui.strings import preconnect
@@ -211,6 +212,9 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
         if event.keyval == Gdk.KEY_Escape:
             self.back.emit("clicked")
+        if is_ctrl_mask(event):
+            if event.keyval == Gdk.KEY_u:
+                self.ok.emit("clicked")
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
         # TODO: cancel mod downloads

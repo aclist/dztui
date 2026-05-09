@@ -72,6 +72,9 @@ class ThreadingManager:
     def set_job_count(self, jobs: int) -> None:
         self.jobs = jobs
 
+    def update_dialog(self, msg: str) -> None:
+        GLib.idle_add(lambda: self.wait_dialog.update_text(msg))
+
     def increment_dialog(self) -> None:
         GLib.idle_add(self.wait_dialog.increment)
 

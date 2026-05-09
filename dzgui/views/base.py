@@ -9,6 +9,7 @@ from dzgui.const.enum import NotebookPage
 from dzgui.controllers.emitter import Emitter
 from dzgui.controllers.mc import Controller
 from dzgui.util import css, strings
+from dzgui.util.keys import is_ctrl_mask
 from dzgui.views.components.connect_panel import ConnectPanel
 from dzgui.views.components.crumbs import Breadcrumbs
 from dzgui.views.components.right_panel import RightPanel
@@ -164,7 +165,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
     def _on_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> bool:
         match event.keyval:
             case Gdk.KEY_Right | Gdk.KEY_l:
-                if event.state is Gdk.ModifierType.CONTROL_MASK:
+                if is_ctrl_mask(event):
                     return False
                 MainController.get_emitter().emit("request_button_box_focus")
                 return True

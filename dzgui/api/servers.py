@@ -462,7 +462,7 @@ def query_playercount(record: Record) -> tuple[int, int] | None:
 
 def query_by_ip(addr: str) -> A2SInfo:
     record = short_ip_to_record(addr)
-    return query_by_record(record)
+    return query_by_record(record, update_gameport=True)
 
 def query_by_id(server_id: int, key: str) -> dict[Any] | None:
     """
@@ -472,9 +472,11 @@ def query_by_id(server_id: int, key: str) -> dict[Any] | None:
     return query_by_record(record)
 
 
-def query_by_record(record: Record) -> A2SInfo:
+def query_by_record(record: Record, update_gameport: bool = False) -> A2SInfo:
     try:
         info = a2s.info((record.ip, record.qport), 3.0)
+        if update_gameport:
+            record = Record(record.ip, info.port, record.qport)
         return A2SInfo(record, info)
     except Exception as e:
         logger.warning(e)

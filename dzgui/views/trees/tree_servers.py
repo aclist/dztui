@@ -12,6 +12,7 @@ from dzgui.managers.filter import FilterManager
 from dzgui.model.proxy_model import ProxyModelManager
 from dzgui.util import strings
 from dzgui.util.dist import CalcDist
+from dzgui.util.keys import is_ctrl_mask
 from dzgui.views.mixins.context_mixin import ContextMixin
 from typing import Literal, TYPE_CHECKING
 
@@ -229,7 +230,7 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
         return True
 
     def _on_server_keypress(self, treeview: Gtk.TreeView, event: Gdk.EventKey) -> None:
-        if event.state is Gdk.ModifierType.CONTROL_MASK:
+        if is_ctrl_mask(event):
             match event.keyval:
                 case Gdk.KEY_f:
                     self.emitter.emit("request_keyword_focus")

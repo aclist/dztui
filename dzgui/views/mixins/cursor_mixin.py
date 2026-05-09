@@ -1,5 +1,6 @@
 from dzgui.const.enum import CursorPosition
 from dzgui.const.constants import SEPARATOR
+from dzgui.util.keys import is_ctrl_mask
 
 import gi
 
@@ -19,7 +20,7 @@ class CursorMixin:
             case Gdk.KEY_k:
                 self._move_cursor(CursorPosition.UP)
             case Gdk.KEY_l | Gdk.KEY_Right:
-                if event.state is Gdk.ModifierType.CONTROL_MASK:
+                if is_ctrl_mask(event):
                     return
                 self.emitter.emit("request_button_box_focus")  # type: ignore
             case _:

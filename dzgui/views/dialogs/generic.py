@@ -109,6 +109,9 @@ class WaitDialog(GenericDialog):
         else:
             spinner.start()
 
+    def update_text(self, msg: str) -> None:
+        self.format_secondary_text(msg)
+
     def increment(self, msg: str = "") -> None:
         if msg != "":
             self.format_secondary_text(msg)
