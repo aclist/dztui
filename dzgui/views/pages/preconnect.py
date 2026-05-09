@@ -197,8 +197,8 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             self.error_placeholder,
             self.warning_placeholder,
         )
-        for widget in widgets:
-            widget.set_visible(True)
+        for child in widgets:
+            child.set_visible(True)
         self.raise_window.set_visible(False)
 
         # TODO: enable button if wmctrl or xdotool is available
@@ -250,7 +250,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         if len(prereqs.mods) > 0 and prereqs.game_mode:
             errors.append("Use Desktop Mode to download mods on Steam Deck")
 
-        print(prereqs.steam_proc)
         if prereqs.steam_proc.is_running is False:
             client = prereqs.steam_proc.name
             errors.append(

@@ -82,7 +82,7 @@ class ConnectionManager:
         self.workshop: Path
 
         self.remote_mod_ids: list[str] = []
-        self.missing_mods: list[str] = []
+        self.missing_mods: list[str, str, int, int] = []
 
     @call_on_thread(dialog.querying)
     def connect_by_id(self, _id: int, key: str) -> None:
@@ -101,12 +101,12 @@ class ConnectionManager:
 
     def _prepare_connection(self, res: "A2SInfo") -> None:
         failure_func = StoredFunc(self._server_timeout)
-        if res.get_info() is None:
+        info = res.get_info()
+        if info is None:
             self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
             return
 
         record = res.get_record()
-        info = res.get_info()
 
         # NOTE: store metadata for later connection
         self.appid = info.game_id
