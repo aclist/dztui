@@ -25,7 +25,7 @@ from dzgui.init.migrate import (
 )
 from dzgui.init.prefix import get_version
 from dzgui.init.prereqs import has_steam_client
-from dzgui.init.proc import has_cmd, is_dayz_running, is_steam_running
+from dzgui.init.proc import has_cmd
 from dzgui.init.update import allow_updates, check_updates
 
 from dzgui.util.map_count import get_map_count
@@ -135,6 +135,7 @@ def main() -> None:
     rebuild_symlinks(XDG.config)
     remove_stale_signatures(XDG.config, XDG.version)
 
+    is_dayz_installed()
     # TODO: handle IP DB failure and use coords fallback
     get_ipdb(XDG.ips)
     local_coords = get_local_coords(XDG.ips)

@@ -29,7 +29,7 @@ from dzgui.const.constants import (
 from dzgui.const.enum import Preferences
 from dzgui.init.proc import foreground, is_dayz_running, is_steam_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
-from dzgui.strings.server_mods import checkmark
+from dzgui.strings.server_mods import checkmark, resync
 from dzgui.util.format import format_mib
 from dzgui.util.strings import dialog, server_timeout
 from dzgui.util.symlink import rebuild_symlinks
@@ -143,8 +143,7 @@ class ConnectionManager:
 
             for mod in remote_mods:
                 if any(mod[1] in tuple for tuple in self.missing_mods):
-                    # TODO: store in strings
-                    mod[2] = "⟳"
+                    mod[2] = resync
 
             if local_version is not None:
                 pefile_path = PeFile.get_pefile_path(steam_path, info.game_id)
