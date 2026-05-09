@@ -214,6 +214,16 @@ class ServerModelManager:
         res = Servers.query_by_record(record)
         self._parse_single_record(res, delete=True)
 
+    # TODO:
+    # def add_to_history(self, record: Servers.Record) -> None:
+    # functionally similar to remove action
+    #    # needs to be called from controller against history tree, not current tree
+    #    proxy_man = self._get_proxy_man()
+    #    # proxy_man.append_row_to_history
+    #    control_model = proxy_man.get_control()
+    #    config_man = self.controller.get_config_man()
+    #    config_man.update_history_file(control_model)
+
     def remove_from_history(self, record: Servers.Record) -> None:
         """Fully unthreaded, just removes a row"""
         proxy_man = self._get_proxy_man()

@@ -284,11 +284,12 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         if prereqs.foreground_cmd is not None:
             self.raise_window.set_sensitive(True)
 
+        if prereqs.missing_mods < 1:
+            self.ok.set_label(preconnect.connect)
         if total_mods < 1:
             self.scrolled.set_visible(False)
             self.progress_box.set_visible(False)
             self.mods_placeholder.set_visible(True)
-            self.ok.set_label(preconnect.connect)
         else:
             self.scrolled.set_visible(True)
             self.progress_box.set_visible(True)

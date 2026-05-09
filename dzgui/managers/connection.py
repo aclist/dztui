@@ -75,6 +75,7 @@ class Prerequisites:
     dayz_running: bool
     steam_proc: SteamProcess
     mods: list[str]
+    missing_mods: int
     foreground_cmd: str | None
     game_mode: bool
 
@@ -183,6 +184,7 @@ class ConnectionManager:
             dayz_running=dayz_running,
             steam_proc=steam_proc,
             mods=remote_mods,
+            missing_mods=len(self.missing_mods),
             foreground_cmd=self.foreground_cmd,  # TODO: change to bool
             game_mode=game_mode,
         )
@@ -259,7 +261,7 @@ class ConnectionManager:
             if is_dayz_running():
                 break
         time.sleep(1)
-        # TODO: add to history file and list store
+        # TODO: add self.record to history file and list store
         # proxy_model.append_to_history()
         func = StoredFunc(self.controller.open_page, NotebookPage.SERVERS)
         self.thread_man.set_cleanup_func(func)
@@ -304,4 +306,3 @@ class ConnectionManager:
             self._connect_steam()
         else:
             self._connect_steam()
-        # TODO: use this only if going back before launching
