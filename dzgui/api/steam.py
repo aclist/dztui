@@ -94,7 +94,7 @@ def connect(addr: str, appid: int, name: str, mods: list[str]) -> None:
     params = [
         "steam",
         "-applaunch",
-        appid,
+        str(appid),
         f"-connect={addr}",
         "-nolauncher",
         "-nosplash",
