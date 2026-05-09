@@ -122,16 +122,14 @@ def main() -> None:
     if allow is True:
         check_updates(version)
 
+    # TODO: config wizard: check has_steam_client() prior to VDF exploration
+
     if _is_steam_deck is False:
         # TODO: sudo escalation dialog
         count = get_map_count()
         # TODO: move into module
         if has_steam_client() is False:
             EarlyAlertDialog(init.requires_steam)
-
-    is_dayz_installed(XDG.config)
-    is_dayz_running(dialog=True)
-    is_steam_running(dialog=True)
 
     # NOTE: clear versions file of unlinked mods
     rebuild_symlinks(XDG.config)
