@@ -13,6 +13,7 @@ from dzgui.const.constants import (
 from dzgui.views.dialogs.early_alert import EarlyAlertDialog
 from dzgui.util.strings import init
 
+
 # TODO: move to util.proc
 def is_dayz_running() -> bool:
     return is_running(DAYZ_BINARY)
@@ -54,10 +55,8 @@ def has_cmd(cmd: str) -> bool:
 
 def foreground(cmd: str, pid: int) -> None:
     if cmd == "wmctrl":
-        proc = subprocess.check_output(
-            ["wmctrl", "-ilp"], capture_output=True, text=True
-        )
-        lines = proc.splitlines()
+        proc = subprocess.run(["wmctrl", "-ilp"], capture_output=True, text=True)
+        lines = proc.stdout.splitlines()
         for line in lines:
             els = line.split(" ")
             if str(pid) in els:
@@ -66,8 +65,8 @@ def foreground(cmd: str, pid: int) -> None:
         subprocess.run(["wmctrl", "-ia", wid])
     elif cmd == "xdotool":
         args = [cmd, "search", "--pid", str(pid)]
-        proc = subprocess.check_output([*args], stderr=subprocess.DEVNULL)
-        lines = proc.splitlines()
+        proc = subprocess.run([*args], capture_output=True, text=True)
+        lines = proc.stdout.splitlines()
         ## NOTE: some forked subprocesses may fail, so skip over them
         for line in lines:
             subprocess.run(

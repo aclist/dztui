@@ -8,6 +8,7 @@ from dzgui.const.constants import (
 from dzgui.const.enum import NotebookPage
 from dzgui.util.css import add_class
 from dzgui.util.localize import number
+from dzgui.strings.server_mods import checkmark
 from dzgui.strings import preconnect
 from dzgui.views.components.frame import HeadingFrame
 from dzgui.views.trees.tree_server_mods import ServerModTreeView
@@ -214,14 +215,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
         # TODO: cancel mod downloads
         # sets some kind of global event listener
-        if self.mod_count.get_visible():
-            # TODO: set ready mode
-            # TODO: strings
-            # self.mod_count.set_label("Enqueuing downloads")
-            # self.cancel.set_visible(True)
-            self.ok.set_label(preconnect.connect)
         self.controller.update_and_connect(self.raise_window.get_active())
-        pass
 
     def _on_back_clicked(self, button: Gtk.Button) -> None:
         self.controller.open_page(NotebookPage.SERVERS)
@@ -308,8 +302,11 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
 
         self._process_warnings(prereqs)
 
-    def update_mod(self, text: str, mark_finished: bool = False) -> None:
-        self.mod_count.set_label(text)
+    def mark_finished(self) -> None:
+        self.mod_count.set_label(preconnect.all_updated)
+        model = self.tree.get_model()
+        for row in model:
+            row[2] = checkmark
 
     def add_errors(self, errors: list[str]) -> None:
         self.error_tree.extend(errors)

@@ -460,7 +460,6 @@ crumbs = Crumbs(
     default="Servers > ",
 )
 
-checkmark = "✓"
 no_mods = "No local mods found."
 no_servers = "No server metadata to list."
 

@@ -29,8 +29,9 @@ from dzgui.const.constants import (
 from dzgui.const.enum import Preferences
 from dzgui.init.proc import foreground, is_dayz_running, is_steam_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
+from dzgui.strings.server_mods import checkmark
 from dzgui.util.format import format_mib
-from dzgui.util.strings import dialog, server_timeout, checkmark
+from dzgui.util.strings import dialog, server_timeout
 from dzgui.util.symlink import rebuild_symlinks
 from dzgui.views.dialogs.generic import ExceptionDialog
 from dzgui.views.dialogs.servers import ServerDetailsDialog, ServerModDialog
@@ -140,10 +141,10 @@ class ConnectionManager:
             version_file = prefs.paths.version
             self.missing_mods = get_needs_update(version_file, hashes)
 
-            # TODO: walk through missing mods and update remote_mods store
             for mod in remote_mods:
                 if any(mod[1] in tuple for tuple in self.missing_mods):
-                    mod[2] = "Needs updating"
+                    # TODO: store in strings
+                    mod[2] = "⟳"
 
             if local_version is not None:
                 pefile_path = PeFile.get_pefile_path(steam_path, info.game_id)
@@ -159,7 +160,6 @@ class ConnectionManager:
         client = self.controller.query_config(Preferences.CLIENT)
         running = is_steam_running(client)
         steam_proc = SteamProcess(client_name, running)
-        # /home/USER/.var/app/com.valvesoftware.Steam
 
         self.foreground_cmd = prefs.foreground_cmd
         game_mode = prefs.is_game_mode
@@ -248,7 +248,6 @@ class ConnectionManager:
         # TODO: test returncode
         # proc.returncode
         # TODO: wait for DAYZ_BINARY to load
-
         # TODO: add to history file and list store
 
     @call_on_thread("Waiting for Steam to update mods")
@@ -262,6 +261,7 @@ class ConnectionManager:
 
         if self.foreground_cmd is not None and raise_window is True:
             pid = os.getpid()
+            logger.info(f"Raising window with '{self.foreground_cmd}'")
             foreground(self.foreground_cmd, pid)
 
         for title, mod, stamp, size in self.missing_mods:
@@ -277,14 +277,12 @@ class ConnectionManager:
                     break
                 time.sleep(1)
 
+        # TODO: update version file
         # TODO: get config path or just push steam path directly
         rebuild_symlinks(self.controller.get_prefs().paths.config)
-        # TODO: update version file
-
         # TODO: update tree checkmarks when finished
-        func = StoredFunc(
-            self.controller.update_status, "All mods updated.", mark_finished=True
-        )
+        # TODO: make this internal to preconnect page
+        func = StoredFunc(self.controller.update_status)
         self.thread_man.set_cleanup_func(func)
 
     def update_and_connect(self, raise_window: bool) -> None:
