@@ -52,6 +52,7 @@ lint = [
     "ruff==0.11.13",
     "PyGObject-stubs==2.13.0",
     "types-requests>=2.32.4",
+    "types-psutil==7.2.2.20260508",
 ]
 dev = [
     "dzgui[docs,test,lint]"
