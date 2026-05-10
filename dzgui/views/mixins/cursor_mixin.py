@@ -9,20 +9,25 @@ from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 
 
 class CursorMixin:
-    def _vim_nav(self, event: Gdk.EventKey):
+    def _vim_nav(self, event: Gdk.EventKey) -> bool:
         match event.keyval:
             case Gdk.KEY_g:
                 self._move_cursor(CursorPosition.TOP)
+                return True
             case Gdk.KEY_G:
                 self._move_cursor(CursorPosition.BOTTOM)
+                return True
             case Gdk.KEY_j:
                 self._move_cursor(CursorPosition.DOWN)
+                return True
             case Gdk.KEY_k:
                 self._move_cursor(CursorPosition.UP)
+                return True
             case Gdk.KEY_l | Gdk.KEY_Right:
                 if is_ctrl_mask(event):
-                    return
+                    return False
                 self.emitter.emit("request_button_box_focus")  # type: ignore
+                return True
             case _:
                 return False
 
@@ -56,5 +61,4 @@ class CursorMixin:
             dest = end
 
         path = Gtk.TreePath.new_from_indices([dest])
-        self.set_cursor(path)  # type: ignore
-        return True
+        self.set_cursor(path)  # type: ignore return True
