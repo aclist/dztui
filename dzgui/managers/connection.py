@@ -75,7 +75,6 @@ class Prerequisites:
     dayz_running: bool
     steam_proc: SteamProcess
     mods: list[str]
-    missing_mods: int
     foreground_cmd: str | None
     game_mode: bool
 
@@ -184,7 +183,6 @@ class ConnectionManager:
             dayz_running=dayz_running,
             steam_proc=steam_proc,
             mods=remote_mods,
-            missing_mods=len(self.missing_mods),
             foreground_cmd=self.foreground_cmd,  # TODO: change to bool
             game_mode=game_mode,
         )
@@ -245,7 +243,6 @@ class ConnectionManager:
         dialog = ExceptionDialog(self.controller, server_timeout)
         dialog.run()
 
-    # TODO: threading
     def _connect_steam(self) -> None:
         addr = f"{self.record.ip}:{self.record.gameport}"
         playername = self.controller.query_config(Preferences.NAME)
@@ -256,8 +253,12 @@ class ConnectionManager:
             self.thread_man.set_cleanup_func(func)
             return
 
+        self.thread_man.show_cancel(False)
         self.thread_man.update_dialog(waiting_for_launch)
         while True:
+            if self.controller.get_exit_event().is_set():
+                # TODO: some facility to also close spawned steam process
+                return
             if is_dayz_running():
                 break
         time.sleep(1)
@@ -290,6 +291,12 @@ class ConnectionManager:
             while True:
                 # NOTE: mods will finish at the same time
                 # TODO: check for early cancel event
+                # TODO: check global sigint event
+                if self.controller.get_exit_event().is_set():
+                    return
+                if self.controller.get_cancel_event().is_set():
+                    self.controller.clear_cancel_event()
+                    return
                 cur_size = get_mod_dir_size(mod_path)
                 if cur_size == size:
                     break
@@ -298,11 +305,11 @@ class ConnectionManager:
         update_signatures(self.missing_mods, prefs.paths.version)
         # TODO: get config path or just push steam path directly
         rebuild_symlinks(prefs.paths.config)
+        self._connect_steam()
 
-    @call_on_thread("Waiting for Steam to update mods")
+    @call_on_thread("Waiting for Steam to update mods", show_cancel=True)
     def update_and_connect(self, raise_window: bool) -> None:
         if len(self.missing_mods) > 0:
             self._update_mods(raise_window)
-            self._connect_steam()
         else:
             self._connect_steam()

@@ -91,6 +91,7 @@ class Statusbar(Gtk.Grid):
 
         self.set_by_context(enum, bar)
 
+    # TODO: unused
     def _on_notebook_page_returned(
         self, statusbar: Self, prior_context: NotebookPage
     ) -> None:
@@ -109,8 +110,9 @@ class Statusbar(Gtk.Grid):
         context: Union["ServerTab", NotebookPage],
     ) -> None:
         self.spinner.stop()
+        # TODO: CalcDist is being called when table is not loaded
         if dist is None:
-            self.set_by_context(context, self.playercount)
+            self.set_by_context(context, "")
         else:
             pretty = self.append_distance(dist)
             self.set_by_context(context, pretty)

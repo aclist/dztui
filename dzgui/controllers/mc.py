@@ -47,6 +47,7 @@ if TYPE_CHECKING:
     from dzgui.views.components.filter_panel import FilterPanel
     from dzgui.views.components.right_panel import RightPanel
     from dzgui.views.components.statusbar import Statusbar
+    from dzgui.views.pages.options import Options
     from dzgui.views.pages.preconnect import PreConnectionAssistant
     from dzgui.views.pages.servers import ServerNotebook
     from dzgui.views.trees.tree_log import LogTreeView
@@ -90,6 +91,7 @@ class Controller(GObject.GObject):
         self.pending_jobs = 1
 
         self.exit_event = threading.Event()
+        self.cancel_event = threading.Event()
         self.connection_man: ConnectionManager
 
     def get_emitter(self) -> Emitter:
@@ -463,6 +465,15 @@ class Controller(GObject.GObject):
     def set_exit_event(self) -> None:
         self.exit_event.set()
 
+    def set_cancel_event(self) -> None:
+        self.cancel_event.set()
+
+    def get_cancel_event(self) -> threading.Event:
+        return self.cancel_event
+
+    def clear_cancel_event(self) -> None:
+        self.cancel_event.clear()
+
     def open_connection_assistant(self, prereqs: "Prerequisites") -> None:
         self.open_page(NotebookPage.CONNECTION)
         self.mediator.preconnect.populate(prereqs)
@@ -479,4 +490,3 @@ class Controller(GObject.GObject):
 
     def get_steam_client_name(self) -> str:
         return self.mediator.options.get_client_name()
-

@@ -20,7 +20,9 @@ from gi.repository import Gtk, GLib  # noqa E402
 logger = logging.getLogger(APP_NAME)
 
 
-def call_on_thread(dialog_str: str, show_dialog: bool = True) -> Callable:
+def call_on_thread(
+    dialog_str: str, show_dialog: bool = True, show_cancel: bool = False
+) -> Callable:
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> None:
@@ -32,7 +34,7 @@ def call_on_thread(dialog_str: str, show_dialog: bool = True) -> Callable:
                 raise TypeError(
                     "Attribute 'thread_man' must be of type 'ThreadingManager'"
                 )
-            self.thread_man.call_on_thread(dialog_str, stored, show_dialog)
+            self.thread_man.call_on_thread(dialog_str, stored, show_dialog, show_cancel)
 
         return wrapper
 
@@ -57,15 +59,22 @@ class ThreadingManager:
         self.destroy_first = False
 
     def call_on_thread(
-        self, dialog_str: str, func: StoredFunc, show_dialog: bool = True
+        self,
+        dialog_str: str,
+        func: StoredFunc,
+        show_dialog: bool = True,
+        show_cancel: bool = False,
     ) -> None:
         def callback() -> None:
             func.call()
             GLib.idle_add(self._destroy_on_idle)
 
         if show_dialog:
-            self.wait_dialog = WaitDialog(self.controller, dialog_str, jobs=self.jobs)
+            self.wait_dialog = WaitDialog(
+                self.controller, dialog_str, jobs=self.jobs, show_cancel=show_cancel
+            )
             self.wait_dialog.show_all()
+
         thread = threading.Thread(target=callback)
         thread.start()
 
@@ -113,3 +122,6 @@ class ThreadingManager:
 
     def get_wait_dialog(self) -> WaitDialog:
         return self.wait_dialog
+
+    def show_cancel(self, state: bool) -> None:
+        GLib.idle_add(self.wait_dialog.show_cancel, state)

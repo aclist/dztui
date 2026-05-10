@@ -135,7 +135,7 @@ class ServerModDialog(ServerDialog):
         columns = [
             server_mods.mod,
             server_mods.mod_id,
-            server_mods.installed,
+            server_mods.up_to_date,
         ]
         for i, column_title in enumerate(columns):
             renderer = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.END)

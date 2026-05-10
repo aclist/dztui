@@ -87,7 +87,13 @@ class NotifyDialog(GenericDialog):
 
 
 class WaitDialog(GenericDialog):
-    def __init__(self, controller: "Controller", secondary: str, jobs: int = 1):
+    def __init__(
+        self,
+        controller: "Controller",
+        secondary: str,
+        jobs: int = 1,
+        show_cancel: bool = False,
+    ):
         super().__init__(
             controller=controller,
             text=strings.wait,
@@ -96,18 +102,28 @@ class WaitDialog(GenericDialog):
             secondary=secondary,
         )
 
+        self.controller = controller
         self.jobs = jobs
         self.cur_job = 1
+
+        self.cancel = Gtk.Button(label="Cancel", halign=Gtk.Align.CENTER)
+        self.cancel.connect("clicked", lambda _: self.controller.set_cancel_event())
 
         self.connect("delete-event", lambda widget, event: True)
         content = self.get_content_area()
         spinner = Gtk.Spinner()
         self.prog = Gtk.ProgressBar()
+
+        content.pack_end(self.cancel, NO_EXPAND, NO_FILL, 0)
         content.pack_end(spinner, NO_EXPAND, NO_FILL, 0)
+
         if self.jobs > 1:
             content.pack_end(self.prog, NO_EXPAND, NO_FILL, 0)
         else:
             spinner.start()
+
+        if show_cancel is False:
+            self.connect("realize", lambda _: self.cancel.set_visible(False))
 
     def update_text(self, msg: str) -> None:
         self.format_secondary_text(msg)
@@ -118,6 +134,9 @@ class WaitDialog(GenericDialog):
         fraction = self.cur_job / self.jobs
         self.prog.set_fraction(fraction)
         self.cur_job += 1
+
+    def show_cancel(self, state: bool) -> None:
+        self.cancel.set_visible(state)
 
 
 class QuitDialog(GenericDialog):

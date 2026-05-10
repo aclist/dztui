@@ -1,27 +1,26 @@
 import psutil
 import subprocess
 import shutil
-import sys
 
 from dzgui.const.constants import (
     DAYZ_BINARY,
     STEAM_CMD,
     FLATPAK_APPID,
+    FLATPAK_CMD,
     FLATPAK_RUN_CMD,
     FLATPAK_SANDBOX,
 )
-from dzgui.views.dialogs.early_alert import EarlyAlertDialog
-from dzgui.util.strings import init
 
 
 # TODO: move to util.proc
 def is_dayz_running() -> bool:
+    """Subprocesses spawned from Steam will not show up in regular process tree"""
     procs = []
     substring = DAYZ_BINARY
     for proc in psutil.process_iter():
         try:
             procs.append(proc.cmdline())
-        except Exception as e:
+        except Exception:
             continue
     return any(substring in item for sublist in procs for item in sublist)
 
@@ -37,10 +36,11 @@ def is_steam_running(cmd: str) -> bool:
         raise TypeError("Not a valid Steam client selection")
 
 
+# CHORE: test alternate clients
 def is_flatpak_steam_running() -> bool:
     if has_cmd(FLATPAK_CMD) is False:
         return False
-    proc = subprocess.check_output([FLATPAK_CMD, "ps"], capture_output=True, text=True)
+    proc = subprocess.check_output([FLATPAK_CMD, "ps"], text=True)
     lines = proc.stdout.splitlines()
     if FLATPAK_APPID in lines:
         return True

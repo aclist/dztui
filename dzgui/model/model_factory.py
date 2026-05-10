@@ -64,7 +64,7 @@ class ServerModCols:
 @dataclass(slots=True, frozen=True)
 class MenuCols:
     name: str
-    hidden: object  # GObject.TYPE_PYOBJECT
+    hidden: object
 
 
 class FastInsertListStore(ListStore):
@@ -108,6 +108,7 @@ class FastInsertListStore(ListStore):
             self.append(row)
 
     def append(self, row: list[Any] | tuple[Any, ...] | None = ...) -> TreeIter:
+        # FIXME: argument cannot be none
         """
         Optimized for speed, but makes no assurances about row homogeneity
         and may segfault if types and length are not identical to ListStore.
