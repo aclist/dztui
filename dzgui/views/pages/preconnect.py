@@ -192,7 +192,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         self.connect("map", self._on_map)
 
     def _on_map(self, widget: Self) -> None:
-        self.grab_focus()
         widgets = (
             self.tree_frame,
             self.progress_box,
@@ -278,7 +277,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         self.scrolled.set_visible(True)
         self.progress_box.set_visible(True)
         self.mods_placeholder.set_visible(False)
-        self.tree.grab_focus()
 
     def populate(self, prereqs: "Prerequisites") -> None:
         mods = prereqs.mods
@@ -309,6 +307,10 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             self.mod_count.set_text(f"{prefix}{str(total_mods)}.{suffix}")
 
         self._process_warnings(prereqs)
+        if self.tree.is_visible:
+            self.tree.grab_focus()
+        else:
+            self.grab_focus()
 
     def mark_finished(self) -> None:
         self.mod_count.set_label(preconnect.all_updated)
