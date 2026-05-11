@@ -32,12 +32,12 @@ class CursorMixin:
                 return False
 
     def _move_cursor(self, position: CursorPosition) -> bool:
-        cur_row = self.get_focused_row_index()  # type: ignore
         model = self.get_model()  # type: ignore
-        if model:
+        if len(model) > 0:
             end = len(model) - 1
         else:
-            return True
+            return False
+        cur_row = self.get_focused_row_index()  # type: ignore
 
         if position == CursorPosition.DOWN:
             if cur_row == end:
