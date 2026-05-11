@@ -55,10 +55,27 @@ class ProxyModelManager:
         self.proxy_model[treeiter][4] = playercount.players
         self.proxy_model[treeiter][6] = playercount.queue
 
-    # def append_to_history(self, row: list) -> None:
-    #    if len(self.control_model) == 10:
-    #        del self.control_model[0]
-    #    self.control_model.append(row)
+    def append_row_to_history(
+        self, history: list[str, str, str, str, int, int, int, str, int, int, str, bool]
+    ) -> None:
+        addr = history[7]
+        qport = history[8]
+
+        found = False
+        for i, row in enumerate(self.control_model):
+            if addr == row[7] and qport == row[8]:
+                print("record exists in history")
+                item = self.control_model.pop(i)
+                self.control_model.append(item)
+                found = True
+                break
+
+        if found is False:
+            self.control_model.append(history)
+        if len(self.control_model) == 11:
+            del self.control_model[0]
+
+        self.filter(FilterMode.INITIAL, skip_cache=True)
 
     def remove_row_from_control(self, record: "Record") -> None:
         if self.control_model is None:

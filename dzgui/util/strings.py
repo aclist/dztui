@@ -134,6 +134,7 @@ servers = {
     "Ctrl-m": "jump to maps field",
     "Ctrl-d": "select default LAN port",
     "Ctrl-n": "select custom LAN port",
+    "Ctrl-u": "connect to server from preconnect dialog",
     "Ctrl-i": "jump to IP insert field",
     "n": "navigate to next tab",
     "p": "navigate to previous tab",

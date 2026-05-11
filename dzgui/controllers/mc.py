@@ -389,7 +389,13 @@ class Controller(GObject.GObject):
         saved_tree = self.get_servers().get_saved()
         ServerModelManager(self, saved_tree).remove_by_record(record)
 
+    def add_to_history(self, record: dict[str, Any]) -> None:
+        tv = self.get_servers().get_recent()
+        ServerModelManager(self, tv).add_to_history(record)
+
     def remove_from_history(self, record: "Record") -> None:
+        # NOTE: remove action is only possible from history tree context menu,
+        # i.e., the active tree
         tv = self.get_active_treeview()
         ServerModelManager(self, tv).remove_from_history(record)
 

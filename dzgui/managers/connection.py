@@ -114,6 +114,7 @@ class ConnectionManager:
             self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
             return
 
+        self.history = res.as_row()
         record = res.get_record()
 
         # NOTE: store metadata for later connection
@@ -263,10 +264,13 @@ class ConnectionManager:
             if is_dayz_running():
                 break
             time.sleep(1)
-        # TODO: add self.record to history file and list store
-        # proxy_model.append_to_history()
-        func = StoredFunc(self.controller.open_page, NotebookPage.SERVERS)
+
+        func = StoredFunc(self._add_to_history_and_return)
         self.thread_man.set_cleanup_func(func)
+
+    def _add_to_history_and_return(self) -> None:
+        self.controller.add_to_history(self.history)
+        self.controller.open_page(NotebookPage.SERVERS)
 
     def _update_mods(self, raise_window: bool) -> None:
         # NOTE: fast enqueue all mods in auto mode

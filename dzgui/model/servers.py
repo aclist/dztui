@@ -214,22 +214,9 @@ class ServerModelManager:
         res = Servers.query_by_record(record)
         self._parse_single_record(res, delete=True)
 
-    # TODO:
-    # def add_to_history(self, record: Servers.Record) -> None:
-    # functionally similar to remove action
-    #    # needs to be called from controller against history tree, not current tree
-    #    proxy_man = self._get_proxy_man()
-    #    # proxy_man.append_row_to_history
-    #    control_model = proxy_man.get_control()
-    #    config_man = self.controller.get_config_man()
-    #    config_man.update_history_file(control_model)
-
-    def remove_from_history(self, record: Servers.Record) -> None:
-        """Fully unthreaded, just removes a row"""
+    def update_history(self) -> None:
         proxy_man = self._get_proxy_man()
-        proxy_man.remove_row_from_control(record)
         control_model = proxy_man.get_control()
-
         config_man = self.controller.get_config_man()
         config_man.update_history_file(control_model)
 
@@ -245,6 +232,17 @@ class ServerModelManager:
 
         self.first_iteration = False
         self.emitter.emit("servers_loaded_init")
+
+    def add_to_history(self, record: dict[str, Any]) -> None:
+        proxy_man = self._get_proxy_man()
+        row = Servers.parse_json([record])
+        proxy_man.append_row_to_history(row[0])
+        self.update_history()
+
+    def remove_from_history(self, record: Servers.Record) -> None:
+        proxy_man = self._get_proxy_man()
+        proxy_man.remove_row_from_control(record)
+        self.update_history()
 
     def add_by_str(self, addr: str) -> None:
         if addr.isdigit():
