@@ -35,7 +35,7 @@ from dzgui.const.constants import (
 from dzgui.const.enum import NotebookPage, Preferences
 from dzgui.init.proc import foreground, is_dayz_running, is_steam_running, is_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
-from dzgui.strings.dialogs import waiting_for_launch
+from dzgui.strings.dialogs import waiting_for_launch, waiting_for_mods
 from dzgui.strings.server_mods import checkmark, resync
 from dzgui.util.format import format_mib
 from dzgui.util.strings import dialog, server_timeout
@@ -256,12 +256,13 @@ class ConnectionManager:
         self.thread_man.show_cancel(False)
         self.thread_man.update_dialog(waiting_for_launch)
         while True:
+            # TODO: check cancel event
             if self.controller.get_exit_event().is_set():
                 # TODO: some facility to also close spawned steam process
                 return
             if is_dayz_running():
                 break
-        time.sleep(1)
+            time.sleep(1)
         # TODO: add self.record to history file and list store
         # proxy_model.append_to_history()
         func = StoredFunc(self.controller.open_page, NotebookPage.SERVERS)
@@ -271,10 +272,8 @@ class ConnectionManager:
         # NOTE: fast enqueue all mods in auto mode
         prefs = self.controller.get_prefs()
 
-        # TODO: increment dialog progress message
         for title, mod, stamp, size in self.missing_mods:
-            # TODO: boolean cancel button on threadman dialog sets event inside threadman
-            # check for early cancel event via sigint
+            # TODO: check cancel and exit events
             enqueue_mod(mod, self.appid)
             time.sleep(2)
 
@@ -286,12 +285,10 @@ class ConnectionManager:
         for title, mod, stamp, size in self.missing_mods:
             mod_path = self.workshop / mod
 
+            # NOTE: Steam updates mod chunks in parallel, will finish at the same time
             while mod_path.is_dir() is False:
                 time.sleep(1)
             while True:
-                # NOTE: mods will finish at the same time
-                # TODO: check for early cancel event
-                # TODO: check global sigint event
                 if self.controller.get_exit_event().is_set():
                     return
                 if self.controller.get_cancel_event().is_set():
@@ -303,11 +300,11 @@ class ConnectionManager:
                 time.sleep(1)
 
         update_signatures(self.missing_mods, prefs.paths.version)
-        # TODO: get config path or just push steam path directly
+        # TODO: just push steam path directly
         rebuild_symlinks(prefs.paths.config)
         self._connect_steam()
 
-    @call_on_thread("Waiting for Steam to update mods", show_cancel=True)
+    @call_on_thread(waiting_for_mods, show_cancel=True)
     def update_and_connect(self, raise_window: bool) -> None:
         if len(self.missing_mods) > 0:
             self._update_mods(raise_window)
