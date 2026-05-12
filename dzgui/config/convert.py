@@ -1,6 +1,7 @@
 import json
 import shlex
 from pathlib import Path
+from typing import Any
 
 
 """
@@ -34,7 +35,7 @@ def rc2json(file: Path) -> str:
         lex = shlex.shlex(f.read())
         lex.whitespace += "="
 
-    keys = {}
+    keys: dict[str, Any] = {}
     ips: list[str] = []
 
     toggles = ["auto_install", "fullscreen"]

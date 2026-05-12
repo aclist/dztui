@@ -89,7 +89,7 @@ def get_remote_signatures(mods: list[str]) -> list[tuple[str, str, int, int]]:
 
 # TODO:: set config to name=user, use official server and no mods,
 # ensure that formatted string is identical to fixture with same hash
-def connect(addr: str, appid: int, name: str, mods: list[str]) -> None:
+def connect(addr: str, appid: int, name: str, mods: list[str]) -> int:
     concat = concat_mods(mods)
     params = [
         "steam",
@@ -121,7 +121,7 @@ def find_user_id(path: Path) -> str | None:
 
 
 def vdf2json(path: Path) -> str:
-    def _istr(indent: int, string: str):
+    def _istr(indent: int, string: str) -> str:
         return (indent * "  ") + string
 
     jbuf = "{\n"

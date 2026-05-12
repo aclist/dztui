@@ -4,7 +4,7 @@ import struct
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import BinaryIO, Union
+from typing import BinaryIO, Self, Union
 
 from packaging.version import Version
 
@@ -69,7 +69,7 @@ class i64:
 
 class PackedData:
     @classmethod
-    def unpack(cls, data: BinaryIO):
+    def unpack(cls, data: BinaryIO) -> Self:
         r = []
         for key, value in cls.__annotations__.items():
             if value is str:
@@ -449,18 +449,18 @@ def get_app_path(folders_path: Path, appid: int) -> Path:
 
 
 # TODO: tests
-def compare_versions(local: DayZVersion, remote: DayZVersion) -> VersionMatch:
-    local_str = Version(dayz_version_to_str(local))
-    remote_str = Version(dayz_version_to_str(remote))
-
-    if local_str == remote_str:
-        return VersionMatch.SAME_VERSION
-
-    if local_str < remote_str:
-        return VersionMatch.LOCAL_OLDER
-
-    if local_str > remote_str:
-        return VersionMatch.LOCAL_NEWER
+#def compare_versions(local: DayZVersion, remote: DayZVersion) -> VersionMatch:
+#    local_str = Version(dayz_version_to_str(local))
+#    remote_str = Version(dayz_version_to_str(remote))
+#
+#    if local_str == remote_str:
+#        return VersionMatch.SAME_VERSION
+#
+#    if local_str < remote_str:
+#        return VersionMatch.LOCAL_OLDER
+#
+#    if local_str > remote_str:
+#        return VersionMatch.LOCAL_NEWER
 
 
 def get_pretty_version(steam_path: Path, appid: int) -> str | None:

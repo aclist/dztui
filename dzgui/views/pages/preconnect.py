@@ -313,6 +313,8 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
     def mark_finished(self) -> None:
         self.mod_count.set_label(preconnect.all_updated)
         model = self.tree.get_model()
+        if model is None:
+            return
         for row in model:
             row[2] = checkmark
 

@@ -75,4 +75,4 @@ class MenuTreeView(TreeView):
         model = self.get_model()
         _iter = self.get_focused_row_iter()
         rowtype = model.get_value(_iter, 1)
-        return rowtype.dict["tooltip"]
+        return str(rowtype.dict["tooltip"])

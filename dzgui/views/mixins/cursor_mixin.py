@@ -61,4 +61,5 @@ class CursorMixin:
             dest = end
 
         path = Gtk.TreePath.new_from_indices([dest])
-        self.set_cursor(path)  # type: ignore return True
+        self.set_cursor(path)  # type: ignore
+        return True
