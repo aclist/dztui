@@ -83,13 +83,12 @@ def main() -> None:
     if args.version is True:
         print(get_version())
         sys.exit(0)
-
     if args.uninstall is True:
         uninstall()
         sys.exit(0)
-
     if args.debug is True:
         warnings.filterwarnings("default", category=DeprecationWarning)
+
     version = get_version()
     set_locale()
 

@@ -221,7 +221,7 @@ def parse_json(json: list) -> list:
         mapname = row["map"].lower()
         players = row["players"]
         max_players = row["max_players"]
-        raw = [
+        raw = (
             name,
             mapname,
             view,
@@ -234,7 +234,7 @@ def parse_json(json: list) -> list:
             ping,
             provider,
             modded,
-        ]
+        )
         rows.append(raw)
     return rows
 
