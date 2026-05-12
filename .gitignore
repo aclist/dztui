@@ -8,3 +8,4 @@ build/
 .mypy_cache/
 notes.otl
 uv.lock
+.coverage
