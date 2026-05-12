@@ -28,7 +28,7 @@ from dzgui.init.prereqs import has_steam_client
 from dzgui.init.proc import has_cmd
 from dzgui.init.update import allow_updates, check_updates
 
-from dzgui.strings import init
+from dzgui.strings import boot
 
 from dzgui.util.map_count import get_map_count
 from dzgui.util.deck import is_steam_deck, is_game_mode
@@ -161,5 +161,5 @@ def main() -> None:
         foreground_cmd=tool,
     )
     # TODO: drop allow updates
-    print(init.all_ok)
+    print(boot.all_ok)
     App(prefs)
