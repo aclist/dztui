@@ -50,8 +50,6 @@ class WorkshopLinkDialog(GenericDialog):
     def _on_button_clicked(self, button: Gtk.Button, uid: str) -> None:
         # TODO: currently checks user id on instantiation
         self.controller.open_user_workshop(uid)
-        # client = self.controller.query_config(Preferences.CLIENT)
-        # open_user_workshop(uid, client)
 
     def _on_dialog_response(self, dialog: Self, resp: Gtk.ResponseType) -> None:
         match resp:

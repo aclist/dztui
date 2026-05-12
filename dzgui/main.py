@@ -28,6 +28,8 @@ from dzgui.init.prereqs import has_steam_client
 from dzgui.init.proc import has_cmd
 from dzgui.init.update import allow_updates, check_updates
 
+from dzgui.strings import init
+
 from dzgui.util.map_count import get_map_count
 from dzgui.util.deck import is_steam_deck, is_game_mode
 from dzgui.util.localize import set_locale
@@ -126,7 +128,7 @@ def main() -> None:
 
     if _is_steam_deck is False:
         # TODO: sudo escalation dialog
-        count = get_map_count()
+        # count = get_map_count()
         # TODO: move into module
         if has_steam_client() is False:
             EarlyAlertDialog(init.requires_steam)
@@ -147,7 +149,6 @@ def main() -> None:
             tool = cmd
             break
 
-    # TODO: push is_game_mode to preconnect dialog
     prefs = UserPrefs(
         is_steam_deck=_is_steam_deck,
         is_game_mode=_is_game_mode,
@@ -160,6 +161,5 @@ def main() -> None:
         foreground_cmd=tool,
     )
     # TODO: drop allow updates
-    # TODO: strings
-    print("All OK. Loading UI...")
+    print(init.all_ok)
     App(prefs)

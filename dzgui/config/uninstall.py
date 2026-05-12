@@ -1,5 +1,6 @@
-import shutil
+# import shutil
 from pathlib import Path
+
 
 def uninstall(path: Path) -> None:
     pass

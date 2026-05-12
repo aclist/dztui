@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 from importlib import resources
-from packaging.version import Version, InvalidVersion
+from packaging.version import Version
 
 from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, REQUEST_TIMEOUT
 from dzgui.const.endpoints import GITHUB_RELEASES, CODEBERG_RELEASES

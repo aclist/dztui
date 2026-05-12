@@ -145,11 +145,18 @@ class Options(Gtk.Box):
         self.force_button.set_sensitive(False)
 
         eb = InfoEventBox(strings.options.dl_eventbox, controller)
-        eb2 = InfoEventBox(strings.options.force_eventbox, controller)
+        # eb2 = InfoEventBox(strings.options.force_eventbox, controller)
 
+        from dzgui.views.components.buttons import SteamWorkshopButton
+
+        workshop_button = SteamWorkshopButton()  # label=strings.self_workshop)
+        workshop_button.connect(
+            "clicked", lambda _: self.controller.open_user_workshop(self.uid)
+        )
         mod_rows = [
-            [LeftLabel(strings.options.install_mode), self.mod_install_toggle, eb],
-            [LeftLabel(strings.options.force_update), self.force_button, eb2],
+            [LeftLabel("Steam Workshop"), workshop_button, eb],
+            # [LeftLabel(strings.options.install_mode), self.mod_install_toggle, eb],
+            # [LeftLabel(strings.options.force_update), self.force_button, eb2],
         ]
 
         self.dayz_version_label = Gtk.Label(label=strings.null)

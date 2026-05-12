@@ -21,7 +21,6 @@ def keys():
         "fav_server",
         "fav_label",
         "name",
-        "branch",
         "fullscreen",
         "steam_api",
         "auto_install",
@@ -29,7 +28,7 @@ def keys():
         "client",
         "ip_list",
         "use_miles",
-        "start_tab"
+        "start_tab",
     ]
 
 
