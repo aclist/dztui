@@ -30,8 +30,7 @@ class NoteDialog(GenericDialog):
         delete_button = Gtk.Button(label="Delete note")
         delete_button.set_sensitive(False)
         self.add_action_widget(delete_button, Gtk.ResponseType.CANCEL)
-        self.add_button("Update note", Gtk.ResponseType.OK)
-        self.ok = self.get_widget_for_response(Gtk.ResponseType.OK)
+        self.ok = self.add_button("Update note", Gtk.ResponseType.OK)
         self.ok.grab_default()
 
         self.entry = ValidatedEntry(controller, self.validate)

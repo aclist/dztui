@@ -73,7 +73,7 @@ class Prerequisites:
     passworded: bool
     dayz_running: bool
     steam_proc: SteamProcess
-    mods: list[str]
+    mods: list[list[str]]
     foreground_cmd: str | None
     game_mode: bool
 
@@ -89,7 +89,7 @@ class ConnectionManager:
         self.workshop: Path
 
         self.remote_mod_ids: list[str] = []
-        self.missing_mods: list[str, str, int, int] = []
+        self.missing_mods: list[tuple[str, str, int, int]] = []
 
     @call_on_thread(dialog.querying)
     def connect_by_id(self, _id: int, key: str) -> None:
@@ -206,7 +206,7 @@ class ConnectionManager:
         mods = Servers.get_rules(record)
         steam_path = self.controller.query_config(Preferences.DEFAULT)
         local = get_local_mod_ids(steam_path)
-        alpha_mods = [
+        alpha_mods: list[list[str]] = [
             [
                 mod.name,
                 str(mod.workshop_id),
@@ -231,7 +231,7 @@ class ConnectionManager:
             destroy_first=True,
         )
 
-    def _present_modlist_dialog(self, mods: list[str]) -> None:
+    def _present_modlist_dialog(self, mods: list[list[str]]) -> None:
         dialog = ServerModDialog(self.controller, mods)
         dialog.run()
 

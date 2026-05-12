@@ -464,7 +464,7 @@ def query_by_ip(addr: str) -> A2SInfo:
     record = short_ip_to_record(addr)
     return query_by_record(record, update_gameport=True)
 
-def query_by_id(server_id: int, key: str) -> dict[Any] | None:
+def query_by_id(server_id: int, key: str) -> A2SInfo:
     """
     Used with numeric Battlemetrics IDs
     """

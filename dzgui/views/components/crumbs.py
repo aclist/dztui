@@ -12,6 +12,7 @@ from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa E402
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.views.base import Notebook
+    from dzgui.views.pages.servers import ServerNotebook
 
 
 class Breadcrumbs(Gtk.Label):
@@ -30,10 +31,12 @@ class Breadcrumbs(Gtk.Label):
         self, notebook: "Notebook", page: Gtk.Widget, index: int
     ) -> None:
         label = notebook.get_tab_label_text(page)
+        if label is None:
+            return
         self.set_server_crumbs(label)
 
     def _on_notebook_page_changed(
-        self, notebook: "Notebook", page: Gtk.Widget, index: int
+        self, notebook: "Notebook", page: "ServerNotebook", index: int
     ) -> None:
         enum = notebook.get_page_by_enum()
         if enum == NotebookPage.SERVERS:
