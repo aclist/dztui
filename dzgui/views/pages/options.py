@@ -102,13 +102,28 @@ class Options(Gtk.Box):
             Preferences.WINDOW,
         )
 
-        self.client_combo = Gtk.ComboBoxText()
-        for text in (
-            options.steam_combo,
-            options.flatpak_combo,
-            options.flatpak_container_combo,
-        ):
-            self.client_combo.append_text(text)
+        # TODO: make this an abstract class
+        client_store = Gtk.ListStore(str, str)
+        clients = (
+            (
+                options.steam_combo,
+                STEAM_CMD,
+            ),
+            (
+                options.flatpak_combo,
+                FLATPAK_RUN_CMD,
+            ),
+            (
+                options.flatpak_container_combo,
+                FLATPAK_SANDBOX,
+            ),
+        )
+        for client in clients:
+            client_store.append(client)
+        self.client_combo = Gtk.ComboBox.new_with_model(client_store)  # Text()
+        renderer_text = Gtk.CellRendererText()
+        self.client_combo.pack_start(renderer_text, True)
+        self.client_combo.add_attribute(renderer_text, "text", 0)
         self.client_combo.set_active(0)
         self.client_combo.connect("changed", self._on_client_changed)
 
@@ -342,16 +357,9 @@ class Options(Gtk.Box):
         self.controller.update_config(Preferences.START_TAB, index)
 
     def _on_client_changed(self, combo: Gtk.ComboBoxText) -> None:
-        # TODO: use two columns or constants here, not strings
-        client = combo.get_active_text()
-        match client:
-            case "Steam":
-                value = STEAM_CMD
-            case "Flatpak":
-                value = FLATPAK_RUN_CMD
-            case "Flatpak (container)":
-                value = FLATPAK_SANDBOX
-        self.controller.update_config(Preferences.CLIENT, value)
+        _iter = combo.get_active_iter()
+        real_cmd = combo.get_model()[_iter][1]
+        self.controller.update_config(Preferences.CLIENT, real_cmd)
 
     def _on_radio_toggled(self, button: Gtk.RadioButton, context: Preferences) -> None:
         try:
@@ -501,7 +509,6 @@ class Options(Gtk.Box):
         # TODO: not happy with this
         active_combo = query.get_client_index(config["client"])
         self.client_combo.set_active(active_combo)
-        # active_combo = 0
 
         start_tab = self.controller.query_config(Preferences.START_TAB)
         self.start_tab_combo.set_active(start_tab)
