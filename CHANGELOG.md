@@ -34,6 +34,7 @@
 - Preconnect dialog
 - Preconnect warnings/failsafes like filesize
 
+
 ## Changed
 - Reduce padding on keys button
 - Boldface breadcrumbs
@@ -44,11 +45,13 @@
 - Cull servers with abnormal queue values (integer overflow: 2147483647)
 - Packaging structure
 - Suppress log messages from imported modules
+- Embed Workshop link in Options menu
 
 ## Dropped
 - Debug mode
 - Branch switching
 - Manual mod install mode (describe rationale)
+- Force update mods
 
 ## Fixed
 - Longstanding issue with left clicks not registering as tree selection changes after spamming keyboard input

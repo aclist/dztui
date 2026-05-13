@@ -41,6 +41,13 @@ if TYPE_CHECKING:
     from dzgui.controllers.emitter import Emitter
 
 
+class ShortHBox(Gtk.Box):
+    def __init__(self, widget: Gtk.Widget) -> None:
+        super().__init__(spacing=5, halign=Gtk.Align.START)
+
+        self.pack_start(widget, NO_EXPAND, NO_FILL, NO_PADDING)
+
+
 class Options(Gtk.Box):
     def __init__(self, controller: "Controller"):
         super().__init__(
@@ -96,15 +103,16 @@ class Options(Gtk.Box):
         )
 
         self.client_combo = Gtk.ComboBoxText()
-        # TODO: strings
-        self.client_combo.append_text("Steam")
-        self.client_combo.append_text("Flatpak")
-        self.client_combo.append_text("Flatpak (container)")
+        for text in (
+            options.steam_combo,
+            options.flatpak_combo,
+            options.flatpak_container_combo,
+        ):
+            self.client_combo.append_text(text)
         self.client_combo.set_active(0)
         self.client_combo.connect("changed", self._on_client_changed)
-        # TODO: short hbox class
-        client_hbox = Gtk.Box(spacing=5, halign=Gtk.Align.START)
-        client_hbox.pack_start(self.client_combo, NO_EXPAND, NO_FILL, NO_PADDING)
+
+        client_hbox = ShortHBox(self.client_combo)
 
         self.distance_toggle = self.make_binary_radio(
             strings.options.km, strings.options.mi, Preferences.DIST
@@ -112,10 +120,10 @@ class Options(Gtk.Box):
 
         combo_store = Gtk.ListStore(str, object)
         tabs = (
-            ("Server browser", ServerTab.BROWSER),
-            ("Saved servers", ServerTab.SAVED),
-            ("Recent", ServerTab.RECENT),
-            ("LAN", ServerTab.LAN),
+            (options.server_combo, ServerTab.BROWSER),
+            (options.saved_combo, ServerTab.SAVED),
+            (options.recent_combo, ServerTab.RECENT),
+            (options.lan_combo, ServerTab.LAN),
         )
         for tab in tabs:
             combo_store.append(tab)
@@ -124,15 +132,15 @@ class Options(Gtk.Box):
         self.start_tab_combo.pack_start(renderer_text, True)
         self.start_tab_combo.add_attribute(renderer_text, "text", 0)
         self.start_tab_combo.set_active(0)
-        start_tab_hbox = Gtk.Box(spacing=5, halign=Gtk.Align.START)
-        start_tab_hbox.pack_start(self.start_tab_combo, NO_EXPAND, NO_FILL, NO_PADDING)
+
+        start_tab_hbox = ShortHBox(self.start_tab_combo)
         self.start_tab_combo.connect("changed", self._on_start_tab_changed)
 
         pref_rows = [
             [LeftLabel(strings.options.client), client_hbox],
             [LeftLabel(strings.options.window_size), self.fullscreen_toggle],
             [LeftLabel(strings.options.distance), self.distance_toggle],
-            [LeftLabel("Start tab"), start_tab_hbox],
+            [LeftLabel(options.start_tab), start_tab_hbox],
             [LeftLabel(strings.options.name), self.player_box],
         ]
 
@@ -191,7 +199,7 @@ class Options(Gtk.Box):
             hexpand=True,
         )
 
-        developers = Gtk.Button(label="Developers", halign=Gtk.Align.START)
+        developers = Gtk.Button(label=options.developers, halign=Gtk.Align.START)
         developers.connect("clicked", self._on_developers_clicked)
 
         prefs = self.controller.get_prefs()
