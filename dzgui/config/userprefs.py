@@ -17,4 +17,3 @@ class UserPrefs:
     allow_updates: bool
     paths: "Xdg"
     use_miles: bool
-    foreground_cmd: str | None

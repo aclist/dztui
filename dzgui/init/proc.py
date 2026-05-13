@@ -60,6 +60,7 @@ def has_cmd(cmd: str) -> bool:
     return False
 
 
+@deprecated("dropped in favor of Gtk native methods")
 def foreground(cmd: str, pid: int) -> None:
     if cmd == "wmctrl":
         proc = subprocess.run(["wmctrl", "-ilp"], capture_output=True, text=True)

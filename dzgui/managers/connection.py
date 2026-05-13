@@ -32,7 +32,7 @@ from dzgui.const.constants import (
     APPNAME_DAYZ_EXP,
 )
 from dzgui.const.enum import NotebookPage, Preferences
-from dzgui.init.proc import foreground, is_dayz_running, is_steam_running
+from dzgui.init.proc import is_dayz_running, is_steam_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings.dialogs import waiting_for_launch, waiting_for_mods
 from dzgui.strings.server_mods import checkmark, resync
@@ -74,7 +74,6 @@ class Prerequisites:
     dayz_running: bool
     steam_proc: SteamProcess
     mods: list[list[str]]
-    foreground_cmd: str | None
     game_mode: bool
 
 
@@ -167,7 +166,6 @@ class ConnectionManager:
         running = is_steam_running(client)
         steam_proc = SteamProcess(client_name, running)
 
-        self.foreground_cmd = prefs.foreground_cmd
         game_mode = prefs.is_game_mode
 
         prereqs = Prerequisites(
@@ -183,7 +181,6 @@ class ConnectionManager:
             dayz_running=dayz_running,
             steam_proc=steam_proc,
             mods=remote_mods,
-            foreground_cmd=self.foreground_cmd,  # TODO: change to bool
             game_mode=game_mode,
         )
 
@@ -281,10 +278,9 @@ class ConnectionManager:
             enqueue_mod(mod, self.appid)
             time.sleep(2)
 
-        if self.foreground_cmd is not None and raise_window is True:
-            pid = os.getpid()
-            logger.info(f"Raising window with '{self.foreground_cmd}'")
-            foreground(self.foreground_cmd, pid)
+        if raise_window is True:
+            logger.info(f"Bringing window to foreground")
+            GLib.idle_add(self.controller.present_window)
 
         for title, mod, stamp, size in self.missing_mods:
             mod_path = self.workshop / mod

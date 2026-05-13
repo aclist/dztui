@@ -7,7 +7,7 @@ import warnings
 from typing import TYPE_CHECKING
 
 from dzgui.api.mods import remove_stale_signatures
-from dzgui.const.constants import APP_NAME, FOREGROUND_CMDS
+from dzgui.const.constants import APP_NAME
 from dzgui.const.enum import Preferences
 from dzgui.config.ipdb import get_ipdb
 from dzgui.config.query import lookup
@@ -142,12 +142,6 @@ def main() -> None:
     local_coords = get_local_coords(XDG.ips)
     use_miles = lookup(XDG.config, Preferences.DIST)
 
-    tool = None
-    for cmd in FOREGROUND_CMDS:
-        if has_cmd(cmd) is True:
-            tool = cmd
-            break
-
     prefs = UserPrefs(
         is_steam_deck=_is_steam_deck,
         is_game_mode=_is_game_mode,
@@ -157,7 +151,6 @@ def main() -> None:
         allow_updates=allow,
         paths=XDG,
         use_miles=use_miles,
-        foreground_cmd=tool,
     )
     # TODO: drop allow updates
     print(boot.all_ok)

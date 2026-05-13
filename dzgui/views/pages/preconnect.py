@@ -116,7 +116,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             visible=False,
             has_tooltip=True,
             sensitive=False,
-            tooltip_text="This option is available if wmctrl or xdotool is installed on the system",
+            tooltip_text="Foreground the DZGUI window after mod downloads are queued",
             active=True,
         )
         self.button_box = Gtk.Box(
@@ -303,8 +303,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             self.raise_window.set_visible(False)
         else:
             self.raise_window.set_visible(True)
-            if prereqs.foreground_cmd is not None:
-                self.raise_window.set_sensitive(True)
+            self.raise_window.set_sensitive(True)
 
             pretty = number(prereqs.required_space)
             suffix = f" Need to download {pretty} MiB of mod updates."
