@@ -246,7 +246,8 @@ class ConnectionManager:
     def _connect_steam(self) -> None:
         addr = f"{self.record.ip}:{self.record.gameport}"
         playername = self.controller.query_config(Preferences.NAME)
-        rc = connect(addr, self.appid, playername, self.remote_mod_ids)
+        client = self.controller.query_config(Preferences.CLIENT)
+        rc = connect(client, addr, self.appid, playername, self.remote_mod_ids)
         if rc != 0:
             # TODO: log/pop the error
             func = StoredFunc(self.controller.update_status)

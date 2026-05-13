@@ -8,6 +8,7 @@ from pathlib import Path
 
 from dzgui.const.constants import APP_NAME
 from dzgui.const.endpoints import STEAM_PUBLISHED_FILES
+from dzgui.util.bash import concat_bash_args
 
 
 logger = logging.getLogger(APP_NAME)
@@ -89,10 +90,11 @@ def get_remote_signatures(mods: list[str]) -> list[tuple[str, str, int, int]]:
 
 # TODO: set config to name=user, use official server and no mods,
 # ensure that formatted string is identical to fixture with same hash
-def connect(addr: str, appid: int, name: str, mods: list[str]) -> int:
+def connect(client: str, addr: str, appid: int, name: str, mods: list[str]) -> int:
     concat = concat_mods(mods)
+    client_args = concat_bash_args(client)
+    # TODO: test flatpak arg expansion
     params = [
-        "steam",
         "-applaunch",
         str(appid),
         f"-connect={addr}",
@@ -102,7 +104,7 @@ def connect(addr: str, appid: int, name: str, mods: list[str]) -> int:
         f"-name={name}",
         f"-mod={concat}",
     ]
-    proc = subprocess.run([*params])
+    proc = subprocess.run([*client_args, *params])
     return proc.returncode
 
 
