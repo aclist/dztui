@@ -2,6 +2,7 @@ from typing import Callable, Self, TYPE_CHECKING
 
 from dzgui.util.clip import copy_clipboard
 from dzgui.util.format import pluralize
+from dzgui.strings import buttons
 from dzgui.util.strings import (
     alert_button_tooltip,
     atomic_buttons,
@@ -169,8 +170,8 @@ class SteamTextButton(SteamConnectButton):
 
 class SteamWorkshopButton(SteamTextButton):
     def __init__(self) -> None:
-        super().__init__(label="Steam Workshop")
-        self.set_tooltip_text("connect to workshop")
+        super().__init__(label=buttons.workshop)
+        self.set_tooltip_text(buttons.workshop_tooltip)
 
 
 class AddButton(IconTextButton):

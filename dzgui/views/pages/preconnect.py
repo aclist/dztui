@@ -225,14 +225,19 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         warnings: list[str] = []
         errors: list[str] = []
 
+        resync_msg = (
+            f"If you recently installed {prereqs.build} or moved it to a different drive,\n"
+            "restart Steam to allow these changes to synchronize, then try again."
+        )
+
         """Errors"""
         if prereqs.binary_missing:
             errors.append(
-                f"Remote server is running the build '{prereqs.build}', but it is not installed."
+                f"Remote server is running the build '{prereqs.build}', but it is not installed.\n{resync_msg}"
             )
         elif prereqs.local_version != prereqs.remote_version:
             errors.append(
-                f"Local client version '{prereqs.local_version}' does not match remote version '{prereqs.remote_version}'."
+                f"Local client version '{prereqs.local_version}' does not match remote version '{prereqs.remote_version}'.\n{resync_msg}"
             )
         if prereqs.required_space > prereqs.available_space:
             required_pretty = number(prereqs.required_space)
@@ -307,7 +312,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             self.mod_count.set_text(f"{prefix}{str(total_mods)}.{suffix}")
 
         self._process_warnings(prereqs)
-        if self.tree.is_visible:
+        if self.tree.is_visible():
             self.tree.grab_focus()
         else:
             self.grab_focus()

@@ -20,8 +20,9 @@ from dzgui.const.constants import (
 )
 from dzgui.const.endpoints import STEAM_API_SETUP, BM_API_SETUP
 from dzgui.const.enum import Preferences, ServerTab
-from dzgui.strings import errors
+from dzgui.strings import errors, options
 from dzgui.util import strings, css, open_links
+from dzgui.views.components.buttons import SteamWorkshopButton
 from dzgui.views.components.labels import LeftLabel
 from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.buttons import WebButton
@@ -144,19 +145,14 @@ class Options(Gtk.Box):
         # NOTE: sensitivity state is updated after config file is loaded
         self.force_button.set_sensitive(False)
 
-        eb = InfoEventBox(strings.options.dl_eventbox, controller)
-        # eb2 = InfoEventBox(strings.options.force_eventbox, controller)
-
-        from dzgui.views.components.buttons import SteamWorkshopButton
+        eb = InfoEventBox(options.workshop_eventbox, controller)
 
         workshop_button = SteamWorkshopButton()  # label=strings.self_workshop)
         workshop_button.connect(
             "clicked", lambda _: self.controller.open_user_workshop(self.uid)
         )
         mod_rows = [
-            [LeftLabel("Steam Workshop"), workshop_button, eb],
-            # [LeftLabel(strings.options.install_mode), self.mod_install_toggle, eb],
-            # [LeftLabel(strings.options.force_update), self.force_button, eb2],
+            [LeftLabel(options.workshop_label), workshop_button, eb],
         ]
 
         self.dayz_version_label = Gtk.Label(label=strings.null)
