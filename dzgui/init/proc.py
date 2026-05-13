@@ -2,6 +2,8 @@ import psutil
 import subprocess
 import shutil
 
+from warnings import deprecated
+
 from dzgui.const.constants import (
     DAYZ_BINARY,
     STEAM_CMD,
