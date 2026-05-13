@@ -13,9 +13,10 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
+    from queue import Queue
     from dzgui.const.enum import ServerTab
     from dzgui.controllers.mc import Controller
-    from queue import Queue
+    from dzgui.util.ip import Coords
 
 logger = logging.getLogger(APP_NAME)
 
@@ -74,13 +75,13 @@ class CalcDist:
         dist = self.compare(self.ip)
         self.result_queue.put([self.addr, dist, self.enum])
 
-    def compare(self, remote: str) -> int | None:
+    def compare(self, remote_ip: str) -> Haversine | None:
         prefs = self.controller.get_prefs()
         local = prefs.coords
         if local is None:
             return None
         try:
-            remote = get_coords(prefs.paths.ips, remote)
+            remote = get_coords(prefs.paths.ips, remote_ip)
         except Exception:
             return None
 

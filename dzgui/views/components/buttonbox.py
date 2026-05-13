@@ -12,11 +12,15 @@ from gi.repository import Gtk, Gdk  # noqa E402
 logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
+    from dzgui.const.enum import NotebookPage
+    from dzgui.controller.mc import Controller
     from dzgui.controllers.emitter import Emitter
 
 
 class ContextualButton(Gtk.Button):
-    def __init__(self, label, opens, tooltip, context):
+    def __init__(
+        self, label: str, opens: "NotebookPage", tooltip: str, context: ButtonType
+    ) -> None:
         super().__init__(
             label=label,
             tooltip_text=tooltip,
@@ -28,7 +32,7 @@ class ContextualButton(Gtk.Button):
 
 
 class ButtonBox(Gtk.Box):
-    def __init__(self, controller) -> None:
+    def __init__(self, controller: "Controller") -> None:
         super().__init__(
             spacing=6,
             margin_top=0,

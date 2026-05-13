@@ -41,7 +41,7 @@ def is_flatpak_steam_running() -> bool:
     if has_cmd(FLATPAK_CMD) is False:
         return False
     proc = subprocess.check_output([FLATPAK_CMD, "ps"], text=True)
-    lines = proc.stdout.splitlines()
+    lines = proc.splitlines()
     if FLATPAK_APPID in lines:
         return True
     return False

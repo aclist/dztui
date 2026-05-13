@@ -28,9 +28,9 @@ def get_local_signatures(version_file: Path) -> dict[str, int]:
     hashes: dict[str, int] = {}
     lines = version_file.read_text().splitlines()
     for line in lines:
-        line = line.split(",")
-        _id = line[0]
-        _hash = int(line[1])
+        data = line.split(",")
+        _id = data[0]
+        _hash = int(data[1])
         hashes[_id] = _hash
     return hashes
 
@@ -49,7 +49,7 @@ def get_needs_update(
     version_file: Path, remote_hashes: list[tuple[str, str, int, int]]
 ) -> list[tuple[str, str, int, int]]:
     local_hashes = get_local_signatures(version_file)
-    needs_update: list[tuple[str, str]] = []
+    needs_update: list[tuple[str, str, int, int]] = []
     for title, _id, _hash, size in remote_hashes:
         if _id not in local_hashes:
             needs_update.append((title, _id, _hash, size))
@@ -64,7 +64,7 @@ def get_remote_signatures(mods: list[str]) -> list[tuple[str, str, int, int]]:
     """
     Attempts to continue connecting even if signatures are empty
     """
-    payload: dict[str, str] = {}
+    payload: dict[str, str | int] = {}
     payload["itemcount"] = len(mods)
     for i, mod in enumerate(mods):
         payload[f"publishedfileids[{i}]"] = mod
@@ -76,13 +76,13 @@ def get_remote_signatures(mods: list[str]) -> list[tuple[str, str, int, int]]:
     if r.status_code != 200:
         return []
 
-    hashes: list[tuple[str, int, int]] = []
+    hashes: list[tuple[str, str, int, int]] = []
     j = r.json()
     rows = j["response"]["publishedfiledetails"]
     for row in rows:
-        title = row["title"]
-        _id = row["publishedfileid"]
-        time = row["time_updated"]
+        title = str(row["title"])
+        _id = str(row["publishedfileid"])
+        time = int(row["time_updated"])
         size = int(row["file_size"])
         hashes.append((title, _id, time, size))
     return hashes

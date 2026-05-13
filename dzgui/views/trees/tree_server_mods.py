@@ -62,6 +62,7 @@ class ServerModTreeView(ContextMixin, TreeView):  # type: ignore
         path = self.get_focused_row_path()
         model = self.get_model()
         tree_iter = model.get_iter(path)
+        # FIXME: https://docs.gtk.org/gtk3/method.TreeModel.get.html
         mod = model.get(tree_iter, 1)[0]
         return str(mod)
 

@@ -130,7 +130,7 @@ def is_valid_port(port: str) -> bool:
 
 
 @deprecated("use ips.csv")
-def get_local_coords(ip: str):
+def get_local_coords(ip: str) -> str:
     url = COORDS_API + "/" + ip
     # local res=$(curl -Ls "$url" | jq -r '"\(.lat)\n\(.lon)"')
     return url

@@ -33,35 +33,35 @@ class VersionMatch(Enum):
     SAME_VERSION = 3
 
 
-class u8:
+class u8(int):
     fmt = "B"
 
 
-class u16:
+class u16(int):
     fmt = "H"
 
 
-class u32:
+class u32(int):
     fmt = "L"
 
 
-class u64:
+class u64(int):
     fmt = "Q"
 
 
-class i8:
+class i8(int):
     fmt = "b"
 
 
-class i16:
+class i16(int):
     fmt = "h"
 
 
-class i32:
+class i32(int):
     fmt = "l"
 
 
-class i64:
+class i64(int):
     fmt = "q"
 
 
@@ -330,6 +330,7 @@ def get_version(file: Path) -> FileVersion:
         magic = hex(struct.unpack("<H", (blob[0:2]))[0])
         f.seek(pos)
 
+        OBJW: OPTIONAL_HDR_WIN_X86 | OPTIONAL_HDR_WIN_X64
         if magic == PE32_x86:
             OPTIONAL_HDR_X86.unpack(f)
             OBJW = OPTIONAL_HDR_WIN_X86.unpack(f)
@@ -363,7 +364,7 @@ def get_version(file: Path) -> FileVersion:
         table = RESOURCE_DIRECTORY_TABLE.unpack(f)
         total = table.number_of_name_entries + table.number_of_id_entries
 
-        for entry in range(total):
+        for _iter in range(total):
             entry = RESOURCE_DIRECTORY_ENTRY.unpack(f)
             if entry.name_or_id == VERSION_RESOURCE:
                 while entry.data_or_subdir & (1 << 31):
@@ -371,7 +372,7 @@ def get_version(file: Path) -> FileVersion:
                     seek_to_hex(hex(offset + shift), f)
                     table = RESOURCE_DIRECTORY_TABLE.unpack(f)
                     total = table.number_of_name_entries + table.number_of_id_entries
-                    for entry in range(total):
+                    for _iter in range(total):
                         entry = RESOURCE_DIRECTORY_ENTRY.unpack(f)
                 break
             if entry.name_or_id > VERSION_RESOURCE:
@@ -383,7 +384,7 @@ def get_version(file: Path) -> FileVersion:
         offset = data.data_rva - hdr.virtual_address + hdr.pointer_to_raw_data
         seek_to_hex(hex(offset), f)
 
-        hdr = VS_VERSION_INFO_HDR.unpack(f)
+        VS_VERSION_INFO_HDR.unpack(f)
         # https://learn.microsoft.com/en-us/windows/win32/menurc/vs-versioninfo
         byte_len = len(VS_VERSION_INFO_ID.encode("utf-16le"))
         label = f.read(byte_len).decode("utf-16le")

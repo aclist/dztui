@@ -49,7 +49,7 @@ def get_local_mods(workshop_path: Path) -> list[Path]:
     return mods
 
 
-def parse_meta(file: Path) -> ModMeta:
+def parse_meta(file: Path) -> ModMeta | None:
     mod = file / "meta.cpp"
     if mod.exists() is False:
         return None
@@ -135,6 +135,8 @@ def remove_stale_signatures(config: Path, versions: Path) -> None:
 def find_stale_mods(config: Path) -> list[int]:
     def push_record(rec: str) -> list:
         record = fqip_to_record(rec)
+        if record is None:
+            return []
         try:
             mods = get_rules(record)
         except Exception:

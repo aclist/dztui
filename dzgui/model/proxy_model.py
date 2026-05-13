@@ -28,7 +28,9 @@ class ProxyModelManager:
     """
 
     def __init__(self, filter_man: "FilterManager") -> None:
-        self.filter_cache = {}
+        self.filter_cache: dict[tuple[str], tuple["FastInsertListStore", list[Any]]] = (
+            {}
+        )
 
         self.proxy_model: "FastInsertListStore" = None
         self.filter_man = filter_man
@@ -55,16 +57,18 @@ class ProxyModelManager:
         self.proxy_model[treeiter][4] = playercount.players
         self.proxy_model[treeiter][6] = playercount.queue
 
+    # FIXME: typehint -> tuple
     def append_row_to_history(
         self, history: list[str, str, str, str, int, int, int, str, int, int, str, bool]
     ) -> None:
         addr = history[7]
         qport = history[8]
 
+        if self.control_model is None:
+            raise AttributeError("Trying to append row to empty model")
         found = False
         for i, row in enumerate(self.control_model):
             if addr == row[7] and qport == row[8]:
-                print("record exists in history")
                 item = self.control_model.pop(i)
                 self.control_model.append(item)
                 found = True

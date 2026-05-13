@@ -24,12 +24,12 @@ def lookup(path: Path, enum: Preferences) -> Any:
 
 
 def get_config(path: Path) -> dict:
-    # TODO: is this being called twice?
+    # TODO: is this being called multiple times?
     try:
         json = read_json(path)
+        return json
     except Exception as e:
         raise e
-    return json
 
 
 def get_favorites(path: Path) -> list[str]:

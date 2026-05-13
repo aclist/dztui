@@ -81,9 +81,9 @@ class A2SInfo:
     def get_info(self) -> a2s.SourceInfo | None:
         return self.info
 
-    def as_row(self) -> dict[str, Any] | None:
+    def as_row(self) -> dict[str, Any]:
         if self.info is None:
-            return None
+            raise AttributeError("No record to convert")
         ip = self.record.ip
         qport = self.record.qport
         return source_info_to_dict(ip, qport, self.info)
@@ -239,7 +239,7 @@ def parse_json(json: list) -> list:
     return rows
 
 
-def source_info_to_dict(ip: str, qport: int, info: "SourceInfo") -> dict[str, Any]:
+def source_info_to_dict(ip: str, qport: int, info: "SourceInfo") -> dict[str, Any] | None:
     try:
         name = info.server_name
         mapname = info.map_name

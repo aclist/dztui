@@ -268,8 +268,10 @@ class ServerModelManager:
 
     def _parse_single_record(self, response: "A2SInfo", delete: bool = False) -> None:
         self.preserve_on_fail = True
-        row = response.as_row()
-        if row is None:
+        try:
+            row = response.as_row()
+        except Exception as e:
+            logger.warning(e)
             self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
             return
 
@@ -301,7 +303,7 @@ class ServerModelManager:
                 return
             config_man.add_saved_server(fqip)
             # 2026-05-04
-            # TODO: this is valid if saved servers tab is already open,
+            # FIXME: this is valid if saved servers tab is already open,
             # but not if app was just booted
             if proxy_man.has_control_model() is False:
                 self._get_proxy_man().push(records)
@@ -393,7 +395,7 @@ class ServerModelManager:
         # TODO: distinguish signals, e.g. "servers_failed_to_load", "servers_loaded_empty"
         # customize statusbar and dialog accordingly
         self.emitter.emit("servers_loaded", self.enum)
-        # TODO: destroy wait dialog first
+        # FIXME: destroy wait dialog first
         # see threadman.set_cleanup_func(_, destroy_first=True)
         if show_dialog:
             dialog = ExceptionDialog(self.controller, api_warn_msg)

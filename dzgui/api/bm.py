@@ -33,8 +33,8 @@ def map_id_to_record(key: str, uid: int) -> Optional["Record"]:
     try:
         record = get_attributes(key, uid)
         ip = record["ip"]
-        port = record["port"]
-        qport = record["portQuery"]
+        port = int(record["port"])
+        qport = int(record["portQuery"])
         return Record(ip, port, qport)
     except Exception:
         return None
