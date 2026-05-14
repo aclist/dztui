@@ -90,9 +90,10 @@ class LogTreeView(ContextMixin, TreeView):  # type: ignore
         if len(records) < 1:
             return None
         for record in records:
-            raw_record = model[record]
-            r = [el for el in raw_record]
-            concat = strings.delimiter.join(r)
+            #raw_record = model[record]
+            #r = [el for el in raw_record]
+            els = tuple(record)
+            concat = strings.delimiter.join(els)
             final.append(concat)
         text = "\n".join(final)
         return text
