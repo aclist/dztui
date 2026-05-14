@@ -70,6 +70,8 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
     def get_selected_mod(self) -> str:
         path = self.get_focused_row_path()
         model = self.get_model()
+        if model is None:
+            raise AttributeError("Trying to call a method on a non-existent model")
         tree_iter = model.get_iter(path)
         mod = model.get(tree_iter, 2)[0]
         return str(mod)
