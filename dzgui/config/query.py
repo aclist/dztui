@@ -23,7 +23,7 @@ def lookup(path: Path, enum: Preferences) -> Any:
         return None
 
 
-def get_config(path: Path) -> dict:
+def get_config(path: Path) -> Any:
     # TODO: is this being called multiple times?
     try:
         json = read_json(path)
@@ -37,7 +37,7 @@ def get_favorites(path: Path) -> list[str]:
         conf = get_config(path)
     except Exception:
         pass
-    return conf["ip_list"]
+    return list(conf["ip_list"])
 
 
 # def is_in_favs(record: str, path: Path) -> bool:

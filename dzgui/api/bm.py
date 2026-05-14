@@ -1,6 +1,6 @@
 import logging
 import requests
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 
 from dzgui.const.constants import APP_NAME
 from dzgui.const.endpoints import BM_SERVERS
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from dzgui.api.servers import Record
 
 
-def get_attributes(key: str, uid: int) -> str:
+def get_attributes(key: str, uid: int) -> Any:
     # TODO: handle if key is not set
     # TODO: tests for malformed IDs/values
 

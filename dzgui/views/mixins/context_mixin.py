@@ -93,7 +93,7 @@ class ContextMixin(TreeView):
             return False
 
     def _on_menu_click(self, widget: Gtk.MenuItem, enum: ContextMenu) -> None:
-        self.controller.menu_action(enum, self)
+        self.controller.menu_action(enum, self)  # type: ignore
 
     def _on_key(self, menu: Gtk.Menu, event: Gdk.EventKey) -> bool | None:
         if not is_navkey(event.keyval):

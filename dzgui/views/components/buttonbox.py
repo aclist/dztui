@@ -13,7 +13,7 @@ logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.const.enum import NotebookPage
-    from dzgui.controller.mc import Controller
+    from dzgui.controllers.mc import Controller
     from dzgui.controllers.emitter import Emitter
 
 

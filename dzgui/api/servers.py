@@ -381,7 +381,7 @@ def ping(ip: str, qport: int) -> int:
         if res is None:
             return 9999
         else:
-            return res["ping"]
+            return int(res["ping"])
     except Exception:
         return 9999
 

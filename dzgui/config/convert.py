@@ -50,7 +50,7 @@ def rc2json(file: Path) -> str:
 
     while True:
         tok = lex.get_token()
-        ntok = lex.get_token()
+        ntok: str | bool | None = lex.get_token()
 
         if ntok is not None:
             ntok = ntok.strip('""')
@@ -58,7 +58,8 @@ def rc2json(file: Path) -> str:
         if tok in deprecated:
             continue
         elif tok in toggles:
-            ntok = str2bool(ntok)
+            if ntok is not None:
+                ntok = str2bool(ntok)
         elif tok == "preferred_client":
             tok = "client"
         elif tok == "api_key":

@@ -107,7 +107,7 @@ class FastInsertListStore(ListStore):
         for row in rows:
             self.append(row)
 
-    def append(self, row: list[Any] | tuple[Any, ...] | None = ...) -> TreeIter:
+    def append(self, row: list[Any] | tuple[Any, ...] | None = ...) -> TreeIter:  # type: ignore
         # FIXME: argument cannot be none
         """
         Optimized for speed, but makes no assurances about row homogeneity
