@@ -22,6 +22,13 @@ class EnumeratedModButton(Gtk.Button):
         self.set_label(enum.dict["label"])
         self.set_tooltip_text(enum.dict["tooltip"])
 
+class ModPanelButton(EnumeratedModButton):
+    def __init__(self, enum: ModButton) -> None:
+        super().__init__(enum=enum)
+
+        if enum is not ModButton.HIGHLIGHT_STALE:
+            self.set_sensitive(False)
+
 
 class ModSelectionPanel(Gtk.Box):
     def __init__(self, controller: "Controller") -> None:
@@ -47,16 +54,11 @@ class ModSelectionPanel(Gtk.Box):
             self.main_panel.pack_start(b, NO_EXPAND, FILL, NO_PADDING)
 
         self.stale_panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        buttons = (
-            ModButton.HIGHLIGHT_STALE,
-            ModButton.SELECT_STALE,
-            ModButton.UNHIGHLIGHT_STALE,
-        )
-        for button in buttons:
-            b = EnumeratedModButton(button)
-            b.connect("clicked", self._on_button_clicked)
-            if button is not ModButton.HIGHLIGHT_STALE:
-                b.set_sensitive(False)
+        self.highlight_stale_button = ModPanelButton(ModButton.HIGHLIGHT_STALE)
+        self.unhighlight_stale_button = ModPanelButton(ModButton.UNHIGHLIGHT_STALE)
+        self.select_stale_button = ModPanelButton(ModButton.SELECT_STALE)
+
+        for b in (self.highlight_stale_button, self.unhighlight_stale_button, self.select_stale_button):
             self.stale_panel.pack_start(b, NO_EXPAND, FILL, NO_PADDING)
 
         for el in header, self.main_panel, self.stale_panel:
@@ -65,13 +67,9 @@ class ModSelectionPanel(Gtk.Box):
         self.connect("map", self._reinit_button)
 
     def _reinit_button(self, widget: Self) -> None:
-        for child in self.stale_panel.get_children():
-            if child.enum == ModButton.UNHIGHLIGHT_STALE:
-                child.set_sensitive(False)
-            elif child.enum == ModButton.SELECT_STALE:
-                child.set_sensitive(False)
-            else:
-                child.set_sensitive(True)
+        self.unhighlight_stale_button.set_sensitive(False)
+        self.select_stale_button.set_sensitive(False)
+        self.highlight_stale_button.set_sensitive(True)
 
     def _on_mods_updated(self, emitter: "Emitter", msg: str, mods: int) -> None:
         if mods < 1:
@@ -85,11 +83,9 @@ class ModSelectionPanel(Gtk.Box):
         self.set_visible(state)
 
     def swap_sensitive(self, state: bool) -> None:
-        for child in self.stale_panel.get_children():
-            if child.enum == ModButton.HIGHLIGHT_STALE:
-                child.set_sensitive(not state)
-            else:
-                child.set_sensitive(state)
+        self.highlight_stale_button.set_sensitive(not state)
+        self.unhighlight_stale_button.set_sensitive(state)
+        self.select_stale_button.set_sensitive(state)
 
     def _on_button_clicked(self, button: EnumeratedModButton) -> None:
         match button.enum:
