@@ -438,6 +438,10 @@ def get_app_path(folders_path: Path, appid: int) -> Path:
         raise AppNotInstalledError(
             f"Failed to find a libraryfolder for the appid {appid}"
         )
+    if Path(app_path).exists() is False:
+        raise AppMovedError(
+            f"The location '{app_path}' pointed to by '{appid}' no longer exists and may have been changed on the disk."
+        )
 
     return Path(app_path)
 
