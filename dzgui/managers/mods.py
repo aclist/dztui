@@ -72,21 +72,18 @@ class ModManager:
         total_mods = len(self.store)
         self.emitter.emit("mods_updated", msg, total_mods)
 
-    # TODO: strings
-    @call_on_thread("deleting mods")
     def delete_mods(self) -> None:
-        # FIXME: do not read from GTK in worker thread
-        # break into function that iterates through paths and one that is threaded
         sel = self.treeview.get_selection()
         model, pathlist = sel.get_selected_rows()
         # NOTE: reverse when multiple selection
-        iters = []
+        mods: list[tuple[str, Gtk.TreeIter]] = []
         for path in reversed(pathlist):
-            _iter = self.delete_single_mod(path)
-            iters.append(_iter)
-
-        func = StoredFunc(self._on_mods_deleted, iters)
-        self.thread_man.set_cleanup_func(func)
+            res = self.get_mod_from_tree_path(path)
+            if res is None:
+                continue
+            mod, _iter = res
+            mods.append((mod, _iter))
+        self.delete_mods_on_system(mods)
 
     def get_mod_from_tree_path(
         self, tree_path: Gtk.TreePath
@@ -98,12 +95,17 @@ class ModManager:
         mod = model.get_value(tree_iter, 2)
         return mod, tree_iter
 
-    def delete_single_mod(self, tree_path: Gtk.TreePath) -> Gtk.TreeIter | None:
-        res = self.get_mod_from_tree_path(tree_path)
-        if res is None:
-            return None
-        mod, _iter = res
+    # TODO: strings
+    @call_on_thread("deleting mods")
+    def delete_mods_on_system(self, mods: list[tuple[str, Gtk.TreeIter]]) -> None:
+        for mod, _iter in mods:
+            self.delete_single_mod(mod)
 
+        iters = [_iter for mod, _iter in mods]
+        func = StoredFunc(self._on_mods_deleted, iters)
+        self.thread_man.set_cleanup_func(func)
+
+    def delete_single_mod(self, mod: str):
         steam_path = Path(self.path)
         mods_path = get_local_mod_path(steam_path)
         app_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
@@ -121,7 +123,6 @@ class ModManager:
             symlink.unlink()
         except PeFile.AppNotInstalledError:
             pass
-        return _iter
 
     def _on_mods_deleted(self, iters: list[Gtk.TreeIter]) -> None:
         for _iter in iters:

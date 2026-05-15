@@ -250,6 +250,7 @@ class ProxyModelManager:
         self.set_filtered(self.filter_map(filters))
         self.set_filtered(self.filter_keyword(filters))
 
+        f: str
         for f in filters[2:]:
             self.set_filtered(self.filter_toggle_off(filters, f))
         return self.filtered
