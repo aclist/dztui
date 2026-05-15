@@ -291,12 +291,14 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         name = prereqs.name
         self.title.set_text(name)
 
-        suffix = "All mods are up to date."
+        # FIXME: append to tree status bar
 
         if total_mods < 1:
             self._hide_mod_area()
         else:
             self._show_mod_area()
+            msg = "All mods are up to date."
+            self.mod_count.set_text(msg)
 
         if prereqs.required_space == 0:
             self.ok.set_label(preconnect.connect)

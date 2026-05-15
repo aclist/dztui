@@ -91,7 +91,6 @@ class LogTreeView(ContextMixin, TreeView):  # type: ignore
             return None
         for record in records:
             raw_record = model[record]
-            #r = [el for el in raw_record]
             els = tuple(raw_record)
             concat = strings.delimiter.join(map(str, els))
             final.append(concat)

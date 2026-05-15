@@ -1,5 +1,4 @@
 import logging
-import os
 import shutil
 import time
 
@@ -279,7 +278,7 @@ class ConnectionManager:
             time.sleep(2)
 
         if raise_window is True:
-            logger.info(f"Bringing window to foreground")
+            logger.info("Bringing window to foreground")
             GLib.idle_add(self.controller.present_window)
 
         for title, mod, stamp, size in self.missing_mods:

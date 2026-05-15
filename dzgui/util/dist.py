@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from queue import Queue
     from dzgui.const.enum import ServerTab
     from dzgui.controllers.mc import Controller
-    from dzgui.util.ip import Coords
 
 logger = logging.getLogger(APP_NAME)
 
