@@ -60,6 +60,7 @@ class ServerModelManager:
         There may be cases where you want to instantiate this class without dumping servers,
         e.g., adding saved servers from another tab
         """
+
         self.first_iteration = True
         match self.enum:
             case ServerTab.BROWSER:
@@ -92,12 +93,10 @@ class ServerModelManager:
             futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
             for future in as_completed(futures):
                 try:
-
                     # NOTE: faciliates early aborting via sigint
                     # TODO: make this logic available to all dump contexts
                     if self.controller.get_exit_event().is_set():
                         return
-
                     self.thread_man.increment_dialog()
                     res = future.result(timeout=API_TIMEOUT)
                     if res.status != 200 or not res.parsed:
@@ -236,7 +235,6 @@ class ServerModelManager:
     def add_to_history(self, record: dict[str, Any]) -> None:
         proxy_man = self._get_proxy_man()
         row = Servers.parse_json([record])
-        print(type(row[0]))
         proxy_man.append_row_to_history(row[0])
         self.update_history()
 
@@ -285,7 +283,7 @@ class ServerModelManager:
         proxy_man = self._get_proxy_man()
         config_man = self.controller.get_config_man()
         fqip = Servers.response_to_fqip(row)
-        record = response.get_record()  # Servers.response_to_record(row)
+        record = response.get_record()
 
         # TODO: less convoluted
         if delete:
@@ -394,7 +392,8 @@ class ServerModelManager:
 
         # TODO: distinguish signals, e.g. "servers_failed_to_load", "servers_loaded_empty"
         # customize statusbar and dialog accordingly
-        self.emitter.emit("servers_loaded", self.enum)
+        # TODO: drop, causes errors
+        # self.emitter.emit("servers_loaded", self.enum)
         # FIXME: destroy wait dialog first
         # see threadman.set_cleanup_func(_, destroy_first=True)
         if show_dialog:

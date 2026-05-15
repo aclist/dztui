@@ -45,7 +45,7 @@ class ButtonGrid(Gtk.Grid):
             checkbox = Gtk.CheckButton(label=check)
             label = checkbox.get_child()
             if label is not None:
-                label.set_ellipsize(Pango.EllipsizeMode.END) # type: ignore
+                label.set_ellipsize(Pango.EllipsizeMode.END)  # type: ignore
 
             if defaults[check]:
                 checkbox.set_active(True)
@@ -188,6 +188,7 @@ class FilterPanel(Gtk.Box):
 
         self.maps_entry: Gtk.Entry = self.maps_combo.get_child()  # type: ignore
         self.maps_entry.set_completion(completion)
+        # TODO: strings
         self.maps_entry.set_placeholder_text("Filter by map")
         self.maps_entry.connect("changed", self._on_map_completion, True)
         self.maps_entry.connect("key-press-event", self._on_map_entry_keypress)

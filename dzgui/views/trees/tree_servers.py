@@ -78,8 +78,8 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
             "IP": 240,
         }
 
-        # TODO: abstract
-        # FIXME: resize col width func causes snapping behavior
+        # TODO: abstract column population logic
+        # TODO: resize col width func causes snapping behavior
         browser_cols = strings.browser_cols
         for i, column_title in enumerate(browser_cols):
             renderer = Gtk.CellRendererText()

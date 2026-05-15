@@ -1,6 +1,6 @@
 import re
 
-from typing import Any, Optional, TYPE_CHECKING, Union
+from typing import Any, TYPE_CHECKING, Union
 from warnings import deprecated
 
 from dzgui.const.enum import FilterMode
@@ -14,7 +14,6 @@ if TYPE_CHECKING:
     from dzgui.model.servers import NewPlayerCount
 
 
-# TODO: annotate list contents (list[list[Any]])
 class ProxyModelManager:
     """
     Manages access to cached FastInsertListStore resources and
@@ -35,9 +34,13 @@ class ProxyModelManager:
         self.proxy_model: "FastInsertListStore"
         self.filter_man = filter_man
 
-        # TODO: list typehints
-        self.control_model: list | None = None
-        self.filtered: list = []
+        self.control_model: (
+            list[tuple[str, str, str, str, int, int, int, str, int, int, str, bool]]
+            | None
+        ) = None
+        self.filtered: list[
+            tuple[str, str, str, str, int, int, int, str, int, int, str, bool]
+        ] = []
         self.success = True
 
     def has_control_model(self) -> bool:
@@ -48,7 +51,9 @@ class ProxyModelManager:
     def append_row(self, row: list) -> None:
         self.proxy_model.append(row)
 
-    def append_row_to_control(self, row: list) -> None:
+    def append_row_to_control(
+        self, row: tuple[str, str, str, str, int, int, int, str, int, int, str, bool]
+    ) -> None:
         if self.control_model is None:
             raise AttributeError("Trying to add rows to a non-existent model")
         self.control_model.append(row)

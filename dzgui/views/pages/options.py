@@ -28,7 +28,6 @@ from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.buttons import WebButton
 from dzgui.views.components.frame import HeadingFrame
 from dzgui.views.dialogs.generic import ExceptionDialog
-from dzgui.views.dialogs.link_dialog import WorkshopLinkDialog
 
 
 import gi
