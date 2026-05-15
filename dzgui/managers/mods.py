@@ -51,13 +51,14 @@ class ModManager:
         self.thread_man = ThreadingManager(controller)
         self._get_mods()
 
-    # TODO: strings
+    # TODO: dialog strings
     @call_on_thread("getting mods")
     def _get_mods(self) -> None:
         mods = get_delimited_mods(self.path)
         if len(mods) < 1:
             msg = self.format_mod_statusbar()
-            self.emitter.emit("mods_updated", msg, 0)
+            func = StoredFunc(lambda: self.emitter.emit("mods_updated", msg, 0))
+            self.thread_man.set_cleanup_func(func)
             return
 
         func = StoredFunc(self._on_mods_loaded, mods)
@@ -74,6 +75,8 @@ class ModManager:
     # TODO: strings
     @call_on_thread("deleting mods")
     def delete_mods(self) -> None:
+        # FIXME: do not read from GTK in worker thread
+        # break into function that iterates through paths and one that is threaded
         sel = self.treeview.get_selection()
         model, pathlist = sel.get_selected_rows()
         # NOTE: reverse when multiple selection

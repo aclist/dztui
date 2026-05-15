@@ -83,7 +83,8 @@ class ServerModelManager:
 
     @call_on_thread(dialog.fetching)
     def _dump_api(self) -> None:
-        # TODO: pass api key a priori in .load() call
+        # TODO: pass api key a priori in .load() call?
+        failure_func = StoredFunc(self._cleanup_on_failure)
         config_man = self.controller.get_config_man()
         key = config_man.lookup(Preferences.STEAM)
         job = Servers.query_api
@@ -101,7 +102,7 @@ class ServerModelManager:
                     res = future.result(timeout=API_TIMEOUT)
                     if res.status != 200 or not res.parsed:
                         self.thread_man.set_cleanup_func(
-                            StoredFunc(self._cleanup_on_failure)
+                            failure_func, destroy_first=True
                         )
                         return
                     j = res.json
@@ -109,9 +110,7 @@ class ServerModelManager:
                         servers.extend(j["response"]["servers"])
                 except Exception as e:
                     logger.critical(e)
-                    self.thread_man.set_cleanup_func(
-                        StoredFunc(self._cleanup_on_failure)
-                    )
+                    self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
                     return
 
         # NOTE: this step is allowed to fail, since this metadata is incidental
@@ -128,6 +127,7 @@ class ServerModelManager:
     def dump_lan(self, port: int, early_abort: bool) -> None:
         servers = []
         ports = range(1, 256)
+        failure_func = StoredFunc(self._cleanup_on_failure)
 
         event = threading.Event()
         with ThreadPoolExecutor() as executor:
@@ -135,7 +135,9 @@ class ServerModelManager:
             for future in as_completed(futures):
                 try:
                     res = future.result(timeout=LAN_TIMEOUT)
-                    if res is not None and early_abort is True:
+                    if res is None:
+                        continue
+                    if early_abort is True:
                         # NOTE: on first non-empty hit, flag pending threads to close
                         event.set()
                         servers.append(res)
@@ -143,16 +145,12 @@ class ServerModelManager:
                             StoredFunc(self._cleanup_on_success)
                         )
                         return
-                    if res is None:
-                        continue
                     servers.append(res)
                 except Exception as e:
                     logger.critical(e)
-                    self.thread_man.set_cleanup_func(
-                        StoredFunc(self._cleanup_on_failure)
-                    )
+                    self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
             if len(servers) == 0:
-                self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
+                self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
                 return
         parsed = Servers.parse_json(servers)
         self._push_data(parsed)
@@ -181,7 +179,7 @@ class ServerModelManager:
                 servers.append(res)
                 if len(servers) == 0:
                     self.thread_man.set_cleanup_func(
-                        StoredFunc(self._cleanup_on_failure)
+                        StoredFunc(self._cleanup_on_failure), destroy_first=True
                     )
                     return
 
@@ -202,9 +200,7 @@ class ServerModelManager:
 
     @call_on_thread(dialog.querying)
     def add_by_record(self, record: Servers.Record) -> None:
-        """
-        Rationale: a Record as shown in server browser may resolve to a different IP
-        """
+        # NOTE: rationale: a raw Record as shown in server browser may resolve to a different IP
         res = Servers.query_by_record(record)
         self._parse_single_record(res)
 
@@ -271,7 +267,9 @@ class ServerModelManager:
             row = response.as_row()
         except Exception as e:
             logger.warning(e)
-            self.thread_man.set_cleanup_func(StoredFunc(self._cleanup_on_failure))
+            self.thread_man.set_cleanup_func(
+                StoredFunc(self._cleanup_on_failure), destroy_first=True
+            )
             return
 
         # NOTE: expected to only contain one item
@@ -302,9 +300,9 @@ class ServerModelManager:
                 return
             config_man.add_saved_server(fqip)
             # FIXME: this is valid if saved servers tab is already open,
-            # but not if app was just booted
+            # but not if app was just booted; causes single row to appear prematurely
             if proxy_man.has_control_model() is False:
-                self._get_proxy_man().push(records)
+                proxy_man.push(records)
             else:
                 proxy_man.append_row_to_control(server)
 
@@ -322,14 +320,13 @@ class ServerModelManager:
                 rows = [row.rstrip("\n") for row in f]
         except OSError:
             self.thread_man.set_cleanup_func(
-                StoredFunc(self._cleanup_on_failure, False)
+                StoredFunc(self._cleanup_on_failure, False), destroy_first=True
             )
             return
         if len(rows) == 0:
             # TODO: customize statusbar to mention how records are added after connecting
-            # cf. cleanup on empty
             self.thread_man.set_cleanup_func(
-                StoredFunc(self._cleanup_on_failure, False)
+                StoredFunc(self._cleanup_on_failure, False), destroy_first=True
             )
             return
         self.thread_man.set_job_count(len(rows))
@@ -343,7 +340,7 @@ class ServerModelManager:
         if len(ips) == 0:
             # TODO: customize statusbar to mention how records can be added via contextmenu
             self.thread_man.set_cleanup_func(
-                StoredFunc(self._cleanup_on_failure, False)
+                StoredFunc(self._cleanup_on_failure, False), destroy_first=True
             )
             return
         self._dump_ips(ips)
@@ -381,21 +378,15 @@ class ServerModelManager:
 
     def _cleanup_on_failure(self, show_dialog: bool = True) -> None:
         # TODO: disable map, keyword, and filter widgets if model is None
-        # -> signal driven (servers_empty, servers_failed_to_load)
+        # signal driven (servers_empty, servers_failed_to_load)
 
         if self.preserve_on_fail is False:
-            # CHORE: test if maps are cleared on failure
             self.tv.set_model(None)
-            # filter_man = self.tv.get_filter_man()
-            # filter_man.set_unique_maps([])
-            # TODO: emit signal to not disable widget sensitivity
+            filter_man = self.tv.get_filter_man()
+            filter_man.set_unique_maps([])
 
         # TODO: distinguish signals, e.g. "servers_failed_to_load", "servers_loaded_empty"
         # customize statusbar and dialog accordingly
-        # TODO: drop, causes errors
-        # self.emitter.emit("servers_loaded", self.enum)
-        # FIXME: destroy wait dialog first
-        # see threadman.set_cleanup_func(_, destroy_first=True)
         if show_dialog:
             dialog = ExceptionDialog(self.controller, api_warn_msg)
             dialog.run()
