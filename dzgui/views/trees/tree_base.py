@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
     def __init__(
-        self, controller: "Controller", menu: Optional["ContextMenuGroup"] = None
+        self, controller: "Controller", menu: Optional["ContextMenuGroup"]
     ) -> None:
         super().__init__(
             enable_search=False,
@@ -72,10 +72,13 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         return model.get_iter(path)
 
     def get_focused_row_path(self) -> Gtk.TreePath:
-        return self.get_cursor().path
+        path, column = self.get_cursor()
+        return path
 
     def get_focused_row_index(self) -> int:
-        return self.get_cursor().path[0]
+        path, column = self.get_cursor()
+        index = path.get_indices()[0]
+        return index
 
     def get_selected_records(self) -> list:
         sel = self.get_selection()
@@ -140,7 +143,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         path = Gtk.TreePath.new_from_indices([0])
         self.set_cursor(path)
 
-    def get_value_at_index(self, index: int) -> str:
+    def get_value_at_index(self, index: int) -> Any:
         (model, pathlist) = self.get_model_and_pathlist()
         if len(pathlist) < 1:
             return ""
@@ -151,7 +154,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
 
     def get_name(self) -> str:
         name = self.get_value_at_index(0)
-        return name
+        return str(name)
 
     def select_first_row(self) -> None:
         sel = self.get_selection()
@@ -164,7 +167,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         return (model, pathlist)
 
     @deprecated("Currently unused")
-    #def get_mpath(self) -> Optional[Gtk.TreePath]:
+    # def get_mpath(self) -> Optional[Gtk.TreePath]:
     #    (model, pathlist) = self.get_model_and_pathlist()
     #    if len(pathlist) < 1:
     #        return None
@@ -186,7 +189,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         return False
 
     @deprecated("unused")
-    #def get_selected_row(self) -> Optional[Gtk.TreeModelRow]:
+    # def get_selected_row(self) -> Optional[Gtk.TreeModelRow]:
     #    ind = self.get_selected_row_index()
     #    model = self.get_model()
     #    if model is None:

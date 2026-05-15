@@ -237,7 +237,7 @@ class Options(Gtk.Box):
     def get_client_name(self) -> str:
         model = self.client_combo.get_model()
         ind = self.client_combo.get_active()
-        return model[ind][0]
+        return str(model[ind][0])
 
     def block_text_entry(self) -> None:
         for entry in self.steam_entry, self.bm_entry:
@@ -352,12 +352,16 @@ class Options(Gtk.Box):
 
     def _on_start_tab_changed(self, combo: Gtk.ComboBoxText) -> None:
         _iter = combo.get_active_iter()
+        if _iter is None:
+            raise ValueError(f"No active iterator set on {combo}")
         enum = combo.get_model()[_iter][1]
         index = enum.value
         self.controller.update_config(Preferences.START_TAB, index)
 
     def _on_client_changed(self, combo: Gtk.ComboBoxText) -> None:
         _iter = combo.get_active_iter()
+        if _iter is None:
+            raise ValueError(f"No active iterator set on {combo}")
         real_cmd = combo.get_model()[_iter][1]
         self.controller.update_config(Preferences.CLIENT, real_cmd)
 

@@ -115,9 +115,12 @@ class FastInsertListStore(ListStore):
         For this reason, it is recommended to use the extend() method to insert
         an entire list of lists
         """
-        total = len(row)
-        i = len(self)
-        tree_iter = self.insert_with_values(i, tuple(range(total)), row)
+        if row is not None:
+            total = len(row)
+            i = len(self)
+            tree_iter = self.insert_with_values(i, tuple(range(total)), row)
+        else:
+            tree_iter = super().append(row)
         return tree_iter
 
 

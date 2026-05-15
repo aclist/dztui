@@ -57,9 +57,10 @@ class ProxyModelManager:
         self.proxy_model[treeiter][4] = playercount.players
         self.proxy_model[treeiter][6] = playercount.queue
 
-    # FIXME: typehint -> tuple
+    # TODO: use dataclass for record rows
     def append_row_to_history(
-        self, history: list[str, str, str, str, int, int, int, str, int, int, str, bool]
+        self,
+        history: tuple[str, str, str, str, int, int, int, str, int, int, str, bool],
     ) -> None:
         addr = history[7]
         qport = history[8]
@@ -247,8 +248,8 @@ class ProxyModelManager:
         self.filter_cache[filters] = (model, rows)
 
     @deprecated("Currently unused")
-    def convert_model_to_list(self, model: "FastInsertListStore") -> list:
-        return [[el for el in row] for row in model]
+    # def convert_model_to_list(self, model: "FastInsertListStore") -> list:
+    #    return [[el for el in row] for row in model]
 
     def set_filtered(self, rows: list | None) -> None:
         if rows is None:

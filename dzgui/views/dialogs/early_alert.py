@@ -5,8 +5,10 @@ from typing import Self
 from dzgui.util.strings import dialog_error, dialog_header
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
+
 
 class EarlyAlertDialog(Gtk.MessageDialog):
     def __init__(self, string: str) -> None:
@@ -14,13 +16,15 @@ class EarlyAlertDialog(Gtk.MessageDialog):
             title=dialog_header,
             text=dialog_error,
             transient_for=None,
-            buttons=Gtk.ButtonsType.OK
+            buttons=Gtk.ButtonsType.OK,
         )
 
         msg = textwrap.fill(string, 50)
         self.format_secondary_text(msg)
 
-        self.action_area.set_margin_bottom(20)
+        aa = self.get_action_area()
+        aa.set_margin_bottom(20)
+        # self.action_area.set_margin_bottom(20)
         self.outer = self.get_content_area()
         self.outer.set_margin_start(30)
         self.outer.set_margin_end(30)
@@ -28,7 +32,8 @@ class EarlyAlertDialog(Gtk.MessageDialog):
         self.set_default_size(250, 100)
 
         abort = self.get_widget_for_response(Gtk.ResponseType.OK)
-        abort.set_label("Exit")
+        if abort is not None and hasattr(abort, "set_label"):
+            abort.set_label("Exit")
 
         self.connect("response", self._on_response)
         self.run()
@@ -41,10 +46,10 @@ class EarlyAlertDialog(Gtk.MessageDialog):
             case Gtk.ResponseType.CANCEL:
                 return
 
+
 class EarlyIgnoreDialog(EarlyAlertDialog):
     def __init__(self, string: str) -> None:
         super().__init__(string=string)
 
         # TODO: reverse order
         self.add_button("Ignore", Gtk.ResponseType.CANCEL)
-

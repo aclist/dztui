@@ -292,7 +292,7 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
         self.start_distcalc()
 
     def get_name(self) -> str:
-        return self.get_value_at_index(0)
+        return str(self.get_value_at_index(0))
 
     def get_simplified_ip(self) -> str:
         addr = self.get_value_at_index(7)

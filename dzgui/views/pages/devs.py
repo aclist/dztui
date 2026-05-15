@@ -64,7 +64,7 @@ class Developers(Gtk.ScrolledWindow):
         self.controller.open_page(NotebookPage.OPTIONS)
 
     def _make_tree(self, prefs: Union["Xdg", "UserPrefs"]) -> Gtk.TreeView:
-        tree = TreeView(self.controller)
+        tree = TreeView(self.controller, menu=None)
         renderer = Gtk.CellRendererText()
         for i, col in enumerate(developers.columns):
             column = Gtk.TreeViewColumn(col, renderer, text=i)
@@ -73,12 +73,6 @@ class Developers(Gtk.ScrolledWindow):
 
         store = self._make_store(prefs)
         tree.set_model(store)
-        # store = Gtk.ListStore(str, str)
-        # for field in fields(prefs):
-        #    if field.name == "paths":
-        #        continue
-        #    k, v = field.name, getattr(prefs, field.name)
-        #    store.append((k, str(v)))
 
         return tree
 

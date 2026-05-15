@@ -199,6 +199,7 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
         for k, v in self.indexes.items():
             if v == self.get_current_page():
                 return k
+        raise ValueError("No notebook pages set")
 
     def toggle_keybindings(self) -> None:
         cur_page = self.get_page_by_enum()

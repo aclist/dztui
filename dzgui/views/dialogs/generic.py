@@ -205,7 +205,9 @@ class ExceptionDialog(GenericDialog):
         self.add_button("OK", Gtk.ResponseType.OK)
 
         self.show_all()
-        self.action_area.get_children()[1].grab_focus()
+        self.ok = self.get_widget_for_response(Gtk.ResponseType.OK)
+        if self.ok is not None:
+            self.ok.grab_focus()
         self.connect("response", self._on_response)
 
     def get_trace(self) -> str:

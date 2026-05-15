@@ -73,7 +73,7 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
         if model is None:
             raise AttributeError("Trying to call a method on a non-existent model")
         tree_iter = model.get_iter(path)
-        mod = model.get(tree_iter, 2)[0]
+        mod = model.get_value(tree_iter, 2)
         return str(mod)
 
     def _parent_selection_changed(

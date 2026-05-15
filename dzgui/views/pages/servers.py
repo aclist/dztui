@@ -153,14 +153,14 @@ class ServerNotebook(Gtk.ScrolledWindow):
         if tv is not None:
             self.controller.populate_model(tv)
 
-    def get_active_treeview(self) -> ServerTreeView | None:
+    def get_active_treeview(self) -> ServerTreeView:
         index = self.notebook.get_current_page()
         scrollable = self.notebook.get_nth_page(index)
         if scrollable is not None and hasattr(scrollable, "get_children"):
             tv = scrollable.get_children()[0]
             if isinstance(tv, ServerTreeView):
                 return tv
-        return None
+        raise ValueError("No treeview set")
 
     def add_notification(self) -> None:
         saved = self.notebook.get_nth_page(1)

@@ -25,7 +25,7 @@ class MenuTreeView(TreeView):
     """
 
     def __init__(self, controller: "Controller") -> None:
-        super().__init__(controller)
+        super().__init__(controller, menu=None)
 
         self.controller = controller
 
@@ -73,6 +73,8 @@ class MenuTreeView(TreeView):
     def get_row_enum(self) -> str:
         # NOTE: col 1 contains a RowType enum
         model = self.get_model()
+        if model is None:
+            raise ValueError("Trying to call a method on non-existent model")
         _iter = self.get_focused_row_iter()
         rowtype = model.get_value(_iter, 1)
         return str(rowtype.dict["tooltip"])

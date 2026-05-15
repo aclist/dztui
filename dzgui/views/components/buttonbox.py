@@ -68,7 +68,7 @@ class ButtonBox(Gtk.Box):
     def _focus_first_button(self, emitter: "Emitter") -> None:
         self.buttons[0].grab_focus()
 
-    def _on_selection_button_clicked(self, button: Gtk.Button) -> None:
+    def _on_selection_button_clicked(self, button: ContextualButton) -> None:
         self.controller.open_page_by_button(button)
 
     def _walk_buttons(self, increment: int) -> None:
@@ -79,8 +79,8 @@ class ButtonBox(Gtk.Box):
                     return
                 if n == -1:
                     return
-                n = self.buttons[n]
-                n.grab_focus()
+                b = self.buttons[n]
+                b.grab_focus()
                 return
 
     def _on_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:

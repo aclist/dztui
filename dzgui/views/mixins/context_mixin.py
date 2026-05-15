@@ -21,6 +21,8 @@ class ContextMixin(TreeView):
         event: Gdk.EventButton | Gdk.EventKey,
     ) -> bool:
 
+        if self.menu is None:
+            return False
         if self.is_selection_empty():
             return False
 

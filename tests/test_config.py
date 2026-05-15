@@ -23,7 +23,6 @@ def keys():
         "name",
         "fullscreen",
         "steam_api",
-        "auto_install",
         "default_steam_path",
         "client",
         "ip_list",
@@ -32,6 +31,7 @@ def keys():
     ]
 
 
+# TODO: use a static fixture instead of system config
 @pytest.fixture
 def config():
     paths = get_xdg_paths()
@@ -69,7 +69,6 @@ def test_bool_conversion(fixture, expect):
     j = convert.rc2json(fixture)
     j = json.loads(j)
     assert j["fullscreen"] == expect[0]
-    assert j["auto_install"] == expect[2]
     assert not j["use_miles"]
 
 

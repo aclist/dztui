@@ -236,6 +236,7 @@ class ServerModelManager:
     def add_to_history(self, record: dict[str, Any]) -> None:
         proxy_man = self._get_proxy_man()
         row = Servers.parse_json([record])
+        print(type(row[0]))
         proxy_man.append_row_to_history(row[0])
         self.update_history()
 

@@ -1,6 +1,7 @@
 from typing import Self, TYPE_CHECKING
 
 from dzgui.const.constants import EXPAND, FILL
+from dzgui.const.enum import ContextMenuGroup
 from dzgui.model.model_factory import ModelFactory
 from dzgui.util import css
 from dzgui.util import strings
@@ -20,7 +21,13 @@ if TYPE_CHECKING:
 
 
 class ServerDialog(GenericDialog):
-    def __init__(self, controller: "Controller", title: str, secondary: str) -> None:
+    def __init__(
+        self,
+        controller: "Controller",
+        title: str,
+        secondary: str,
+        menu: ContextMenuGroup | None,
+    ) -> None:
         super().__init__(
             controller=controller,
             text=title,
@@ -32,7 +39,7 @@ class ServerDialog(GenericDialog):
         self.set_default_response(Gtk.ResponseType.OK)
         self.set_size_request(800, 700)
 
-        self.view = TreeView(controller)
+        self.view = TreeView(controller, menu)
         self.view.set_fixed_height_mode(True)
 
         self.connect("response", self._on_response)
@@ -59,7 +66,7 @@ class ServerDialog(GenericDialog):
 class ServerDetailsDialog(ServerDialog):
     def __init__(self, controller: "Controller", details: "Details"):
         name = controller.get_server_name()
-        super().__init__(controller, strings.server_details, name)
+        super().__init__(controller, strings.server_details, name, menu=None)
 
         self.store = Gtk.ListStore(str, str, Pango.Weight)
         self.view.connect("row-activated", self._on_row_activated)
@@ -116,10 +123,16 @@ class ServerDetailsDialog(ServerDialog):
 
 
 class ServerModDialog(ServerDialog):
-    def __init__(self, controller: "Controller", mods: list[list[str]]):
+    def __init__(
+        self,
+        controller: "Controller",
+        mods: list[list[str]],
+    ):
 
         name = controller.get_server_name()
-        super().__init__(controller, server_mods.modlist, name)
+        super().__init__(
+            controller, server_mods.modlist, name, menu=ContextMenuGroup.SERVER_MOD
+        )
 
         self.controller = controller
         self.mod_store = ModelFactory().make_server_mod_store()
