@@ -27,9 +27,10 @@ class ProxyModelManager:
     """
 
     def __init__(self, filter_man: "FilterManager") -> None:
-        self.filter_cache: dict[tuple[str], tuple["FastInsertListStore", list[Any]]] = (
-            {}
-        )
+        self.filter_cache: dict[
+            tuple[str],
+            list[tuple[str, str, str, str, int, int, int, str, int, int, str, bool]],
+        ] = {}
 
         self.proxy_model: "FastInsertListStore"
         self.filter_man = filter_man
@@ -124,9 +125,11 @@ class ProxyModelManager:
 
         if skip_cache is False:
             if filters in self.filter_cache:
-                cache = self.filter_cache[filters]
-                self.set_proxy_model(cache[0])
-                self.set_filtered(cache[1])
+                cached_rows = self.filter_cache[filters]
+                clone = ModelFactory().make_server_store()
+                clone.extend(cached_rows)
+                self.set_proxy_model(clone)
+                self.set_filtered(cached_rows)
                 return None
 
         match mode:
@@ -145,7 +148,7 @@ class ProxyModelManager:
             rows = self.sort_rows(rows)
             clone.extend(rows)
 
-        self.set_cache(filters, clone, rows)
+        self.set_cache(filters, rows)
         self.set_proxy_model(clone)
         return clone
 
@@ -241,7 +244,7 @@ class ProxyModelManager:
                 rows = [row for row in rows if not row[11]]
         return rows
 
-    def filter_toggle_on(self, filters: tuple) -> list:
+    def filter_toggle_on(self, filters: tuple[str]) -> list:
         """Effectively applies all filters"""
         self.set_filtered(self.control_model)
         self.set_filtered(self.filter_map(filters))
@@ -251,10 +254,8 @@ class ProxyModelManager:
             self.set_filtered(self.filter_toggle_off(filters, f))
         return self.filtered
 
-    def set_cache(
-        self, filters: tuple, model: "FastInsertListStore", rows: list
-    ) -> None:
-        self.filter_cache[filters] = (model, rows)
+    def set_cache(self, filters: tuple[str], filtered_rows: list[tuple]) -> None:
+        self.filter_cache[filters] = filtered_rows
 
     @deprecated("Currently unused")
     # def convert_model_to_list(self, model: "FastInsertListStore") -> list:
