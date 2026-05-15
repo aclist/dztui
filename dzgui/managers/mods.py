@@ -105,7 +105,7 @@ class ModManager:
         func = StoredFunc(self._on_mods_deleted, iters)
         self.thread_man.set_cleanup_func(func)
 
-    def delete_single_mod(self, mod: str):
+    def delete_single_mod(self, mod: str) -> None:
         steam_path = Path(self.path)
         mods_path = get_local_mod_path(steam_path)
         app_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
