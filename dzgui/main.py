@@ -25,7 +25,6 @@ from dzgui.init.migrate import (
 )
 from dzgui.init.prefix import get_version
 from dzgui.init.prereqs import has_steam_client
-from dzgui.init.proc import has_cmd
 from dzgui.init.update import allow_updates, check_updates
 
 from dzgui.strings import boot
@@ -37,7 +36,7 @@ from dzgui.util.symlink import rebuild_symlinks
 from dzgui.util.strings import init, flags
 
 from dzgui.views.base import App
-from dzgui.views.dialogs.early_alert import EarlyAlertDialog, EarlyIgnoreDialog
+from dzgui.views.dialogs.early_alert import EarlyAlertDialog
 
 if TYPE_CHECKING:
     from pathlib import Path

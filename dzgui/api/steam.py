@@ -141,7 +141,8 @@ def vdf2json(path: Path) -> str:
             indent -= 1
             jbuf += _istr(indent, "}")
             ntok = lex.get_token()
-            lex.push_token(ntok)
+            if ntok is not None:
+                lex.push_token(ntok)
             if ntok and ntok != "}":
                 jbuf += ","
             jbuf += "\n"
@@ -151,12 +152,14 @@ def vdf2json(path: Path) -> str:
                 jbuf += _istr(indent, tok + ": {\n")
                 indent += 1
             else:
-                jbuf += _istr(indent, tok + ": " + ntok)
-                ntok = lex.get_token()
-                lex.push_token(ntok)
-                if ntok != "}":
-                    jbuf += ","
-                jbuf += "\n"
+                if ntok is not None:
+                    jbuf += _istr(indent, tok + ": " + ntok)
+                    ntok = lex.get_token()
+                    if ntok is not None:
+                        lex.push_token(ntok)
+                    if ntok != "}":
+                        jbuf += ","
+                    jbuf += "\n"
 
 
 def gen_shortcut() -> None:

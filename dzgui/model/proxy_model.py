@@ -32,7 +32,7 @@ class ProxyModelManager:
             {}
         )
 
-        self.proxy_model: "FastInsertListStore" = None
+        self.proxy_model: "FastInsertListStore"
         self.filter_man = filter_man
 
         # TODO: list typehints
@@ -49,6 +49,8 @@ class ProxyModelManager:
         self.proxy_model.append(row)
 
     def append_row_to_control(self, row: list) -> None:
+        if self.control_model is None:
+            raise AttributeError("Trying to add rows to a non-existent model")
         self.control_model.append(row)
         self.filter(FilterMode.INITIAL, skip_cache=True)
 
@@ -97,8 +99,10 @@ class ProxyModelManager:
     def clear_proxy_model(self) -> None:
         self.proxy_model.clear()
 
-    def get_proxy_model(self) -> "FastInsertListStore":
-        return self.proxy_model
+    def get_proxy_model(self) -> Union["FastInsertListStore", None]:
+        if hasattr(self, "proxy_model"):
+            return self.proxy_model
+        return None
 
     def filter(
         self, mode: FilterMode, skip_cache: bool = False
@@ -243,7 +247,7 @@ class ProxyModelManager:
         return self.filtered
 
     def set_cache(
-        self, filters: tuple, model: Optional["FastInsertListStore"], rows: list
+        self, filters: tuple, model: "FastInsertListStore", rows: list
     ) -> None:
         self.filter_cache[filters] = (model, rows)
 
@@ -260,7 +264,7 @@ class ProxyModelManager:
     def get_filtered(self) -> list:
         return self.filtered
 
-    def set_proxy_model(self, model: Optional["FastInsertListStore"]) -> None:
+    def set_proxy_model(self, model: "FastInsertListStore") -> None:
         """
         FastInsertListStore representation of the raw model after filtration
         """
@@ -272,7 +276,11 @@ class ProxyModelManager:
         """
         self.control_model = rows
 
-    def get_control(self) -> list:
+    def get_control(self) -> list[Any]:
+        if self.control_model is None:
+            raise AttributeError(
+                "Expected a populated control model, but it is Nonetype"
+            )
         return self.control_model
 
     def wipe_cache(self, full: bool = False) -> None:

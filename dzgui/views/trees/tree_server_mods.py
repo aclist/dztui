@@ -64,7 +64,6 @@ class ServerModTreeView(ContextMixin, TreeView):  # type: ignore
         if model is None:
             raise AttributeError("Trying to call a method on a non-existent model")
         tree_iter = model.get_iter(path)
-        # FIXME: https://docs.gtk.org/gtk3/method.TreeModel.get.html
         mod = model.get_value(tree_iter, 1)
         return str(mod)
 

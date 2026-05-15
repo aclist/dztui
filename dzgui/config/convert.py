@@ -50,35 +50,41 @@ def rc2json(file: Path) -> str:
 
     while True:
         tok = lex.get_token()
-        ntok: str | bool | None = lex.get_token()
+        ntok = lex.get_token()
+        value: str | bool
 
         if ntok is not None:
             ntok = ntok.strip('""')
+            value = ntok
 
         if tok in deprecated:
             continue
         elif tok in toggles:
             if ntok is not None:
-                ntok = str2bool(ntok)
+                value = str2bool(ntok)
         elif tok == "preferred_client":
             tok = "client"
         elif tok == "api_key":
             tok = "bm_api"
         elif tok == "ip_list":
             while True:
-                ntok = lex.get_token().strip('""')
+                ntok = lex.get_token()
+                if ntok is not None:
+                    ntok = ntok.strip('""')
+                    value = ntok
                 if ntok == ")":
                     break
                 # TODO: make test for this
                 # NOTE: strip malformed records from ancient config file versions
-                if len(ntok.split(":")) == 3 and ntok.split(":")[2] != "":
-                    ips.append(ntok)
+                if ntok is not None:
+                    if len(ntok.split(":")) == 3 and ntok.split(":")[2] != "":
+                        ips.append(ntok)
             continue
 
         if not tok:
             break
 
-        keys[tok] = ntok
+        keys[tok] = value
 
     keys["ip_list"] = ips
     keys["use_miles"] = False

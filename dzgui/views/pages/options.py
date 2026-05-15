@@ -94,7 +94,7 @@ class Options(Gtk.Box):
         )
         self.player_box.set_halign(Gtk.Align.START)
         # TODO: make submit field a standalone class
-        self.player_box.get_children()[0].set_width_chars(30)
+        self.player_box.get_children()[0].set_width_chars(30)  # type: ignore
 
         self.fullscreen_toggle = self.make_binary_radio(
             strings.options.last_used,
@@ -159,18 +159,9 @@ class Options(Gtk.Box):
             [LeftLabel(strings.options.name), self.player_box],
         ]
 
-        self.mod_install_toggle = self.make_binary_radio(
-            strings.options.manual_dl, strings.options.auto_dl, Preferences.INSTALL
-        )
-        self.force_button = Gtk.Button(label=strings.options.update)
-        self.force_button.connect("clicked", self._on_force_update_clicked)
-
-        # NOTE: sensitivity state is updated after config file is loaded
-        self.force_button.set_sensitive(False)
-
         eb = InfoEventBox(options.workshop_eventbox, controller)
 
-        workshop_button = SteamWorkshopButton()  # label=strings.self_workshop)
+        workshop_button = SteamWorkshopButton()
         workshop_button.connect(
             "clicked", lambda _: self.controller.open_user_workshop(self.uid)
         )
@@ -346,10 +337,6 @@ class Options(Gtk.Box):
             self.bm_entry.set_text(self.old_bm)
         pass
 
-    def _on_force_update_clicked(self, button: Gtk.Button) -> None:
-        # TODO: unimplemented
-        print("UNIMPLEMENTED")
-
     def _on_start_tab_changed(self, combo: Gtk.ComboBoxText) -> None:
         _iter = combo.get_active_iter()
         if _iter is None:
@@ -372,18 +359,6 @@ class Options(Gtk.Box):
             button.handler_block_by_func(self._on_radio_toggled)
             self.populate_settings()
             button.handler_unblock_by_func(self._on_radio_toggled)
-
-        if context == Preferences.INSTALL:
-            if self.controller.is_auto_install():
-                self.force_button.set_sensitive(True)
-                WorkshopLinkDialog(
-                    self.controller,
-                    strings.options.manual_sub_msg,
-                    strings.self_workshop,
-                    self.uid,
-                )
-            else:
-                self.force_button.set_sensitive(False)
 
     def _is_valid_text(self, text: str, context: Preferences) -> bool:
         if text.isspace():
@@ -458,11 +433,10 @@ class Options(Gtk.Box):
         config = query.get_config(prefs.paths.config)
 
         # TODO: use newer config enums
-        name = config["name"]
-        default_steam_path = config["default_steam_path"]
-        steam = config["steam_api"]
-        bm = config["bm_api"]
-        install = config["auto_install"]
+        name = self.controller.query_config(Preferences.NAME)
+        default_steam_path = self.controller.query_config(Preferences.DEFAULT)
+        steam = self.controller.query_config(Preferences.STEAM)
+        bm = self.controller.query_config(Preferences.BM)
 
         steam_path = Path(default_steam_path)
         # NOTE: this is a best effort guess at the most recent user
@@ -481,9 +455,7 @@ class Options(Gtk.Box):
 
         # NOTE: suppress toggle signal until radios are built
         self._suppress_toggles(True)
-        self.force_button.set_sensitive(install)
         for el, conf_state in [
-            (self.mod_install_toggle, install),
             (self.fullscreen_toggle, config["fullscreen"]),
             (self.distance_toggle, config["use_miles"]),
         ]:
@@ -519,7 +491,6 @@ class Options(Gtk.Box):
 
     def _suppress_toggles(self, state: bool) -> None:
         for toggle in [
-            self.mod_install_toggle,
             self.fullscreen_toggle,
             self.distance_toggle,
         ]:

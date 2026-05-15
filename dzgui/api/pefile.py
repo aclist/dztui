@@ -431,20 +431,15 @@ def get_app_path(folders_path: Path, appid: int) -> Path:
     for obj in j["libraryfolders"]:
         if str(appid) in j["libraryfolders"][obj]["apps"]:
             app_path = j["libraryfolders"][obj]["path"]
-            break
+            if Path(app_path).exists():
+                break
 
     if app_path is None:
         raise AppNotInstalledError(
             f"Failed to find a libraryfolder for the appid {appid}"
         )
 
-    app_path = Path(app_path)
-    if app_path.exists() is False:
-        raise AppMovedError(
-            f"Path '{app_path}' specified in libraryfolders does not exist"
-        )
-
-    return app_path
+    return Path(app_path)
 
 
 def get_pretty_version(steam_path: Path, appid: int) -> str | None:

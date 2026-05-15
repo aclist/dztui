@@ -291,8 +291,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         name = prereqs.name
         self.title.set_text(name)
 
-        # FIXME: append to tree status bar
-
         if total_mods < 1:
             self._hide_mod_area()
         else:

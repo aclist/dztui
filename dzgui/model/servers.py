@@ -303,7 +303,6 @@ class ServerModelManager:
                 self.thread_man.set_cleanup_func(func)
                 return
             config_man.add_saved_server(fqip)
-            # 2026-05-04
             # FIXME: this is valid if saved servers tab is already open,
             # but not if app was just booted
             if proxy_man.has_control_model() is False:

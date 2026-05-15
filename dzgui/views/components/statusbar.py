@@ -1,4 +1,5 @@
 from typing import Self, Union, TYPE_CHECKING
+from warnings import deprecated
 
 from dzgui.const.enum import NotebookPage, ServerTab
 from dzgui.util.strings import esc_to_return, question_to_return
@@ -131,10 +132,11 @@ class Statusbar(Gtk.Grid):
         cid = self.statusbar.get_context_id(str(context))
         self.statusbar.pop(cid)
 
-    def get_text(self) -> str:
-        area = self.statusbar.get_message_area()
-        label = area.get_children()[0]
-        return str(label.get_text())
+    @deprecated("currently unused")
+    # def get_text(self) -> str:
+    #    area = self.statusbar.get_message_area()
+    #    label = area.get_children()[0]
+    #    return str(label.get_text())
 
     def set_by_context(
         self, context: Union[NotebookPage, "ServerTab"], string: str

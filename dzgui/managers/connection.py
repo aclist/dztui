@@ -111,7 +111,12 @@ class ConnectionManager:
             self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
             return
 
-        self.history = res.as_row()
+        try:
+            self.history = res.as_row()
+        except Exception:
+            self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
+            return
+
         record = res.get_record()
 
         # NOTE: store metadata for later connection

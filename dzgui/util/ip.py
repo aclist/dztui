@@ -54,9 +54,9 @@ def get_coords(ips: "Path", ip: str) -> Coords:
     prefix = f"^{split[0]}.{split[1]}."
 
     if shutil.which("rg") is not None:
-        args = ["/usr/bin/rg", prefix, ips]
+        args = ["/usr/bin/rg", prefix, str(ips)]
     else:
-        args = ["/usr/bin/grep", "-E", prefix, ips]
+        args = ["/usr/bin/grep", "-E", prefix, str(ips)]
     proc = subprocess.run(args, capture_output=True, text=True)
 
     if proc.returncode != 0:

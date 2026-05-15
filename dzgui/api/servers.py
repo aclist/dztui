@@ -86,7 +86,11 @@ class A2SInfo:
             raise AttributeError("No record to convert")
         ip = self.record.ip
         qport = self.record.qport
-        return source_info_to_dict(ip, qport, self.info)
+        try:
+            return source_info_to_dict(ip, qport, self.info)
+        except Exception as e:
+            logger.warning(e)
+            raise e
 
     def is_modded(self) -> bool:
         if self.info is None:
@@ -239,7 +243,7 @@ def parse_json(json: list) -> list:
     return rows
 
 
-def source_info_to_dict(ip: str, qport: int, info: "SourceInfo") -> dict[str, Any] | None:
+def source_info_to_dict(ip: str, qport: int, info: "SourceInfo") -> dict[str, Any]:
     try:
         name = info.server_name
         mapname = info.map_name
@@ -268,7 +272,7 @@ def source_info_to_dict(ip: str, qport: int, info: "SourceInfo") -> dict[str, An
     except Exception as e:
         # TODO: generalized function
         logger.critical(f"{type(e).__name__}: {e} ({ip}:{qport})")
-        return None
+        raise e
 
 
 def query_direct(ip: str, qport: int, timeout: float = 3.0) -> dict[str, Any] | None:
@@ -448,6 +452,8 @@ def get_rules(record: Record) -> list["DayzMod"]:
 def query_playercount(record: Record) -> tuple[int, int] | None:
     try:
         res = query_direct(record.ip, record.qport)
+        if res is None:
+            return None
         players = int(res["players"])
         r = res["gametype"].split("lqs")
         try:
@@ -462,6 +468,8 @@ def query_playercount(record: Record) -> tuple[int, int] | None:
 
 def query_by_ip(addr: str) -> A2SInfo:
     record = short_ip_to_record(addr)
+    if record is None:
+        return A2SInfo(Record("0", 0, 0), None)
     return query_by_record(record, update_gameport=True)
 
 def query_by_id(server_id: int, key: str) -> A2SInfo:
@@ -469,6 +477,8 @@ def query_by_id(server_id: int, key: str) -> A2SInfo:
     Used with numeric Battlemetrics IDs
     """
     record = map_id_to_record(key, server_id)
+    if record is None:
+        return A2SInfo(Record("0", 0, 0), None)
     return query_by_record(record)
 
 
@@ -485,6 +495,7 @@ def query_by_record(record: Record, update_gameport: bool = False) -> A2SInfo:
 
 def short_ip_to_record(addr: str) -> Optional[Record]:
     r = addr.split(":")
+    # TODO: raise exceptions instead of Nonetype
     if len(r) != 2:
         return None
     return Record(r[0], 0, int(r[1]))

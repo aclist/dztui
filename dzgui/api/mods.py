@@ -70,8 +70,11 @@ def parse_meta(file: Path) -> ModMeta | None:
                 if ntok == "-":
                     ntok += str(lex.get_token())
             elif tok == "name":
-                ntok = lex.get_token().split('"')[1]
-            v.append(ntok)
+                ntok = lex.get_token()
+                if ntok is not None:
+                    ntok = ntok.split('"')[1]
+            if ntok is not None:
+                v.append(ntok)
         meta = ModMeta(*v)
         return meta
 
@@ -99,7 +102,7 @@ def get_delimited_mods(steam_path: Path) -> list[Any]:
         size = get_mod_size(mod)
         # NOTE: final col is cell renderer highlight toggle
         clean.append([meta.name, symlink, mod_dir, size, False])
-    clean.sort(key=lambda row: row[0].casefold())
+    clean.sort(key=lambda row: str(row[0]).casefold())
     return clean
 
 

@@ -30,11 +30,11 @@ class ContextMixin(TreeView):
             case Gdk.EventType.BUTTON_PRESS:
                 if event.button != 3:
                     return False
-                self._process_button_event(event)
+                self._process_button_event(event)  # type: ignore
             case Gdk.EventType.KEY_PRESS:
-                if not is_ctrl_mask(event):
+                if not is_ctrl_mask(event):  # type: ignore
                     return False
-                if event.keyval is not Gdk.KEY_l:
+                if event.keyval is not Gdk.KEY_l:  # type: ignore
                     return False
             case _:
                 return False
