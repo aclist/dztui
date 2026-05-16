@@ -2,130 +2,165 @@ import logging
 
 from typing import Self, TYPE_CHECKING
 
-from dzgui.const.enum import ContextMenuGroup
+from dzgui.const.constants import APP_NAME
+from dzgui.const.enum import ContextMenuGroup, ServerTab
 from dzgui.views.trees.tree_servers import ServerTreeView
 from dzgui.util.strings import server_labels
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib  # noqa E402
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.mc import Emitter
+
+
+class ScrollableTree(Gtk.ScrolledWindow):
+    def __init__(self, tree: "ServerTreeView") -> None:
+        super().__init__()
+
+        self.tree = tree
+        self.add(tree)
+
+    def get_tree(self) -> "ServerTreeView":
+        return self.tree
+
 
 class ServerNotebook(Gtk.ScrolledWindow):
     def __init__(self, controller: "Controller"):
         super().__init__()
 
-        self.tab_cache = ""
         self.controller = controller
+        self.emitter = self.controller.get_emitter()
+
         self.controller.register_widget("servers", self)
         self.notebook = Gtk.Notebook(show_tabs=True)
 
-        self.browser = ServerTreeView(controller)
-        self.saved = ServerTreeView(controller)
-        self.recent = ServerTreeView(controller)
-        self.lan = ServerTreeView(controller)
-
-        self.lan.set_query_func(self.query_test)
-        # TODO: set context menu on init
-        self.browser.set_context_menu(ContextMenuGroup.SERVER_BROWSER)
-        self.saved.set_context_menu(ContextMenuGroup.SAVED)
-        self.recent.set_context_menu(ContextMenuGroup.RECENT)
-        self.lan.set_context_menu(ContextMenuGroup.SCAN_LAN)
-
-        # TODO: set model manager for each tab on init
-        # TODO: add set_ and get_model_manager() methods
+        self.browser = ServerTreeView(
+            controller, ServerTab.BROWSER, ContextMenuGroup.SERVER_BROWSER
+        )
+        self.saved = ServerTreeView(controller, ServerTab.SAVED, ContextMenuGroup.SAVED)
+        self.recent = ServerTreeView(
+            controller, ServerTab.RECENT, ContextMenuGroup.RECENT
+        )
+        self.lan = ServerTreeView(controller, ServerTab.LAN, ContextMenuGroup.SCAN_LAN)
 
         tabs = [
-            (self.browser, server_labels.browser, self.controller.get_server_store),
-            (self.saved, server_labels.saved, self.controller.get_saved_store),
-            (self.recent, server_labels.recent, self.controller.get_recent_store),
-            (self.lan, server_labels.lan, self.controller.get_lan_store),
-            ]
+            (self.browser, server_labels.browser),
+            (self.saved, server_labels.saved),
+            (self.recent, server_labels.recent),
+            (self.lan, server_labels.lan),
+        ]
 
-        for tree, label, func in tabs:
-            store = func()
-            if label == "LAN":
-                pass
-                #store.append(["BAR", "a", "a", "a", 1, 1, 1, "1:1", 0, 0, "a", False])
-            else:
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                store.append(["BAR", "a", "a", "a", 0, 0, 0, "1:1", 0, 0, "a", False])
-                tree.loaded = True
-            # TODO: set model on init of servertreeview
-            tree.set_model(store)
-
-            scrolled = Gtk.ScrolledWindow()
-            scrolled.add(tree)
+        for tree, label in tabs:
+            scrolled = ScrollableTree(tree)
             self.notebook.append_page(scrolled, Gtk.Label(label=label))
 
         self.add(self.notebook)
         self.notebook.connect_after("switch-page", self._on_page_changed)
         self.connect("key-press-event", self._on_keypress)
+        self.connect("map", self._on_map)
+        self.connect("unmap", self._on_unmap)
 
-    def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
+        self.emitter.connect("servers_loaded", self._on_servers_loaded)
+        self.emitter.connect("saved_servers_changed", self._on_saved_servers_changed)
 
+    def _on_saved_servers_changed(self, emitter: "Emitter") -> None:
+        # TODO: can be dropped/consolidated?
+        saved = 1
+        cur_page = self.notebook.get_current_page()
+        if cur_page == saved:
+            return
+        page = self.notebook.get_nth_page(saved)
+        if not page:
+            return
+        label = self.notebook.get_tab_label(page)
+        if label is None:
+            return
+        if hasattr(label, "set_text"):
+            label.set_text(f"{server_labels.saved}*")
+
+    def _on_servers_loaded(self, emitter: "Emitter", tab: "ServerTab") -> None:
+        # NOTE: workaround for GTK bug where fullscreen causes headers to vanish when model is None
+        # TODO: this should be internal to servers page
+        tv = self.get_active_treeview()
+        if tv is None:
+            return
+        state = False if tv.get_model() is None else True
+        tv.set_headers_visible(state)
+        tv.set_loaded(True)
+        tv.focus_first_row()
+        tv.grab_focus()
+
+    def _on_map(self, widget: Self) -> None:
+        self.emitter.emit("server_page_toggled", True)
+
+    def _on_unmap(self, widget: Self) -> None:
+        self.emitter.emit("server_page_toggled", False)
+
+    def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> bool:
+        # NOTE: abort if modifier mask is active
+        if event.state != 0:
+            return False
         match event.keyval:
             case Gdk.KEY_n:
                 self.notebook.next_page()
+                self.grab_content_area()
+                return True
             case Gdk.KEY_p:
                 self.notebook.prev_page()
+                self.grab_content_area()
+                return True
             case _:
-                return
-        self.get_active_treeview().grab_focus()
+                return False
 
+    def grab_content_area(self) -> None:
+        tv = self.get_active_treeview()
+        if tv is not None:
+            tv.grab_focus()
 
-    def _on_page_changed(self, notebook: Gtk.Notebook, child: Gtk.Widget, index: int) -> None:
-        # TODO: abstract
-        # TODO: load on first run
-        label = self.notebook.get_tab_label_text(child)
-        if label is None:
+    def get_current_tab_text(self) -> str:
+        ind = self.notebook.get_current_page()
+        child = self.notebook.get_nth_page(ind)
+        if child is None:
+            return ""
+        text = self.notebook.get_tab_label_text(child)
+        if text is None:
+            return ""
+        return text
+
+    def _on_page_changed(
+        self, notebook: Gtk.Notebook, child: ScrollableTree, index: int
+    ) -> None:
+        if self.controller.loaded is False:
             return
-        # TODO: strings
-        text = label.strip("*")
-        self.notebook.set_tab_label_text(child, text)
 
-        # TODO: strings
-        string = f"Servers > {text}"
-        self.controller.set_crumbs(string)
-        self.tab_cache = string
+        label = self.notebook.get_tab_label_text(child)
+        if label is not None:
+            # TODO: strings
+            text = label.strip("*")
+            self.notebook.set_tab_label_text(child, text)
 
-        child.grab_focus()
+        tree = child.get_tree()
+        self.emitter.emit("server_page_changed", tree)
 
-        # FIXME: doesn't fire on first run
-        self.controller.update_server_status()
-        self.controller.populate_model()
-
-    # TODO: put in controller
-    def query_test(self) -> None:
-        data = (["BAR", "a", "a", "a", 1, 1, 1, "1:1", 0, 0, "a", False])
-        return data
-
-    def get_cached_label(self) -> str:
-        return self.tab_cache
+        # NOTE: spawns a thread
+        tv = self.get_active_treeview()
+        if tv is not None:
+            self.controller.populate_model(tv)
 
     def get_active_treeview(self) -> ServerTreeView:
         index = self.notebook.get_current_page()
         scrollable = self.notebook.get_nth_page(index)
-        treeview = scrollable.get_children()[0]
-        return treeview
+        if scrollable is not None and hasattr(scrollable, "get_children"):
+            tv = scrollable.get_children()[0]
+            if isinstance(tv, ServerTreeView):
+                return tv
+        raise ValueError("No treeview set")
 
     def add_notification(self) -> None:
         saved = self.notebook.get_nth_page(1)
@@ -149,9 +184,22 @@ class ServerNotebook(Gtk.ScrolledWindow):
                 continue
             for col in tab.get_columns():
                 if col.get_title() == title:
-                    self.controller.suppress_signal(tab, col, "_on_col_width_changed", True)
+                    self.controller.suppress_signal(
+                        tab, col, "_on_col_width_changed", True
+                    )
                     col.set_fixed_width(width)
-                    self.controller.suppress_signal(tab, col, "_on_col_width_changed", False)
+                    self.controller.suppress_signal(
+                        tab, col, "_on_col_width_changed", False
+                    )
 
-    def get_tabs(self) -> tuple:
-        return (self.browser, self.saved, self.recent, self.lan)
+    def get_browser(self) -> ServerTreeView:
+        return self.browser
+
+    def get_saved(self) -> ServerTreeView:
+        return self.saved
+
+    def get_recent(self) -> ServerTreeView:
+        return self.recent
+
+    def get_lan(self) -> ServerTreeView:
+        return self.lan

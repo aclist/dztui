@@ -1,0 +1,12 @@
+developers = "Developers"
+start_tab = "Start tab"
+workshop_label = "Subscribed mods"
+workshop_eventbox = "If you manually subscribed to mods on Steam prior to using DZGUI, you can unsubscribe via this link."
+steam_combo = "Steam"
+flatpak_combo = "Flatpak"
+flatpak_container_combo = "Flatpak (container)"
+
+server_combo = "Server browser"
+saved_combo = "Saved servers"
+recent_combo = "Recent"
+lan_combo = "LAN"

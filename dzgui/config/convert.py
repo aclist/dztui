@@ -1,11 +1,13 @@
 import json
 import shlex
 from pathlib import Path
+from typing import Any
 
 
 """
 Convert legacy dztuirc to config.json
 """
+
 
 class UnsupportedKey(Exception):
     pass
@@ -33,40 +35,58 @@ def rc2json(file: Path) -> str:
         lex = shlex.shlex(f.read())
         lex.whitespace += "="
 
-    d = {}
+    keys: dict[str, Any] = {}
     ips: list[str] = []
 
-    toggles = ["auto_install", "debug", "fullscreen"]
-    deprecated = ["staging_dir", "src_path", "steam_path"]
+    toggles = ["fullscreen"]
+    deprecated = [
+        "staging_dir",
+        "src_path",
+        "steam_path",
+        "debug",
+        "branch",
+        "auto_install",
+    ]
 
     while True:
         tok = lex.get_token()
         ntok = lex.get_token()
+        value: str | bool
 
         if ntok is not None:
             ntok = ntok.strip('""')
+            value = ntok
 
         if tok in deprecated:
             continue
         elif tok in toggles:
-            ntok = str2bool(ntok)
+            if ntok is not None:
+                value = str2bool(ntok)
         elif tok == "preferred_client":
             tok = "client"
         elif tok == "api_key":
             tok = "bm_api"
         elif tok == "ip_list":
             while True:
-                ntok = lex.get_token().strip('""')
+                ntok = lex.get_token()
+                if ntok is not None:
+                    ntok = ntok.strip('""')
+                    value = ntok
                 if ntok == ")":
                     break
-                ips.append(ntok)
+                # TODO: make test for this
+                # NOTE: strip malformed records from ancient config file versions
+                if ntok is not None:
+                    if len(ntok.split(":")) == 3 and ntok.split(":")[2] != "":
+                        ips.append(ntok)
             continue
 
         if not tok:
             break
 
-        d[tok] = ntok
+        keys[tok] = value
 
-    d["ip_list"] = ips
-    d["use_miles"] = False
-    return json.dumps(d, indent=2)
+    keys["ip_list"] = ips
+    keys["use_miles"] = False
+    keys["start_tab"] = 0
+    return json.dumps(keys, indent=2)

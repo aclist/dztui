@@ -26,15 +26,16 @@ def get_cpu_model() -> str:
 def print_servers(servers: list[str]) -> str:
     s = ""
     for server in servers:
-        s+= server + "\n"
+        s += server + "\n"
     return s
 
 
 def print_mods(mods: list[int]) -> str:
     s = ""
     for mod in mods:
-        s+= str(mod) + "\n"
+        s += str(mod) + "\n"
     return s
+
 
 def write_diagnostic(config: Path, outfile: Path) -> None:
     # TODO: test availability on other distros
@@ -62,7 +63,7 @@ def write_diagnostic(config: Path, outfile: Path) -> None:
     servers = lookup(config, Preferences.IP_LIST)
     servers_pretty = print_servers(servers)
 
-    # FIXME: extraneous newlines in lists
+    # FIXME: extraneous newlines in lists of mods
     template = f"""\
     {APP_NAME} version {version} ({branch})
     Date: {date}
@@ -82,5 +83,5 @@ def write_diagnostic(config: Path, outfile: Path) -> None:
     {servers_pretty}
     """
 
-    output = "\n".join([line.lstrip() for line in template.split('\n')])
+    output = "\n".join([line.lstrip() for line in template.split("\n")])
     outfile.write_text(output)

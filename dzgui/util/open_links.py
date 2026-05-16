@@ -12,10 +12,6 @@ links = {
     RowType.BUGS: endpoints.GITHUB_ISSUES,
     RowType.FORUM: endpoints.FORUM,
     RowType.SPONSOR: endpoints.SPONSORS,
-    RowType.CHNG_STEAM_API: endpoints.STEAM_API_SETUP,
-    RowType.CHNG_BM_API: endpoints.BM_API_SETUP,
-    RowType.CONN_BY_ID: endpoints.BM_BROWSE,
-    RowType.ADD_BY_ID: endpoints.BM_BROWSE,
 }
 
 

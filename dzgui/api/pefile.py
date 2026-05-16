@@ -4,10 +4,7 @@ import struct
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from shlex import shlex
-from typing import BinaryIO, Union
-
-from packaging.version import Version
+from typing import BinaryIO, Self, Union
 
 from dzgui.const.constants import (
     APPID_DAYZ,
@@ -36,44 +33,44 @@ class VersionMatch(Enum):
     SAME_VERSION = 3
 
 
-class u8:
+class u8(int):
     fmt = "B"
 
 
-class u16:
+class u16(int):
     fmt = "H"
 
 
-class u32:
+class u32(int):
     fmt = "L"
 
 
-class u64:
+class u64(int):
     fmt = "Q"
 
 
-class i8:
+class i8(int):
     fmt = "b"
 
 
-class i16:
+class i16(int):
     fmt = "h"
 
 
-class i32:
+class i32(int):
     fmt = "l"
 
 
-class i64:
+class i64(int):
     fmt = "q"
 
 
 class PackedData:
     @classmethod
-    def unpack(cls, data: BinaryIO):
+    def unpack(cls, data: BinaryIO) -> Self:
         r = []
         for key, value in cls.__annotations__.items():
-            if value == str:
+            if value is str:
                 f = data.read(8).rstrip(b"\x00\x00").decode()
             else:
                 fmt = endian + (value.fmt)
@@ -242,7 +239,7 @@ class FileVersion:
     major: int
     minor: int
     build: int
-    revision: int
+    revision: str
 
 
 @dataclass(slots=True, frozen=True)
@@ -269,6 +266,7 @@ class AppNotInstalledError(Exception):
 
 class AppMovedError(Exception):
     """VDF points to a nonexistent location on disk"""
+
     pass
 
 
@@ -283,8 +281,11 @@ def parse_version_number(data: BinaryIO) -> FileVersion:
     minor = struct.unpack("<L", data.read(4))[0] >> 16 & 0xFFFF
     major = struct.unpack("<L", data.read(4))[0] >> 0 & 0xFFFF
     build = struct.unpack("<L", data.read(4))[0] >> 0 & 0xFFFF
-    revision = struct.unpack("<L", data.read(4))[0] >> 16 & 0xFFFF
-    return FileVersion(major, minor, build, revision)
+    # NOTE: 0-pad revision number
+    revision = str(struct.unpack("<L", data.read(4))[0] >> 16 & 0xFFFF)
+    offset = 3 - len(revision)
+    padded = "0" * offset + revision
+    return FileVersion(major, minor, build, padded)
 
 
 def seek_to_hex(address: str, data: BinaryIO) -> None:
@@ -313,7 +314,8 @@ def get_dayz_version(file: Path) -> DayZVersion:
 
 
 def dayz_version_to_str(v: DayZVersion) -> str:
-    return ".".join(str(el) for el in [v.major, v.minor, v.patch])
+    return ".".join(el for el in list(map(str, [v.major, v.minor, v.patch])))
+    # return ".".join(str(el) for el in [v.major, v.minor, v.patch])
 
 
 def dayz_version_from_str(v: str) -> DayZVersion:
@@ -332,6 +334,7 @@ def get_version(file: Path) -> FileVersion:
         magic = hex(struct.unpack("<H", (blob[0:2]))[0])
         f.seek(pos)
 
+        OBJW: OPTIONAL_HDR_WIN_X86 | OPTIONAL_HDR_WIN_X64
         if magic == PE32_x86:
             OPTIONAL_HDR_X86.unpack(f)
             OBJW = OPTIONAL_HDR_WIN_X86.unpack(f)
@@ -365,18 +368,15 @@ def get_version(file: Path) -> FileVersion:
         table = RESOURCE_DIRECTORY_TABLE.unpack(f)
         total = table.number_of_name_entries + table.number_of_id_entries
 
-        for entry in range(total):
+        for _iter in range(total):
             entry = RESOURCE_DIRECTORY_ENTRY.unpack(f)
             if entry.name_or_id == VERSION_RESOURCE:
                 while entry.data_or_subdir & (1 << 31):
                     shift = entry.data_or_subdir & ~(1 << 31)
                     seek_to_hex(hex(offset + shift), f)
                     table = RESOURCE_DIRECTORY_TABLE.unpack(f)
-                    total = (
-                        table.number_of_name_entries
-                        + table.number_of_id_entries
-                    )
-                    for entry in range(total):
+                    total = table.number_of_name_entries + table.number_of_id_entries
+                    for _iter in range(total):
                         entry = RESOURCE_DIRECTORY_ENTRY.unpack(f)
                 break
             if entry.name_or_id > VERSION_RESOURCE:
@@ -388,7 +388,7 @@ def get_version(file: Path) -> FileVersion:
         offset = data.data_rva - hdr.virtual_address + hdr.pointer_to_raw_data
         seek_to_hex(hex(offset), f)
 
-        hdr = VS_VERSION_INFO_HDR.unpack(f)
+        VS_VERSION_INFO_HDR.unpack(f)
         # https://learn.microsoft.com/en-us/windows/win32/menurc/vs-versioninfo
         byte_len = len(VS_VERSION_INFO_ID.encode("utf-16le"))
         label = f.read(byte_len).decode("utf-16le")
@@ -423,6 +423,7 @@ def get_pefile_path(steam_path: Path, appid: int) -> Path:
     pe_path = app_path / f"steamapps/common/{name}/{binary}"
     return pe_path
 
+
 def get_app_path(folders_path: Path, appid: int) -> Path:
     app_path = None
 
@@ -434,32 +435,27 @@ def get_app_path(folders_path: Path, appid: int) -> Path:
     for obj in j["libraryfolders"]:
         if str(appid) in j["libraryfolders"][obj]["apps"]:
             app_path = j["libraryfolders"][obj]["path"]
-            break
+            if Path(app_path).exists():
+                break
 
     if app_path is None:
         raise AppNotInstalledError(
             f"Failed to find a libraryfolder for the appid {appid}"
         )
-
-    app_path = Path(app_path)
-    if app_path.exists() is False:
+    if Path(app_path).exists() is False:
         raise AppMovedError(
-            f"Path '{app_path}' specified in libraryfolders does not exist"
+            f"The location '{app_path}' pointed to by '{appid}' no longer exists and may have been changed on the disk."
         )
 
-    return app_path
+    return Path(app_path)
 
 
-# TODO: tests
-def compare_versions(local: DayZVersion, remote: DayZVersion) -> VersionMatch:
-    local_str = Version(dayz_version_to_str(local))
-    remote_str = Version(dayz_version_to_str(remote))
-
-    if local_str == remote_str:
-        return VersionMatch.SAME_VERSION
-
-    if local_str < remote_str:
-        return VersionMatch.LOCAL_OLDER
-
-    if local_str > remote_str:
-        return VersionMatch.LOCAL_NEWER
+def get_pretty_version(steam_path: Path, appid: int) -> str | None:
+    try:
+        pe_file_path = get_pefile_path(steam_path, appid)
+        vers = get_dayz_version(pe_file_path)
+        dayz_version = dayz_version_to_str(vers)
+        return dayz_version
+    except Exception as e:
+        print(e)
+        return None

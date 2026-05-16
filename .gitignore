@@ -7,3 +7,5 @@ build/
 .pytest_cache/
 .mypy_cache/
 notes.otl
+uv.lock
+.coverage

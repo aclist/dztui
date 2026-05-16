@@ -10,3 +10,10 @@ file.
 All contributors are expected to act in accordance with the project's
 `code of conduct <https://github.com/aclist/dztui/blob/main/CODE_OF_CONDUCT.md>`_,
 and follow the project's standards and guidelines.
+
+To install DZGUI and related dependencies for linting, testing, and version control,
+invoke the command ``uv pip install .[dev]``.
+
+After this process, install the applicable pre-commit hooks by invoking the command ``pre-commit install``.
+
+These pre-commit hooks enforce code checks that prevent making commits unless the relevant tests pass.

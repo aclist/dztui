@@ -4,10 +4,11 @@ UDP_PORT = 27016
 VM_FILE = "/proc/sys/vm/max_map_count"
 MIN_COUNT = 1048576
 
-REQUEST_TIMEOUT = 3
+REQUEST_TIMEOUT = 10
 
 APPNAME_DAYZ = "DayZ"
-APPNAME_DAYZ_EXP = "DayZ Experimental"
+APPNAME_DAYZ_EXP = "DayZ Exp"
+APPNAME_DAYZ_EXP_HUMAN = "DayZ Experimental"
 DAYZ_BINARY = "DayZ_x64.exe"
 
 LIBRARYFOLDERS_PATH = "steamapps/libraryfolders.vdf"
@@ -30,15 +31,22 @@ APP_NAME_ABBR = "dzg"
 HEX_RED = "#FF0000"
 HEX_ORANGE = "#FFAC1C"
 
+CLIPBOARD = "edit-copy-symbolic"
+HELP_BUBBLE = "help-about-symbolic"
+INPUT_KEYBOARD = "input-keyboard-symbolic"
+LIST_ADD = "list-add-symbolic"
+REFRESH_ICON = "view-refresh-symbolic"
+SEARCH_ICON = "system-search-symbolic"
+STEAM_ICON = "steam_tray_mono"
 VIEW_CONCEAL = "view-conceal-symbolic"
 VIEW_REVEAL = "view-reveal-symbolic"
-INPUT_KEYBOARD = "input-keyboard-symbolic"
-HELP_BUBBLE = "help-about-symbolic"
-REFRESH_ICON = "view-refresh-symbolic"
+ERROR = "dialog-error-symbolic"
+WARNING = "dialog-warning-symbolic"
 WEB_BROWSER = "web-browser-symbolic"
 
 SEPARATOR = "SEPARATOR"
 
+# TODO: drop
 NO_PADDING = 0
 NO_EXPAND = False
 NO_FILL = False
@@ -55,3 +63,9 @@ LEGACY_IPS_PATH = ".local/share/dzgui/helpers/ips.csv"
 
 DEBUG_LOG = f"{APP_NAME}_DEBUG.LOG"
 SYSTEM_LOG = f"{APP_NAME}_SYSTEM.LOG"
+CHANGELOG_PATH = "data/CHANGELOG.md"
+CSS_PATH = "data/app.css"
+
+LOG_FILTERS = ("CRITICAL", "WARNING", "INFO", "DEBUG")
+# TODO: drop
+FOREGROUND_CMDS = ("wmctrl", "xdotool")

@@ -2,18 +2,18 @@ import logging
 from pathlib import Path
 
 from dzgui.api.mods import get_local_mod_path, get_local_mod_ids, _hash
-from dzgui.const.constants import APPID_DAYZ, APPID_DAYZ_EXP
+from dzgui.const.constants import APPID_DAYZ, APPID_DAYZ_EXP, APP_NAME
 from dzgui.const.enum import Preferences
 from dzgui.config.query import lookup
 
 import dzgui.api.pefile as PeFile
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
+
 
 def rebuild_symlinks(config: Path) -> None:
     path = lookup(config, Preferences.DEFAULT)
     steam_path = Path(path)
-
     dayz_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
     # NOTE: unlink stale symlinks
     for file in dayz_path.iterdir():
@@ -27,19 +27,18 @@ def rebuild_symlinks(config: Path) -> None:
         source = Path(dayz_path / md5sum)
         if source.exists() is False:
             source.symlink_to(workshop / uid)
+    clone_symlinks(steam_path)
 
 
-def clone_symlinks(config: Path) -> None:
+def clone_symlinks(steam_path: Path) -> None:
     """
-    Used after any symlink operation
+    Shares symlinks between builds. Used after any symlink operation
     """
-    path = lookup(config, Preferences.DEFAULT)
-    steam_path = Path(path)
     try:
         dayz_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
         exp_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ_EXP)
     except Exception as e:
-        logger.critical(e)
+        logger.warning(e)
         return
 
     # TODO: test these two operations

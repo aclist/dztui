@@ -1,10 +1,11 @@
 from pathlib import Path
 
-import gi  # noqa E402
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GLib, GObject
-
 from dzgui.util.strings import picker
+
+import gi  # noqa E402
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk  # noqa E402
 
 
 class FilePicker(Gtk.FileChooserDialog):

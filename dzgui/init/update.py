@@ -4,16 +4,18 @@ import subprocess
 import sys
 
 from importlib import resources
-from packaging.version import Version, InvalidVersion
+from packaging.version import Version
 
-from dzgui.const.constants import APP_NAME_LOWER, REQUEST_TIMEOUT
+from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, REQUEST_TIMEOUT
 from dzgui.const.endpoints import GITHUB_RELEASES, CODEBERG_RELEASES
 from dzgui.init.prefix import is_prefix_writeable
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
+
 
 def get_latest_release() -> str | None:
     tag = None
+    # TODO: check order; github often has gateway errors
     for url in [GITHUB_RELEASES, CODEBERG_RELEASES]:
         try:
             res = requests.get(url, timeout=REQUEST_TIMEOUT)
@@ -25,18 +27,20 @@ def get_latest_release() -> str | None:
             continue
     return tag
 
+
 def allow_updates(allow: bool) -> bool:
     if allow is False:
         return False
     if allow is True:
         return is_prefix_writeable()
 
+
 def check_updates(version: str) -> None:
-    latest = get_latest_release()
-    prefix = sys.prefix
-    if latest is None:
-        return
     try:
+        latest = get_latest_release()
+        prefix = sys.prefix
+        if latest is None:
+            return
         if Version(version) >= Version(latest):
             return
 
@@ -50,5 +54,5 @@ def check_updates(version: str) -> None:
                 # TODO: pop a dialog
                 pass
             sys.exit(proc)
-    except InvalidVersion:
+    except Exception:
         return

@@ -6,10 +6,11 @@ import shutil
 
 from pathlib import Path
 
-from dzgui.const.constants import REQUEST_TIMEOUT
+from dzgui.const.constants import APP_NAME, REQUEST_TIMEOUT
 from dzgui.const.endpoints import DB_IP
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
+
 
 def find_download_url(url: str) -> str | None:
     res = requests.get(url, timeout=REQUEST_TIMEOUT)
@@ -20,6 +21,7 @@ def find_download_url(url: str) -> str | None:
         return None
     return str(urls[0])
 
+
 def get_ipdb(ips_path: Path) -> None:
     url = find_download_url(DB_IP)
     if url is None:
@@ -28,10 +30,10 @@ def get_ipdb(ips_path: Path) -> None:
     date = find_date(url)
     month_file = ips_path.parent / ".month"
     if ips_path.exists() and month_file.exists():
-            old_date = month_file.read_text().rstrip("\n")
-            if old_date == date:
-                logger.info(f"IP DB date matches: {date}")
-                return
+        old_date = month_file.read_text().rstrip("\n")
+        if old_date == date:
+            logger.info(f"IP DB date matches: {date}")
+            return
 
     # TODO: log additional output
     logger.info(f"Fetching IPDB for {date} from {url}")

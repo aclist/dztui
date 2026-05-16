@@ -4,21 +4,11 @@ from typing import TYPE_CHECKING
 from dzgui.api import pefile as PeFile
 from dzgui.api.steam import find_user_id
 from dzgui.config import query
-from dzgui.util import strings, css, open_links
-
-from dzgui.views.components.label import LeftLabel
-from dzgui.views.components.eventbox import InfoEventBox
-from dzgui.views.components.buttons import WebButton
-from dzgui.views.dialogs.link_dialog import WorkshopLinkDialog
-
-from dzgui.const.enum import Preferences, Popup
-from dzgui.const.endpoints import STEAM_API_SETUP, BM_API_SETUP
 from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
     APPNAME_DAYZ,
-    APPNAME_DAYZ_EXP,
-    BETA_REPO,
+    APPNAME_DAYZ_EXP_HUMAN,
     FLATPAK_RUN_CMD,
     FLATPAK_SANDBOX,
     NO_EXPAND,
@@ -27,14 +17,35 @@ from dzgui.const.constants import (
     STEAM_CMD,
     VIEW_CONCEAL,
     VIEW_REVEAL,
-    )
+)
+from dzgui.const.endpoints import STEAM_API_SETUP, BM_API_SETUP
+from dzgui.const.enum import Preferences, ServerTab
+from dzgui.strings import errors, options
+from dzgui.util import strings, css, open_links
+from dzgui.views.components.buttons import SteamWorkshopButton
+from dzgui.views.components.labels import LeftLabel
+from dzgui.views.components.eventbox import InfoEventBox
+from dzgui.views.components.buttons import WebButton
+from dzgui.views.components.frame import HeadingFrame
+from dzgui.views.dialogs.generic import ExceptionDialog
+
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk  # noqa
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
+
+
+class ShortHBox(Gtk.Box):
+    def __init__(self, widget: Gtk.Widget) -> None:
+        super().__init__(spacing=5, halign=Gtk.Align.START)
+
+        self.pack_start(widget, NO_EXPAND, NO_FILL, NO_PADDING)
+
 
 class Options(Gtk.Box):
     def __init__(self, controller: "Controller"):
@@ -45,18 +56,20 @@ class Options(Gtk.Box):
         )
 
         self.controller = controller
+        self.controller.register_widget("options", self)
+        emitter = controller.get_emitter()
+        emitter.connect("api_change_failed", self._on_api_change_failed)
 
         self.DEFAULT_WIDTH = 1
         self.DEFAULT_HEIGHT = 1
 
-        # TODO: strings
         label = Gtk.Label(label=strings.options.header)
         label.set_halign(Gtk.Align.CENTER)
         css.add_class(label, "page-heading")
         self.add(label)
 
-        self.steam_entry = None
-        self.bm_entry = None
+        self.steam_entry: Gtk.Entry
+        self.bm_entry: Gtk.Entry
 
         self.steam = WebButton(label=strings.options.steam_web)
         self.steam.connect("clicked", self._on_link_button_clicked, STEAM_API_SETUP)
@@ -78,64 +91,89 @@ class Options(Gtk.Box):
         self.player_box = self._make_submit_field(
             strings.options.name_placeholder, Preferences.NAME
         )
+        self.player_box.set_halign(Gtk.Align.START)
+        # TODO: make submit field a standalone class
+        self.player_box.get_children()[0].set_width_chars(30)  # type: ignore
+
         self.fullscreen_toggle = self.make_binary_radio(
             strings.options.last_used,
             strings.options.always_fs,
             Preferences.WINDOW,
         )
 
-        self.client_combo = Gtk.ComboBoxText()
-        # TODO: strings
-        self.client_combo.append_text("Steam")
-        self.client_combo.append_text("Flatpak")
-        self.client_combo.append_text("Flatpak (container)")
+        # TODO: make this an abstract class
+        client_store = Gtk.ListStore(str, str)
+        clients = (
+            (
+                options.steam_combo,
+                STEAM_CMD,
+            ),
+            (
+                options.flatpak_combo,
+                FLATPAK_RUN_CMD,
+            ),
+            (
+                options.flatpak_container_combo,
+                FLATPAK_SANDBOX,
+            ),
+        )
+        for client in clients:
+            client_store.append(client)
+        self.client_combo = Gtk.ComboBox.new_with_model(client_store)  # Text()
+        renderer_text = Gtk.CellRendererText()
+        self.client_combo.pack_start(renderer_text, True)
+        self.client_combo.add_attribute(renderer_text, "text", 0)
         self.client_combo.set_active(0)
         self.client_combo.connect("changed", self._on_client_changed)
-        hbox = Gtk.Box(spacing=5, halign=Gtk.Align.START)
-        hbox.pack_start(self.client_combo, NO_EXPAND, NO_FILL, NO_PADDING)
+
+        client_hbox = ShortHBox(self.client_combo)
 
         self.distance_toggle = self.make_binary_radio(
             strings.options.km, strings.options.mi, Preferences.DIST
         )
 
+        combo_store = Gtk.ListStore(str, object)
+        tabs = (
+            (options.server_combo, ServerTab.BROWSER),
+            (options.saved_combo, ServerTab.SAVED),
+            (options.recent_combo, ServerTab.RECENT),
+            (options.lan_combo, ServerTab.LAN),
+        )
+        for tab in tabs:
+            combo_store.append(tab)
+        self.start_tab_combo = Gtk.ComboBox.new_with_model(combo_store)
+        renderer_text = Gtk.CellRendererText()
+        self.start_tab_combo.pack_start(renderer_text, True)
+        self.start_tab_combo.add_attribute(renderer_text, "text", 0)
+        self.start_tab_combo.set_active(0)
+
+        start_tab_hbox = ShortHBox(self.start_tab_combo)
+        self.start_tab_combo.connect("changed", self._on_start_tab_changed)
+
         pref_rows = [
-            [LeftLabel(strings.options.client), hbox],
+            [LeftLabel(strings.options.client), client_hbox],
             [LeftLabel(strings.options.window_size), self.fullscreen_toggle],
             [LeftLabel(strings.options.distance), self.distance_toggle],
+            [LeftLabel(options.start_tab), start_tab_hbox],
             [LeftLabel(strings.options.name), self.player_box],
         ]
 
-        self.mod_install_toggle = self.make_binary_radio(
-            strings.options.manual_dl, strings.options.auto_dl, Preferences.INSTALL
+        eb = InfoEventBox(options.workshop_eventbox, controller)
+
+        workshop_button = SteamWorkshopButton()
+        workshop_button.connect(
+            "clicked", lambda _: self.controller.open_user_workshop(self.uid)
         )
-        self.force_button = Gtk.Button(label=strings.options.update)
-        self.force_button.connect("clicked", self._on_force_update_clicked)
-
-        # NOTE: sensitivity state is updated after config file is loaded
-        self.force_button.set_sensitive(False)
-
-        eb = InfoEventBox(strings.options.dl_eventbox, self)
-        eb2 = InfoEventBox(strings.options.force_eventbox, self)
-
         mod_rows = [
-            [LeftLabel(strings.options.install_mode), self.mod_install_toggle, eb],
-            [LeftLabel(strings.options.force_update), self.force_button, eb2],
+            [LeftLabel(options.workshop_label), workshop_button, eb],
         ]
 
         self.dayz_version_label = Gtk.Label(label=strings.null)
         self.dayz_exp_version_label = Gtk.Label(label=strings.null)
 
-        self.branch_combo = Gtk.ComboBoxText()
-        self.branch_combo.append_text(strings.options.stable)
-        self.branch_combo.append_text(strings.options.testing)
-        self.branch_combo.set_active(0)
-        self.branch_combo.connect("changed", self._on_branch_changed)
-        self.branch_eb = InfoEventBox("", self)
-
         version_rows = [
             [LeftLabel(APPNAME_DAYZ), self.dayz_version_label],
-            [LeftLabel(APPNAME_DAYZ_EXP), self.dayz_exp_version_label],
-            [LeftLabel(strings.options.branch), self.branch_combo, self.branch_eb],
+            [LeftLabel(APPNAME_DAYZ_EXP_HUMAN), self.dayz_exp_version_label],
         ]
 
         api_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -148,7 +186,7 @@ class Options(Gtk.Box):
             margin_top=5,
             margin_bottom=10,
             homogeneous=True,
-            spacing=10
+            spacing=10,
         )
         api_links_box.add(self.steam)
         api_links_box.add(self.bm)
@@ -166,30 +204,30 @@ class Options(Gtk.Box):
             hexpand=True,
         )
 
-        developers=Gtk.Button(label="Developers", halign=Gtk.Align.START)
+        developers = Gtk.Button(label=options.developers, halign=Gtk.Align.START)
         developers.connect("clicked", self._on_developers_clicked)
 
         prefs = self.controller.get_prefs()
-        is_developer = prefs.is_developer
-        if is_developer:
-            grid.attach(
-                developers, 1, 0, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT
-            )
+        if prefs.is_debug:
+            grid.attach(developers, 1, 0, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
 
         for frame in [
-            self.make_frame(api_box, strings.options.api_keys),
-            self.make_frame(prefs_grid, strings.options.prefs),
-            self.make_frame(mods_grid, strings.options.mods),
-            self.make_frame(version_grid, strings.options.version),
+            HeadingFrame(api_box, strings.options.api_keys),
+            HeadingFrame(prefs_grid, strings.options.prefs),
+            HeadingFrame(mods_grid, strings.options.mods),
+            HeadingFrame(version_grid, strings.options.version),
         ]:
-            grid.attach(
-                frame, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT
-            )
+            grid.attach(frame, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
             row += 1
 
         self.scrollable = Gtk.ScrolledWindow(vexpand=True)
         self.scrollable.add(grid)
         self.add(self.scrollable)
+
+    def get_client_name(self) -> str:
+        model = self.client_combo.get_model()
+        ind = self.client_combo.get_active()
+        return str(model[ind][0])
 
     def block_text_entry(self) -> None:
         for entry in self.steam_entry, self.bm_entry:
@@ -220,13 +258,11 @@ class Options(Gtk.Box):
         entry.connect("insert-text", self._on_text_typed, context, button)
         entry.connect("activate", self._on_field_activated, context, button)
         entry.get_property("buffer").connect(
-                "deleted-text", self._on_text_deleted, context, button
+            "deleted-text", self._on_text_deleted, context, button
         )
 
         if private:
-            entry.set_icon_from_icon_name(
-                Gtk.EntryIconPosition.SECONDARY, VIEW_REVEAL
-            )
+            entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, VIEW_REVEAL)
             entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
             entry.connect("icon-release", self._on_icon_release)
             entry.set_visibility(False)
@@ -243,7 +279,7 @@ class Options(Gtk.Box):
         return box
 
     def _on_field_activated(
-            self, entry: Gtk.Entry, context: Preferences, button: Gtk.Button
+        self, entry: Gtk.Entry, context: Preferences, button: Gtk.Button
     ) -> None:
         text = entry.get_text()
         if not self._is_valid_text(text, context):
@@ -264,9 +300,7 @@ class Options(Gtk.Box):
         for record in rows:
             col = 1
             for el in record:
-                grid.attach(
-                    el, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT
-                )
+                grid.attach(el, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
                 col += 1
             row += 1
         return grid
@@ -275,6 +309,9 @@ class Options(Gtk.Box):
         self, button: Gtk.Button, entry: Gtk.Entry, enum: Preferences
     ) -> None:
         old_text = self.controller.query_config(enum)
+        self.old_text = old_text
+        self.old_entry = entry
+
         button.set_sensitive(False)
         match enum:
             case Preferences.NAME:
@@ -282,8 +319,12 @@ class Options(Gtk.Box):
                 self.controller.update_config(enum, value)
             case Preferences.BM | Preferences.STEAM:
                 text = "".join(entry.get_text().split())
-                self.controller.set_callback(self.restore_api_text, old_text, entry)
-                self.controller.update_api_key(text, enum)
+                self.controller.update_api_key(enum, text)
+
+    def _on_api_change_failed(self, emitter: "Emitter") -> None:
+        self.old_entry.set_text(self.old_text)
+        dialog = ExceptionDialog(self.controller, errors.api_validation_error)
+        dialog.run()
 
     def restore_api_text(self, text: str, entry: Gtk.Entry) -> None:
         entry.set_text(text)
@@ -295,57 +336,28 @@ class Options(Gtk.Box):
             self.bm_entry.set_text(self.old_bm)
         pass
 
-    def _on_force_update_clicked(self, button: Gtk.Button) -> None:
-        # TODO: unimplemented
-        print("UNIMPLEMENTED")
-        #wait_msg = strings.dialog.updating_mods
-        #show_wait_dialog = True
-        #call_on_thread(show_wait_dialog, cmd, wait_msg, "")
+    def _on_start_tab_changed(self, combo: Gtk.ComboBoxText) -> None:
+        _iter = combo.get_active_iter()
+        if _iter is None:
+            raise ValueError(f"No active iterator set on {combo}")
+        enum = combo.get_model()[_iter][1]
+        index = enum.value
+        self.controller.update_config(Preferences.START_TAB, index)
 
     def _on_client_changed(self, combo: Gtk.ComboBoxText) -> None:
-        # TODO: use two columns or constants here, not strings
-        client = combo.get_active_text()
-        match client:
-            case "Steam":
-                value = STEAM_CMD
-            case "Flatpak":
-                value = FLATPAK_RUN_CMD
-            case "Flatpak (container)":
-                value = FLATPAK_SANDBOX
-        self.controller.update_config(Preferences.CLIENT, value)
+        _iter = combo.get_active_iter()
+        if _iter is None:
+            raise ValueError(f"No active iterator set on {combo}")
+        real_cmd = combo.get_model()[_iter][1]
+        self.controller.update_config(Preferences.CLIENT, real_cmd)
 
-    def _on_branch_changed(self, combo: Gtk.ComboBoxText) -> None:
-        branch = combo.get_active_text()
-        print("UNIMPLEMENTED")
-        print(branch)
-        ## TODO: needs to trigger download process
-        #self.controller.toggle_branch(branch)
-        #branch = combo.get_active_text().lower()
-        #self.controller.update_config("branch", branch)
-        #scripts/update
-
-    def _on_radio_toggled(
-        self, button: Gtk.RadioButton, context: Preferences
-    ) -> None:
+    def _on_radio_toggled(self, button: Gtk.RadioButton, context: Preferences) -> None:
         try:
             self.controller.toggle_config(context)
         except Exception:
             button.handler_block_by_func(self._on_radio_toggled)
             self.populate_settings()
             button.handler_unblock_by_func(self._on_radio_toggled)
-
-        if context == Preferences.INSTALL:
-            if self.controller.is_auto_install():
-                self.force_button.set_sensitive(True)
-                WorkshopLinkDialog(
-                    self.controller,
-                    strings.options.manual_sub_msg,
-                    strings.self_workshop,
-                    self.uid
-                )
-            else:
-                self.force_button.set_sensitive(False)
-
 
     def _is_valid_text(self, text: str, context: Preferences) -> bool:
         if text.isspace():
@@ -409,37 +421,26 @@ class Options(Gtk.Box):
 
         return hbox
 
-    def make_frame(self, widget: Gtk.Widget, text: str) -> Gtk.Box:
-        label = Gtk.Label(label=text)
-        label.set_halign(Gtk.Align.START)
-        css.add_class(label, "settings-subheading")
-
-        frame = Gtk.Frame(hexpand=True)
-        frame.add(widget)
-
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        box.add(label)
-        box.add(frame)
-
-        return box
-
     def populate_settings(self) -> None:
-        # TODO: controller.get_config()
         prefs = self.controller.get_prefs()
+        # NOTE: re-check in case file was removed by user between runs
         if prefs.paths.config.is_file() is False:
-            # NOTE: in case file got deleted locally
-            self.controller.spawn_dialog(strings.config_not_found, Popup.QUIT)
-            return
+            dialog = ExceptionDialog(self.controller, strings.config_not_found)
+            dialog.run()
+            raise Exception
 
         config = query.get_config(prefs.paths.config)
-        name = config["name"]
-        default_steam_path = config["default_steam_path"]
-        steam = config["steam_api"]
-        bm = config["bm_api"]
-        install = config["auto_install"]
+
+        # TODO: use newer config enums
+        name = self.controller.query_config(Preferences.NAME)
+        default_steam_path = self.controller.query_config(Preferences.DEFAULT)
+        steam = self.controller.query_config(Preferences.STEAM)
+        bm = self.controller.query_config(Preferences.BM)
 
         steam_path = Path(default_steam_path)
-        self.uid = find_user_id(steam_path)
+        # NOTE: this is a best effort guess at the most recent user
+        uid = find_user_id(steam_path)
+        self.uid = "" if uid is None else uid
 
         self.old_steam = steam
         self.old_bm = bm
@@ -447,15 +448,15 @@ class Options(Gtk.Box):
 
         self.steam_entry.set_text(steam)
         self.bm_entry.set_text(bm)
-        self.player_box.get_children()[0].set_text(name)
+        p = self.player_box.get_children()[0]
+        if hasattr(p, "set_text"):
+            p.set_text(name)
 
         # NOTE: suppress toggle signal until radios are built
         self._suppress_toggles(True)
-        self.force_button.set_sensitive(install)
         for el, conf_state in [
-            (self.mod_install_toggle, install),
             (self.fullscreen_toggle, config["fullscreen"]),
-            (self.distance_toggle, config["use_miles"])
+            (self.distance_toggle, config["use_miles"]),
         ]:
             el.get_children()[conf_state].set_active(True)
         self._suppress_toggles(False)
@@ -469,22 +470,12 @@ class Options(Gtk.Box):
             if field[0] == "":
                 field[1].get_children()[1].set_sensitive(False)
 
-        try:
-            pe_file_path = PeFile.get_pefile_path(
-                steam_path, APPID_DAYZ
-            )
-            vers = PeFile.get_dayz_version(pe_file_path)
-            dayz_version = PeFile.dayz_version_to_str(vers)
-        except Exception:
+        dayz_version = PeFile.get_pretty_version(steam_path, APPID_DAYZ)
+        if dayz_version is None:
             dayz_version = strings.null
 
-        try:
-            exp_file_path = PeFile.get_pefile_path(
-                steam_path, APPID_DAYZ_EXP
-            )
-            vers = PeFile.get_dayz_version(exp_file_path)
-            dayz_exp_version = PeFile.dayz_version_to_str(vers)
-        except Exception:
+        dayz_exp_version = PeFile.get_pretty_version(steam_path, APPID_DAYZ_EXP)
+        if dayz_exp_version is None:
             dayz_exp_version = strings.null
 
         self.dayz_version_label.set_text(dayz_version)
@@ -494,27 +485,17 @@ class Options(Gtk.Box):
         active_combo = query.get_client_index(config["client"])
         self.client_combo.set_active(active_combo)
 
-
-        active_combo = 1 if config["branch"] == BETA_REPO else 0
-
-        self.controller.suppress_signal(self, self.branch_combo, "_on_branch_changed", True)
-        self.branch_combo.set_active(active_combo)
-        self.branch_combo.set_sensitive(prefs.allow_updates)
-        self.controller.suppress_signal(self, self.branch_combo, "_on_branch_changed", False)
-
-        if prefs.allow_updates is True:
-            msg = strings.options.self_update
-        else:
-            msg = strings.options.no_self_update
-        self.branch_eb.set_text(msg)
+        start_tab = self.controller.query_config(Preferences.START_TAB)
+        self.start_tab_combo.set_active(start_tab)
 
     def _suppress_toggles(self, state: bool) -> None:
         for toggle in [
-            self.mod_install_toggle,
             self.fullscreen_toggle,
             self.distance_toggle,
         ]:
-            self.controller.suppress_signal(self, toggle.get_children()[0], "_on_radio_toggled", state)
+            self.controller.suppress_signal(
+                self, toggle.get_children()[0], "_on_radio_toggled", state
+            )
 
     def _on_icon_release(
         self,
@@ -529,3 +510,6 @@ class Options(Gtk.Box):
             icon, state = VIEW_CONCEAL, True
         widget.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, icon)
         widget.set_visibility(state)
+
+    def grab_content_area(self) -> None:
+        return

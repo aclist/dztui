@@ -1,20 +1,26 @@
-import multiprocessing
+import logging
+
 from math import radians, cos, sin, asin, sqrt
 from typing import TYPE_CHECKING
 
-
-import dzgui.util.ip as ip
-from dzgui.util.ip import GeolocationError
+from dzgui.const.constants import APP_NAME
+from dzgui.util.ip import get_coords
 from dzgui.util.localize import number
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
-    from dzgui.util.ip import Coords
+    from queue import Queue
+    from dzgui.const.enum import ServerTab
+    from dzgui.controllers.mc import Controller
 
-class Haversine():
+logger = logging.getLogger(APP_NAME)
+
+
+class Haversine:
     def __init__(self, lat1: float, lon1: float, lat2: float, lon2: float) -> None:
 
         R = 6371 * 1000
@@ -24,7 +30,7 @@ class Haversine():
         lat1 = radians(lat1)
         lat2 = radians(lat2)
 
-        a = sin(dLat/2) ** 2 + cos(lat1) * cos(lat2) * sin(dLon/2) ** 2
+        a = sin(dLat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dLon / 2) ** 2
         c = 2 * asin(sqrt(a))
 
         self.dist = R * c
@@ -35,53 +41,49 @@ class Haversine():
     def as_miles(self) -> float:
         return self.dist / 1609.344
 
-def compare(local: "Coords", remote_c: str, fmt: str) -> int | None:
-    if local is None:
-        return None
-    try:
-        # FIXME: expects XDG.ips
-        remote = ip.get_coords(remote_c)
-    except GeolocationError:
-        return None
+    def get_rounded(self, use_miles: bool) -> str:
+        if self is None:
+            return "Unknown"
+        if use_miles:
+            raw = round(self.as_miles())
+            separated = number(raw)
+            return str(separated) + " mi"
+        else:
+            raw = round(self.as_kilometers())
+            separated = number(raw)
+            return str(separated) + " km"
 
-    haversine = Haversine(local.lat, local.lon, remote.lat, remote.lon)
-    if fmt == "km":
-        dist = haversine.as_kilometers()
-    else:
-        dist = haversine.as_miles()
-    return round(dist)
 
-class CalcDist(multiprocessing.Process):
+class CalcDist:
     def __init__(
         self,
-        widget: Gtk.Widget,
         addr: str,
-        result_queue: multiprocessing.Queue,
-        cache: dict,
-    ):
+        enum: "ServerTab",
+        result_queue: "Queue",
+        controller: "Controller",
+        cache: dict[str, Haversine],
+    ) -> None:
         super().__init__()
 
+        self.enum = enum
+        self.controller = controller
         self.result_queue = result_queue
         self.addr = addr
-        self.ip = addr.split(":")[0]
+        self.ip = self.addr
 
-    # TODO: pass  controller correctly
-    def run(self) -> None:
-        use_miles = MainController.query_config("use_miles")
-        fmt = "mi" if use_miles else "km"
+        dist = self.compare(self.ip)
+        self.result_queue.put([self.addr, dist, self.enum])
 
-        # TODO: get cache accordingly
-        if self.addr in cache:
-            if fmt in cache[self.addr]:
-                logger.info(f"Address '{self.addr}' already in cache")
-                self.result_queue.put([self.addr, cache[self.addr]])
-                return
+    def compare(self, remote_ip: str) -> Haversine | None:
+        prefs = self.controller.get_prefs()
+        local = prefs.coords
+        if local is None:
+            return None
+        try:
+            remote = get_coords(prefs.paths.ips, remote_ip)
+        except Exception:
+            return None
 
-        prefs = MainController.get_prefs()
-        dist = compare(prefs.coords, prefs.paths.ips, self.ip, fmt)
-        if dist is None:
-            dist_pretty =  "Unknown"
-        else:
-            d = number(dist)
-            dist_pretty = f"{d} {fmt}"
-        self.result_queue.put([self.addr, dist_pretty])
+        # TODO: handle failed remote dist
+        haversine = Haversine(local.lat, local.lon, remote.lat, remote.lon)
+        return haversine

@@ -14,3 +14,7 @@ repos:
     name: Copy CHANGELOG.md to package data dir
     entry: python scripts/copy_changelog.py
     language: system
+  - id: untracked
+    name: Check for untracked files not present in .gitignore
+    entry: python scripts/untracked.py
+    language: system

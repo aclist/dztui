@@ -1,13 +1,19 @@
 from dataclasses import dataclass
-from dzgui.config.xdg import Xdg
-from dzgui.util.ip import Coords
+from typing import TYPE_CHECKING, Union
 
-@dataclass(slots=True, frozen=True)
+if TYPE_CHECKING:
+    from dzgui.config.xdg import Xdg
+    from dzgui.util.ip import Coords
+
+
+# NOTE: mutable dataclass, 'use_miles' key changes on demand
+@dataclass(slots=True)
 class UserPrefs:
     is_steam_deck: bool
     is_game_mode: bool
-    is_developer: bool
-    coords: Coords | None
+    is_debug: bool
+    coords: Union["Coords", None]
     version: str
     allow_updates: bool
-    paths: Xdg
+    paths: "Xdg"
+    use_miles: bool

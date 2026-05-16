@@ -54,7 +54,10 @@ def get_xdg_paths() -> dict:
     resolved_paths = {}
     for path in xdg_paths:
         rp = os.environ.get(path)
-        resolved_paths[path] = Path(rp) / APP_NAME_LOWER if is_writeable(rp) else xdg_paths[path] / APP_NAME_LOWER
+        if rp is not None and is_writeable(rp):
+            resolved_paths[path] = Path(rp)
+        else:
+            resolved_paths[path] = xdg_paths[path] / APP_NAME_LOWER
     return resolved_paths
 
 

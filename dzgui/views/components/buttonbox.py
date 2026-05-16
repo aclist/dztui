@@ -1,26 +1,38 @@
 import logging
+from typing import TYPE_CHECKING
 
+from dzgui.const.constants import APP_NAME, NO_EXPAND, NO_FILL, NO_PADDING
 from dzgui.const.enum import ButtonType
-from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk  # noqa E402
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
+
+if TYPE_CHECKING:
+    from dzgui.const.enum import NotebookPage
+    from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
+
 
 class ContextualButton(Gtk.Button):
-    def __init__(self, label, opens, tooltip, context):
+    def __init__(
+        self, label: str, opens: "NotebookPage", tooltip: str, context: ButtonType
+    ) -> None:
         super().__init__(
             label=label,
-            tooltip_text=tooltip
+            tooltip_text=tooltip,
+            focus_on_click=False,
         )
 
         self.context = context
         self.opens = opens
 
+
 class ButtonBox(Gtk.Box):
-    def __init__(self, controller) -> None:
+    def __init__(self, controller: "Controller") -> None:
         super().__init__(
             spacing=6,
             margin_top=0,
@@ -30,6 +42,9 @@ class ButtonBox(Gtk.Box):
         )
 
         self.controller = controller
+        self.emitter = controller.get_emitter()
+        self.emitter.connect("request_button_box_focus", self._focus_first_button)
+
         self.buttons = list()
         self.connect("key-press-event", self._on_keypress)
         prefs = controller.get_prefs()
@@ -40,9 +55,8 @@ class ButtonBox(Gtk.Box):
                 opens=side_button.dict["opens"],
                 tooltip=side_button.dict["tooltip"],
                 context=side_button,
-                )
+            )
 
-            # FIXME: if debug log fails to load, still opens table
             size = (10, 10) if prefs.is_steam_deck else (50, 50)
             x, y = size
             button.set_size_request(x, y)
@@ -51,8 +65,10 @@ class ButtonBox(Gtk.Box):
             button.connect("clicked", self._on_selection_button_clicked)
             self.pack_start(button, NO_EXPAND, NO_FILL, NO_PADDING)
 
+    def _focus_first_button(self, emitter: "Emitter") -> None:
+        self.buttons[0].grab_focus()
 
-    def _on_selection_button_clicked(self, button: Gtk.Button) -> None:
+    def _on_selection_button_clicked(self, button: ContextualButton) -> None:
         self.controller.open_page_by_button(button)
 
     def _walk_buttons(self, increment: int) -> None:
@@ -63,8 +79,8 @@ class ButtonBox(Gtk.Box):
                     return
                 if n == -1:
                     return
-                n = self.buttons[n]
-                n.grab_focus()
+                b = self.buttons[n]
+                b.grab_focus()
                 return
 
     def _on_keypress(self, widget: Gtk.Widget, event: Gdk.EventKey) -> None:

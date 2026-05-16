@@ -3,23 +3,27 @@ import requests
 
 from typing import Union, TYPE_CHECKING
 
-from dzgui.const.constants import APPID_DAYZ, REQUEST_TIMEOUT
+from dzgui.const.constants import APPID_DAYZ, APP_NAME, REQUEST_TIMEOUT
 from dzgui.const import endpoints
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
+
 
 if TYPE_CHECKING:
     from requests import Response
 
+
 def test_steam_api(key: str) -> bool:
     appid = APPID_DAYZ
     payload: dict[str, Union[int, str]] = {
-        "filter": r"\appid" + fr"\{appid}",
+        "filter": r"\appid" + rf"\{appid}",
         "limit": 10,
         "key": key,
     }
     try:
-        res = requests.get(endpoints.STEAM_SERVERS, params=payload, timeout=REQUEST_TIMEOUT)
+        res = requests.get(
+            endpoints.STEAM_SERVERS, params=payload, timeout=REQUEST_TIMEOUT
+        )
         return is_remote_up(res)
     except Exception as e:
         logger.critical(e)
@@ -44,10 +48,7 @@ def test_bm_api(key: str) -> bool:
     hdr = {"Authorization": "Bearer " + key}
     try:
         res = requests.get(
-            endpoints.BM_SERVERS,
-            params=payload,
-            headers=hdr,
-            timeout=REQUEST_TIMEOUT
+            endpoints.BM_SERVERS, params=payload, headers=hdr, timeout=REQUEST_TIMEOUT
         )
         return is_remote_up(res)
     except Exception as e:

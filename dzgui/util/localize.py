@@ -1,6 +1,7 @@
 import os
 import locale
 
+
 def number(num: int | float) -> str:
     spec = ""
     if type(num) is int:

@@ -1,23 +1,28 @@
 import logging
 
-from typing import Callable, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
+from warnings import deprecated
 
-from dzgui.const.constants import SEPARATOR
+from dzgui.const.constants import APP_NAME, SEPARATOR
 from dzgui.util.keys import is_navkey
 from dzgui.views.mixins.cursor_mixin import CursorMixin
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.const.enum import ContextMenuGroup
 
+
 class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
-    def __init__(self, controller: "Controller", menu: "ContextMenuGroup" = None) -> None:
+    def __init__(
+        self, controller: "Controller", menu: Optional["ContextMenuGroup"]
+    ) -> None:
         super().__init__(
             enable_search=False,
             search_column=-1,
@@ -28,12 +33,13 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         self.controller = controller
         self.sel_blocked = False
         self.set_row_separator_func(self._separate)
+        self.emitter = self.controller.get_emitter()
 
         self.selected_row = self.get_selection()
         self.selected_row.set_mode(Gtk.SelectionMode.SINGLE)
         self.selected_row.connect("changed", self._on_tree_selection_changed)
-
         self.connect("row-activated", self._on_row_activated)
+
         self.connect("key-press-event", self._on_keypress)
         self.connect("key-release-event", self._on_key_release)
 
@@ -41,82 +47,81 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
     def generic_treesel_changed(self, selection: Gtk.TreeSelection) -> None:
         pass
 
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST,
-        arg_types=(Gtk.TreePath, Gtk.TreeViewColumn)
+    @GObject.Signal(
+        flags=GObject.SignalFlags.RUN_LAST, arg_types=(Gtk.TreePath, Gtk.TreeViewColumn)
     )
-    def generic_row_activated(self,
-        path: Gtk.TreePath,
-        column: Gtk.TreeViewColumn
+    def generic_row_activated(
+        self, path: Gtk.TreePath, column: Gtk.TreeViewColumn
     ) -> None:
         pass
 
-    def signal_emission(func: Callable) -> Callable:
-        def wrapper(self, *args, **kwargs):
-            self.controller.block_signals()
-            func(self, *args, **kwargs)
-            self.controller.unblock_signals()
-
-        return wrapper
-
-    def _separate(self, model: Gtk.ListStore, iter_: Gtk.TreeIter) -> bool:
-        if model[iter_][0] == SEPARATOR:
+    def _separate(self, model: Gtk.ListStore, _iter: Gtk.TreeIter) -> bool:
+        if model[_iter][0] == SEPARATOR:
             return True
         return False
 
-    def get_current_iter(self) -> Gtk.TreeIter | None:
+    def get_current_iter(self) -> Optional[Gtk.TreeIter]:
         it = self.get_selection().get_selected()[1]
         return it
 
     def get_focused_row_iter(self) -> Gtk.TreeIter:
         path = self.get_focused_row_path()
         model = self.get_model()
+        if model is None:
+            raise AttributeError("No model attached to tree")
         return model.get_iter(path)
 
     def get_focused_row_path(self) -> Gtk.TreePath:
-        return self.get_cursor().path
+        path, column = self.get_cursor()
+        return path
 
     def get_focused_row_index(self) -> int:
-        return self.get_cursor().path[0]
+        path, column = self.get_cursor()
+        index = path.get_indices()[0]
+        return index
 
     def get_selected_records(self) -> list:
         sel = self.get_selection()
         model, rows = sel.get_selected_rows()
         return [model[row] for row in rows]
 
-    def _on_keypress(
-        self, treeview: Gtk.TreeView, event: Gdk.EventKey
-    ) -> None:
-
+    def _on_keypress(self, treeview: Gtk.TreeView, event: Gdk.EventKey) -> None:
         if is_navkey(event.keyval):
-            # TODO: investigate this
-            tv = self.controller.get_active_treeview()
+            if self.get_model() is None:
+                return
             if self.sel_blocked is False:
+                self.sel_blocked = True
                 self.controller.suppress_signal(
-                    tv,
-                    tv.selected_row,
+                    self,
+                    self.selected_row,
                     "_on_tree_selection_changed",
                     True,
                 )
             self._vim_nav(event)
         return
 
-    def _on_key_release(
-        self, treeview: Gtk.TreeView, event: Gdk.EventKey
-    ) -> None:
-        # TODO: explain this better
+    def _on_key_release(self, treeview: Gtk.TreeView, event: Gdk.EventKey) -> None:
         """
         Suppresses spamming on keydown
+        TODO: explain this better
         """
-        #if event.keyval is Gdk.KEY_space:
+        # TODO: multisel
+        # if event.keyval is Gdk.KEY_space:
         #    it = self.get_focused_row_iter()
         #    self.get_selection().select_iter(it)
         #    return True
 
+        model = self.get_model()
+        if model is None:
+            return
+        if len(model) < 2:
+            return
         if is_navkey(event.keyval):
             if self.sel_blocked is True:
+                self.sel_blocked = False
                 self.controller.suppress_signal(
-                    self.controller.mediator.treeview,
-                    self.controller.mediator.treeview.selected_row,
+                    self,
+                    self.selected_row,
                     "_on_tree_selection_changed",
                     False,
                 )
@@ -135,12 +140,11 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
                 self.get_selection().unselect_path(path)
 
     def focus_first_row(self) -> None:
-        self.set_cursor(0)
+        path = Gtk.TreePath.new_from_indices([0])
+        self.set_cursor(path)
 
-    def get_value_at_index(self, index: int) -> str:
-        select = self.get_selection()
-        sels = select.get_selected_rows()
-        (model, pathlist) = sels
+    def get_value_at_index(self, index: int) -> Any:
+        (model, pathlist) = self.get_model_and_pathlist()
         if len(pathlist) < 1:
             return ""
         path = pathlist[0]
@@ -150,22 +154,26 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
 
     def get_name(self) -> str:
         name = self.get_value_at_index(0)
-        return name
+        return str(name)
 
-    def select_first_row(self):
+    def select_first_row(self) -> None:
         sel = self.get_selection()
         self._on_tree_selection_changed(sel)
 
-    def get_mpath(self) -> Gtk.TreePath | None:
+    def get_model_and_pathlist(self) -> tuple:
         select = self.get_selection()
         sels = select.get_selected_rows()
         (model, pathlist) = sels
-        if len(pathlist) < 1:
-            return None
-        path = pathlist[0]
-        return path
+        return (model, pathlist)
 
-    @signal_emission
+    @deprecated("Currently unused")
+    # def get_mpath(self) -> Optional[Gtk.TreePath]:
+    #    (model, pathlist) = self.get_model_and_pathlist()
+    #    if len(pathlist) < 1:
+    #        return None
+    #    path = pathlist[0]
+    #    return path
+
     def _on_row_activated(
         self,
         treeview: Gtk.TreeView,
@@ -175,18 +183,23 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         self.emit("generic_row_activated", path, col)
 
     def is_selection_empty(self) -> bool:
-        # TODO: reduce duplicated methods
-        sel = self.get_selection()
-        sels = sel.get_selected_rows()
-        (model, pathlist) = sels
+        (model, pathlist) = self.get_model_and_pathlist()
         if len(pathlist) < 1:
             return True
         return False
 
-    def get_selected_row(self) -> Gtk.TreeModelRow | None:
-        ind = self.get_selected_row_index()
+    @deprecated("unused")
+    # def get_selected_row(self) -> Optional[Gtk.TreeModelRow]:
+    #    ind = self.get_selected_row_index()
+    #    model = self.get_model()
+    #    if model is None:
+    #        return None
+    #    row = model[ind]
+    #    return row
+
+    def get_col_value_by_path_index(self, path: Gtk.TreePath, index: int) -> Any:
         model = self.get_model()
         if model is None:
             return None
-        row = model[ind]
-        return row
+        value = model[path][index]
+        return value

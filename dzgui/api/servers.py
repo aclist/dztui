@@ -1,5 +1,4 @@
 import ipaddress
-import json
 import logging
 import math
 import os
@@ -7,22 +6,27 @@ import re
 import requests
 import socket
 import subprocess
-import typing  # noqa
+import threading
 
 from dataclasses import dataclass
-from typing import Union
+from typing import Any, Optional, TYPE_CHECKING, Union
 
-from dzgui.const.constants import REQUEST_TIMEOUT
+from dzgui.api.bm import map_id_to_record
+from dzgui.const.constants import APP_NAME, REQUEST_TIMEOUT
 from dzgui.const.endpoints import STEAM_SERVERS
 from dzgui.util import strings
 
 import a2s
 import dayzquery
 
+if TYPE_CHECKING:
+    from a2s import SourceInfo
+    from dayzquery import DayzMod
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 # TODO: confirm that patches from testing are incorporated here
+# particularly around malformed values in JSON response. check commit log
 
 params = [
     r"\nor\1\map\chernarusplus\nor\1\map\sakhal\nor\1\map\enoch\empty\1\nor\1\map\namalsk",  # noqa
@@ -37,16 +41,67 @@ params = [
 ]
 
 
-class BmAPIError(Exception):
-    pass
-
-
-class BmIdError(Exception):
-    pass
-
-
 class InvalidIpError(Exception):
     pass
+
+
+@dataclass(slots=True, frozen=True)
+class Res:
+    status: int
+    parsed: bool
+    json: Union[dict[str, Any], None]
+
+
+@dataclass(slots=True, frozen=True)
+class Details:
+    data: Union[list, None]
+    description: str
+    success: bool
+
+
+@dataclass(slots=True)
+class Record:
+    """
+    The gameport field is manipulated by the RowType.CONN_BY_IP method
+    """
+
+    ip: str
+    gameport: int
+    qport: int
+
+
+class A2SInfo:
+    def __init__(self, record: Record, info: a2s.SourceInfo | None) -> None:
+        self.record = record
+        self.info = info
+
+    def get_record(self) -> Record:
+        return self.record
+
+    def get_info(self) -> a2s.SourceInfo | None:
+        return self.info
+
+    def as_row(self) -> dict[str, Any]:
+        if self.info is None:
+            raise AttributeError("No record to convert")
+        ip = self.record.ip
+        qport = self.record.qport
+        try:
+            return source_info_to_dict(ip, qport, self.info)
+        except Exception as e:
+            logger.warning(e)
+            raise e
+
+    def is_modded(self) -> bool:
+        if self.info is None:
+            raise ValueError("Cannot call this method on Nonetype")
+        try:
+            kw = self.info.keywords.split(",")
+            state = True if "mod" in kw else False
+            return state
+        except Exception as e:
+            logger.warning(e)
+            raise e
 
 
 def get_netmask() -> str:
@@ -56,7 +111,10 @@ def get_netmask() -> str:
     return netmask
 
 
-def test_ip(suffix: int, port: int) -> dict | None:
+# TODO: rename
+def test_ip(suffix: int, port: int, event: threading.Event) -> dict | None:
+    if event.is_set():
+        return None
     netmask = get_netmask()
     hostname = f"{netmask}.{str(suffix)}"
     ping = ["ping", "-c1", "-i", "0.1", "-w", "1"]
@@ -67,6 +125,9 @@ def test_ip(suffix: int, port: int) -> dict | None:
 
 
 def sanitize(name: str) -> str:
+    """
+    Strips extraneous padding and spammy junk chars in server names
+    """
     name = re.sub(r"\r", r"", name)
     name = re.sub(r"\n", r"", name)
     name = re.sub(r"\x01", r"", name)
@@ -124,7 +185,7 @@ def parse_json(json: list) -> list:
             view = strings.filter_3pp
 
         if "external" in r:
-            provider = strings.filter_unoffiical
+            provider = strings.filter_unofficial
         else:
             provider = strings.filter_official
 
@@ -136,6 +197,8 @@ def parse_json(json: list) -> list:
         try:
             r = row["gametype"].split("lqs")
             queue = r[1].split(",")[0]
+            if int(queue) > 255:
+                continue
         except IndexError:
             queue = 0
 
@@ -162,7 +225,7 @@ def parse_json(json: list) -> list:
         mapname = row["map"].lower()
         players = row["players"]
         max_players = row["max_players"]
-        raw = [
+        raw = (
             name,
             mapname,
             view,
@@ -175,15 +238,13 @@ def parse_json(json: list) -> list:
             ping,
             provider,
             modded,
-        ]
+        )
         rows.append(raw)
     return rows
 
 
-def query_direct(ip: str, qport: int, TIMEOUT: float=3.0) -> dict | None:
+def source_info_to_dict(ip: str, qport: int, info: "SourceInfo") -> dict[str, Any]:
     try:
-        info = a2s.info((ip, qport), TIMEOUT)
-
         name = info.server_name
         mapname = info.map_name
         address = ip + ":" + str(qport)
@@ -208,67 +269,24 @@ def query_direct(ip: str, qport: int, TIMEOUT: float=3.0) -> dict | None:
         res["gameport"] = gameport
         res["ping"] = ping
         return res
-    except TimeoutError:
-        return None
-    except KeyError:
-        return None
+    except Exception as e:
+        # TODO: generalized function
+        logger.critical(f"{type(e).__name__}: {e} ({ip}:{qport})")
+        raise e
 
 
-@dataclass(slots=True, frozen=True)
-class Res:
-    status: int
-    parsed: bool
-    json: Union[str, None]
-
-
-@dataclass(slots=True, frozen=True)
-class Ping:
-    addr: str
-    iteration: int
-    ping: int
-
-
-@dataclass(slots=True, frozen=True)
-class Details:
-    data: Union[list, None]
-    description: str
-    success: bool
-
-
-@dataclass(slots=True, frozen=True)
-class Prereqs:
-    password: bool
-    gameport: int
-    appid: Union[int, None]
-    version: Union[str, None]
-
-
-@dataclass(slots=True)
-class Record:
-    """
-    The gameport field is manipulated by the RowType.CONN_BY_IP method
-    """
-    ip: str
-    gameport: int
-    qport: int
-
-
-# TODO: refactor this
-def get_prereqs(ip: str, qport: int) -> Prereqs:
+def query_direct(ip: str, qport: int, timeout: float = 3.0) -> dict[str, Any] | None:
     try:
-        info = a2s.info((ip, qport))
-    except TimeoutError:
-        return Prereqs(False, 0, None, None)
-
-    gameport = getattr(info, "port", 0)
-    is_password = getattr(info, "password_protected", False)
-    appid = getattr(info, "game_id", None)
-    version = getattr(info, "version", None)
-
-    return Prereqs(is_password, gameport, appid, version)
+        info = a2s.info((ip, qport), timeout)
+        return source_info_to_dict(ip, qport, info)
+    except Exception as e:
+        logger.warning(e)
+        return None
 
 
-def details(ip: str, qport: int) -> Details:
+def get_details(record: Record) -> Details:
+    ip = record.ip
+    qport = record.qport
     default_str = strings.none_provided
 
     try:
@@ -276,8 +294,8 @@ def details(ip: str, qport: int) -> Details:
     except TimeoutError:
         return Details(None, default_str, False)
     try:
-        rules = dayzquery.dayz_rules((ip, int(qport)))
-    except TimeoutError:
+        rules = dayzquery.dayz_rules((ip, qport))
+    except Exception:
         return Details(None, default_str, False)
 
     try:
@@ -361,52 +379,40 @@ def details(ip: str, qport: int) -> Details:
     return Details(rows, description, True)
 
 
-def ping(iteration: int, row: list) -> Ping:
-    addr = row[7]
-    qport = row[8]
-
-    res = None
-
-    if row[9] != 9999:
-        return Ping(addr, iteration, row[9])
-
-    try:
-        ip = addr.split(":")[0]
-    except IndexError:
-        ping = 9999
-
+def ping(ip: str, qport: int) -> int:
     try:
         res = query_direct(ip, qport, 0.5)
+        if res is None:
+            return 9999
+        else:
+            return int(res["ping"])
     except Exception:
-        pass
-
-    if res is None:
-        ping = 9999
-    else:
-        ping = res["ping"]
-
-    return Ping(addr, iteration, ping)
+        return 9999
 
 
 def query_api(key: str, appid: int, param: str) -> Res:
     LIMIT = 10000
     payload: dict[str, Union[int, str]] = {
-        "filter": r"\appid" + fr"\{appid}" + param,
+        "filter": r"\appid" + rf"\{appid}" + param,
         "limit": LIMIT,
         "key": key,
     }
-
     try:
+        """
+        NOTE: the global default timeout is None;
+        using a low timeout (~5s) sometimes fails
+        """
         res = requests.get(STEAM_SERVERS, params=payload, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         parsed = True
-        data = res.json()
-    except Exception as e:
-        status = res.status_code
+        status = 200
+        json = res.json()
+    except Exception:
         parsed = False
-        data = None
+        json = None
+        status = 403
     finally:
-        return Res(status, parsed, data)
+        return Res(status, parsed, json)
 
 
 def validate_ip(addr: str) -> Record:
@@ -435,10 +441,82 @@ def validate_ip(addr: str) -> Record:
     record = Record(ip, 0, qport)
     return record
 
-def get_rules(ip: str, qport: int) -> list[int]:
+
+def get_rules(record: Record) -> list["DayzMod"]:
+    ip = record.ip
+    qport = record.qport
+    mods = dayzquery.dayz_rules((ip, qport)).mods
+    return [mod for mod in mods]
+
+
+def query_playercount(record: Record) -> tuple[int, int] | None:
     try:
-        mods = dayzquery.dayz_rules((ip, int(qport))).mods
-        return [mod for mod in mods]
+        res = query_direct(record.ip, record.qport)
+        if res is None:
+            return None
+        players = int(res["players"])
+        r = res["gametype"].split("lqs")
+        try:
+            queue = int(r[1].split(",")[0])
+        except IndexError:
+            queue = 0
+        return players, queue
     except Exception as e:
         logger.critical(e)
-        return []
+        return None
+
+
+def query_by_ip(addr: str) -> A2SInfo:
+    record = short_ip_to_record(addr)
+    if record is None:
+        return A2SInfo(Record("0", 0, 0), None)
+    return query_by_record(record, update_gameport=True)
+
+def query_by_id(server_id: int, key: str) -> A2SInfo:
+    """
+    Used with numeric Battlemetrics IDs
+    """
+    record = map_id_to_record(key, server_id)
+    if record is None:
+        return A2SInfo(Record("0", 0, 0), None)
+    return query_by_record(record)
+
+
+def query_by_record(record: Record, update_gameport: bool = False) -> A2SInfo:
+    try:
+        info = a2s.info((record.ip, record.qport), 3.0)
+        if update_gameport:
+            record = Record(record.ip, info.port, record.qport)
+        return A2SInfo(record, info)
+    except Exception as e:
+        logger.warning(e)
+        return A2SInfo(record, None)
+
+
+def short_ip_to_record(addr: str) -> Optional[Record]:
+    r = addr.split(":")
+    # TODO: raise exceptions instead of Nonetype
+    if len(r) != 2:
+        return None
+    return Record(r[0], 0, int(r[1]))
+
+
+def fqip_to_record(addr: str) -> Optional[Record]:
+    r = addr.split(":")
+    if len(r) != 3:
+        return None
+    return Record(r[0], int(r[1]), int(r[2]))
+
+
+def response_to_fqip(res: dict) -> str:
+    ip = res["addr"].split(":")[0]
+    gameport = res["gameport"]
+    qport = res["addr"].split(":")[1]
+    return f"{ip}:{gameport}:{qport}"
+
+
+def response_to_record(res: dict) -> Record:
+    ip = res["addr"].split(":")[0]
+    gameport = res["gameport"]
+    qport = res["addr"].split(":")[1]
+    return Record(ip, int(gameport), int(qport))

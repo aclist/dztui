@@ -1,66 +1,70 @@
 import logging
-import multiprocessing
-import subprocess
+import threading
 
-import gi
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
+from queue import Queue
+from typing import Any, Self, Union
+from warnings import deprecated
 
-from dzgui.const.enum import (
-    ContextMenu,
-    ContextMenuGroup,
-    RowType,
-    )
-from dzgui.const.constants import UDP_PORT
-from dzgui.api.servers import Record
-from dzgui.util.dist import CalcDist
-from dzgui.util.keys import is_navkey
+from dzgui.api.servers import ping, Record
+from dzgui.const.constants import APP_NAME
+from dzgui.const.enum import ContextMenu, ContextMenuGroup, ServerTab
+from dzgui.managers.filter import FilterManager
+from dzgui.model.proxy_model import ProxyModelManager
 from dzgui.util import strings
-from typing import Any, Callable, Literal, TYPE_CHECKING
+from dzgui.util.dist import CalcDist
+from dzgui.util.keys import is_ctrl_mask
+from dzgui.views.mixins.context_mixin import ContextMixin
+from typing import Literal, TYPE_CHECKING
+
 
 from dzgui.views.trees.tree_base import TreeView
 import dzgui.util._json as JSON  # noqa
 
-logger = logging.getLogger(__name__)
+import gi
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
+
+
+logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
+    from dzgui.model.model_factory import FastInsertListStore
 
-# TODO: restore missing methods
-# TODO: add multiprocessing queue
-# TODO: fix cache
+QUEUE_CHECK_DELAY = 200
 
-class EnumeratedMenuItem(Gtk.MenuItem):
-    def __init__(self, enum: ContextMenu):
-        super().__init__(label=enum.dict["label"])
+
+class ServerTreeView(ContextMixin, TreeView):  # type: ignore
+    def __init__(
+        self, controller: "Controller", enum: ServerTab, menu: ContextMenuGroup
+    ) -> None:
+        super().__init__(controller, menu=menu)
+
+        self.controller = controller
+        self.emitter = controller.get_emitter()
         self.enum = enum
 
-
-class ServerTreeView(TreeView):
-    __gsignals__ = {
-        "on_distcalc_started": (GObject.SignalFlags.RUN_FIRST, None, ())
-    }
-    def __init__(self, controller: "Controller") -> None:
-        super().__init__(controller)
-
-        QUEUE_CHECK_DELAY = 200
-
         self.loaded = False
-        self.query_func: Callable = None
 
-        self.menu = Gtk.Menu()
-        self.menu.connect("key-press-event", self._on_key)
-        self.controller = controller
+        self.filter_man = FilterManager()
+        self.proxy_man = ProxyModelManager(self.filter_man)
+        model = self.proxy_man.get_proxy_model()
+        self.set_model(model)
 
         self.set_fixed_height_mode(True)
-        self.set_headers_visible(True)
+        # NOTE: headers become visible on model load
+        self.set_headers_visible(False)
 
-        self.current_proc = None
-        self.queue = multiprocessing.Queue()
+        self.queue_id: int
+        self.handler_id: int
+        self.queue: Queue = Queue()
+
+        self.seen_cache: list[str] = []
 
         prefs = self.controller.get_prefs()
         columns = prefs.paths.columns
-
         try:
             data = JSON.read_json(columns)
             valid_json = True
@@ -68,6 +72,14 @@ class ServerTreeView(TreeView):
             logger.critical(e)
             valid_json = False
 
+        width_map = {
+            "Name": 800,
+            "Map": 300,
+            "IP": 240,
+        }
+
+        # TODO: abstract column population logic
+        # TODO: resize col width func causes snapping behavior
         browser_cols = strings.browser_cols
         for i, column_title in enumerate(browser_cols):
             renderer = Gtk.CellRendererText()
@@ -84,55 +96,90 @@ class ServerTreeView(TreeView):
                 column.set_fixed_width(saved_size)
                 column.set_expand(True)
             else:
-                if column_title == "Name":
-                    column.set_fixed_width(800)
-                if column_title == "Map":
-                    column.set_fixed_width(300)
+                w = width_map[column_title]
+                column.set_fixed_width(w)
+            if column_title == "Ping":
+                column.set_cell_data_func(renderer, self._get_ping)
 
             column.connect("notify::fixed-width", self._on_col_width_changed)
             self.append_column(column)
 
-        self.connect("on_distcalc_started", self._on_calclat_started)
-        self.connect("button-release-event", self._on_server_button_release)
-        self.connect("key-press-event", self._on_server_keypress)
+        self.connect("button-press-event", self.present_menu)
         self.connect("generic_row_activated", self._parent_row_activated)
         self.connect("generic_treesel_changed", self._parent_selection_changed)
+        self.connect("key-press-event", self._on_server_keypress)
+        self.connect("key-press-event", self.present_menu)
+        self.connect("map", self._on_map)
+        self.connect("unmap", self._on_unmap)
 
-        GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
+        self.set_has_tooltip(True)
+        self.connect("query-tooltip", self._on_tooltip)
 
-    def _on_key(self, menu: Gtk.Menu, event: Gdk.EventKey) -> bool | None:
-        if not is_navkey(event.keyval):
+        # TODO: why is this being saved?
+        # self.thread = None
+
+    def _on_tooltip(
+        self,
+        treeview: Self,
+        x: int,
+        y: int,
+        keyboard_mode: bool,
+        tooltip: Gtk.Tooltip,
+    ) -> bool:
+        """
+        Present record data for the hovered row even if it is unfocused
+        """
+        coords_x, coords_y = treeview.convert_widget_to_bin_window_coords(x, y)
+        path = self.get_path_at_pos(coords_x, coords_y)
+        if path is None or path[0] is None:
             return False
-        sel = menu.get_selected_item()
-        children = menu.get_children()
-        for i, child in enumerate(children):
-            if sel is child:
-                ind = i
-                break
+        model = self.get_model()
+        if model is None:
+            return False
+        tree_iter = model.get_iter(path[0])
+        ip = model.get_value(tree_iter, 7)
+        qport = model.get_value(tree_iter, 8)
+        addr = ip + ":" + str(qport)
+        note = self.controller.get_note_by_record(addr)
 
-        match event.keyval:
-            case Gdk.KEY_j:
-                if ind == len(children) - 1:
-                    return True
-                menu.select_item(children[ind+1])
-            case Gdk.KEY_k:
-                if ind - 1 < 0:
-                    return True
-                menu.select_item(children[ind-1])
-            case Gdk.KEY_g:
-                menu.select_item(children[0])
-            case Gdk.KEY_G:
-                ind = len(children) - 1
-                menu.select_item(children[ind])
-            case _:
-                return False
-        return True
+        if len(note) > 0:
+            tooltip.set_text(note)
+            self.set_tooltip_row(tooltip, path[0])
+            return True
+        return False
 
-    def set_query_func(self, func: Callable) -> None:
-        self.query_func = func
+    def start_queue_checker(self) -> None:
+        self.queue_id = GLib.timeout_add(QUEUE_CHECK_DELAY, self._check_result_queue)
 
-    def get_query_func(self) -> Callable | None:
-        return self.query_func
+    def get_filter_man(self) -> FilterManager:
+        return self.filter_man
+
+    def get_proxy_man(self) -> ProxyModelManager:
+        return self.proxy_man
+
+    def get_enum(self) -> ServerTab:
+        return self.enum
+
+    def _on_map(self, widget: Self) -> None:
+        # TODO: disable filter panel if current model is None
+        if self.get_enum() is ServerTab.LAN:
+            self.emitter.emit("lan_tab_toggled", True)
+
+        store = self.filter_man.get_map_store()
+
+        # FIXME: if model is none, wipe maps
+        # distinguish this signal from changing map combo in-situ
+        self.emitter.emit("load_maps", store)
+        self.handler_id = self.emitter.connect("statusbar_loaded", self.start_distcalc)
+        self.start_queue_checker()
+        self.start_distcalc()
+
+    def _on_unmap(self, tree: Self) -> None:
+        # NOTE: removes queue checker for this tab
+        GLib.Source.remove(self.queue_id)
+        self.emitter.disconnect(self.handler_id)
+        if self.get_enum() is ServerTab.LAN:
+            self.emitter.emit("lan_tab_toggled", False)
 
     def _on_col_width_changed(
         self, col: Gtk.TreeViewColumn, width: GObject.ParamSpecInt
@@ -140,169 +187,213 @@ class ServerTreeView(TreeView):
         """
         Propagate width change to other tabs
         """
-        title = col.get_title()
-        size = col.get_width()
-
         # NOTE: get final width after drag action completes
         GLib.idle_add(self.controller.propagate_column_width, col)
 
-    def terminate_process(self) -> None:
-      if self.current_proc and self.current_proc.is_alive():
-          self.current_proc.terminate()
+    def start_distcalc(self, emitter: Union["Emitter", None] = None) -> None:
+        self.emitter.emit("distcalc_started")
+        record = self.get_record()
+        if record is None:
+            context = self.get_enum()
+            self.emitter.emit("distcalc_ended", None, context)
+            return
 
-    def _on_calclat_started(self, treeview):
-        server_tooltip[0] = format_tooltip()
-        server_tooltip[1] = server_tooltip[0] + "| Distance: calculating..."
-        self.update_statusbar(server_tooltip[1])
+        cache = self.controller.get_dist_cache()
+
+        if record.ip in cache:
+            haversine = cache[record.ip]
+            self.controller.set_statusbar_dist(haversine, self.get_enum())
+            return
+
+        enum = self.get_enum()
+        thread = threading.Thread(
+            daemon=True,
+            target=CalcDist,
+            args=(record.ip, enum, self.queue, self.controller, cache),
+        )
+        thread.start()
 
     def _check_result_queue(self) -> Literal[True]:
         latest_result = None
+        # FIXME: empty results cause statusbar to be emptied
         while not self.queue.empty():
             latest_result = self.queue.get()
 
+        # FIXME: cache is being checked in two passes
+        cache = self.controller.get_dist_cache()
+
         if latest_result:
-            addr = latest_result[0]
-            km = latest_result[1]
-            cache[addr] = km
-            # FIXME
-            self.statusbar.append_distance(km)
+            addr, haversine, tab = latest_result
+            if addr not in cache:
+                self.controller.set_dist_cache(addr, haversine)
+            # TODO: should be emitting a statusbar signal here instead?
+            self.controller.set_statusbar_dist(haversine, self.get_enum())
         return True
 
-    def _on_server_keypress(
-        self, treeview: Gtk.TreeView, event: Gdk.EventKey
-    ) -> bool | None:
-        # TODO: use mixins
-        # CONTROL_MASK + KEY_l
-        if event.state is Gdk.ModifierType.CONTROL_MASK:
+    def _on_server_keypress(self, treeview: Gtk.TreeView, event: Gdk.EventKey) -> None:
+        if is_ctrl_mask(event):
             match event.keyval:
-                case Gdk.KEY_l:
-                    self._on_server_button_release(self, event)
-                case Gdk.KEY_r:
-                    self.refresh_player_count()
                 case Gdk.KEY_f:
-                    # TODO: register filter panel instead of mediating thru right panel
-                    self.controller.mediator.grid.right_panel.filters_vbox.keyword_entry.grab_focus()
+                    self.emitter.emit("request_keyword_focus")
                 case Gdk.KEY_m:
-                    self.controller.mediator.grid.right_panel.filters_vbox.maps_entry.grab_focus()
+                    self.emitter.emit("request_maps_focus")
                 case Gdk.KEY_i:
-                    self.controller.mediator.grid.conpan.entry.grab_focus()
+                    self.emitter.emit("request_ip_entry_focus")
+                case Gdk.KEY_d:
+                    self.emitter.emit("request_default_port_focus")
+                case Gdk.KEY_n:
+                    if self.enum is ServerTab.LAN:
+                        self.emitter.emit("request_custom_port_focus")
+                case Gdk.KEY_c:
+                    self.controller.menu_action(ContextMenu.COPY_SERVER_IP, self)
+                case Gdk.KEY_r:
+                    # TODO: unimplemented, needs threading
+                    self.controller.menu_action(ContextMenu.REFRESH_PLAYERS, self)
         else:
             match event.keyval:
                 case Gdk.KEY_l | Gdk.KEY_Right:
-                    self.controller.mediator.right_panel.focus_button_box()
+                    self.emitter.emit("request_button_box_focus")
                 case _:
-                    self.controller.toggle_check(event)
+                    self.emitter.emit("check_button_pressed", event.keyval)
 
-    def set_context_menu(self, items: ContextMenuGroup) -> None:
-        # TODO: if debug is on, add raw command copy to context menu
-        for item in items.value:
-            menu_item = EnumeratedMenuItem(item)
-            menu_item.connect("activate", self._on_menu_click)
-            self.menu.append(menu_item)
-        self.menu.show_all()
+    def is_modded(self) -> bool:
+        select = self.get_selection()
+        sels = select.get_selected_rows()
+        (model, pathlist) = sels
+        path = pathlist[0]
+        tree_iter = model.get_iter(path)
+        has_mods = model.get_value(tree_iter, 11)
+        return bool(has_mods)
 
-    def _on_menu_click(self, item) -> None:
-        print(f"UNIMPLEMENTED: {item.enum}")
-        pass
+    # def get_selected_row(self) -> Gtk.TreeModelRow:
+    #    sel = self.get_selection()
+    #    sels = sel.get_selected_rows()
+    #    print(type(sels[0]))
+    #    return sels[0]
 
-    def _on_server_button_release(
-        self, widget: Gtk.Widget, event: Gdk.EventButton
+    def is_in_favs(self) -> bool:
+        record = self.get_record_string()
+        if self.controller.get_config_man().is_in_favs(record):
+            return True
+        return False
+
+    def _parent_row_activated(
+        self, tree: TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn
     ) -> None:
-        # TODO: use ContextMixin
-        if event.type is Gdk.EventType.BUTTON_RELEASE and event.button != 3:
-            return
-
-        try:
-            pathinfo = self.get_path_at_pos(int(event.x), int(event.y))
-            if pathinfo is None:
-                return
-            (path, col, cellx, celly) = pathinfo
-            if path is None:
-                return
-            self.set_cursor(path, col, False)
-        except AttributeError:
-            pass
-
-        mod_context_items = [ContextMenu.OPEN_WORKSHOP, ContextMenu.DELETE_MOD]
-
-        # TODO: dynamic menu entries
-        #for row in items:
-        #    if row == ContextMenu.ADD_SERVER:
-        #        if self.is_in_favs():
-        #            row = ContextMenu.REMOVE_SERVER
-        #    item = Gtk.MenuItem(label=row.dict["label"])
-        #    item.type = row
-        #    item.action = row.dict["action"]
-        #    self.menu.append(item)
-        #    if row == ContextMenu.SHOW_MODS:
-        #        if not self.has_mods():
-        #            item.set_sensitive(False)
-        #    if row == ContextMenu.ADD_NOTE:
-        #        if self.get_record_string() in notes_cache:
-        #            item.set_label(strings.edit_note)
-
-        if event.type is Gdk.EventType.KEY_PRESS and event.keyval is Gdk.KEY_l:
-            if self.is_selection_empty():
-                return
-            self.menu.popup_at_widget(
-                widget, Gdk.Gravity.CENTER, Gdk.Gravity.WEST
-            )
-        else:
-            self.menu.popup_at_pointer(event)
-        self.menu.select_first(False)
-
-    def _parent_row_activated(self,
-            tree: TreeView,
-            path: Gtk.TreePath,
-            column: Gtk.TreeViewColumn
-        ) -> None:
-        # TODO: process server connection
-        # TODO: get record
-        print(self.get_value_at_index(0))
-
-    def _parent_selection_changed(self, base_class: TreeView, sel: Gtk.TreeSelection):
-
-        self.terminate_process()
         record = self.get_record()
-
         if record is None:
             return
+        self.controller.connect_by_record(record)
 
-        #model = self.get_model()
-        #if record is None:
-        #    self.controller.update_server_status(model)
-        #    return
+    def _parent_selection_changed(
+        self, base_class: TreeView, sel: Gtk.TreeSelection
+    ) -> None:
+        if self.loaded is False:
+            return
+        self.start_distcalc()
 
-        ip = record.ip
-        # TODO
-        #self.emit("on_distcalc_started")
-        #self.current_proc = CalcDist(self, record.ip, self.queue, cache)
-        #self.current_proc.start()
+    def get_name(self) -> str:
+        return str(self.get_value_at_index(0))
+
+    def get_simplified_ip(self) -> str:
+        addr = self.get_value_at_index(7)
+        qport = self.get_value_at_index(8)
+        ip = addr.split(":")[0]
+        return f"{ip}:{qport}"
 
     def get_record_string(self) -> str:
         addr = self.get_value_at_index(7)
         qport = self.get_value_at_index(8)
         return f"{addr}:{qport}"
 
-    def get_record(self) -> dict | None:
-        # TODO: delegate to controller
-        select = self.get_selection()
-        sels = select.get_selected_rows()
-        (model, pathlist) = sels
-        if len(pathlist) < 1:
+    def get_record(self) -> Record | None:
+        if self.loaded is False:
             return None
-        path = pathlist[0]
-        model = self.get_model()
-        if not model:
+        try:
+            r = self.get_record_string()
+            ip, gameport, qport = r.split(":")
+            return Record(ip, int(gameport), int(qport))
+        except ValueError as e:
+            logger.critical(e)
             return None
-        addr = model[path][7]
-        qport = model[path][8]
-        ip = addr.split(":")[0]
-        gameport = int(addr.split(":")[1])
-        return Record(ip, gameport, qport)
 
-    def get_loaded(self) -> bool:
+    def is_loaded(self) -> bool:
         return self.loaded
 
     def set_loaded(self, status: bool) -> None:
         self.loaded = status
+
+    def get_model_and_control_model(
+        self,
+    ) -> tuple[Union[Gtk.TreeModel, None], list[Any]]:
+        model = self.get_model()
+        control = self.proxy_man.get_control()
+        return model, control
+
+    @staticmethod
+    def ping_server(
+        model: "FastInsertListStore",
+        _iter: Gtk.TreeIter,
+        ip: str,
+        qport: int,
+        ping_column: int,
+    ) -> None:
+        _ping = ping(ip, qport)
+        GLib.idle_add(lambda: model.set(_iter, ping_column, _ping))
+
+    def _get_ping(
+        self,
+        column: Gtk.TreeViewColumn,
+        cell: Gtk.CellRendererText,
+        model: Gtk.TreeModel,
+        _iter: Gtk.TreeIter,
+        data: Any,
+    ) -> None:
+
+        addr_column = 7
+        qport_column = 8
+        ping_column = 9
+
+        addr = model.get_value(_iter, addr_column).split(":")
+        ip = addr[0]
+        gameport = addr[1]
+        qport = model.get_value(_iter, qport_column)
+        record = f"{addr}:{gameport}:{qport}"
+
+        if record in self.seen_cache:
+            return
+        self.seen_cache.append(record)
+
+        thread = threading.Thread(
+            daemon=True,
+            target=self.ping_server,
+            args=(model, _iter, ip, qport, ping_column),
+        )
+        thread.start()
+
+    @deprecated("Currently unused")
+    def _lazy_load(
+        self,
+        column: Gtk.TreeViewColumn,
+        cell: Gtk.CellRendererText,
+        model: Gtk.TreeModel,
+        it: Gtk.TreeIter,
+        col_index: int,
+    ) -> Any:
+        """
+        Lazy load contents from model manager into visible CellRenderers on demand
+        N.B., all row data types will be stringified and must be fetched
+        from separate model manager, not internally from TreeView
+        cf. Gtk.TreeViewColumn.set_cell_data_func()
+        """
+        path = model.get_path(it)
+        row_index = path.get_indices()[0]
+        try:
+            start, end = self.get_visible_range()
+        except Exception:
+            return
+        if row_index >= start[0] <= end[0]:
+            # NOTE: fetch raw data rows
+            real_model = self.proxy_man.get_control()
+            value = real_model[row_index][col_index]
+            cell.set_property("text", str(value))

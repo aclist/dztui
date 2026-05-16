@@ -1,11 +1,12 @@
 import re
 
 from dzgui.util.localize import number
-from dzgui.util.strings import no_mods, no_servers, distance_suffix
+from dzgui.util.strings import no_mods, no_servers, workshop
 
 import gi
+
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk # noqa E402
+from gi.repository import Gtk  # noqa E402
 
 
 def format_pango(text: str) -> str:
@@ -46,25 +47,38 @@ def format_mods(size: int, mods: int) -> str:
     l_size = number(size)
     plural = pluralize("mods", mods)
     # TODO: strings
-    suffix = "Ctrl-click to select multiple."
+    suffix = "Ctrl-click to select multiple; Shift-click to select a range."
     return f"Found {mods:n} {plural} taking up {l_size} MiB. {suffix}"
 
 
-def format_player_count(model: Gtk.TreeModel | None) -> str:
+def format_mib(bits: int) -> float:
+    return round(bits / (1024**2), 3)
+
+
+def format_server_mods(mods: int) -> str:
+    plural = pluralize("mods", mods)
+    return f"Found {mods:n} {plural}. {workshop}"
+
+
+def format_player_count(model: Gtk.TreeModel | None, control: list) -> str:
     players = 0
     hits: int
     status: str
-    if model is None or len(model) == 0:
+    if model is None:
         return no_servers
     else:
         hits = len(model)
         for row in model:
             players += row[4]
-    players_pretty = pluralize("players", players)
+    control_total = len(control)
     hits_pretty = pluralize("matches", hits)
-    suffix = distance_suffix
-    status = f"Found {hits:n} {hits_pretty} with {players:n} {players_pretty}"
-    return f"{status} | {suffix}"
+    players_pretty = pluralize("players", players)
+    hidden = control_total - hits
+    hidden_pretty = f" ({hidden:n} hidden)" if hidden > 0 else ""
+    status = (
+        f"Showing {hits:n} {hits_pretty}{hidden_pretty}, {players:n} {players_pretty}."
+    )
+    return status
 
 
 def embolden(text: str) -> str:

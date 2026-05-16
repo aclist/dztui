@@ -26,7 +26,7 @@ dependencies = [
     "packaging==25.0",
     "psutil==7.1.3",
     "python-a2s",
-    "requests==2.32.5"
+    "requests==2.32.5",
 ]
 
 [project.scripts]
@@ -52,6 +52,7 @@ lint = [
     "ruff==0.11.13",
     "PyGObject-stubs==2.13.0",
     "types-requests>=2.32.4",
+    "types-psutil==7.2.2.20260508",
 ]
 dev = [
     "dzgui[docs,test,lint]"
@@ -64,7 +65,8 @@ build-backend = "setuptools.build_meta"
 [tool.ruff]
 line-length = 88
 indent-width = 4
-extend-exclude = ["tree_servers.py", "tree_server_mods.py", "dialogs", "right_panel.py", "filter_panel.py", "base.py", "*lib/a2s", "dist.py"]
+extend-exclude = ["*lib/a2s"]
+lint.unfixable = ["F401"]
 
 [tool.ruff.format]
 quote-style = "double"
