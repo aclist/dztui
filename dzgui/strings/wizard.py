@@ -38,11 +38,12 @@ config_new_button = "Create new DZGUI 7 config from scratch"
 config_new_box = "A new config file will be created. Proceed to the next step."
 
 ### APIValidationPage
+entry_placeholder = "Enter API key here"
 api_success = "API key set successfully. Please proceed to the next step."
 heading_steam_api = "Steam Web API key"
 button_web_api = "Web API setup link"
 blurb_steam_api = """
-You will need to set up a Steam Web API key in order to browse the global server list.
+You must set up a Steam Web API key in order to browse the global server list.
 \nIf you don't have one already, it can be set up via the page below.
 \nPlease refer to the DZGUI documentation for more instructions.
 """
@@ -52,7 +53,18 @@ by numeric ID on the web. For example, in the URL https://www.battlemetrics.net/
 the ID would be <b>24819107</b>.
 """
 
-entry_placeholder = "Enter API key here"
+### PreferencesPage
+heading_prefs = "User preferences"
+blurb_prefs = """Here you can set up some basic settings. Additional preferences can be\n
+configured via the Options menu once DZGUI launches.
+"""
+label_player = "Player name"
+placeholder_player = "Set an in-game player name"
+radio_km = "km (kilometers)"
+radio_mi = "mi (miles)"
+label_dist = "Distance display"
+label_client = "Steam client"
+
 
 ### Completion page
 heading_completion = "Setup complete"

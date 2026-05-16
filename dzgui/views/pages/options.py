@@ -9,12 +9,9 @@ from dzgui.const.constants import (
     APPID_DAYZ_EXP,
     APPNAME_DAYZ,
     APPNAME_DAYZ_EXP_HUMAN,
-    FLATPAK_RUN_CMD,
-    FLATPAK_SANDBOX,
     NO_EXPAND,
     NO_FILL,
     NO_PADDING,
-    STEAM_CMD,
     VIEW_CONCEAL,
     VIEW_REVEAL,
 )
@@ -27,6 +24,7 @@ from dzgui.views.components.labels import LeftLabel
 from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.buttons import WebButton
 from dzgui.views.components.frame import HeadingFrame
+from dzgui.views.components.misc import ClientCombo
 from dzgui.views.dialogs.generic import ExceptionDialog
 
 
@@ -101,29 +99,7 @@ class Options(Gtk.Box):
             Preferences.WINDOW,
         )
 
-        # TODO: make this an abstract class
-        client_store = Gtk.ListStore(str, str)
-        clients = (
-            (
-                options.steam_combo,
-                STEAM_CMD,
-            ),
-            (
-                options.flatpak_combo,
-                FLATPAK_RUN_CMD,
-            ),
-            (
-                options.flatpak_container_combo,
-                FLATPAK_SANDBOX,
-            ),
-        )
-        for client in clients:
-            client_store.append(client)
-        self.client_combo = Gtk.ComboBox.new_with_model(client_store)  # Text()
-        renderer_text = Gtk.CellRendererText()
-        self.client_combo.pack_start(renderer_text, True)
-        self.client_combo.add_attribute(renderer_text, "text", 0)
-        self.client_combo.set_active(0)
+        self.client_combo = ClientCombo()
         self.client_combo.connect("changed", self._on_client_changed)
 
         client_hbox = ShortHBox(self.client_combo)

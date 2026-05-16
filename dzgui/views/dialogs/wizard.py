@@ -13,8 +13,8 @@ from dzgui.const.constants import (
     HERO_PATH,
     LEGACY_CONFIG_PATH,
 )
+from dzgui.const.boilerplate import config_boilerplate
 from dzgui.const.endpoints import BM_API_SETUP, STEAM_API_SETUP
-
 from dzgui.init.migrate import migrate_legacy_conf
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings import wizard
@@ -23,14 +23,16 @@ from dzgui.util.open_links import open_link_by_url
 from dzgui.util.css import add_class
 from dzgui.views.components.buttons import WebButton
 from dzgui.views.components.entry import APIEntry
+from dzgui.views.components.misc import ClientCombo
 
 import gi
 
 gi.require_version("Gtk", "3.0")
-gi.require_version("Gdk", "3.0")
 from gi.repository import Gdk, Gtk, GLib, GObject, GdkPixbuf  # noqa E402
 
 
+# TODO: currently unused, corresponds to linear index
+# TODO: use of pagenum enum and page_type attribute is redundant
 class PageNum(Enum):
     INTRO = 1
     HAS_CONFIG = 2
@@ -334,7 +336,7 @@ class ConfigMigrationPage(ScrolledWizardPage):
         EMITTER.emit("step_complete")
         EMITTER.emit("config", False)
 
-    def get_migrated(self) -> bool:
+    def is_migrated(self) -> bool:
         return self.migrated
 
     def _on_import_clicked(self, button: Gtk.Button) -> None:
@@ -349,6 +351,67 @@ class ConfigMigrationPage(ScrolledWizardPage):
         EMITTER.emit("config", True)
 
 
+class PreferencesPage(ScrolledWizardPage):
+    def __init__(self) -> None:
+        super().__init__(
+            enum=PageNum.USER_PREFS,
+            heading=wizard.heading_prefs,
+            description=wizard.blurb_prefs,
+        )
+        self.page_type = Gtk.AssistantPageType.INTRO
+
+        # TODO: widgets and strings are largely a reimplementation of options page, consolidate
+        name_label = Gtk.Label(label=wizard.label_player)
+        self.name_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, spacing=10, halign=Gtk.Align.CENTER
+        )
+        self.name_entry = Gtk.Entry(placeholder_text=wizard.placeholder_player)
+        self.name_entry.connect("changed", self._on_entry_changed)
+        self.name_box.add(name_label)
+        self.name_box.add(self.name_entry)
+
+        self.dist_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, spacing=10, halign=Gtk.Align.CENTER
+        )
+        self.radio_km = Gtk.RadioButton.new_with_label(None, wizard.radio_km)
+        self.radio_miles = Gtk.RadioButton.new_with_label_from_widget(
+            self.radio_km, wizard.radio_mi
+        )
+        dist_label = Gtk.Label(label=wizard.label_dist)
+        self.dist_box.add(dist_label)
+        self.dist_box.add(self.radio_km)
+        self.dist_box.add(self.radio_miles)
+
+        client_label = Gtk.Label(label=wizard.label_client)
+        self.client_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, spacing=10, halign=Gtk.Align.CENTER
+        )
+        self.client_combo = ClientCombo()
+        self.client_box.add(client_label)
+        self.client_box.add(self.client_combo)
+
+        for el in self.name_box, self.dist_box, self.client_box:
+            self.add_start(el)
+
+    def get_prefs(self) -> None:
+        name = self.name_entry.get_text().strip()
+        use_miles = self.radio_miles.get_active()
+        model = self.client_combo.get_model()
+        ind = self.client_combo.get_active()
+        client = model[ind][1]
+        print(name)
+        print(use_miles)
+        print(client)
+        return name, use_miles, client
+
+    def _on_entry_changed(self, entry: Gtk.Entry) -> None:
+        text = entry.get_text()
+        if text.isspace():
+            EMITTER.emit("step_pending")
+            return
+        EMITTER.emit("step_complete")
+
+
 class CompletionPage(ScrolledWizardPage):
     def __init__(self) -> None:
         super().__init__(
@@ -356,7 +419,6 @@ class CompletionPage(ScrolledWizardPage):
             heading=wizard.heading_completion,
             description=wizard.blurb_completion,
         )
-        # TODO: show collapsible config file tree
         self.page_type = Gtk.AssistantPageType.SUMMARY
 
         self.connect("map", lambda _: EMITTER.emit("step_complete"))
@@ -371,8 +433,6 @@ class Assistant(Gtk.Assistant):
             self.set_default_size(1500, 900)
 
         self.config_path = config
-        # TODO: read in from boilerplate file
-        from dzgui.const.boilerplate import config_boilerplate
 
         self.config_values: dict[str, Any] = config_boilerplate
 
@@ -381,16 +441,7 @@ class Assistant(Gtk.Assistant):
         self.page3 = SteamPathPage()
         self.page4 = SteamValidationPage()
         self.page5 = BMValidationPage()
-
-        # self.page6 = PreferencesPage()
-        # contains name, miles, and steam client choice
-        # self.name = Gtk.Entry()
-        # self.miles = Gtk.RadioButton()
-        # TODO: use dual column model, recycle into options
-        # TODO: update client_combo in options page
-        # self.client = Gtk.ComboBox()
-        # TODO: write to config if not present
-
+        self.page6 = PreferencesPage()
         self.page7 = CompletionPage()
 
         self.set_forward_page_func(self._advance_page)
@@ -407,6 +458,7 @@ class Assistant(Gtk.Assistant):
             self.page3,
             self.page4,
             self.page5,
+            self.page6,
             self.page7,
         ):
             # NOTE: skip config migration page if no legacy config file
@@ -420,9 +472,6 @@ class Assistant(Gtk.Assistant):
         self.show_all()
 
     def write_config(self) -> None:
-        # NOTE: implies that file was already migrated on page 3
-        if self.has_legacy_config:
-            return
         write_json(self.config_values, self.config_path)
 
     def _advance_page(self, index: int) -> int:
@@ -431,7 +480,7 @@ class Assistant(Gtk.Assistant):
             case self.page1:
                 pass
             case self.page2:
-                if self.page2.get_migrated():
+                if self.page2.is_migrated():
                     return self.get_n_pages() - 1
             case self.page3:
                 self.config_values["default_steam_path"] = page.get_path_from_radio()
@@ -439,11 +488,15 @@ class Assistant(Gtk.Assistant):
                 self.config_values["steam_api"] = page.get_api_key()
             case self.page5:
                 self.config_values["bm_api"] = page.get_api_key()
-            # case self.page6:
-            # self.write_config()
+            # NOTE: collects config values before advancing to last page
+            case self.page6:
+                name, use_miles, client = self.page6.get_prefs()
+                self.config_values["name"] = name
+                self.config_values["use_miles"] = use_miles
+                self.config_values["client"] = client
+                self.write_config()
             case _:
                 raise AttributeError("Trying to advance a non-canonical page")
-        print(self.config_values)
         return index + 1
 
     def destroy_and_quit(self, widget: Self) -> None:
