@@ -29,9 +29,9 @@ def check_updates(version: str) -> str | None:
     try:
         latest = get_latest_release()
         if latest is None:
-            return
+            return None
         if Version(version) >= Version(latest):
-            return
+            return None
         return latest
     except Exception:
-        return
+        return None
