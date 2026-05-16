@@ -213,13 +213,24 @@ class ServerModelManager:
         res = Servers.query_by_record(record)
         self._parse_single_record(res, delete=True)
 
-    def update_history(self) -> None:
+    def update_history(
+        self,
+        rows: (
+            list[tuple[str, str, str, str, int, int, int, str, int, int, str, bool]]
+            | None
+        ) = None,
+    ) -> None:
         proxy_man = self._get_proxy_man()
-        control_model = proxy_man.get_control()
         config_man = self.controller.get_config_man()
-        config_man.update_history_file(control_model)
+        if rows is not None:
+            records = rows
+        else:
+            control_model = proxy_man.get_control()
+            records = control_model
 
-        self._sort_unique_maps(control_model)
+        config_man.update_history_file(records)
+        config_man.update_history_file(records)
+        self._sort_unique_maps(records)
         proxy = proxy_man.get_proxy_model()
         self.tv.set_model(proxy)
 
@@ -234,8 +245,12 @@ class ServerModelManager:
 
     def add_to_history(self, record: dict[str, Any]) -> None:
         proxy_man = self._get_proxy_man()
-        row = Servers.parse_json([record])
-        proxy_man.append_row_to_history(row[0])
+        rows = Servers.parse_json([record])
+        try:
+            proxy_man.append_row_to_history(rows[0])
+        except Exception:
+            self.update_history(rows)
+            return
         self.update_history()
 
     def remove_from_history(self, record: Servers.Record) -> None:
