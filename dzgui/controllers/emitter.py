@@ -9,14 +9,14 @@ from gi.repository import Gdk, GObject  # noqa E402
 if TYPE_CHECKING:
     from dzgui.const.enum import NotebookPage, ServerTab
 
-# TODO: rename signals to e.g. maps_keybinding_pressed
 
+# TODO: if servers fail to load, may leave dangling widgets waiting for a signal
 
 class Emitter(GObject.GObject):
     def __init__(self) -> None:
         super().__init__()
 
-    # TODO: rename request verbs
+    # TODO: rename signals to e.g. maps_keybinding_pressed
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def request_keyword_focus(self) -> None:
         """User invoked Ctrl-f keybinding from ServerTreeView"""
@@ -150,4 +150,3 @@ class Emitter(GObject.GObject):
     def keyword_set(self, keyword: str) -> None:
         pass
 
-    # TODO: if servers fail to load, may leave dangling widgets waiting for a signal

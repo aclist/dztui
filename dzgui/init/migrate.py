@@ -52,4 +52,5 @@ def copy_ipdb(ips_path: Path) -> None:
         return
     if legacy.is_file() is False:
         return
+    # TODO: ensure that month file is copied
     shutil.copy(legacy, ips_path)

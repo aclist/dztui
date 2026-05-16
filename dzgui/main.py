@@ -102,6 +102,7 @@ def main() -> None:
         make_parents(XDG.debug)
 
     if has_new_config(XDG.config) is False:
+        # TODO: handle this in assistant
         migrate_legacy_conf(XDG.config)
         migrate_cols_file(XDG.columns)
         # TODO: copy notes file

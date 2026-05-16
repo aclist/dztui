@@ -45,6 +45,7 @@ WEB_BROWSER = "web-browser-symbolic"
 
 SEPARATOR = "SEPARATOR"
 
+# TODO: drop
 NO_PADDING = 0
 NO_EXPAND = False
 NO_FILL = False
@@ -65,4 +66,5 @@ CHANGELOG_PATH = "data/CHANGELOG.md"
 CSS_PATH = "data/app.css"
 
 LOG_FILTERS = ("CRITICAL", "WARNING", "INFO", "DEBUG")
+# TODO: drop
 FOREGROUND_CMDS = ("wmctrl", "xdotool")

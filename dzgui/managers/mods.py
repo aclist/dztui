@@ -181,7 +181,7 @@ class ModManager:
                 model[path][4] = True
         self.emitter.emit("mods_highlighted")
 
-    # TODO: strings
+    # TODO: dialog strings
     @call_on_thread("working")
     def highlight_stale(self) -> None:
         stale = find_stale_mods(self.prefs.paths.config)

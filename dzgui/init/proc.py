@@ -39,6 +39,7 @@ def is_steam_running(cmd: str) -> bool:
 
 
 # CHORE: test alternate clients
+# TODO: has_flatpak_steam
 def is_flatpak_steam_running() -> bool:
     if has_cmd(FLATPAK_CMD) is False:
         return False

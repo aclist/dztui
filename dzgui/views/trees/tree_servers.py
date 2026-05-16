@@ -215,6 +215,7 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
 
     def _check_result_queue(self) -> Literal[True]:
         latest_result = None
+        # FIXME: empty results cause statusbar to be emptied
         while not self.queue.empty():
             latest_result = self.queue.get()
 
