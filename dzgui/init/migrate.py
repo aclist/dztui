@@ -18,6 +18,7 @@ def has_new_config(config: Path) -> bool:
 
 
 def migrate_cols_file(res: Path) -> None:
+    # NOTE: dzg.columns.json is API 7 spec
     old_res = Path.home() / LEGACY_COLS_PATH
     if old_res.is_file():
         j = read_json(old_res)
@@ -32,11 +33,20 @@ def migrate_cols_file(res: Path) -> None:
 def copy_state_files(state_path: Path) -> None:
     home = Path.home()
     legacy = home / ".local/state/dzgui"
+    to_copy = [
+        "dzg.res.json",
+        "dzg.notes.json",
+        "dzg.history",
+        "dzg.versions",
+        "ips.csv",
+        ".month",
+    ]
     if state_path == legacy:
         # TODO: log this
         return
     for file in legacy.iterdir():
-        shutil.copy(file, state_path / file.name)
+        if file.name in to_copy:
+            shutil.copy(file, state_path / file.name)
 
 
 def copy_ipdb(ips_path: Path) -> None:

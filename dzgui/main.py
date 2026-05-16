@@ -18,8 +18,8 @@ from dzgui.init.dayz import is_dayz_installed
 from dzgui.init.flock import lock_acquire
 from dzgui.init.migrate import (
     has_new_config,
-    # migrate_cols_file,
-    # copy_state_files,
+    copy_state_files,
+    migrate_cols_file,
 )
 from dzgui.init.prefix import get_version
 from dzgui.init.prereqs import has_steam_client
@@ -96,7 +96,6 @@ def main() -> None:
     if XDG.resolution.parent.is_dir() is False:
         make_parents(XDG.resolution)
 
-    # TODO: test
     if XDG.debug.is_file() is False:
         make_parents(XDG.debug)
 
@@ -107,10 +106,9 @@ def main() -> None:
         del os.environ["GTK_IM_MODULE"]
 
     if has_new_config(XDG.config) is False:
+        migrate_cols_file(XDG.columns)
+        copy_state_files(xdg_paths["XDG_STATE_HOME"])
         # TODO: add logging inside wizard
-        # TODO: copy notes file, version file, etc.
-        # migrate_cols_file(XDG.columns)
-        # copy_state_files(xdg_paths["XDG_STATE_HOME"])
         SetupWizard(version, _is_steam_deck, XDG.config)
         return
 
@@ -147,6 +145,5 @@ def main() -> None:
         update_available=update_available,
         use_miles=use_miles,
     )
-    # TODO: drop allow updates
     print(boot.all_ok)
     App(prefs)
