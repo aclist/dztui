@@ -28,7 +28,7 @@ class ClientCombo(Gtk.ComboBox):
         )
         for client in clients:
             self.client_store.append(client)
-        self.set_model(self.client_store)  # Text()
+        self.set_model(self.client_store)
         renderer_text = Gtk.CellRendererText()
         self.pack_start(renderer_text, True)
         self.add_attribute(renderer_text, "text", 0)
