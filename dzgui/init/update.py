@@ -1,14 +1,10 @@
 import logging
 import requests
-import subprocess
-import sys
 
-from importlib import resources
 from packaging.version import Version
 
-from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, REQUEST_TIMEOUT
+from dzgui.const.constants import APP_NAME, REQUEST_TIMEOUT
 from dzgui.const.endpoints import GITHUB_RELEASES, CODEBERG_RELEASES
-from dzgui.init.prefix import is_prefix_writeable
 
 logger = logging.getLogger(APP_NAME)
 

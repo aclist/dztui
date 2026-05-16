@@ -18,17 +18,17 @@ from dzgui.init.dayz import is_dayz_installed
 from dzgui.init.flock import lock_acquire
 from dzgui.init.migrate import (
     has_new_config,
-    migrate_cols_file,
-    migrate_legacy_conf,
-    copy_state_files,
+    # migrate_cols_file,
+    # copy_state_files,
 )
 from dzgui.init.prefix import get_version
 from dzgui.init.prereqs import has_steam_client
-from dzgui.init.update import check_updates
+
+# from dzgui.init.update import check_updates
 
 from dzgui.strings import boot
 
-from dzgui.util.map_count import get_map_count
+# from dzgui.util.map_count import get_map_count
 from dzgui.util.deck import is_steam_deck, is_game_mode
 from dzgui.util.localize import set_locale
 from dzgui.util.symlink import rebuild_symlinks

@@ -182,7 +182,7 @@ class APIEntry(Gtk.Box):
         for el in self.entry, self.submit:
             self.add(el)
 
-    def get_entry(self) -> None:
+    def get_entry(self) -> Gtk.Entry:
         return self.entry
 
     def popup(self) -> None:
