@@ -1,4 +1,5 @@
 ## Added
+- Setup wizard
 - Changelog text wrapping and formatting
 - Changelog ships with source
 - Documentation ships with source

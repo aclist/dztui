@@ -481,7 +481,7 @@ class Options(Gtk.Box):
         self.dayz_version_label.set_text(dayz_version)
         self.dayz_exp_version_label.set_text(dayz_exp_version)
 
-        # TODO: not happy with this
+        # TODO: bicolumn list store with no cell renderer on index 1, use raw command names
         active_combo = query.get_client_index(config["client"])
         self.client_combo.set_active(active_combo)
 

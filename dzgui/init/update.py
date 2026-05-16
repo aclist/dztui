@@ -20,6 +20,7 @@ def get_latest_release() -> str | None:
         try:
             res = requests.get(url, timeout=REQUEST_TIMEOUT)
             if res.status_code == 200:
+                print(res.json())
                 tag = res.json()["tag_name"]
                 break
         except Exception as e:
@@ -28,31 +29,13 @@ def get_latest_release() -> str | None:
     return tag
 
 
-def allow_updates(allow: bool) -> bool:
-    if allow is False:
-        return False
-    if allow is True:
-        return is_prefix_writeable()
-
-
-def check_updates(version: str) -> None:
+def check_updates(version: str) -> str | None:
     try:
         latest = get_latest_release()
-        prefix = sys.prefix
         if latest is None:
             return
         if Version(version) >= Version(latest):
             return
-
-        # TODO: test update logic
-        print("UNIMPLEMENTED: fetches in-app updates")
-        return
-
-        with resources.path(APP_NAME_LOWER, "scripts/update.sh") as path:
-            proc = subprocess.Popen(["/usr/bin/env", "bash", path, latest, prefix])
-            if proc != 0:
-                # TODO: pop a dialog
-                pass
-            sys.exit(proc)
+        return latest
     except Exception:
         return

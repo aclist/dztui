@@ -13,7 +13,6 @@ from dzgui.config.ipdb import get_ipdb
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.config.xdg import get_xdg_paths, parse_filepaths
-from dzgui.const.update import ALLOW_UPDATES
 from dzgui.init.coords import get_local_coords
 from dzgui.init.dayz import is_dayz_installed
 from dzgui.init.flock import lock_acquire
@@ -25,7 +24,7 @@ from dzgui.init.migrate import (
 )
 from dzgui.init.prefix import get_version
 from dzgui.init.prereqs import has_steam_client
-from dzgui.init.update import allow_updates, check_updates
+from dzgui.init.update import check_updates
 
 from dzgui.strings import boot
 
@@ -36,6 +35,7 @@ from dzgui.util.symlink import rebuild_symlinks
 from dzgui.util.strings import init, flags
 
 from dzgui.views.base import App
+from dzgui.views.dialogs.wizard import SetupWizard
 from dzgui.views.dialogs.early_alert import EarlyAlertDialog
 
 if TYPE_CHECKING:
@@ -97,20 +97,10 @@ def main() -> None:
 
     if XDG.resolution.parent.is_dir() is False:
         make_parents(XDG.resolution)
+
     # TODO: test
     if XDG.debug.is_file() is False:
         make_parents(XDG.debug)
-
-    if has_new_config(XDG.config) is False:
-        # TODO: handle this in assistant
-        migrate_legacy_conf(XDG.config)
-        migrate_cols_file(XDG.columns)
-        # TODO: copy notes file
-        copy_state_files(xdg_paths["XDG_STATE_HOME"])
-
-    setup_logger(XDG.debug)
-    with open(XDG.debug, "w") as f:
-        f.truncate(0)
 
     _is_steam_deck = is_steam_deck()
     _is_game_mode = is_game_mode() if _is_steam_deck else False
@@ -118,12 +108,20 @@ def main() -> None:
         # NOTE: this may no longer be necessary on newer versions of SteamOS
         del os.environ["GTK_IM_MODULE"]
 
-    # TODO: test spamming timeout
-    allow = allow_updates(ALLOW_UPDATES)
-    if allow is True:
-        check_updates(version)
+    if has_new_config(XDG.config) is False:
+        # TODO: add logging inside wizard
+        # TODO: copy notes file, version file, etc.
+        # migrate_cols_file(XDG.columns)
+        # copy_state_files(xdg_paths["XDG_STATE_HOME"])
+        SetupWizard(version, _is_steam_deck, XDG.config)
+        return
 
-    # TODO: config wizard: check has_steam_client() prior to VDF exploration
+    setup_logger(XDG.debug)
+    with open(XDG.debug, "w") as f:
+        f.truncate(0)
+
+    # TODO: update area in gutter
+    # new_version = check_updates(version)
 
     if _is_steam_deck is False:
         # TODO: sudo escalation dialog
@@ -148,7 +146,6 @@ def main() -> None:
         is_debug=args.debug,
         coords=local_coords,
         version=version,
-        allow_updates=allow,
         paths=XDG,
         use_miles=use_miles,
     )

@@ -1,5 +1,4 @@
 import shutil
-import sys
 
 from pathlib import Path
 from dzgui.const.constants import LEGACY_CONFIG_PATH, LEGACY_COLS_PATH, LEGACY_IPS_PATH
@@ -7,16 +6,11 @@ from dzgui.config.convert import rc2json
 from dzgui.util._json import read_json, write_json
 
 
-# TODO: move to setup wizard
 def migrate_legacy_conf(config: Path) -> None:
     old_conf = Path.home() / LEGACY_CONFIG_PATH
-    if old_conf.is_file():
-        j = rc2json(old_conf)
-        config.parent.mkdir(parents=True, exist_ok=True)
-        config.write_text(j)
-    else:
-        print("Unimplemented. You must have a working dztuirc.")
-        sys.exit(1)
+    j = rc2json(old_conf)
+    config.parent.mkdir(parents=True, exist_ok=True)
+    config.write_text(j)
 
 
 def has_new_config(config: Path) -> bool:
