@@ -95,6 +95,8 @@ class FastInsertListStore(ListStore):
         expected_types = [
             GTYPE_TO_PYTHON[self.get_column_type(i)] for i in range(n_cols)
         ]
+        if len(rows) == 0:
+            return
         if not self._is_same_length(rows):
             raise ValueError("Sublists are not of uniform length")
         if not self._is_type_homogeneous(rows):
