@@ -35,3 +35,6 @@
 .masked-tree {
     background-color: transparent;
 }
+.error-frame border {
+    border: 2px solid red;
+}

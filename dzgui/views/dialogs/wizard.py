@@ -20,7 +20,7 @@ from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManage
 from dzgui.strings import wizard
 from dzgui.util._json import write_json
 from dzgui.util.open_links import open_link_by_url
-from dzgui.util.css import add_class
+from dzgui.util.css import add_class, load_css
 from dzgui.views.components.buttons import WebButton
 from dzgui.views.components.entry import APIEntry
 from dzgui.views.components.misc import ClientCombo
@@ -138,7 +138,6 @@ class NotificationFrame(Gtk.Frame):
         self.add(self.box)
 
         if error:
-            # TODO: custom css file only for wizard
             add_class(self, "error-frame")
 
 
@@ -250,11 +249,7 @@ class IntroductionPage(ScrolledWizardPage):
 class Heading(Gtk.Label):
     def __init__(self, label: str):
         super().__init__(label=label)
-
-        # add_class(self, "heading")
-        # font weight
-        # TODO: set css em size
-        # TODO: bold text
+        add_class(self, "settings-subheading")
 
 
 class ChunkyButton(Gtk.Button):
@@ -317,17 +312,18 @@ class ConfigMigrationPage(ScrolledWizardPage):
 
         self.add_start(self.grid)
 
+        self.err_box = NotificationFrame(wizard.config_error_box, error=True)
         self.success_box = NotificationFrame(wizard.config_import_box)
         self.from_scratch_box = NotificationFrame(wizard.config_new_box)
-        self.add_start(self.success_box)
-        self.add_start(self.from_scratch_box)
+        for box in self.err_box, self.success_box, self.from_scratch_box:
+            self.add_start(box)
 
         self.connect("map", self._hide_boxes)
         self.import_button.connect("clicked", self._on_import_clicked)
         self.new_button.connect("clicked", self._on_new_clicked)
 
     def _hide_boxes(self, page: Self) -> None:
-        for box in self.success_box, self.from_scratch_box:
+        for box in self.success_box, self.from_scratch_box, self.err_box:
             box.set_visible(False)
 
     def _on_new_clicked(self, button: Gtk.Button) -> None:
@@ -346,7 +342,9 @@ class ConfigMigrationPage(ScrolledWizardPage):
             self.migrated = True
             self.success_box.set_visible(True)
         except Exception:
-            pass
+            self.err_box.set_visible(True)
+            EMITTER.emit("step_pending")
+            return
         EMITTER.emit("step_complete")
         EMITTER.emit("config", True)
 
@@ -467,6 +465,7 @@ class Assistant(Gtk.Assistant):
         self.connect("cancel", self.destroy_and_quit)
         self.connect("close", self.destroy_and_quit)
         self.show_all()
+        load_css()
 
     def write_config(self) -> None:
         write_json(self.config_values, self.config_path)
@@ -546,15 +545,13 @@ class SteamPathPage(ScrolledWizardPage):
         )
 
         self.page_type = Gtk.AssistantPageType.INTRO
-
-        # TODO: add custom CSS class to Gtk.Frame so that only this one is styled
-        err_box = NotificationFrame(wizard.error_steam_path, error=True)
-        self.err = err_box
+        self.err_box = NotificationFrame(wizard.no_valid_paths, error=True)
 
         self.scan_button = Gtk.Button(label=wizard.button_scan, halign=Gtk.Align.CENTER)
         self.scan_button.connect("clicked", self._on_scan_clicked)
 
         self.add_start(self.scan_button)
+        self.add_start(self.err_box)
         self.connect("map", self._start_incomplete)
 
     def _on_scan_clicked(self, button: Gtk.Button) -> None:
@@ -567,9 +564,8 @@ class SteamPathPage(ScrolledWizardPage):
             spacing=10,
         )
         total = len(paths)
-        err_box = NotificationFrame(wizard.no_valid_paths)
         if total == 0:
-            self.add_start(err_box)
+            self.err_box.set_visible(True)
         else:
             button_box.add(Gtk.Label(label=f"Steam paths found: {total} total."))
             for i, button_path in enumerate(paths):
@@ -589,11 +585,7 @@ class SteamPathPage(ScrolledWizardPage):
         return active.get_label()
 
     def _start_incomplete(self, page: Self) -> None:
-        self.err.set_visible(False)
-
-    def _test_error_func(self, button: Gtk.CheckButton) -> None:
-        self.err.set_visible(True)
-        EMITTER.emit("step_incomplete")
+        self.err_box.set_visible(False)
 
 
 class SetupWizard(Gtk.Application):
@@ -628,6 +620,3 @@ class Emitter(GObject.GObject):
 
 
 EMITTER = Emitter()
-
-# TODO: Ctrl-q
-# TODO: change behavior of global emitter

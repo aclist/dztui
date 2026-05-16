@@ -6,7 +6,6 @@ This wizard is going to help you set up some common config options before launch
 
 ### SteamPathPage
 # TODO
-error_steam_path = "ERROR TEXT HERE"
 heading_steam_path = "Steam path"
 blurb_steam_path = """
 DZGUI needs to find the location to your default Steam installation.
@@ -36,6 +35,7 @@ config_import_box = (
 )
 config_new_button = "Create new DZGUI 7 config from scratch"
 config_new_box = "A new config file will be created. Proceed to the next step."
+config_error_box = "Something went wrong while writing a new config file to the system."
 
 ### APIValidationPage
 entry_placeholder = "Enter API key here"
