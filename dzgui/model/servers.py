@@ -57,7 +57,7 @@ class ServerModelManager:
 
     def load(self) -> None:
         """
-        There may be cases where you want to instantiate this class without dumping servers,
+        Load is not called on init. There may be cases where you want to instantiate this class without dumping servers,
         e.g., adding saved servers from another tab
         """
 
@@ -134,6 +134,8 @@ class ServerModelManager:
             futures = [executor.submit(Servers.test_ip, i, port, event) for i in ports]
             for future in as_completed(futures):
                 try:
+                    if self.controller.get_exit_event().is_set():
+                        return
                     res = future.result(timeout=LAN_TIMEOUT)
                     if res is None:
                         continue
@@ -169,8 +171,10 @@ class ServerModelManager:
                 for ip in ips
             ]
             for future in as_completed(futures):
+                # TODO: wrap except
+                if self.controller.get_exit_event().is_set():
+                    return
                 res = future.result(timeout=API_TIMEOUT)
-
                 self.thread_man.increment_dialog()
                 # NOTE: failing entries are culled
                 if res is None:
