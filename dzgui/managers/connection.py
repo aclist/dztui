@@ -28,7 +28,7 @@ from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
     APPNAME_DAYZ,
-    APPNAME_DAYZ_EXP,
+    APPNAME_DAYZ_EXP_HUMAN,
 )
 from dzgui.const.enum import NotebookPage, Preferences
 from dzgui.init.proc import is_dayz_running, is_steam_running
@@ -123,7 +123,7 @@ class ConnectionManager:
         self.appid = info.game_id
         self.record = record
 
-        builds = {APPID_DAYZ: APPNAME_DAYZ, APPID_DAYZ_EXP: APPNAME_DAYZ_EXP}
+        builds = {APPID_DAYZ: APPNAME_DAYZ, APPID_DAYZ_EXP: APPNAME_DAYZ_EXP_HUMAN}
         build = builds[self.appid]
         binary_missing = False
         required_mib = 0.0

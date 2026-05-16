@@ -7,7 +7,8 @@ MIN_COUNT = 1048576
 REQUEST_TIMEOUT = 10
 
 APPNAME_DAYZ = "DayZ"
-APPNAME_DAYZ_EXP = "DayZ Experimental"
+APPNAME_DAYZ_EXP = "DayZ Exp"
+APPNAME_DAYZ_EXP_HUMAN = "DayZ Experimental"
 DAYZ_BINARY = "DayZ_x64.exe"
 
 LIBRARYFOLDERS_PATH = "steamapps/libraryfolders.vdf"

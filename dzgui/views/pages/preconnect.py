@@ -200,8 +200,8 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         )
         for child in widgets:
             child.set_visible(True)
-        self.raise_window.set_visible(False)
 
+        self.raise_window.set_visible(False)
         self.raise_window.set_sensitive(False)
         self.ok.set_sensitive(True)
         self.ok.set_label(preconnect.update_mods)
@@ -214,8 +214,6 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
                 self.ok.emit("clicked")
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
-        # TODO: cancel mod downloads
-        # sets some kind of global event listener
         self.controller.update_and_connect(self.raise_window.get_active())
 
     def _on_back_clicked(self, button: Gtk.Button) -> None:

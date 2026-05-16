@@ -8,7 +8,7 @@ from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
     APPNAME_DAYZ,
-    APPNAME_DAYZ_EXP,
+    APPNAME_DAYZ_EXP_HUMAN,
     FLATPAK_RUN_CMD,
     FLATPAK_SANDBOX,
     NO_EXPAND,
@@ -173,7 +173,7 @@ class Options(Gtk.Box):
 
         version_rows = [
             [LeftLabel(APPNAME_DAYZ), self.dayz_version_label],
-            [LeftLabel(APPNAME_DAYZ_EXP), self.dayz_exp_version_label],
+            [LeftLabel(APPNAME_DAYZ_EXP_HUMAN), self.dayz_exp_version_label],
         ]
 
         api_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)

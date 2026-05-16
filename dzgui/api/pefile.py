@@ -239,7 +239,7 @@ class FileVersion:
     major: int
     minor: int
     build: int
-    revision: int
+    revision: str
 
 
 @dataclass(slots=True, frozen=True)
@@ -281,8 +281,11 @@ def parse_version_number(data: BinaryIO) -> FileVersion:
     minor = struct.unpack("<L", data.read(4))[0] >> 16 & 0xFFFF
     major = struct.unpack("<L", data.read(4))[0] >> 0 & 0xFFFF
     build = struct.unpack("<L", data.read(4))[0] >> 0 & 0xFFFF
-    revision = struct.unpack("<L", data.read(4))[0] >> 16 & 0xFFFF
-    return FileVersion(major, minor, build, revision)
+    # NOTE: 0-pad revision number
+    revision = str(struct.unpack("<L", data.read(4))[0] >> 16 & 0xFFFF)
+    offset = 3 - len(revision)
+    padded = "0" * offset + revision
+    return FileVersion(major, minor, build, padded)
 
 
 def seek_to_hex(address: str, data: BinaryIO) -> None:
@@ -311,7 +314,8 @@ def get_dayz_version(file: Path) -> DayZVersion:
 
 
 def dayz_version_to_str(v: DayZVersion) -> str:
-    return ".".join(str(el) for el in [v.major, v.minor, v.patch])
+    return ".".join(el for el in list(map(str, [v.major, v.minor, v.patch])))
+    # return ".".join(str(el) for el in [v.major, v.minor, v.patch])
 
 
 def dayz_version_from_str(v: str) -> DayZVersion:
@@ -452,5 +456,6 @@ def get_pretty_version(steam_path: Path, appid: int) -> str | None:
         vers = get_dayz_version(pe_file_path)
         dayz_version = dayz_version_to_str(vers)
         return dayz_version
-    except Exception:
+    except Exception as e:
+        print(e)
         return None
