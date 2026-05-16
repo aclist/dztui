@@ -393,15 +393,12 @@ class PreferencesPage(ScrolledWizardPage):
         for el in self.name_box, self.dist_box, self.client_box:
             self.add_start(el)
 
-    def get_prefs(self) -> None:
+    def get_prefs(self) -> tuple[str, bool, str]:
         name = self.name_entry.get_text().strip()
         use_miles = self.radio_miles.get_active()
         model = self.client_combo.get_model()
         ind = self.client_combo.get_active()
         client = model[ind][1]
-        print(name)
-        print(use_miles)
-        print(client)
         return name, use_miles, client
 
     def _on_entry_changed(self, entry: Gtk.Entry) -> None:
