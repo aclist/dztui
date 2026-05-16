@@ -44,30 +44,6 @@ logger = logging.getLogger(APP_NAME)
 warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 
 
-## TODO: move to configs/servers
-# def query_history() -> list | None:
-#    history_file = MainController.get_prefs().paths.history
-#    try:
-#        with open(history_file, "r") as f:
-#            rows = [row.rstrip("\n") for row in f]
-#    except OSError:
-#        rows = None
-#    return rows
-#
-## TODO: belongs in model
-# def str_to_record(record: str) -> Record | None:
-#    r = record.split(":")
-#    if len(r) != 3:
-#        return None
-#    return Record(r[0], int(r[1]), int(r[2]))
-#
-## TODO: ibid
-# def record_to_str(record: Record) -> str:
-#    return f"{record.ip}:{record.gameport}:{record.qport}"
-#
-#
-
-
 class OuterWindow(Gtk.Window):
     def __init__(self) -> None:
         super().__init__(title=APP_NAME, border_width=10, icon_name=APP_NAME_LOWER)

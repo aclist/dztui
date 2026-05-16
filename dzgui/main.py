@@ -23,10 +23,8 @@ from dzgui.init.migrate import (
 )
 from dzgui.init.prefix import get_version
 from dzgui.init.prereqs import has_steam_client
-
-# from dzgui.init.update import check_updates
-
 from dzgui.strings import boot
+from dzgui.init.update import check_updates
 
 # from dzgui.util.map_count import get_map_count
 from dzgui.util.deck import is_steam_deck, is_game_mode
@@ -120,8 +118,7 @@ def main() -> None:
     with open(XDG.debug, "w") as f:
         f.truncate(0)
 
-    # TODO: update area in gutter
-    # new_version = check_updates(version)
+    update_available = check_updates(version)
 
     if _is_steam_deck is False:
         # TODO: sudo escalation dialog
@@ -147,6 +144,7 @@ def main() -> None:
         coords=local_coords,
         version=version,
         paths=XDG,
+        update_available=update_available,
         use_miles=use_miles,
     )
     # TODO: drop allow updates

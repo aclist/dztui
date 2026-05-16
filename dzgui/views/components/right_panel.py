@@ -1,12 +1,14 @@
 from typing import Literal, TYPE_CHECKING
 
+from dzgui.const.constants import NO_EXPAND, NO_FILL, FILL, NO_PADDING
+from dzgui.const.endpoints import GITHUB_USER_RELEASES
 from dzgui.const.enum import ServerTab
 from dzgui.util.clip import copy_clipboard
+from dzgui.util.open_links import open_link_by_url
 from dzgui.views.components.buttonbox import ButtonBox
 from dzgui.views.components.filter_panel import FilterPanel
 from dzgui.views.components.mod_panel import ModSelectionPanel
-from dzgui.views.components.buttons import RefreshButton, KeysButton
-from dzgui.const.constants import NO_EXPAND, NO_FILL, FILL, NO_PADDING
+from dzgui.views.components.buttons import IconTextButton, RefreshButton, KeysButton
 
 import gi
 
@@ -40,14 +42,17 @@ class RightPanel(Gtk.Box):
 
         self.copying = False
 
-        # TODO: strings
-        version = self.controller.get_prefs().version
+        prefs = self.controller.get_prefs()
+        version = prefs.version
+        update = prefs.update_available
+
         self.version_label = Gtk.Label(
             label=version,
             hexpand=True,
             vexpand=True,
             halign=Gtk.Align.END,
             valign=Gtk.Align.END,
+            # TODO: strings
             tooltip_text="Click to copy to clipboard",
         )
         eb = Gtk.EventBox(halign=Gtk.Align.END, valign=Gtk.Align.END)
@@ -58,7 +63,26 @@ class RightPanel(Gtk.Box):
             self.pack_start(el, NO_EXPAND, FILL, NO_PADDING)
 
         self.pack_start(self.sel_panel, NO_EXPAND, NO_FILL, NO_PADDING)
-        self.pack_start(eb, NO_EXPAND, FILL, NO_PADDING)
+
+        self.version_button = IconTextButton(
+            "dialog-information-symbolic", label="Updates available"
+        )
+
+        self.gutter_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            halign=Gtk.Align.END,
+            valign=Gtk.Align.END,
+            spacing=10,
+        )
+        if update:
+            self.version_button.set_halign(Gtk.Align.END)
+            self.gutter_box.add(self.version_button)
+            self.version_button.connect("clicked", self._on_version_button_clicked)
+        self.gutter_box.add(eb)
+        self.pack_start(self.gutter_box, NO_EXPAND, FILL, NO_PADDING)
+
+    def _on_version_button_clicked(self, button: Gtk.Button) -> None:
+        open_link_by_url(GITHUB_USER_RELEASES)
 
     def _on_server_page_changed(
         self, emitter: "Emitter", page: "ServerTreeView"

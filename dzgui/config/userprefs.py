@@ -15,4 +15,5 @@ class UserPrefs:
     coords: Union["Coords", None]
     version: str
     paths: "Xdg"
+    update_available: bool
     use_miles: bool

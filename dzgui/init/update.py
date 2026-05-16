@@ -16,7 +16,6 @@ def get_latest_release() -> str | None:
         try:
             res = requests.get(url, timeout=REQUEST_TIMEOUT)
             if res.status_code == 200:
-                print(res.json())
                 tag = res.json()["tag_name"]
                 break
         except Exception as e:
@@ -25,13 +24,13 @@ def get_latest_release() -> str | None:
     return tag
 
 
-def check_updates(version: str) -> str | None:
+def check_updates(version: str) -> bool:
     try:
         latest = get_latest_release()
         if latest is None:
-            return None
+            return False
         if Version(version) >= Version(latest):
-            return None
-        return latest
+            return False
+        return True
     except Exception:
-        return None
+        return False
