@@ -54,8 +54,12 @@ lint = [
     "types-requests>=2.32.4",
     "types-psutil==7.2.2.20260508",
 ]
+build = [
+    "build==1.5.0",
+]
+
 dev = [
-    "dzgui[docs,test,lint]"
+    "dzgui[docs,test,lint,build]"
 ]
 
 [build-system]
