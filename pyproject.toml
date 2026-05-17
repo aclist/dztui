@@ -4,7 +4,7 @@ description = "DayZ server browser and mod manager for Linux"
 authors = [
     {name = "aclist"}
 ]
-version = "7.0.0"
+version = "7.0.0b1"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 readme = "README.md"
@@ -54,8 +54,12 @@ lint = [
     "types-requests>=2.32.4",
     "types-psutil==7.2.2.20260508",
 ]
+build = [
+    "build==1.5.0",
+]
+
 dev = [
-    "dzgui[docs,test,lint]"
+    "dzgui[docs,test,lint,build]"
 ]
 
 [build-system]
@@ -79,6 +83,7 @@ line-length = 88
 python_version = "3.13"
 disallow_untyped_defs = true
 warn_return_any = true
+exclude = ["lib/*"]
 
 [[tool.mypy.overrides]]
 module = [

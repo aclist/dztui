@@ -64,8 +64,12 @@ LEGACY_IPS_PATH = ".local/share/dzgui/helpers/ips.csv"
 DEBUG_LOG = f"{APP_NAME}_DEBUG.LOG"
 SYSTEM_LOG = f"{APP_NAME}_SYSTEM.LOG"
 CHANGELOG_PATH = "data/CHANGELOG.md"
+HERO_PATH = "data/images/hero.png"
 CSS_PATH = "data/app.css"
+VDF_PATH = "steamapps/libraryfolders.vdf"
+DEFAULT_STEAM_PATH = ".local/share/Steam"
+FLATPAK_STEAM_PATH = ".var/app/com.valvesoftware.Steam/data/Steam"
+UBUNTU_STEAM_PATH = ".steam/steam"
+DEBIAN_STEAM_PATH = ".steam/debian-installation"
 
 LOG_FILTERS = ("CRITICAL", "WARNING", "INFO", "DEBUG")
-# TODO: drop
-FOREGROUND_CMDS = ("wmctrl", "xdotool")

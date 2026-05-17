@@ -9,3 +9,5 @@ build/
 notes.otl
 uv.lock
 .coverage
+pyapp-latest/
+dist/

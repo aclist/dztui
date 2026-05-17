@@ -1,4 +1,5 @@
 ## Added
+- Setup wizard
 - Changelog text wrapping and formatting
 - Changelog ships with source
 - Documentation ships with source
@@ -36,6 +37,7 @@
 
 
 ## Changed
+- Conform to PEP 440 versioning for beta versions
 - Reduce padding on keys button
 - Boldface breadcrumbs
 - Bold labels inside frames

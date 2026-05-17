@@ -14,6 +14,6 @@ class UserPrefs:
     is_debug: bool
     coords: Union["Coords", None]
     version: str
-    allow_updates: bool
     paths: "Xdg"
+    update_available: bool
     use_miles: bool

@@ -1,7 +1,7 @@
 import inspect
 import logging
 import threading
-from typing import Any, Literal, TYPE_CHECKING
+from typing import Any, Literal, TYPE_CHECKING, Union
 
 from functools import wraps
 from typing import Callable
@@ -52,7 +52,7 @@ class StoredFunc:
 
 
 class ThreadingManager:
-    def __init__(self, controller: "Controller") -> None:
+    def __init__(self, controller: Union["Controller", None]) -> None:
         self.controller = controller
         self.jobs = 1
         self.cleanup_func: StoredFunc | None = None
@@ -69,7 +69,7 @@ class ThreadingManager:
             func.call()
             GLib.idle_add(self._destroy_on_idle)
 
-        if show_dialog:
+        if show_dialog is True and self.controller is not None:
             self.wait_dialog = WaitDialog(
                 self.controller, dialog_str, jobs=self.jobs, show_cancel=show_cancel
             )

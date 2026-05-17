@@ -1,17 +1,55 @@
 import json
 import logging
+import os
 import requests
 import subprocess
 
 from shlex import shlex
 from pathlib import Path
 
-from dzgui.const.constants import APP_NAME
+from dzgui.init.prereqs import has_steam_client
+from dzgui.const.constants import (
+    APP_NAME,
+    DEBIAN_STEAM_PATH,
+    DEFAULT_STEAM_PATH,
+    FLATPAK_STEAM_PATH,
+    UBUNTU_STEAM_PATH,
+    VDF_PATH,
+)
 from dzgui.const.endpoints import STEAM_PUBLISHED_FILES
+from dzgui.strings import wizard
 from dzgui.util.bash import concat_bash_args
 
 
 logger = logging.getLogger(APP_NAME)
+
+
+def get_steam_paths() -> list[tuple[Path, str]]:
+    paths = []
+    if has_steam_client():
+        HOME = Path.home()
+        env = os.environ.get("XDG_DATA_HOME")
+        if env is not None:
+            XDG_DATA_HOME = env
+        else:
+            XDG_DATA_HOME = DEFAULT_STEAM_PATH
+
+        DEFAULT_PATH = HOME.joinpath(XDG_DATA_HOME)
+        FLATPAK_PATH = HOME.joinpath(FLATPAK_STEAM_PATH)
+        UBUNTU_PATH = HOME.joinpath(UBUNTU_STEAM_PATH)
+        DEBIAN_PATH = HOME.joinpath(DEBIAN_STEAM_PATH)
+
+        human = {
+            DEFAULT_PATH: wizard.desc_default_path,
+            FLATPAK_PATH: wizard.desc_flatpak_path,
+            UBUNTU_PATH: wizard.desc_ubuntu_path,
+            DEBIAN_PATH: wizard.desc_debian_path,
+        }
+
+        for path in DEFAULT_PATH, FLATPAK_PATH, UBUNTU_PATH, DEBIAN_PATH:
+            if path.joinpath(VDF_PATH).is_file():
+                paths.append((path, human[path]))
+    return paths
 
 
 def concat_mods(mods: list[str]) -> str:

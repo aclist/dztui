@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from dzgui.const.constants import APP_NAME_LOWER, DEBUG_LOG, SYSTEM_LOG
 
+
 @dataclass
 class Xdg:
     config: Path
@@ -73,7 +74,7 @@ def parse_filepaths(xdg: dict) -> Xdg:
     system = state / "logs" / SYSTEM_LOG
     debug = state / "logs" / DEBUG_LOG
 
-    columns = state / "dzg.cols.json"
+    columns = state / "dzg.columns.json"
     notes = state / "dzg.notes.json"
     resolution = state / "dzg.res.json"
     history = state / "dzg.history"
