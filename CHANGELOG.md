@@ -1,5 +1,10 @@
 # Changelog
 
+## [6.0.6-beta.1] 2026-05-17
+## Changed
+- Update symlink hash logic to align with DZGUI 7 beta
+- Update A2S helper to latest commit
+
 ## [6.0.5-beta.2] 2026-04-17
 ## Changed
 - During server connection attempts, only download mods local to specific server
