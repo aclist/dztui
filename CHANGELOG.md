@@ -48,6 +48,7 @@
 - Packaging structure
 - Suppress log messages from imported modules
 - Embed Workshop link in Options menu
+- Disable overlay scrollbars on server tables
 
 ## Dropped
 - Debug mode
