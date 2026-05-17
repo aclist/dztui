@@ -1,5 +1,10 @@
 # Changelog
 
+## [6.0.5] 2026-05-17
+## Changed
+- Update symlink hash logic to align with DZGUI 7 beta
+- Update A2S helper to latest commit
+
 ## [6.0.4] 2026-04-13
 ## Fixed
 - Update A2S module checksums to support servers with missing description field
