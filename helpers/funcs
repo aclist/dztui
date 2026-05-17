@@ -930,12 +930,18 @@ query_defunct(){
     <<< "$result" awk '{print $2}'
 }
 encode(){
-    echo "$1" | md5sum | cut -c -8
+    echo -n "$1" | md5sum | cut -c -8
 }
 compare(){
     local modlist="$@"
     diff=$(comm -23 <(<<< "$modlist" sort -u) <(installed_mods | sort))
     echo "$diff"
+}
+unlink_all(){
+    readarray -t links < <(find "$game_dir" -maxdepth 1 -mindepth 1 -type l)
+    for link in "${links[@]}"; do
+        unlink "$link"
+    done
 }
 legacy_symlinks(){
     logger INFO "Removing legacy symlinks"
@@ -1027,7 +1033,10 @@ update_symlinks(){
     if [[ ! -d "$workshop_dir" ]]; then
         return
     fi
-    legacy_symlinks
+    if [[ ! -d "$game_dir" ]]; then
+        return
+    fi
+    unlink_all
     symlinks
 }
 try_fallback(){

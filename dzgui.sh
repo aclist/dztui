@@ -2,7 +2,7 @@
 set -o pipefail
 
 src_path="$(readlink -e "$0")"
-version=6.0.5-beta.2
+version=6.0.6-beta.1
 
 #CONSTANTS
 aid=221100
@@ -567,9 +567,12 @@ get_hash(){
     md5sum "$1" | awk '{print $1}'
 }
 fetch_a2s(){
-    # this file is currently monolithic
-    [[ -d $helpers_path/a2s ]] && { logger INFO "A2S helper is current"; return 0; }
-    local sha=c7590ffa9a6d0c6912e17ceeab15b832a1090640
+    sum="d26da2fe03df2b95436f823f0496887b"
+    if [[ -d $helpers_path/a2s ]] && [[ $(get_hash "$helpers_path/a2s/info.py") == $sum ]]; then
+        logger INFO "A2S helper is current"
+        return 0
+    fi
+    local sha=b40eb24cdbb06ebd08272f224257fe5a81610e86
     local author="yepoleb"
     local repo="python-a2s"
     local url="https://github.com/$author/$repo/tarball/$sha"
@@ -626,7 +629,7 @@ fetch_helpers_by_sum(){
     [[ -f "$config_file" ]] && source "$config_file"
     declare -A sums
     sums=(
-        ["funcs"]="2e1b0e6693258fe8b4bf23d9b6431d7f"
+        ["funcs"]="1cd26343cd68a5382e3377a9757497fa"
         ["query_v2.py"]="55d339ba02512ac69de288eb3be41067"
         ["servers.py"]="ed442c3aecf33f777d59dcf53650d263"
         ["ui.py"]="cf52a3d5883afe02a013d8673df494fa"
