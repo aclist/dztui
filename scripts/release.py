@@ -4,7 +4,6 @@ import subprocess
 
 from importlib import metadata
 from pathlib import Path
-from typing import Any
 
 from dzgui.const.constants import APP_NAME_LOWER
 
