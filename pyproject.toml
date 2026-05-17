@@ -39,7 +39,11 @@ Issues = "https://github.com/aclist/dzgui/issues"
 Changelog = "https://github.com/aclist/dzgui/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-docs = ["sphinx"]
+docs = [
+    "sphinx==9.0.4",
+    "sphinx-rtd_theme==3.1.0",
+    "sphinx-copybutton==0.5.2"
+]
 test = [
     "black==25.1.0",
     "pre-commit==4.4.0",
@@ -55,6 +59,7 @@ lint = [
     "types-psutil==7.2.2.20260508",
 ]
 build = [
+    "pre-commit==4.4.0",
     "build==1.5.0",
 ]
 
