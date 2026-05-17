@@ -5,7 +5,6 @@ This wizard will help you set up some common config options before launching the
 """
 
 ### SteamPathPage
-# TODO
 heading_steam_path = "Steam path"
 blurb_steam_path = """
 DZGUI needs to find the location to your default Steam installation.
