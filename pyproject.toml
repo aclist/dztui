@@ -79,6 +79,7 @@ line-length = 88
 python_version = "3.13"
 disallow_untyped_defs = true
 warn_return_any = true
+exclude = ["lib/*"]
 
 [[tool.mypy.overrides]]
 module = [
