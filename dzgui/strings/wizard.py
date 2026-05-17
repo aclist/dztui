@@ -1,7 +1,7 @@
 ### IntroductionPage
 title_intro = "Welcome"
 blurb_intro = """
-This wizard is going to help you set up some common config options before launching the application.
+This wizard will help you set up some common config options before launching the application.
 """
 
 ### SteamPathPage

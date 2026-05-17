@@ -109,7 +109,7 @@ def main() -> None:
         migrate_cols_file(XDG.columns)
         copy_state_files(xdg_paths["XDG_STATE_HOME"])
         # TODO: add logging inside wizard
-        SetupWizard(version, _is_steam_deck, XDG.config)
+        SetupWizard(_is_steam_deck, XDG.config)
         return
 
     setup_logger(XDG.debug)

@@ -236,10 +236,10 @@ class SteamValidationPage(APIValidationPage):
 
 
 class IntroductionPage(ScrolledWizardPage):
-    def __init__(self, version: str):
+    def __init__(self):
         super().__init__(
             enum=PageNum.INTRO,
-            heading=f"Welcome to {APP_NAME} {version}!",
+            heading=f"Welcome to {APP_NAME}!",
             description=wizard.blurb_intro,
         )
         self.page_type = Gtk.AssistantPageType.INTRO
@@ -359,37 +359,39 @@ class PreferencesPage(ScrolledWizardPage):
         self.page_type = Gtk.AssistantPageType.INTRO
 
         # TODO: widgets and strings are largely a reimplementation of options page, consolidate
-        name_label = Gtk.Label(label=wizard.label_player)
-        self.name_box = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL, spacing=10, halign=Gtk.Align.CENTER
+        name_label = Gtk.Label(label=wizard.label_player, halign=Gtk.Align.START)
+        self.name_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        self.name_entry = Gtk.Entry(
+            placeholder_text=wizard.placeholder_player,
+            halign=Gtk.Align.END,
+            width_chars=40,
         )
-        self.name_entry = Gtk.Entry(placeholder_text=wizard.placeholder_player)
         self.name_entry.connect("changed", self._on_entry_changed)
         self.name_box.add(name_label)
         self.name_box.add(self.name_entry)
 
-        self.dist_box = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL, spacing=10, halign=Gtk.Align.CENTER
-        )
+        self.dist_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         self.radio_km = Gtk.RadioButton.new_with_label(None, wizard.radio_km)
         self.radio_miles = Gtk.RadioButton.new_with_label_from_widget(
             self.radio_km, wizard.radio_mi
         )
-        dist_label = Gtk.Label(label=wizard.label_dist)
+        dist_label = Gtk.Label(label=wizard.label_dist, halign=Gtk.Align.START)
         self.dist_box.add(dist_label)
         self.dist_box.add(self.radio_km)
         self.dist_box.add(self.radio_miles)
 
-        client_label = Gtk.Label(label=wizard.label_client)
-        self.client_box = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL, spacing=10, halign=Gtk.Align.CENTER
-        )
+        client_label = Gtk.Label(label=wizard.label_client, halign=Gtk.Align.START)
+        self.client_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         self.client_combo = ClientCombo()
         self.client_box.add(client_label)
         self.client_box.add(self.client_combo)
 
-        for el in self.name_box, self.dist_box, self.client_box:
-            self.add_start(el)
+        outer_box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL, halign=Gtk.Align.CENTER, spacing=10
+        )
+        for el in self.name_box, self.client_box, self.dist_box:
+            outer_box.add(el)
+        self.add_start(outer_box)
 
     def get_prefs(self) -> tuple[str, bool, str]:
         name = self.name_entry.get_text().strip()
@@ -420,7 +422,7 @@ class CompletionPage(ScrolledWizardPage):
 
 
 class Assistant(Gtk.Assistant):
-    def __init__(self, version: str, is_deck: bool, config: Path):
+    def __init__(self, is_deck: bool, config: Path):
         super().__init__()
         if is_deck:
             self.fullscreen()
@@ -431,7 +433,7 @@ class Assistant(Gtk.Assistant):
 
         self.config_values: dict[str, Any] = config_boilerplate
 
-        self.page1 = IntroductionPage(version)
+        self.page1 = IntroductionPage()
         self.page2 = ConfigMigrationPage(config)
         self.page3 = SteamPathPage()
         self.page4 = SteamValidationPage()
@@ -565,7 +567,7 @@ class SteamPathPage(ScrolledWizardPage):
         )
         total = len(paths)
         if total == 0:
-            self.err_box.set_visible(True)
+            show_errors = True
         else:
             button_box.add(Gtk.Label(label=f"Steam paths found: {total} total."))
             for i, button_path in enumerate(paths):
@@ -577,8 +579,11 @@ class SteamPathPage(ScrolledWizardPage):
                     frame = RadioFrame(self.first_button, button_path)
                     button_box.add(frame)
             self.add_start(button_box)
+            show_errors = False
             EMITTER.emit("step_complete")
         self.show_all()
+        # TODO: more robust approach
+        self.err_box.set_visible(show_errors)
 
     def get_path_from_radio(self) -> str:
         active = next(r for r in self.first_button.get_group() if r.get_active())
@@ -589,17 +594,17 @@ class SteamPathPage(ScrolledWizardPage):
 
 
 class SetupWizard(Gtk.Application):
-    def __init__(self, version: str, is_deck: bool, config: Path) -> None:
+    def __init__(self, is_deck: bool, config: Path) -> None:
         super().__init__()
         GLib.set_prgname(APP_NAME)
-        Window(version, is_deck, config)
+        Window(is_deck, config)
         Gtk.main()
 
 
 class Window(Gtk.Window):
-    def __init__(self, version: str, is_deck: bool, config: Path) -> None:
+    def __init__(self, is_deck: bool, config: Path) -> None:
         super().__init__(title=APP_NAME, icon_name=APP_NAME)
-        Assistant(version, is_deck, config)
+        Assistant(is_deck, config)
 
 
 class Emitter(GObject.GObject):
