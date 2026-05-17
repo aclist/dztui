@@ -16,9 +16,9 @@ pyapp_dir = root.joinpath("pyapp-latest")
 builder = build.ProjectBuilder(root)
 builder.build("wheel", output_directory=output)
 
-interpreter="py3"
-arch="none"
-target="any"
+interpreter = "py3"
+arch = "none"
+target = "any"
 version = metadata.version(APP_NAME_LOWER)
 filename = f"{APP_NAME_LOWER}-{version}-{interpreter}-{arch}-{target}.whl"
 
@@ -38,4 +38,4 @@ if proc.returncode == 0:
     output_exe = root.joinpath("pyapp-latest/target/release/pyapp")
     release_exe = output.joinpath("dzgui")
     output_exe.rename(release_exe)
-    print(f"Wrote output to '{output_exe}'")
+    print(f"Wrote output to '{release_exe}'")
