@@ -1,6 +1,7 @@
 import build
 import os
 import subprocess
+import tarfile
 
 from importlib import metadata
 from pathlib import Path
@@ -35,6 +36,10 @@ env["PYAPP_PYTHON_VERSION"] = "3.13"
 proc = subprocess.run(["cargo", "build", "--release"], env=env, cwd=pyapp_dir)
 if proc.returncode == 0:
     output_exe = root.joinpath("pyapp-latest/target/release/pyapp")
-    release_exe = output.joinpath("dzgui")
+    release_exe = output.joinpath(APP_NAME_LOWER)
     output_exe.rename(release_exe)
-    print(f"Wrote output to '{release_exe}'")
+    tarname = APP_NAME_LOWER + ".tar.gz"
+    tarpath = output.joinpath(tarname)
+    with tarfile.open(tarpath, "w:gz") as tar:
+        tar.add(release_exe)
+    print(f"Wrote tarfile to '{tarpath}'")
