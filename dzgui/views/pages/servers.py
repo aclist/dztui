@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 class ScrollableTree(Gtk.ScrolledWindow):
     def __init__(self, tree: "ServerTreeView") -> None:
-        super().__init__()
+        super().__init__(overlay_scrolling=False)
 
         self.tree = tree
         self.add(tree)
