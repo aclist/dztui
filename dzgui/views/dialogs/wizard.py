@@ -236,7 +236,7 @@ class SteamValidationPage(APIValidationPage):
 
 
 class IntroductionPage(ScrolledWizardPage):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             enum=PageNum.INTRO,
             heading=f"Welcome to {APP_NAME}!",
