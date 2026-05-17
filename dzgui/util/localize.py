@@ -1,4 +1,3 @@
-import os
 import locale
 
 
@@ -13,5 +12,3 @@ def number(num: int | float) -> str:
 
 def set_locale() -> None:
     locale.setlocale(locale.LC_ALL, "")
-    user_loc = loc if (loc := os.getenv("LC_CTYPE")) else "en_US.UTF-8"
-    locale.setlocale(locale.LC_NUMERIC, user_loc)
