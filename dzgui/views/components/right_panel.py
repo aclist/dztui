@@ -125,7 +125,7 @@ class RightPanel(Gtk.Box):
 
                 exe_path = os.getenv("PYAPP")
                 if exe_path is None:
-                    msg = "Failed to find DZGUI launch executable"
+                    msg = dialogs.failed_to_update
                     func = StoredFunc(self._on_update_failure, msg)
                     self.thread_man.set_cleanup_func(func, destroy_first=True)
                     return
