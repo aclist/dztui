@@ -1,14 +1,32 @@
+import logging
+import os
+import requests
+import shutil
+import subprocess
+import tarfile
+
 from typing import Literal, TYPE_CHECKING
 
-from dzgui.const.constants import NO_EXPAND, NO_FILL, FILL, NO_PADDING
-from dzgui.const.endpoints import GITHUB_USER_RELEASES
+from dzgui.const.constants import (
+    APP_NAME,
+    NO_EXPAND,
+    NO_FILL,
+    FILL,
+    NO_PADDING,
+    TMP_EXE,
+    TMP_PATH,
+    TMP_TARBALL,
+)
+from dzgui.const.update import ALLOW_UPDATES
 from dzgui.const.enum import ServerTab
+from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
+from dzgui.strings import dialogs
 from dzgui.util.clip import copy_clipboard
-from dzgui.util.open_links import open_link_by_url
 from dzgui.views.components.buttonbox import ButtonBox
 from dzgui.views.components.filter_panel import FilterPanel
 from dzgui.views.components.mod_panel import ModSelectionPanel
 from dzgui.views.components.buttons import IconTextButton, RefreshButton, KeysButton
+from dzgui.views.dialogs.generic import ExceptionDialog, QuitDialog
 
 import gi
 
@@ -20,11 +38,14 @@ if TYPE_CHECKING:
     from dzgui.controllers.emitter import Emitter
     from dzgui.views.trees.tree_servers import ServerTreeView
 
+logger = logging.getLogger(APP_NAME)
+
 
 class RightPanel(Gtk.Box):
     def __init__(self, controller: "Controller"):
         super().__init__(spacing=6, orientation=Gtk.Orientation.VERTICAL)
 
+        self.thread_man = ThreadingManager(controller)
         self.controller = controller
         self.controller.register_widget("right_panel", self)
 
@@ -44,7 +65,7 @@ class RightPanel(Gtk.Box):
 
         prefs = self.controller.get_prefs()
         version = prefs.version
-        update = prefs.update_available
+        update = prefs.latest_release
 
         self.version_label = Gtk.Label(
             label=version,
@@ -64,7 +85,7 @@ class RightPanel(Gtk.Box):
 
         self.pack_start(self.sel_panel, NO_EXPAND, NO_FILL, NO_PADDING)
 
-        self.version_button = IconTextButton(
+        self.update_button = IconTextButton(
             "dialog-information-symbolic", label="Updates available"
         )
 
@@ -74,15 +95,54 @@ class RightPanel(Gtk.Box):
             valign=Gtk.Align.END,
             spacing=10,
         )
-        if update:
-            self.version_button.set_halign(Gtk.Align.END)
-            self.gutter_box.add(self.version_button)
-            self.version_button.connect("clicked", self._on_version_button_clicked)
+        if ALLOW_UPDATES and update is not None:
+            self.update_button.set_halign(Gtk.Align.END)
+            self.gutter_box.add(self.update_button)
+            self.update_button.connect(
+                "clicked", self._on_update_button_clicked, update
+            )
         self.gutter_box.add(eb)
         self.pack_start(self.gutter_box, NO_EXPAND, FILL, NO_PADDING)
 
-    def _on_version_button_clicked(self, button: Gtk.Button) -> None:
-        open_link_by_url(GITHUB_USER_RELEASES)
+    def _on_update_success(self) -> None:
+        msg = dialogs.update_success
+        dialog = QuitDialog(self.controller, msg)
+        dialog.run()
+
+    def _on_update_failure(self, msg: str) -> None:
+        dialog = ExceptionDialog(self.controller, msg)
+        dialog.run()
+
+    @call_on_thread(dialogs.fetching_update)
+    def _on_update_button_clicked(self, button: Gtk.Button, url: str) -> None:
+        try:
+            res = requests.get(url)
+            if res.status_code == 200:
+                with open(TMP_TARBALL, "wb") as file:
+                    file.write(res.content)
+                with tarfile.open(TMP_TARBALL) as tar:
+                    tar.extractall(TMP_PATH)
+
+                exe_path = os.getenv("PYAPP")
+                if exe_path is None:
+                    msg = dialogs.failed_to_update
+                    func = StoredFunc(self._on_update_failure, msg)
+                    self.thread_man.set_cleanup_func(func, destroy_first=True)
+                    return
+                shutil.move(TMP_EXE, exe_path)
+
+                proc = subprocess.run([exe_path, "self", "restore"])
+                if proc.returncode == 0:
+                    func = StoredFunc(self._on_update_success)
+                    self.thread_man.set_cleanup_func(func, destroy_first=True)
+                else:
+                    msg = dialogs.failed_to_update
+                    func = StoredFunc(self._on_update_failure, msg)
+                    self.thread_man.set_cleanup_func(func, destroy_first=True)
+        except Exception as e:
+            func = StoredFunc(self._on_update_failure, e)
+            self.thread_man.set_cleanup_func(func, destroy_first=True)
+            logger.warning(e)
 
     def _on_server_page_changed(
         self, emitter: "Emitter", page: "ServerTreeView"

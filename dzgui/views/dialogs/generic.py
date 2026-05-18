@@ -81,7 +81,7 @@ class NotifyDialog(GenericDialog):
             controller=controller,
             text=strings.notice,
             mtype=Gtk.MessageType.INFO,
-            buttons=Gtk.ButtonsType.OK_CANCEL,
+            buttons=Gtk.ButtonsType.OK,
             secondary=secondary,
         )
 
@@ -143,7 +143,7 @@ class QuitDialog(GenericDialog):
     def __init__(self, controller: "Controller", secondary: str):
         super().__init__(
             controller=controller,
-            text=strings.wait,
+            text=strings.restart_required,
             mtype=Gtk.MessageType.INFO,
             buttons=Gtk.ButtonsType.NONE,
             secondary=secondary,

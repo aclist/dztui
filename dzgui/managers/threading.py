@@ -29,7 +29,7 @@ def call_on_thread(
             self = args[0]
             stored = StoredFunc(func, *args, **kwargs)
             if not hasattr(self, "thread_man"):
-                raise AttributeError
+                raise AttributeError(f"Object '{self}' has no attribute 'thread_man'")
             if type(self.thread_man) is not ThreadingManager:
                 raise TypeError(
                     "Attribute 'thread_man' must be of type 'ThreadingManager'"

@@ -38,6 +38,7 @@ input_required = "User input required"
 confirm = "Confirmation"
 notice = "Notice"
 wait = "Please wait"
+restart_required = "App relaunch required"
 
 # Wait dialogs
 ping = "Ping"
