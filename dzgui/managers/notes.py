@@ -20,7 +20,10 @@ logger = logging.getLogger(APP_NAME)
 class NoteManager:
     def __init__(self, controller: "Controller", path: "Path") -> None:
         self.notes_path = path
-        self.cache: dict[str, str] = read_json(self.notes_path)
+        try:
+            self.cache: dict[str, str] = read_json(self.notes_path)
+        except Exception:
+            self.cache = {}
 
     def add_note(self, server: str, note: str) -> None:
         self.cache[server] = note
