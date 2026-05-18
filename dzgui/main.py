@@ -89,6 +89,8 @@ def main() -> None:
     version = get_version()
     set_locale()
 
+    print(f"{APP_NAME} {version}")
+
     # NOTE: consider aborting this check if steam deck
     xdg_paths = get_xdg_paths()
     XDG = parse_filepaths(xdg_paths)
