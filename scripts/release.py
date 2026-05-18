@@ -20,9 +20,10 @@ interpreter = "py3"
 arch = "none"
 target = "any"
 version = metadata.version(APP_NAME_LOWER)
-filename = f"{APP_NAME_LOWER}-{version}-{interpreter}-{arch}-{target}.whl"
+wheelname = f"{APP_NAME_LOWER}-{version}-{interpreter}-{arch}-{target}.whl"
+tarname = f"{APP_NAME_LOWER}-{version}.tar.gz"
 
-wheel = str(output.joinpath(filename))
+wheel = str(output.joinpath(wheelname))
 entrypoint = "dzgui.main:main"
 
 env = os.environ
@@ -39,7 +40,6 @@ if proc.returncode == 0:
     output_exe = root.joinpath("pyapp-latest/target/release/pyapp")
     release_exe = output.joinpath(APP_NAME_LOWER)
     output_exe.rename(release_exe)
-    tarname = APP_NAME_LOWER + ".tar.gz"
     tarpath = output.joinpath(tarname)
     with tarfile.open(tarpath, "w:gz") as tar:
         tar.add(release_exe)
