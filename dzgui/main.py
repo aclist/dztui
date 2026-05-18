@@ -116,7 +116,7 @@ def main() -> None:
     with open(XDG.debug, "w") as f:
         f.truncate(0)
 
-    update_available = check_updates(version)
+    latest_release = check_updates(version)
 
     if _is_steam_deck is False:
         # TODO: sudo escalation dialog
@@ -142,7 +142,7 @@ def main() -> None:
         coords=local_coords,
         version=version,
         paths=XDG,
-        update_available=update_available,
+        latest_release=latest_release,
         use_miles=use_miles,
     )
     print(boot.all_ok)

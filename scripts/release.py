@@ -30,8 +30,9 @@ env["PYAPP_PROJECT_VERSION"] = version
 env["PYAPP_PROJECT_NAME"] = APP_NAME_LOWER
 env["PYAPP_EXEC_SPEC"] = entrypoint
 env["PYAPP_PROJECT_PATH"] = wheel
-env["PYAPP_DISTRIBUTION_EMBED"] = "1"
+env["PYAPP_DISTRIBUTION_EMBED"] = "true"
 env["PYAPP_PYTHON_VERSION"] = "3.13"
+env["PYAPP_PASS_LOCATION"] = "true"
 
 proc = subprocess.run(["cargo", "build", "--release"], env=env, cwd=pyapp_dir)
 if proc.returncode == 0:
