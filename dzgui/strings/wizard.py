@@ -67,4 +67,4 @@ label_client = "Steam client"
 
 ### Completion page
 heading_completion = "Setup complete"
-blurb_completion = "Configuration completed successfully. Please exit and restart DZGUI to apply changes."
+blurb_completion = "Configuration completed successfully. Click 'Close' to close this dialog and launch DZGUI."
