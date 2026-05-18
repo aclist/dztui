@@ -65,7 +65,6 @@
 ## Unreleased
 - Load offline mods
 - Choose to jump into splash screen instead of server
-- Setup wizard
 - Local documentation
 - Raw debug command in context menu
 

@@ -73,3 +73,7 @@ UBUNTU_STEAM_PATH = ".steam/steam"
 DEBIAN_STEAM_PATH = ".steam/debian-installation"
 
 LOG_FILTERS = ("CRITICAL", "WARNING", "INFO", "DEBUG")
+
+TMP_PATH = "/tmp"
+TMP_TARBALL = "/tmp/dzgui.tar.gz"
+TMP_EXE = "/tmp/dzgui"
