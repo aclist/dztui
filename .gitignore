@@ -11,3 +11,4 @@ uv.lock
 .coverage
 pyapp-latest/
 dist/
+cpython
