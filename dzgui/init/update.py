@@ -2,6 +2,7 @@ import logging
 import requests
 
 from packaging.version import Version
+from typing import Any
 
 from dzgui.const.constants import APP_NAME, REQUEST_TIMEOUT
 from dzgui.const.endpoints import GITHUB_RELEASES, CODEBERG_RELEASES
@@ -9,7 +10,7 @@ from dzgui.const.endpoints import GITHUB_RELEASES, CODEBERG_RELEASES
 logger = logging.getLogger(APP_NAME)
 
 
-def get_latest_release() -> tuple[str, str] | tuple[None, None]:
+def get_latest_release() -> tuple[Any, Any] | tuple[None, None]:
     tag = None
     url = None
     # TODO: check order; github often has gateway errors
@@ -17,8 +18,8 @@ def get_latest_release() -> tuple[str, str] | tuple[None, None]:
         try:
             res = requests.get(url, timeout=REQUEST_TIMEOUT)
             if res.status_code == 200:
-                tag = str(res.json()["tag_name"])
-                url = str(res.json()["assets"][0]["browser_download_url"])
+                tag = res.json()["tag_name"]
+                url = res.json()["assets"][0]["browser_download_url"]
                 break
         except Exception as e:
             logger.critical(e)
