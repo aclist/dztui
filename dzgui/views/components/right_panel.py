@@ -17,6 +17,7 @@ from dzgui.const.constants import (
     TMP_PATH,
     TMP_TARBALL,
 )
+from dzgui.const.update import ALLOW_UPDATES
 from dzgui.const.enum import ServerTab
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings import dialogs
@@ -94,7 +95,7 @@ class RightPanel(Gtk.Box):
             valign=Gtk.Align.END,
             spacing=10,
         )
-        if update is not None:
+        if ALLOW_UPDATES and update is not None:
             self.update_button.set_halign(Gtk.Align.END)
             self.gutter_box.add(self.update_button)
             self.update_button.connect(
