@@ -42,5 +42,5 @@ if proc.returncode == 0:
     output_exe.rename(release_exe)
     tarpath = output.joinpath(tarname)
     with tarfile.open(tarpath, "w:gz") as tar:
-        tar.add(release_exe)
+        tar.add(release_exe, arcname=APP_NAME_LOWER)
     print(f"Wrote tarfile to '{tarpath}'")
