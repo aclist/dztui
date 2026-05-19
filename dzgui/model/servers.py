@@ -125,6 +125,8 @@ class ServerModelManager:
 
     @call_on_thread(dialog.scanning)
     def dump_lan(self, port: int, early_abort: bool) -> None:
+        self.first_iteration = True
+
         servers = []
         ports = range(1, 256)
         failure_func = StoredFunc(self._cleanup_on_failure)
@@ -139,15 +141,11 @@ class ServerModelManager:
                     res = future.result(timeout=LAN_TIMEOUT)
                     if res is None:
                         continue
+                    servers.append(res)
                     if early_abort is True:
                         # NOTE: on first non-empty hit, flag pending threads to close
                         event.set()
-                        servers.append(res)
-                        self.thread_man.set_cleanup_func(
-                            StoredFunc(self._cleanup_on_success)
-                        )
-                        return
-                    servers.append(res)
+                        break
                 except Exception as e:
                     logger.critical(e)
                     self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
