@@ -278,9 +278,7 @@ class ConnectPanel(Gtk.Box):
 
         for el in self.lan, self.fav, self.add_panel:
             self.add(el)
-
-    def set_lan_visible(self, state: bool) -> None:
-        self.lan.set_visible(state)
+        self.lan.set_visible(False)
 
     def _on_lan_tab_toggled(self, emitter: "Emitter", state: bool) -> None:
-        self.set_lan_visible(state)
+        self.lan.set_visible(state)
