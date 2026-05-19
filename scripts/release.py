@@ -34,7 +34,7 @@ env["PYAPP_PASS_LOCATION"] = "true"
 env["PYAPP_SKIP_INSTALL"] = "true"
 env["PYAPP_DISTRIBUTION_EMBED"] = "true"
 env["PYAPP_FULL_ISOLATION"] = "true"
-env["PYAPP_DISTRIBUTION_PATH"] = cpython
+env["PYAPP_DISTRIBUTION_PATH"] = str(cpython)
 env["PYAPP_DISTRIBUTION_PYTHON_PATH"] = "python/bin/python3"
 
 proc = subprocess.run(["cargo", "build", "--release"], env=env, cwd=pyapp_dir)
