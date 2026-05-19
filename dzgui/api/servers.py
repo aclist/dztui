@@ -106,7 +106,7 @@ class A2SInfo:
 
 def get_netmask() -> str:
     hostname = os.uname()[1]
-    i = socket.gethostbyname(hostname)
+    i = socket.gethostbyname(f"{hostname}.local")
     netmask = i.rsplit(".", 1)[0]
     return netmask
 
