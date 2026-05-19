@@ -101,7 +101,7 @@ build_corrupted = (
     "Steam settings or DayZ installation may be corrupted. Try restarting Steam."
 )
 api_warn_msg = """No servers returned. Please wait and try again.
-If this issue persists, your API key may be defunct or your network is blocking requests.
+This usually indicates a transitory network timeout. If this issue persists, your API key or network may be malfunctioning.
 """
 server_timeout = "Timed out when querying server, check IP or try again later."
 server_error = (

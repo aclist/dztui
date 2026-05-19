@@ -162,8 +162,8 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
 
     def _on_map(self, widget: Self) -> None:
         # TODO: disable filter panel if current model is None
-        if self.get_enum() is ServerTab.LAN:
-            self.emitter.emit("lan_tab_toggled", True)
+        state = self.get_enum() is ServerTab.LAN
+        self.emitter.emit("lan_tab_toggled", state)
 
         store = self.filter_man.get_map_store()
 
@@ -178,8 +178,6 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
         # NOTE: removes queue checker for this tab
         GLib.Source.remove(self.queue_id)
         self.emitter.disconnect(self.handler_id)
-        if self.get_enum() is ServerTab.LAN:
-            self.emitter.emit("lan_tab_toggled", False)
 
     def _on_col_width_changed(
         self, col: Gtk.TreeViewColumn, width: GObject.ParamSpecInt

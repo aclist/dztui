@@ -262,8 +262,8 @@ class Grid(Gtk.Grid):
 
         self.emitter.connect("server_page_toggled", self.toggle_filter_panels)
 
+    # TODO: drop, use map/signal
     def hide_widgets_on_init(self) -> None:
-        self.conpan.set_lan_visible(False)
         self.right_panel.sel_panel.hide()
 
     def toggle_filter_panels(self, emitter: "Emitter", state: bool) -> None:

@@ -112,6 +112,9 @@ def main() -> None:
         copy_state_files(xdg_paths["XDG_STATE_HOME"])
         # TODO: add logging inside wizard
         SetupWizard(_is_steam_deck, XDG.config)
+
+    # NOTE: implies that setup wizard failed or was closed
+    if has_new_config(XDG.config) is False:
         return
 
     setup_logger(XDG.debug)
@@ -127,7 +130,7 @@ def main() -> None:
         if has_steam_client() is False:
             EarlyAlertDialog(init.requires_steam)
 
-    # NOTE: clear versions file of unlinked mods
+    # NOTE: clears versions file of unlinked mods
     rebuild_symlinks(XDG.config)
     remove_stale_signatures(XDG.config, XDG.version)
 
