@@ -34,7 +34,7 @@ DZG-004: On Steam Deck, some mods in the Workshop show a black screen when DZGUI
 ---------------------------------------------------------------------------------------------------------
 This is a bug in the Steam client that is being tracked at Valve's Steam for Linux issue tracker here: https://github.com/ValveSoftware/steam-for-linux/issues/9598.
 
-To resolve this issue, manually intervene in the Steam client by selecting a different context (e.g., Store, Library), waiting for it to load, then navigating back to the Workshop context. This should 
+To resolve this issue, manually intervene in the Steam client by selecting a different context (e.g., Store, Library), waiting for it to load, then navigating back to the Workshop context. This should
 clear the blockage and allow the contents to render.
 
 .. _DZG-005:

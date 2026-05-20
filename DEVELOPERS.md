@@ -1,13 +1,13 @@
 # TODO: link to here from sphinx docs
 
+# Installing dev dependencies
+uv pip install -e .[dev]
+
 # Setting up precommit hooks
 pre-commit install
 
 # Fetching submodules
 git submodule update --recursive --init
-
-# Installing dev dependencies
-uv pip install -e .[dev]
 
 # Building documentation
 sphinx-build -M html source build -a

@@ -111,9 +111,9 @@ class Statusbar(Gtk.Grid):
         context: Union["ServerTab", NotebookPage],
     ) -> None:
         self.spinner.stop()
-        # TODO: CalcDist is being called when table is not loaded
+        # FIXME: CalcDist is being called when table is not loaded
         if dist is None:
-            self.set_by_context(context, "")
+            return
         else:
             pretty = self.append_distance(dist)
             self.set_by_context(context, pretty)
