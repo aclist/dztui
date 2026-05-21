@@ -159,6 +159,9 @@ class ConfigManager:
 
     def save_res_and_quit(self, tv: "ServerTreeView", window: "OuterWindow") -> None:
         columns = tv.get_columns()
+        filters = self.controller.get_all_tree_filters()
+        filters_file = self.prefs.paths.filters
+
         columns_file = self.prefs.paths.columns
         try:
             data = read_json(columns_file)
@@ -173,6 +176,7 @@ class ConfigManager:
 
         try:
             write_json(data, columns_file)
+            write_json(filters, filters_file)
         except Exception as e:
             logger.critical(e)
 
@@ -216,3 +220,12 @@ class ConfigManager:
             h = WINDOW_DEFAULT_Y
             logger.info(f"Using default window size {w},{h}")
             window.set_default_size(w, h)
+
+    def get_filters(self, tv: "ServerTreeView") -> list[str] | None:
+        filters = self.prefs.paths.filters
+        try:
+            enum = tv.get_enum()
+            filters = read_json(filters)
+            return filters[str(enum)]
+        except Exception:
+            return None

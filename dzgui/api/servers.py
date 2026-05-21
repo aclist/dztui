@@ -472,6 +472,7 @@ def query_by_ip(addr: str) -> A2SInfo:
         return A2SInfo(Record("0", 0, 0), None)
     return query_by_record(record, update_gameport=True)
 
+
 def query_by_id(server_id: int, key: str) -> A2SInfo:
     """
     Used with numeric Battlemetrics IDs
