@@ -34,6 +34,7 @@
 - Early load alerts button
 - Preconnect dialog
 - Preconnect warnings/failsafes like filesize
+- Save filters per server context between sessions
 
 
 ## Changed
