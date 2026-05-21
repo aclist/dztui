@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 # TODO: if servers fail to load, may leave dangling widgets waiting for a signal
 
+
 class Emitter(GObject.GObject):
     def __init__(self) -> None:
         super().__init__()
@@ -150,3 +151,6 @@ class Emitter(GObject.GObject):
     def keyword_set(self, keyword: str) -> None:
         pass
 
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def lan_page_initialized(self) -> None:
+        pass
