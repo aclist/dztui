@@ -17,6 +17,7 @@ class Xdg:
     system: Path
     debug: Path
     ips: Path
+    filters: Path
 
 
 def is_writeable(path_str: str) -> bool:
@@ -63,9 +64,6 @@ def get_xdg_paths() -> dict:
 
 
 def parse_filepaths(xdg: dict) -> Xdg:
-    # cache = xdg["XDG_CACHE_HOME"]
-    # data = xdg["XDG_DATA_HOME"]
-
     config = xdg["XDG_CONFIG_HOME"]
     state = xdg["XDG_STATE_HOME"]
 
@@ -80,6 +78,7 @@ def parse_filepaths(xdg: dict) -> Xdg:
     history = state / "dzg.history"
     versions = state / "dzg.versions"
     ips = state / "ips.csv"
+    filters = state / "dzg.filters.json"
 
     return Xdg(
         config,
@@ -91,4 +90,5 @@ def parse_filepaths(xdg: dict) -> Xdg:
         system,
         debug,
         ips,
+        filters
     )

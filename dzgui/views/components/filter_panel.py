@@ -68,6 +68,7 @@ class ButtonGrid(Gtk.Grid):
             )
 
     def reload_filters(self) -> None:
+        # TODO: may be superfluous
         checkboxes = self.checks
         self.block_toggles(True)
         filters = self.controller.get_enabled_filters()
@@ -330,3 +331,8 @@ class FilterPanel(Gtk.Box):
             self.block_map_change_propagation = False
             return
         self.emitter.emit("map_selection_changed", name)
+
+    def set_filters(self, filters: dict[str, bool]) -> None:
+        for check in self.button_grid.checks:
+            label = check.get_label()
+            check.set_active(filters[label])

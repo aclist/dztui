@@ -73,6 +73,7 @@ class ServerModelManager:
                 self._dump_history()
             case ServerTab.LAN:
                 # NOTE: LAN tab is only loaded on demand
+                self.emitter.emit("lan_page_initialized")
                 pass
             case _:
                 pass
@@ -123,7 +124,7 @@ class ServerModelManager:
         parsed = Servers.parse_json(servers)
         self._push_data(parsed)
 
-    @call_on_thread(dialog.scanning)
+    @call_on_thread(dialog.scanning, show_cancel=True)
     def dump_lan(self, port: int, early_abort: bool) -> None:
         self.first_iteration = True
 
@@ -137,6 +138,11 @@ class ServerModelManager:
             for future in as_completed(futures):
                 try:
                     if self.controller.get_exit_event().is_set():
+                        event.set()
+                        return
+                    if self.controller.get_cancel_event().is_set():
+                        event.set()
+                        self.controller.clear_cancel_event()
                         return
                     res = future.result(timeout=LAN_TIMEOUT)
                     if res is None:

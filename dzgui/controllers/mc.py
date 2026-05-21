@@ -260,6 +260,21 @@ class Controller(GObject.GObject):
     def select_colorized(self) -> None:
         self.mod_man.select_colorized()
 
+    def get_all_tree_filters(self) -> dict[str, dict[str, bool]]:
+        servers = self.get_servers()
+        all_filters: dict[str, dict[str, bool]] = {}
+        trees = (
+            servers.get_browser(),
+            servers.get_saved(),
+            servers.get_recent(),
+            servers.get_lan(),
+        )
+        for tree in trees:
+            enum = str(tree.get_enum())
+            filters = tree.get_filter_man().get_filters()
+            all_filters[enum] = filters
+        return all_filters
+
     def get_filter_man(self) -> "FilterManager":
         """Each ServerTreeView has an atomic FilterManager"""
         return self.get_active_treeview().get_filter_man()
@@ -303,7 +318,20 @@ class Controller(GObject.GObject):
             self.emitter.emit("servers_loaded", tv.get_enum())
             return
         self.mediator.statusbar.set_by_context(tv.get_enum(), "")
+        self.mediator.filters.button_grid.block_toggles(True)
+        self.populate_filter_prefs()
+        self.mediator.filters.button_grid.block_toggles(False)
         ServerModelManager(self, tv).load()
+
+    def populate_filter_prefs(self) -> None:
+        tv = self.get_active_treeview()
+        filters = self.config_man.get_filters(tv)
+        if filters is None:
+            return
+        filter_man = self.get_filter_man()
+        for filt, state in filters.items():
+            filter_man.set_filter(filt, state)
+        self.mediator.filters.set_filters(filters)
 
     def get_dist_cache(self) -> dict[str, "Haversine"]:
         return self.dist_cache
