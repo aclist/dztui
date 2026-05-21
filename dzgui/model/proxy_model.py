@@ -122,7 +122,6 @@ class ProxyModelManager:
         # TODO: filter cache: return a dataclass object with clearly enumerated map, keyword, and filter values
         # instead of just a serial list of strings
         filters = self.filter_man.get_all_filters()
-        print(filters)
 
         if skip_cache is False:
             if filters in self.filter_cache:
