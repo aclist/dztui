@@ -11,5 +11,5 @@ class ModsMixin:
         self, tree: TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn
     ) -> None:
 
-        mod = self.get_value_at_index(2)
+        mod = self.get_value_at_index(2)  # type: ignore
         self.controller.open_workshop_page(mod)  # type: ignore

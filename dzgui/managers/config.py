@@ -221,7 +221,7 @@ class ConfigManager:
             logger.info(f"Using default window size {w},{h}")
             window.set_default_size(w, h)
 
-    def get_filters(self, tv: "ServerTreeView") -> list[str] | None:
+    def get_filters(self, tv: "ServerTreeView") -> Any | None:
         filters = self.prefs.paths.filters
         try:
             enum = tv.get_enum()

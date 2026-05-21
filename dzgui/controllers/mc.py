@@ -260,7 +260,7 @@ class Controller(GObject.GObject):
     def select_colorized(self) -> None:
         self.mod_man.select_colorized()
 
-    def get_all_tree_filters(self) -> list[str]:
+    def get_all_tree_filters(self) -> dict[str, dict[str, bool]]:
         servers = self.get_servers()
         all_filters: dict[str, dict[str, bool]] = {}
         trees = (
@@ -332,9 +332,6 @@ class Controller(GObject.GObject):
         for filt, state in filters.items():
             filter_man.set_filter(filt, state)
         self.mediator.filters.set_filters(filters)
-
-    def get_filters(self) -> list[str]:
-        return self.mediator.filters.get_filters()
 
     def get_dist_cache(self) -> dict[str, "Haversine"]:
         return self.dist_cache
