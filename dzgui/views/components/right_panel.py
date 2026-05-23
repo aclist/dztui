@@ -1,9 +1,5 @@
 import logging
 import os
-import requests
-import shutil
-import subprocess
-import tarfile
 
 from typing import Literal, TYPE_CHECKING
 
@@ -13,20 +9,14 @@ from dzgui.const.constants import (
     NO_FILL,
     FILL,
     NO_PADDING,
-    TMP_EXE,
-    TMP_PATH,
-    TMP_TARBALL,
 )
-from dzgui.const.update import ALLOW_UPDATES
 from dzgui.const.enum import ServerTab
 from dzgui.managers.update import UpdateManager
-from dzgui.strings import dialogs
 from dzgui.util.clip import copy_clipboard
 from dzgui.views.components.buttonbox import ButtonBox
 from dzgui.views.components.filter_panel import FilterPanel
 from dzgui.views.components.mod_panel import ModSelectionPanel
 from dzgui.views.components.buttons import IconTextButton, RefreshButton, KeysButton
-from dzgui.views.dialogs.generic import ExceptionDialog, QuitDialog
 
 import gi
 
@@ -106,7 +96,7 @@ class RightPanel(Gtk.Box):
         self.pack_start(self.gutter_box, NO_EXPAND, FILL, NO_PADDING)
 
     def _on_update_button_clicked(self, button: Gtk.Button, exe_path: str, url: str) -> None:
-        UpdateManager().update_version()
+        UpdateManager(self.controller).update_version()
 
     def _on_server_page_changed(
         self, emitter: "Emitter", page: "ServerTreeView"
