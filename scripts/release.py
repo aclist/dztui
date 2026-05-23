@@ -28,7 +28,6 @@ env["PYAPP_PROJECT_NAME"] = appname
 env["PYAPP_EXEC_SPEC"] = entrypoint
 env["PYAPP_PROJECT_PATH"] = wheel
 env["PYAPP_PASS_LOCATION"] = "true"
-# env["PYAPP_PYTHON_VERSION"] = "3.13"
 
 # NOTE: explicitly install all dependencies into distribution
 env["PYAPP_SKIP_INSTALL"] = "true"
