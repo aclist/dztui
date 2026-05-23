@@ -95,8 +95,10 @@ class RightPanel(Gtk.Box):
         self.gutter_box.add(eb)
         self.pack_start(self.gutter_box, NO_EXPAND, FILL, NO_PADDING)
 
-    def _on_update_button_clicked(self, button: Gtk.Button, exe_path: str, url: str) -> None:
-        UpdateManager(self.controller).update_version()
+    def _on_update_button_clicked(
+        self, button: Gtk.Button, exe_path: str, url: str
+    ) -> None:
+        UpdateManager(self.controller).update_version(exe_path, url)
 
     def _on_server_page_changed(
         self, emitter: "Emitter", page: "ServerTreeView"
