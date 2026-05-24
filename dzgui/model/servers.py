@@ -243,9 +243,11 @@ class ServerModelManager:
         filter_man = self.tv.get_filter_man()
         maps = self._get_new_maps()
         filter_man.set_unique_maps(maps)
+        store = filter_man.get_map_store()
 
         self.first_iteration = False
-        self.emitter.emit("servers_loaded_init")
+        self.emitter.emit("load_maps", store)
+        # self.emitter.emit("servers_loaded_init")
 
     def add_to_history(self, record: dict[str, Any]) -> None:
         proxy_man = self._get_proxy_man()
@@ -378,24 +380,24 @@ class ServerModelManager:
         # NOTE: maps are set outside of thread because it triggers map changed signals
         maps = self._get_new_maps()
         filter_man.set_unique_maps(maps)
+        store = filter_man.get_map_store()
+        self.emitter.emit("load_maps", store)
 
         self.first_iteration = False
-        self.emitter.emit("servers_loaded_init")
         self.emitter.emit("saved_servers_changed")
 
     def _update_maps(self) -> None:
         filter_man = self.tv.get_filter_man()
         filter_man.set_unique_maps(self._get_new_maps())
-        self.emitter.emit("servers_loaded_init")
+        store = filter_man.get_map_store()
+        self.emitter.emit("load_maps", store)
         self.first_iteration = False
 
     def _cleanup_on_success(self) -> None:
         proxy = self._get_proxy_man().get_proxy_model()
         self.tv.set_model(proxy)
 
-        # TODO: servers_loaded vs servers_reloaded
         self.emitter.emit("servers_loaded", self.enum)
-
         if self.first_iteration:
             self._update_maps()
 

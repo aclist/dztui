@@ -107,16 +107,16 @@ class RightPanel(Gtk.Box):
         if page.loaded is True:
             return
         self.filters_vbox.set_sensitive(False)
+        # TODO: unless it is lan page
+        #self.refresh_button.set_sensitive(False)
 
     def _on_lan_page_init(self, emitter: "Emitter") -> None:
         self.filters_vbox.set_sensitive(False)
-        #self.refresh_button.set_sensitive(False)
 
     def _on_servers_loaded(self, emitter: "Emitter", context: "ServerTab") -> None:
         # TODO: similar logic on notebook page change
         state = self.controller.has_server_model()
-        for el in self.filters_vbox, self.refresh_button:
-            el.set_sensitive(state)
+        self.filters_vbox.set_sensitive(state)
 
     def _on_version_clicked(self, widget: Gtk.EventBox, event: Gdk.EventButton) -> None:
         def revert() -> Literal[False]:
