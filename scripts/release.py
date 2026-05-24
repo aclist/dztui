@@ -45,3 +45,9 @@ if proc.returncode == 0:
     with tarfile.open(tarpath, "w:gz") as tar:
         tar.add(release_exe, arcname=appname)
     print(f"Wrote tarfile to '{tarpath}'")
+
+proc = subprocess.run([release_exe, "-v"], capture_output=True, text=True)
+assert proc.stdout.rstrip() == version
+
+release_exe.unlink()
+Path(wheel).unlink()
