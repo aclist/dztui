@@ -84,7 +84,6 @@ class Controller(GObject.GObject):
         self.emitter = Emitter()
         self.emitter.connect("map_selection_changed", self._on_map_selection_changed)
         self.emitter.connect("check_toggled", self._on_check_toggled)
-        self.emitter.connect("servers_loaded_init", self._on_servers_loaded_init)
 
         # NOTE: suppress requests until entire UI is loaded
         self.loaded = False
@@ -321,6 +320,7 @@ class Controller(GObject.GObject):
         self.mediator.filters.button_grid.block_toggles(True)
         self.populate_filter_prefs()
         self.mediator.filters.button_grid.block_toggles(False)
+        self.emitter.emit("lan_page_initialized")
         ServerModelManager(self, tv).load()
 
     def populate_filter_prefs(self) -> None:
@@ -347,16 +347,7 @@ class Controller(GObject.GObject):
         filter_man = self.get_filter_man()
         return filter_man.get_filters()
 
-    # TODO: rename
-    def _on_servers_loaded_init(self, emitter: "Emitter") -> None:
-        """Triggered after servers load but prior to maps loading"""
-        # FIXME: wipe maps store when changing tabs if model is none
-        # e.g. select recent, toggle map, then select lan -> not wiped
-        tv = self.get_active_treeview()
-        if tv.loaded is False:
-            return
-        store = self.get_map_store()
-        self.emitter.emit("load_maps", store)
+    # FIXME: wipe maps store when changing tabs if model is none
 
     def has_server_model(self) -> bool:
         treeview = self.get_active_treeview()

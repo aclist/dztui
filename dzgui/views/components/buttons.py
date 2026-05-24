@@ -94,9 +94,11 @@ class RefreshButton(IconTextButton):
             icon=REFRESH_ICON,
             label=atomic_buttons.refresh,
         )
+
         self.controller = controller
         emitter = self.controller.get_emitter()
         self.loading = False
+        self.clicked = False
 
         self.time = 30
 
@@ -110,17 +112,21 @@ class RefreshButton(IconTextButton):
 
     def _on_refresh_clicked(self, button: Self) -> None:
         """Spawned in a thread"""
-        self.loading = True
+        self.clicked = True
         self.controller.refresh_tree()
         # TODO: get server tab enum
         # if LAN tab, reload existing entries in place
 
     def start_decrement(self, emitter: "Emitter", tab: "ServerTab") -> None:
+        if self.clicked is False:
+            return
         if self.loading:
-            self.set_sensitive(False)
-            self.loading = False
-            self.show_time(True)
-            GLib.timeout_add_seconds(1, self.decrement)
+            return
+        self.set_sensitive(False)
+        self.loading = True
+        self.clicked = False
+        self.show_time(True)
+        GLib.timeout_add_seconds(1, self.decrement)
 
     def decrement(self) -> bool:
         self.time -= 1
@@ -128,6 +134,7 @@ class RefreshButton(IconTextButton):
             self.time = 30
             self.show_time(False)
             self.set_sensitive(True)
+            self.loading = False
             return False
         self.show_time(True)
         return True
