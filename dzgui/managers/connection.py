@@ -161,7 +161,7 @@ class ConnectionManager:
                 if len(self.missing_mods) > 0:
                     required_size = sum(row[2] for row in self.missing_mods)
                     required_mib = format_mib(required_size)
-                    free_mib = format_mib(required_size)
+                    free_mib = format_mib(free)
 
         dayz_running = is_dayz_running()
 
@@ -222,7 +222,8 @@ class ConnectionManager:
     def query_modlist_and_present(self, record: Servers.Record) -> None:
         try:
             mods = self._query_modlist(record)
-        except Exception:
+        except Exception as e:
+            print(f"{type(e).__name__}: {e}")
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._server_timeout), destroy_first=True
             )
@@ -279,8 +280,13 @@ class ConnectionManager:
 
         for title, mod, stamp, size in self.missing_mods:
             # TODO: check cancel and exit events
+            if self.controller.get_exit_event().is_set():
+                return
+            if self.controller.get_cancel_event().is_set():
+                self.controller.clear_cancel_event()
+                return
             enqueue_mod(mod, self.appid)
-            time.sleep(2)
+            time.sleep(2.5)
 
         if raise_window is True:
             logger.info("Bringing window to foreground")
