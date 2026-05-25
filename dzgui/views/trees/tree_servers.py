@@ -72,6 +72,7 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
             logger.critical(e)
             valid_json = False
 
+        # NOTE: reasonable defaults for long columns
         width_map = {
             "Name": 800,
             "Map": 300,
@@ -96,8 +97,9 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
                 column.set_fixed_width(saved_size)
                 column.set_expand(True)
             else:
-                w = width_map[column_title]
-                column.set_fixed_width(w)
+                if column_title in width_map:
+                    w = width_map[column_title]
+                    column.set_fixed_width(w)
             if column_title == "Ping":
                 column.set_cell_data_func(renderer, self._get_ping)
 

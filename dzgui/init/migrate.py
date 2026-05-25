@@ -18,15 +18,20 @@ def has_new_config(config: Path) -> bool:
 
 
 def migrate_cols_file(res: Path) -> None:
-    # NOTE: dzg.columns.json is API 7 spec
+    # NOTE: filename "dzg.columns.json" is API 7 spec
     old_res = Path.home() / LEGACY_COLS_PATH
     if old_res.is_file():
         j = read_json(old_res)
         cols = j["cols"]
+        # NOTE: implies prior conversion
         if "View" in cols:
             return
-        cols["View"] = cols.pop("Perspective")
-        cols["Max"] = cols.pop("Maximum")
+        # NOTE: user may not have changed these widths in API 6
+        try:
+            cols["View"] = cols.pop("Perspective")
+            cols["Max"] = cols.pop("Maximum")
+        except Exception:
+            pass
         write_json(j, res)
 
 
