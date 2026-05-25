@@ -98,7 +98,7 @@ class RefreshButton(IconTextButton):
         self.controller = controller
         emitter = self.controller.get_emitter()
         self.loading = False
-        self.clicked = False
+        self.is_clicked = False
 
         self.time = 30
 
@@ -112,19 +112,19 @@ class RefreshButton(IconTextButton):
 
     def _on_refresh_clicked(self, button: Self) -> None:
         """Spawned in a thread"""
-        self.clicked = True
+        self.is_clicked = True
         self.controller.refresh_tree()
         # TODO: get server tab enum
         # if LAN tab, reload existing entries in place
 
     def start_decrement(self, emitter: "Emitter", tab: "ServerTab") -> None:
-        if self.clicked is False:
+        if self.is_clicked is False:
             return
         if self.loading:
             return
         self.set_sensitive(False)
         self.loading = True
-        self.clicked = False
+        self.is_clicked = False
         self.show_time(True)
         GLib.timeout_add_seconds(1, self.decrement)
 
