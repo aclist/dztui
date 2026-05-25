@@ -1,6 +1,7 @@
 import shutil
 
 from pathlib import Path
+from typing import Any
 from dzgui.const.constants import LEGACY_CONFIG_PATH, LEGACY_COLS_PATH, LEGACY_IPS_PATH
 from dzgui.config.convert import rc2json
 from dzgui.util._json import read_json, write_json
@@ -17,7 +18,7 @@ def has_new_config(config: Path) -> bool:
     return config.exists()
 
 
-def convert_cols_file(res: Path) -> dict[str, int] | None:
+def convert_cols_file(res: Path) -> Any | None:
     j = read_json(res)
     cols = j["cols"]
     # NOTE: implies prior conversion

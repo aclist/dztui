@@ -162,19 +162,6 @@ class ServerNotebook(Gtk.ScrolledWindow):
                 return tv
         raise ValueError("No treeview set")
 
-    def add_notification(self) -> None:
-        saved = self.notebook.get_nth_page(1)
-        if saved is None:
-            return
-        text = self.notebook.get_tab_label_text(saved)
-        if text is None:
-            return
-        # TODO: strings
-        if "*" in text:
-            return
-        text += "*"
-        self.notebook.set_tab_label_text(saved, text)
-
     def update_tab_widths(self, col: Gtk.TreeViewColumn) -> None:
         # TODO: may cause pixel offsets when application is maximized
         width = col.get_width()

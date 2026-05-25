@@ -121,8 +121,6 @@ def main() -> None:
     with open(XDG.debug, "w") as f:
         f.truncate(0)
 
-    latest_release = check_updates(version)
-
     if _is_steam_deck is False:
         # TODO: sudo escalation dialog
         # count = get_map_count()
@@ -130,15 +128,21 @@ def main() -> None:
         if has_steam_client() is False:
             EarlyAlertDialog(init.requires_steam)
 
+    is_dayz_installed(XDG.config)
+
+    # TODO: slow running procs here--needs dialog
     # NOTE: clears versions file of unlinked mods
     rebuild_symlinks(XDG.config)
     remove_stale_signatures(XDG.config, XDG.version)
 
-    is_dayz_installed(XDG.config)
     # TODO: handle IP DB failure and use coords fallback
+    # TODO: drop this after dialog is complete
+    print("Fetching geolocation data, may take some time...")
     get_ipdb(XDG.ips)
     local_coords = get_local_coords(XDG.ips)
     use_miles = lookup(XDG.config, Preferences.DIST)
+
+    latest_release = check_updates(version)
 
     prefs = UserPrefs(
         is_steam_deck=_is_steam_deck,

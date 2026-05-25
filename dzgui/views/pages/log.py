@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 from dzgui.const.constants import LOG_FILTERS
+from dzgui.views.components.scrollable import NoOverlayScrolledWindow
 from dzgui.views.mixins.cursor_mixin import CursorMixin
 from dzgui.views.mixins.help_menu_mixin import HelpMenuMixin
 from dzgui.views.trees.tree_log import LogTreeView
@@ -21,7 +22,7 @@ class Log(CursorMixin, HelpMenuMixin, Gtk.Box):  # type: ignore
         NOTE: LogTreeView is kept in a separate ScrolledWindow so that
         checkboxes will be flush on bottom
         """
-        self.scrolled = Gtk.ScrolledWindow()
+        self.scrolled = NoOverlayScrolledWindow()
         self.treeview = LogTreeView(controller)
         self.scrolled.add(self.treeview)
 

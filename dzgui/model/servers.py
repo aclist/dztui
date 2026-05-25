@@ -324,6 +324,7 @@ class ServerModelManager:
                 self.thread_man.set_cleanup_func(func)
                 return
             config_man.add_saved_server(fqip)
+
             # FIXME: this is valid if saved servers tab is already open,
             # but not if app was just booted; causes single row to appear prematurely
             if proxy_man.has_control_model() is False:
@@ -374,7 +375,8 @@ class ServerModelManager:
         proxy = self._get_proxy_man().get_proxy_model()
         self.tv.set_model(proxy)
 
-        self.emitter.emit("servers_loaded", self.enum)
+        if self.controller.get_active_treeview().get_enum == ServerTab.SAVED:
+            self.emitter.emit("servers_loaded", self.enum)
 
         filter_man = self.tv.get_filter_man()
         # NOTE: maps are set outside of thread because it triggers map changed signals

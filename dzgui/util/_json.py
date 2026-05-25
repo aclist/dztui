@@ -12,7 +12,7 @@ def read_json(path: Path) -> Any:
         raise e
 
 
-def write_json(data: dict, path: Path) -> None:
+def write_json(data: dict[str, Any], path: Path) -> None:
     try:
         j = json.dumps(data, indent=2)
         path.write_text(j)
