@@ -286,7 +286,7 @@ class ConnectionManager:
                 self.controller.clear_cancel_event()
                 return
             enqueue_mod(mod, self.appid)
-            time.sleep(2.5)
+            time.sleep(3)
 
         if raise_window is True:
             logger.info("Bringing window to foreground")
