@@ -43,11 +43,14 @@ def clone_symlinks(steam_path: Path) -> None:
 
     # TODO: test these two operations
     # use less time intensive logic like the above
-    for file in exp_path.iterdir():
-        if file.is_symlink():
-            file.unlink()
+    try:
+        for file in exp_path.iterdir():
+            if file.is_symlink():
+                file.unlink()
 
-    for file in dayz_path.iterdir():
-        if file.is_symlink():
-            uid = file.name
-            Path(exp_path / uid).symlink_to(dayz_path / uid)
+        for file in dayz_path.iterdir():
+            if file.is_symlink():
+                uid = file.name
+                Path(exp_path / uid).symlink_to(dayz_path / uid)
+    except Exception as e:
+        logger.critical(e)
