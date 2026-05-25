@@ -28,7 +28,6 @@ env["PYAPP_PROJECT_NAME"] = appname
 env["PYAPP_EXEC_SPEC"] = entrypoint
 env["PYAPP_PROJECT_PATH"] = wheel
 env["PYAPP_PASS_LOCATION"] = "true"
-# env["PYAPP_PYTHON_VERSION"] = "3.13"
 
 # NOTE: explicitly install all dependencies into distribution
 env["PYAPP_SKIP_INSTALL"] = "true"
@@ -46,3 +45,9 @@ if proc.returncode == 0:
     with tarfile.open(tarpath, "w:gz") as tar:
         tar.add(release_exe, arcname=appname)
     print(f"Wrote tarfile to '{tarpath}'")
+
+proc = subprocess.run([release_exe, "-v"], capture_output=True, text=True)
+assert proc.stdout.rstrip() == version
+
+release_exe.unlink()
+Path(wheel).unlink()

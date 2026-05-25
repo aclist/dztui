@@ -1,0 +1,13 @@
+{
+  "cols": {
+    "Name": 1,
+    "Map": 1,
+    "Gametime": 1,
+    "Players": 1,
+    "Queue": 1,
+    "IP": 1,
+    "Qport": 1,
+    "Ping": 1,
+    "View": 1
+  }
+}
