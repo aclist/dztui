@@ -1,4 +1,5 @@
 from typing import Self, TYPE_CHECKING
+from dzgui.views.components.scrollable import NoOverlayScrolledWindow
 from dzgui.views.trees.tree_mods import ModTreeView
 
 import gi
@@ -10,7 +11,8 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
 
-class Mods(Gtk.ScrolledWindow):
+
+class Mods(NoOverlayScrolledWindow):
     def __init__(self, controller: "Controller") -> None:
         super().__init__()
 

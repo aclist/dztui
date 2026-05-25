@@ -53,3 +53,5 @@ class EarlyIgnoreDialog(EarlyAlertDialog):
 
         # TODO: reverse order
         self.add_button("Ignore", Gtk.ResponseType.CANCEL)
+
+        # TODO: if exit, sys.exit(1), else pass
