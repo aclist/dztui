@@ -88,13 +88,12 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
         model: Gtk.TreeModel,
         it: Gtk.TreeIter,
         data: Any,
-    ) -> Any:
+    ) -> None:
         state = model[it][4]
         if state is True:
             cell.set_property("foreground", HEX_RED)
         else:
             cell.set_property("foreground", None)
-        return
 
     def _format_float(
         self,
@@ -103,8 +102,7 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
         model: Gtk.TreeModel,
         it: Gtk.TreeIter,
         data: Any,
-    ) -> Any:
+    ) -> None:
         val = model[it][3]
         formatted = localize.number(val)
         cell.set_property("text", formatted)
-        return
