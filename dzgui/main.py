@@ -43,11 +43,6 @@ parser.add_argument("-u", "--uninstall", action="store_true", help=flags.uninsta
 parser.add_argument("-d", "--debug", action="store_true", help=flags.debug)
 args = parser.parse_args()
 
-import gi
-
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, Gdk  # noqa
-
 
 # TODO: profile load time
 def make_parents(path: "Path") -> None:

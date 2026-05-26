@@ -1,7 +1,9 @@
 import sys
-import time
+from typing import Literal, TYPE_CHECKING
+
+# import time
 from enum import Enum
-from typing import Any, Self, TYPE_CHECKING
+from typing import Any, Self
 
 # TODO: import dialog titles
 from dzgui.api.mods import remove_stale_signatures
@@ -11,8 +13,10 @@ from dzgui.init.coords import get_local_coords
 from dzgui.init.update import check_updates
 from dzgui.const.constants import EXPAND, FILL
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
+from dzgui.util.strings import dialog_header
 from dzgui.util.symlink import rebuild_symlinks
-from dzgui.views.components.buttons import ClipboardButton
+
+# from dzgui.views.components.buttons import ClipboardButton
 
 import gi
 
@@ -21,6 +25,7 @@ from gi.repository import Gtk, GLib, Gdk  # noqa
 
 if TYPE_CHECKING:
     from dzgui.config.xdg import Xdg
+    from dzgui.util.ip import Coords
 
 
 class Success(Enum):
@@ -30,16 +35,17 @@ class Success(Enum):
 
 # TODO: add margins to tree
 class BootDialog(Gtk.Dialog):
-    def __init__(self, parent: Gtk.Widget, xdg: "Xdg", version: str) -> None:
+    def __init__(self, parent: "BootWindow", xdg: "Xdg", version: str) -> None:
         super().__init__(
             # text="TEST",
             # buttons=Gtk.ButtonsType.NONE,
             # message_type=Gtk.MessageType.INFO,
             # secondary_text="BOOTING UP",
             # TODO: strings
-            title="TEST TITLE",
+            title=dialog_header,
             parent=parent,
-            flags=Gtk.DialogFlags.MODAL,
+            modal=True,
+            # flags=Gtk.DialogFlags.MODAL,
         )
 
         self.parent = parent
@@ -82,7 +88,6 @@ class BootDialog(Gtk.Dialog):
         self.view.append_column(col_int)
 
         self.view.get_selection().set_mode(Gtk.SelectionMode.NONE)
-        self.connect("response", self._on_response)
         self.connect("delete-event", self._on_delete)
 
         self.scrollable_tree = Gtk.ScrolledWindow(overlay_scrolling=False)
@@ -152,17 +157,13 @@ class BootDialog(Gtk.Dialog):
         self.failed = False
         self.steps = iter(steps)
 
-    def pulse_spinner(self) -> None:
+    def pulse_spinner(self) -> Literal[True]:
         for row in self.store:
             if row[2]:
                 if row[3] == 150:
                     row[3] = 0
                 else:
                     row[3] += 1
-        # if self.pulse == 100:
-        #     self.pulse = 0
-        # else:
-        #     self.pulse += 1
         self.spinner_renderer.set_property("pulse", row[3])
         return True
 
@@ -170,15 +171,8 @@ class BootDialog(Gtk.Dialog):
         GLib.timeout_add(100, self.pulse_spinner)
         self.iter_step()
 
-    def _on_delete(self, widget: Self, event: Gdk.Event) -> None:
+    def _on_delete(self, widget: Self, event: Gdk.Event) -> Literal[True]:
         return True
-
-    def _on_response(self, dialog: Self, response: Gtk.ResponseType) -> None:
-        print("caught response")
-        if response == Gtk.ResponseType.DELETE_EVENT:
-            return True
-        if response == Gtk.ResponseType.CLOSE:
-            return True
 
     def iter_step(self) -> None:
         try:
@@ -214,9 +208,6 @@ class BootDialog(Gtk.Dialog):
             callback = StoredFunc(self.update_status, Success.FAIL)
             self.thread_man.set_cleanup_func(callback)
 
-    def get_results(self) -> list[Any]:
-        return self.results
-
     def update_task(self, task: str) -> None:
         self.store.append((task, "Running", True, 0))
 
@@ -224,9 +215,7 @@ class BootDialog(Gtk.Dialog):
     def update_status(self, state: Success) -> None:
         d = {Success.OK: "OK", Success.FAIL: "FAILED"}
         msg = d[state]
-        model = self.view.get_model()
-        _iter = model.get_iter(len(model) - 1)
-        model.set_value(_iter, 1, msg)
+        self.store[len(self.store) - 1][1] = msg
         self.iter_step()
 
     def _set_spinner_vis(
@@ -275,8 +264,9 @@ class BootWindow(Gtk.Window):
     def set_results(self, res: list[Any]) -> None:
         self.results = res
 
-    def get_results(self) -> str:
-        return self.results
+    def get_results(self) -> tuple["Coords", str]:
+        coords, version_url = self.results
+        return (coords, version_url)
 
-    def _on_destroy(self, widget) -> None:
+    def _on_destroy(self, dialog: BootDialog) -> None:
         Gtk.main_quit()

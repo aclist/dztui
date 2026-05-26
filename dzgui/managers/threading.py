@@ -47,7 +47,7 @@ class StoredFunc:
         self.func = func
         self.bindings = sig.bind(*args, **kwargs)
 
-    def call(self) -> None:
+    def call(self) -> Any:
         return self.func(*self.bindings.args, *self.bindings.kwargs)
 
 
