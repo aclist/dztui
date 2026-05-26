@@ -126,8 +126,6 @@ class BootDialog(Gtk.Dialog):
         self.content = self.get_content_area()
         self.content.pack_start(self.scrollable_tree, EXPAND, FILL, 0)
         self.content.pack_start(self.error_box, EXPAND, FILL, 0)
-        # self.content.pack_start(self.loading_label, EXPAND, FILL, 0)
-        # self.content.pack_start(self.spinner, EXPAND, FILL, 0)
         self.show_all()
 
         self.error_box.hide()
@@ -148,8 +146,8 @@ class BootDialog(Gtk.Dialog):
             (StoredFunc(get_ipdb, self.xdg.ips), geo, False),
             (StoredFunc(get_local_coords, self.xdg.ips), coords, True),
             (StoredFunc(check_updates, self.version), updates, True),
-            # (StoredFunc(time.sleep, 5.1), "Sleeping", True),
             # (StoredFunc(time.sleep, 0.1), "Sleeping", True),
+            # (StoredFunc(lambda: 1/0), "Sleeping", True),
             # (StoredFunc(time.sleep, 0.1), "Sleeping", False),
             # (StoredFunc(lambda: 1 / 0), "Broken function", False),
         ]
@@ -175,20 +173,20 @@ class BootDialog(Gtk.Dialog):
         return True
 
     def iter_step(self) -> None:
+        if self.failed:
+            # TODO: abstract into method
+            self.error_box.show()
+            self.error_label.set_text(self.exception)
+            self.spinner.stop()
+            self.loading_label.hide()
+            return
         try:
             step, label, store_output = next(self.steps)
             self.update_task(label)
             self.background(step, store_output)
         except StopIteration:
-            if self.failed:
-                # TODO: abstract into method
-                self.error_box.show()
-                self.error_label.set_text(self.exception)
-                self.spinner.stop()
-                self.loading_label.hide()
-            else:
-                self.parent.set_results(self.results)
-                self.destroy()
+            self.parent.set_results(self.results)
+            self.destroy()
 
     @call_on_thread("", show_dialog=False)
     def background(self, func: StoredFunc, store_output: bool) -> None:
