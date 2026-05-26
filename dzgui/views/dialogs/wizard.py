@@ -534,6 +534,9 @@ class Assistant(Gtk.Assistant):
         bar.set_text(f"{page_num}/{total}")
 
         # NOTE: disable forward action
+        # TODO: use page enums
+        if page == self.page5:
+            return
         if page != self.page1:
             EMITTER.emit("step_pending")
 
