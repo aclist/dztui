@@ -51,7 +51,11 @@ if proc.returncode == 0:
     output_exe.rename(release_exe)
     tarpath = output.joinpath(tarname)
     with tarfile.open(tarpath, "w:gz") as tar:
-        tar.add(release_exe, arcname=appname)
+        info = tar.gettarinfo(release_exe)
+        info.uname = appname
+        info.name = appname
+        with open(release_exe, "rb") as f:
+            tar.addfile(info, f)
     print(f"Wrote tarfile to '{tarpath}'")
 
 proc = subprocess.run([release_exe, "-v"], capture_output=True, text=True)
