@@ -35,6 +35,7 @@
 - Preconnect dialog
 - Preconnect warnings/failsafes like filesize
 - Save filters per server context between sessions
+- Preboot progress dialog
 
 
 ## Changed
