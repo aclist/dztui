@@ -14,6 +14,7 @@ def read_json(path: Path) -> Any:
 
 def write_json(data: dict[str, Any], path: Path) -> None:
     try:
+        path.parent.mkdir(parents=True, exist_ok=True)
         j = json.dumps(data, indent=2)
         path.write_text(j)
     except Exception as e:
