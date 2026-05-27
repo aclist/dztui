@@ -265,26 +265,26 @@ class ConnectionManager:
         addr = f"{self.record.ip}:{self.record.gameport}"
         playername = self.controller.query_config(Preferences.NAME)
         client = self.controller.query_config(Preferences.CLIENT)
-        #if menu_only:
-        #    rc = load_to_menu(client, addr, self.appid, playername, self.remote_mod_ids)
-        #else:
-        #    rc = connect(client, addr, self.appid, playername, self.remote_mod_ids)
-        #if rc != 0:
-        #    # TODO: log/pop the error
-        #    func = StoredFunc(self.controller.update_status)
-        #    self.thread_man.set_cleanup_func(func)
-        #    return
+        if menu_only:
+            rc = load_to_menu(client, addr, self.appid, playername, self.remote_mod_ids)
+        else:
+            rc = connect(client, addr, self.appid, playername, self.remote_mod_ids)
+        if rc != 0:
+            # TODO: log/pop the error
+            func = StoredFunc(self.controller.update_status)
+            self.thread_man.set_cleanup_func(func)
+            return
 
-        #self.thread_man.show_cancel(False)
-        #self.thread_man.update_dialog(waiting_for_launch)
-        #while True:
-        #    # TODO: check cancel event
-        #    if self.controller.get_exit_event().is_set():
-        #        # TODO: some facility to also close spawned steam process
-        #        return
-        #    if is_dayz_running():
-        #        break
-        #    time.sleep(1)
+        self.thread_man.show_cancel(False)
+        self.thread_man.update_dialog(waiting_for_launch)
+        while True:
+            # TODO: check cancel event
+            if self.controller.get_exit_event().is_set():
+                # TODO: some facility to also close spawned steam process
+                return
+            if is_dayz_running():
+                break
+            time.sleep(1)
 
         func = StoredFunc(self._add_to_history_and_return)
         self.thread_man.set_cleanup_func(func)
