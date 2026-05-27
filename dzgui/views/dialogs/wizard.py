@@ -31,8 +31,6 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gdk, Gtk, GLib, GObject, GdkPixbuf  # noqa E402
 
 
-# TODO: currently unused, corresponds to linear index
-# TODO: use of pagenum enum and page_type attribute is redundant
 class PageNum(Enum):
     INTRO = 1
     HAS_CONFIG = 2
@@ -92,6 +90,9 @@ class ScrolledWizardPage(Gtk.ScrolledWindow):
         self.box.pack_start(self.description, expand=False, fill=True, padding=0)
 
         self.connect("map", self._on_map)
+
+    def get_enum(self) -> PageNum:
+        return self.enum
 
     def get_progress_bar(self) -> Progress:
         return self.prog
@@ -474,6 +475,7 @@ class Assistant(Gtk.Assistant):
 
     def _advance_page(self, index: int) -> int:
         page = self.get_nth_page(index)
+        # TODO: use enums
         match page:
             case self.page1:
                 pass
@@ -534,6 +536,9 @@ class Assistant(Gtk.Assistant):
         bar.set_text(f"{page_num}/{total}")
 
         # NOTE: disable forward action
+        # TODO: use page enums
+        if page == self.page5:
+            return
         if page != self.page1:
             EMITTER.emit("step_pending")
 

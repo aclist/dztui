@@ -6,14 +6,11 @@ import warnings
 
 from typing import TYPE_CHECKING
 
-from dzgui.api.mods import remove_stale_signatures
 from dzgui.const.constants import APP_NAME
 from dzgui.const.enum import Preferences
-from dzgui.config.ipdb import get_ipdb
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.config.xdg import get_xdg_paths, parse_filepaths
-from dzgui.init.coords import get_local_coords
 from dzgui.init.dayz import is_dayz_installed
 from dzgui.init.flock import lock_acquire
 from dzgui.init.migrate import (
@@ -24,17 +21,16 @@ from dzgui.init.migrate import (
 from dzgui.init.prefix import get_version
 from dzgui.init.prereqs import has_steam_client
 from dzgui.strings import boot
-from dzgui.init.update import check_updates
 
 # from dzgui.util.map_count import get_map_count
 from dzgui.util.deck import is_steam_deck, is_game_mode
 from dzgui.util.localize import set_locale
-from dzgui.util.symlink import rebuild_symlinks
 from dzgui.util.strings import init, flags
 
 from dzgui.views.base import App
-from dzgui.views.dialogs.wizard import SetupWizard
+from dzgui.views.dialogs.boot import BootWindow
 from dzgui.views.dialogs.early_alert import EarlyAlertDialog
+from dzgui.views.dialogs.wizard import SetupWizard
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -130,20 +126,17 @@ def main() -> None:
 
     is_dayz_installed(XDG.config)
 
-    # TODO: slow running procs here--needs dialog
-    # NOTE: clears versions file of unlinked mods
-    rebuild_symlinks(XDG.config)
-    remove_stale_signatures(XDG.config, XDG.version)
+    bootwin = BootWindow(XDG, version)
+    local_coords, latest_release = bootwin.get_results()
 
-    # TODO: handle IP DB failure and use coords fallback
-    # TODO: drop this after dialog is complete
-    print("Fetching geolocation data, may take some time...")
-    get_ipdb(XDG.ips)
-    local_coords = get_local_coords(XDG.ips)
+    # rebuild_symlinks(XDG.config)
+    # remove_stale_signatures(XDG.config, XDG.version)
+
+    ## TODO: handle IP DB failure and use coords fallback
+    # local_coords = get_local_coords(XDG.ips)
+    # latest_release = check_updates(version)
+
     use_miles = lookup(XDG.config, Preferences.DIST)
-
-    latest_release = check_updates(version)
-
     prefs = UserPrefs(
         is_steam_deck=_is_steam_deck,
         is_game_mode=_is_game_mode,

@@ -35,6 +35,7 @@
 - Preconnect dialog
 - Preconnect warnings/failsafes like filesize
 - Save filters per server context between sessions
+- Preboot progress dialog
 
 
 ## Changed
@@ -50,6 +51,7 @@
 - Suppress log messages from imported modules
 - Embed Workshop link in Options menu
 - Disable overlay scrollbars on server tables
+- Reduce size of geolocation DB on disk (~100MB)
 
 ## Dropped
 - Debug mode

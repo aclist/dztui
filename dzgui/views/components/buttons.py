@@ -1,4 +1,4 @@
-from typing import Callable, Self, TYPE_CHECKING
+from typing import Callable, Self, TYPE_CHECKING, Union
 
 from dzgui.util.clip import copy_clipboard
 from dzgui.util.format import pluralize
@@ -70,16 +70,24 @@ class LargeIconTextButton(IconButton):
 
 
 class ClipboardButton(IconTextButton):
-    def __init__(self, controller: "Controller", func: Callable) -> None:
+    def __init__(self, controller: Union["Controller", None], func: Callable) -> None:
         super().__init__(CLIPBOARD, atomic_buttons.copy)
         self.controller = controller
         self.connect("clicked", self._on_button_clicked, func)
 
-        self.set_tooltip_text("Copy IP to clipboard")
+        self.set_tooltip_text("Copy to clipboard")
 
     def _on_button_clicked(self, button: Self, func: Callable) -> None:
         data = func()
         copy_clipboard(data)
+
+
+# TODO: determine when controller would be passed to this button or drop
+class CopyIpButton(ClipboardButton):
+    def __init__(self, controller: Union["Controller", None], func: Callable) -> None:
+        super().__init__(controller, func)
+
+        self.set_tooltip_text("Copy IP to clipboard")
 
 
 class WebButton(IconTextButton):

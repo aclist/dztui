@@ -23,39 +23,35 @@ def find_download_url(url: str) -> str | None:
 
 
 def get_ipdb(ips_path: Path) -> None:
-    url = find_download_url(DB_IP)
-    if url is None:
-        return
-
-    date = find_date(url)
-    month_file = ips_path.parent / ".month"
-    if ips_path.exists() and month_file.exists():
-        old_date = month_file.read_text().rstrip("\n")
-        if old_date == date:
-            logger.info(f"IP DB date matches: {date}")
+    try:
+        url = find_download_url(DB_IP)
+        if url is None:
             return
 
-    # TODO: log additional output
-    logger.info(f"Fetching IPDB for {date} from {url}")
-    try:
+        date = find_date(url)
+        month_file = ips_path.parent / ".month"
+        if ips_path.exists() and month_file.exists():
+            old_date = month_file.read_text().rstrip("\n")
+            if old_date == date:
+                logger.info(f"IP DB date matches: {date}")
+                return
+
+        # TODO: log additional output
+        logger.info(f"Fetching IPDB for {date} from {url}")
         tmp = serialize(url)
-    except Exception as e:
-        logger.critical(e)
-        return
+        logger.info(f"Extracting {tmp}")
+        unzip(tmp, ips_path)
 
-    logger.info(f"Extracting {tmp}")
-    unzip(tmp, ips_path)
-
-    logger.info("Stripping IPv6 records")
-    try:
+        logger.info("Stripping IPv6 records")
         strip_ipv6(ips_path)
+
+        with open(month_file, "w") as f:
+            f.write(date)
+        logger.info(f"Wrote {date} to {month_file}")
     except Exception as e:
+        # NOTE: in the event of failure, geolocation calc is simply not performed
         logger.critical(e)
         return
-
-    with open(month_file, "w") as f:
-        f.write(date)
-    logger.info(f"Wrote {date} to {month_file}")
 
 
 def find_date(url: str) -> str:
@@ -81,19 +77,34 @@ def serialize(url: str) -> Path:
     return tmp
 
 
-# TODO: optimize this function
-# consider using grep
-# cf. grep -vE "^[a-z0-9]{4}:" | grep -v "::" > "$ip_file"
 def strip_ipv6(path: Path) -> None:
-    ips = []
-    with open(path, "r") as f:
-        s = f.read()
+    """Can be IO intensive and cause visual lag on UI frames
+    running in the main thread even when run in its own thread;
+    lines are batched into memory-manageable chunks to reduce
+    disk writes. Raw file can be 8M+ records long, so it is
+    not read into memory at once.
 
-    reg = r"^\d{1,3}\..*"
-    ips = re.findall(reg, s, re.MULTILINE)
-    assert ips[0].split(",")[0] == "0.0.0.0"
-    assert ips[-1].split(",")[0] == "224.0.0.0"
-
-    with open(path, "w") as f:
-        for ip in ips:
-            f.write(ip + "\n")
+    Relative size is reduced by ~100MB by pruning unwanted columns
+    """
+    # NOTE: "^::," is the boundary line between IPv4 and IPv6
+    # NOTE: deprecated regex matching (slower by 5s)
+    # reg = r"^\d{1,3}\..*"
+    alt_path = path.parent.joinpath("ips_stripped.csv")
+    merged = ""
+    its = 0
+    with open(path, "r") as f, open(alt_path, "w") as out:
+        for line in f:
+            els = line.split(",")
+            if "." not in els[0]:
+                break
+            final = ",".join([els[0], els[1], els[-2], els[-1]])
+            merged += final
+            its += 1
+            if its == 500:
+                out.write(merged)
+                its = 0
+                merged = ""
+        if its > 0:
+            out.write(merged)
+    path.unlink()
+    alt_path.rename(path)

@@ -47,8 +47,8 @@ class StoredFunc:
         self.func = func
         self.bindings = sig.bind(*args, **kwargs)
 
-    def call(self) -> None:
-        self.func(*self.bindings.args, *self.bindings.kwargs)
+    def call(self) -> Any:
+        return self.func(*self.bindings.args, *self.bindings.kwargs)
 
 
 class ThreadingManager:
@@ -113,8 +113,8 @@ class ThreadingManager:
 
         func = self.get_cleanup_func()
         if func is not None:
-            func.call()
             self.set_cleanup_func(None)
+            func.call()
         if not self.destroy_first:
             self.destroy_dialog()
 
