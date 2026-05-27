@@ -133,9 +133,6 @@ def main() -> None:
     # remove_stale_signatures(XDG.config, XDG.version)
 
     ## TODO: handle IP DB failure and use coords fallback
-    ## TODO: drop this after dialog is complete
-    # print("Fetching geolocation data, may take some time...")
-    # get_ipdb(XDG.ips)
     # local_coords = get_local_coords(XDG.ips)
     # latest_release = check_updates(version)
 

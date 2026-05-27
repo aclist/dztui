@@ -15,8 +15,8 @@ from dzgui.const.constants import EXPAND, FILL
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.util.strings import dialog_header
 from dzgui.util.symlink import rebuild_symlinks
+from dzgui.views.components.buttons import ClipboardButton
 
-# from dzgui.views.components.buttons import ClipboardButton
 
 import gi
 
@@ -37,15 +37,9 @@ class Success(Enum):
 class BootDialog(Gtk.Dialog):
     def __init__(self, parent: "BootWindow", xdg: "Xdg", version: str) -> None:
         super().__init__(
-            # text="TEST",
-            # buttons=Gtk.ButtonsType.NONE,
-            # message_type=Gtk.MessageType.INFO,
-            # secondary_text="BOOTING UP",
-            # TODO: strings
             title=dialog_header,
             parent=parent,
             modal=True,
-            # flags=Gtk.DialogFlags.MODAL,
         )
 
         self.parent = parent
@@ -60,14 +54,12 @@ class BootDialog(Gtk.Dialog):
 
         self.view = Gtk.TreeView(enable_search=False, headers_visible=False)
         self.view.set_model(self.store)
-        # self.view.set_fixed_height_mode(True)
 
-        for i, column_title in enumerate(["Task", "State"]):  # , "Spinner"]):
+        for i, column_title in enumerate(["Task", "State"]):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
             column.set_resizable(False)
-            # column.set_expand(True)
             column.set_sort_column_id(i)
             column.set_cell_data_func(renderer, self._format_color, func_data=None)
             self.view.append_column(column)
@@ -108,10 +100,8 @@ class BootDialog(Gtk.Dialog):
         )
         self.error_label = Gtk.Label()
 
-        # TODO: recycle ClipboardButton from generics
         # TODO: abstract class
-        # self.copy_button = ClipboardButton()
-        self.copy_button = Gtk.Button(label="Copy")
+        self.copy_button = ClipboardButton(None, lambda: self.error_label.get_text())
         self.button_hbox = Gtk.Box(
             orientation=Gtk.Orientation.HORIZONTAL, halign=Gtk.Align.CENTER, spacing=10
         )
@@ -166,7 +156,6 @@ class BootDialog(Gtk.Dialog):
         return True
 
     def run(self) -> None:
-        GLib.timeout_add(100, self.pulse_spinner)
         self.iter_step()
 
     def _on_delete(self, widget: Self, event: Gdk.Event) -> Literal[True]:
@@ -190,7 +179,8 @@ class BootDialog(Gtk.Dialog):
 
     @call_on_thread("", show_dialog=False)
     def background(self, func: StoredFunc, store_output: bool) -> None:
-        # time.sleep(0.1)
+        # FIXME: freezes during heavy IO
+        GLib.timeout_add(100, self.pulse_spinner)
         try:
             if store_output:
                 res = func.call()
@@ -209,7 +199,6 @@ class BootDialog(Gtk.Dialog):
     def update_task(self, task: str) -> None:
         self.store.append((task, "Running", True, 0))
 
-    # TODO: use enum
     def update_status(self, state: Success) -> None:
         d = {Success.OK: "OK", Success.FAIL: "FAILED"}
         msg = d[state]
