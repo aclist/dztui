@@ -3,16 +3,21 @@ Knowledge Base
 
 .. _DZG-001:
 
-DZG-001: Periodically getting dropped from servers, or servers appear unreachable
+DZG-001: Periodically getting dropped from servers, or servers time out in DZGUI
 ------------------------------------------------------------------------------------
-It is a longstanding issue in DayZ that the game opens a large number of connections when querying servers and/or while connected to servers.
-This can result in excess traffic on the user's PC which, depending on how much headroom your network has, can lead to getting dropped, unresponsiveness, or a timeout.
+DayZ opens a large number of connections while querying/connected to servers.
 
-If you are on Wi-Fi, try switching to a wired connection and see if the problem resolves itself. If it does, your wireless router settings do not have enough headroom for max simultaneous connections. Use a wired connection, or update your network settings to a more permissive setup.
+In addition, packets sent from server responses are expected to be a standard size (see warning below).
 
-Bohemia has acknowledged this issue going back 10+ years and stated that DayZ has a heavy impact on the network, but there is as yet no proposed solution on the DayZ side.
+If your network does not have enough headroom or has settings departing from defaults, this may lead to getting dropped from servers,
+unresponsiveness, or a timeout.
 
-This issue is frequently seen on Steam Deck, due to the tendency for users to use it in an untethered Wi-Fi setup.
+If you are on Wi-Fi, try switching to a wired connection and see if the problem resolves itself. Consumer Wi-Fi routers
+tend to have less headroom than their wired counterparts.
+
+.. important::
+   Ensure that MTU (maximum tranmission unit) on your network is set to the standard size of 1,500 bytes.
+   If your network preferences or router have "jumbo" frames enabled, packets may be dropped, causing server queries to time out.
 
 .. _DZG-002:
 
