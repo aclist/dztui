@@ -45,7 +45,6 @@ def get_ipdb(ips_path: Path) -> None:
         logger.info("Stripping IPv6 records")
         strip_ipv6(ips_path)
 
-        print("here")
         with open(month_file, "w") as f:
             f.write(date)
         logger.info(f"Wrote {date} to {month_file}")
@@ -89,7 +88,7 @@ def strip_ipv6(path: Path) -> None:
     """
     # NOTE: "^::," is the boundary line between IPv4 and IPv6
     # NOTE: deprecated regex matching (slower by 5s)
-    #reg = r"^\d{1,3}\..*"
+    # reg = r"^\d{1,3}\..*"
     alt_path = path.parent.joinpath("ips_stripped.csv")
     merged = ""
     its = 0
@@ -108,4 +107,4 @@ def strip_ipv6(path: Path) -> None:
         if its > 0:
             out.write(merged)
     path.unlink()
-    alt_path.rename(path.name)
+    alt_path.rename(path)
