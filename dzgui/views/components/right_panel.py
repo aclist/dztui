@@ -1,6 +1,7 @@
 import logging
 import os
 
+from pathlib import Path
 from typing import Literal, TYPE_CHECKING
 
 from dzgui.const.constants import (
@@ -13,6 +14,7 @@ from dzgui.const.constants import (
 from dzgui.const.enum import ServerTab
 from dzgui.managers.update import UpdateManager
 from dzgui.util.clip import copy_clipboard
+from dzgui.util.file import is_writeable
 from dzgui.views.components.buttonbox import ButtonBox
 from dzgui.views.components.filter_panel import FilterPanel
 from dzgui.views.components.mod_panel import ModSelectionPanel
@@ -87,11 +89,13 @@ class RightPanel(Gtk.Box):
         )
         exe_path = os.getenv("PYAPP")
         if exe_path and update is not None:
-            self.update_button.set_halign(Gtk.Align.END)
-            self.gutter_box.add(self.update_button)
-            self.update_button.connect(
-                "clicked", self._on_update_button_clicked, exe_path, update
-            )
+            if is_writeable(Path(exe_path)) is True:
+                print("path is writeable")
+                self.update_button.set_halign(Gtk.Align.END)
+                self.gutter_box.add(self.update_button)
+                self.update_button.connect(
+                    "clicked", self._on_update_button_clicked, exe_path, update
+                )
         self.gutter_box.add(eb)
         self.pack_start(self.gutter_box, NO_EXPAND, FILL, NO_PADDING)
 
@@ -108,7 +112,7 @@ class RightPanel(Gtk.Box):
             return
         self.filters_vbox.set_sensitive(False)
         # TODO: unless it is lan page
-        #self.refresh_button.set_sensitive(False)
+        # self.refresh_button.set_sensitive(False)
 
     def _on_lan_page_init(self, emitter: "Emitter") -> None:
         self.filters_vbox.set_sensitive(False)
