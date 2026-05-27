@@ -51,6 +51,7 @@
 - Suppress log messages from imported modules
 - Embed Workshop link in Options menu
 - Disable overlay scrollbars on server tables
+- Reduce size of geolocation DB on disk (~100MB)
 
 ## Dropped
 - Debug mode

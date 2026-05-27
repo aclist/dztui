@@ -90,7 +90,6 @@ class RightPanel(Gtk.Box):
         exe_path = os.getenv("PYAPP")
         if exe_path and update is not None:
             if is_writeable(Path(exe_path)) is True:
-                print("path is writeable")
                 self.update_button.set_halign(Gtk.Align.END)
                 self.gutter_box.add(self.update_button)
                 self.update_button.connect(
