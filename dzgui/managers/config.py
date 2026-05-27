@@ -55,12 +55,22 @@ class ConfigManager:
 
     def update_history_file(self, fqip: str) -> None:
         with open(self.prefs.paths.history, "r") as f:
-            lines = [line.rstrip() for line in f.readlines()]
-        lines.append(fqip)
-        lines = set(lines)
-        dq = deque(lines, maxlen=10)
+            ips = [line.rstrip() for line in f.readlines()]
+
+        seen = set()
+        ips.append(fqip)
+        # NOTE: Preserve linear order of records while deduplicating
+        unique = deque(maxlen=10)
+        for i in range(len(ips) - 1, -1, -1):
+            if ips[i] not in seen:
+                seen.add(ips[i])
+                unique.appendleft(ips[i])
+                # NOTE: appendleft will push 11th item off right edge
+                if len(unique) == 10:
+                    break
+
         with open(self.prefs.paths.history, "w") as f:
-            for record in dq:
+            for record in unique:
                 f.write(f"{record}\n")
 
     def remove_saved_server(self, record: str) -> None:
