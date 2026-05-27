@@ -6,7 +6,7 @@ from dzgui.strings import connect_panel
 from dzgui.util.keys import is_ctrl_mask
 from dzgui.views.components.buttons import (
     AddButton,
-    ClipboardButton,
+    CopyIpButton,
     SteamConnectButton,
 )
 from dzgui.views.components.entry import IpEntry, PortEntry
@@ -151,7 +151,7 @@ class FavPanel(Gtk.Frame):
 
         self.fav_button = SteamConnectButton()
         self.fav_button.connect("clicked", self._on_connect_clicked)
-        self.copy_button = ClipboardButton(self.controller, self.get_fav_ip)
+        self.copy_button = CopyIpButton(self.controller, self.get_fav_ip)
         if favorite is None:
             self.toggle_buttons(False)
 
