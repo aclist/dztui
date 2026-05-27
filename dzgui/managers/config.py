@@ -1,6 +1,7 @@
 import logging
 import traceback
 
+from collections import deque
 from typing import Any, TYPE_CHECKING
 
 from dzgui.const.constants import (
@@ -52,11 +53,15 @@ class ConfigManager:
         ips.append(record)
         self.update_config(Preferences.IP_LIST, ips)
 
-    def update_history_file(self, records: list[Any]) -> None:
+    def update_history_file(self, fqip: str) -> None:
+        with open(self.prefs.paths.history, "r") as f:
+            lines = [line.rstrip() for line in f.readlines()]
+        lines.append(fqip)
+        lines = set(lines)
+        dq = deque(lines, maxlen=10)
         with open(self.prefs.paths.history, "w") as f:
-            for record in records:
-                addr = f"{record[7]}:{record[8]}"
-                f.write(f"{addr}\n")
+            for record in dq:
+                f.write(f"{record}\n")
 
     def remove_saved_server(self, record: str) -> None:
         ips = self.lookup(Preferences.IP_LIST)

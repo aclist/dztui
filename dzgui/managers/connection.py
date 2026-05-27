@@ -290,7 +290,7 @@ class ConnectionManager:
         self.thread_man.set_cleanup_func(func)
 
     def _add_to_history_and_return(self) -> None:
-        self.controller.add_to_history(self.history)
+        self.controller.add_to_history(self.history, self.record)
         self.controller.open_page(NotebookPage.SERVERS)
 
     def _update_mods(self, raise_window: bool, menu_only: bool = False) -> None:

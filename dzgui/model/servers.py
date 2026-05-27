@@ -23,7 +23,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
-    from dzgui.api.servers import A2SInfo
+    from dzgui.api.servers import A2SInfo, Record
     from dzgui.controllers.mc import Controller
     from dzgui.model.proxy_model import ProxyModelManager
     from dzgui.views.trees.tree_servers import ServerTreeView
@@ -225,15 +225,12 @@ class ServerModelManager:
         ) = None,
     ) -> None:
         proxy_man = self._get_proxy_man()
-        config_man = self.controller.get_config_man()
         if rows is not None:
             records = rows
         else:
             control_model = proxy_man.get_control()
             records = control_model
 
-        config_man.update_history_file(records)
-        config_man.update_history_file(records)
         self._sort_unique_maps(records)
         proxy = proxy_man.get_proxy_model()
         self.tv.set_model(proxy)
@@ -249,15 +246,20 @@ class ServerModelManager:
         self.emitter.emit("load_maps", store)
         # self.emitter.emit("servers_loaded_init")
 
-    def add_to_history(self, record: dict[str, Any]) -> None:
+    # TODO: dataclass for record rows; check for other dict annotations
+    def add_to_history(self, data: tuple[dict[str, Any], "Record"]) -> None:
+        row, record = data
         proxy_man = self._get_proxy_man()
-        rows = Servers.parse_json([record])
+        rows = Servers.parse_json([row])
         try:
             proxy_man.append_row_to_history(rows[0])
+            self.update_history()
         except Exception:
             self.update_history(rows)
-            return
-        self.update_history()
+
+        fqip = Servers.record_to_fqip(record)
+        config_man = self.controller.get_config_man()
+        config_man.update_history_file(fqip)
 
     def remove_from_history(self, record: Servers.Record) -> None:
         proxy_man = self._get_proxy_man()
