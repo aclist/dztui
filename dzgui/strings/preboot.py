@@ -1,0 +1,5 @@
+symlinks = "Rebuilding symlinks"
+signatures = "Updating mod signatures"
+geo = "Checking geolocation records"
+coords = "Checking local coordinates"
+updates = "Checking for updates"
