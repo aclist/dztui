@@ -6,13 +6,14 @@ from enum import Enum
 from typing import Any, Self
 
 # TODO: import dialog titles
-from dzgui.api.mods import remove_stale_signatures
+from dzgui.api.mods import remove_stale_signatures as remove_stale
 from dzgui.config.ipdb import get_ipdb
 from dzgui.const.constants import HEX_GREEN, HEX_RED
 from dzgui.init.coords import get_local_coords
 from dzgui.init.update import check_updates
 from dzgui.const.constants import EXPAND, FILL
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
+from dzgui.strings import preboot
 from dzgui.util.strings import dialog_header
 from dzgui.util.symlink import rebuild_symlinks
 from dzgui.views.components.buttons import ClipboardButton
@@ -33,6 +34,7 @@ class Success(Enum):
     FAIL = 2
 
 
+# TODO: strings for "Running", "Failed", etc.
 # TODO: add margins to tree
 class BootDialog(Gtk.Dialog):
     def __init__(self, parent: "BootWindow", xdg: "Xdg", version: str) -> None:
@@ -86,11 +88,6 @@ class BootDialog(Gtk.Dialog):
         self.scrollable_tree.add(self.view)
         self.scrollable_tree.set_size_request(700, 400)
 
-        # TODO: pack spinner into dedicated box
-        self.loading_label = Gtk.Label(label="Loading")
-        self.spinner = Gtk.Spinner()
-        self.spinner.start()
-
         self.error_box = Gtk.Box(
             halign=Gtk.Align.CENTER,
             orientation=Gtk.Orientation.VERTICAL,
@@ -120,30 +117,22 @@ class BootDialog(Gtk.Dialog):
 
         self.error_box.hide()
 
-        symlinks = "Rebuilding symlinks"
-        signatures = "Updating mod signatures"
-        geo = "Checking geolocation records"
-        coords = "Checking local coordinates"
-        updates = "Checking for updates"
-
         steps = [
-            (StoredFunc(rebuild_symlinks, self.xdg.config), symlinks, False),
+            (StoredFunc(rebuild_symlinks, self.xdg.config), preboot.symlinks, False),
             (
-                StoredFunc(remove_stale_signatures, self.xdg.config, self.xdg.version),
-                signatures,
+                StoredFunc(remove_stale, self.xdg.config, self.xdg.version),
+                preboot.signatures,
                 False,
             ),
-            (StoredFunc(get_ipdb, self.xdg.ips), geo, False),
-            (StoredFunc(get_local_coords, self.xdg.ips), coords, True),
-            (StoredFunc(check_updates, self.version), updates, True),
-            # (StoredFunc(time.sleep, 0.1), "Sleeping", True),
-            # (StoredFunc(lambda: 1/0), "Sleeping", True),
-            # (StoredFunc(time.sleep, 0.1), "Sleeping", False),
-            # (StoredFunc(lambda: 1 / 0), "Broken function", False),
+            (StoredFunc(get_ipdb, self.xdg.ips), preboot.geo, False),
+            (StoredFunc(get_local_coords, self.xdg.ips), preboot.coords, True),
+            (StoredFunc(check_updates, self.version), preboot.updates, True),
         ]
         self.results: list[Any] = []
         self.failed = False
         self.steps = iter(steps)
+
+        GLib.timeout_add(100, self.pulse_spinner)
 
     def pulse_spinner(self) -> Literal[True]:
         for row in self.store:
@@ -163,11 +152,8 @@ class BootDialog(Gtk.Dialog):
 
     def iter_step(self) -> None:
         if self.failed:
-            # TODO: abstract into method
             self.error_box.show()
             self.error_label.set_text(self.exception)
-            self.spinner.stop()
-            self.loading_label.hide()
             return
         try:
             step, label, store_output = next(self.steps)
@@ -179,8 +165,6 @@ class BootDialog(Gtk.Dialog):
 
     @call_on_thread("", show_dialog=False)
     def background(self, func: StoredFunc, store_output: bool) -> None:
-        # FIXME: freezes during heavy IO
-        GLib.timeout_add(100, self.pulse_spinner)
         try:
             if store_output:
                 res = func.call()
@@ -226,15 +210,16 @@ class BootDialog(Gtk.Dialog):
         it: Gtk.TreeIter,
         data: Any,
     ) -> None:
+        prop = "foreground"
         state = model[it][1]
         if column.get_sort_column_id() != 1:
             return
         if state == "OK":
-            cell.set_property("foreground", HEX_GREEN)
+            cell.set_property(prop, HEX_GREEN)
         elif state == "FAILED":
-            cell.set_property("foreground", HEX_RED)
+            cell.set_property(prop, HEX_RED)
         else:
-            cell.set_property("foreground", None)
+            cell.set_property(prop, None)
 
 
 class BootWindow(Gtk.Window):

@@ -79,15 +79,33 @@ def serialize(url: str) -> Path:
 
 
 def strip_ipv6(path: Path) -> None:
-    alt_path = path.parent.joinpath("stripped.csv")
+    """Can be IO intensive and cause visual lag on UI frames
+    running in the main thread even when run in its own thread;
+    lines are batched into memory-manageable chunks to reduce
+    disk writes. Raw file can be 8M+ records long, so it is
+    not read into memory at once.
+
+    Relative size is reduced by ~100MB by pruning unwanted columns
+    """
+    # NOTE: "^::," is the boundary line between IPv4 and IPv6
+    # NOTE: deprecated regex matching (slower by 5s)
+    #reg = r"^\d{1,3}\..*"
+    alt_path = path.parent.joinpath("ips_stripped.csv")
+    merged = ""
+    its = 0
     with open(path, "r") as f, open(alt_path, "w") as out:
         for line in f:
-            reg = r"^\d{1,3}\..*"
-            m = re.match(reg, line)
-            if not m:
-                continue
             els = line.split(",")
-            final = ",".join([els[0], els[1], els[6], els[7]])
-            out.write(final)
+            if "." not in els[0]:
+                break
+            final = ",".join([els[0], els[1], els[-2], els[-1]])
+            merged += final
+            its += 1
+            if its == 500:
+                out.write(merged)
+                its = 0
+                merged = ""
+        if its > 0:
+            out.write(merged)
     path.unlink()
     alt_path.rename(path.name)
