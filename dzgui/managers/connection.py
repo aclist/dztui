@@ -15,6 +15,7 @@ from dzgui.api.steam import (
     enqueue_mod,
     get_remote_signatures,
     get_needs_update,
+    load_to_menu,
 )
 
 from dzgui.api.mods import (
@@ -74,6 +75,7 @@ class Prerequisites:
     steam_proc: SteamProcess
     mods: list[list[str]]
     game_mode: bool
+    is_last_server: bool
 
 
 class ConnectionManager:
@@ -172,6 +174,8 @@ class ConnectionManager:
 
         game_mode = prefs.is_game_mode
 
+        is_last = self.is_last_server()
+
         prereqs = Prerequisites(
             name=info.server_name,
             appid=info.game_id,
@@ -186,10 +190,22 @@ class ConnectionManager:
             steam_proc=steam_proc,
             mods=remote_mods,
             game_mode=game_mode,
+            is_last_server=is_last,
         )
 
         func = StoredFunc(self.controller.open_connection_assistant, prereqs)
         self.thread_man.set_cleanup_func(func, destroy_first=True)
+
+    def is_last_server(self) -> bool:
+        prefs = self.controller.get_prefs()
+        history = prefs.paths.history
+        try:
+            lines = history.read_text().splitlines()
+            last = lines[-1]
+            current = Servers.record_to_fqip(self.record)
+            return last == current
+        except Exception:
+            return False
 
     @call_on_thread(dialog.querying)
     def query_details(self, record: Servers.Record) -> None:
@@ -245,11 +261,14 @@ class ConnectionManager:
         dialog = ExceptionDialog(self.controller, server_timeout)
         dialog.run()
 
-    def _connect_steam(self) -> None:
+    def _connect_steam(self, menu_only: bool) -> None:
         addr = f"{self.record.ip}:{self.record.gameport}"
         playername = self.controller.query_config(Preferences.NAME)
         client = self.controller.query_config(Preferences.CLIENT)
-        rc = connect(client, addr, self.appid, playername, self.remote_mod_ids)
+        if menu_only:
+            rc = load_to_menu(client, addr, self.appid, playername, self.remote_mod_ids)
+        else:
+            rc = connect(client, addr, self.appid, playername, self.remote_mod_ids)
         if rc != 0:
             # TODO: log/pop the error
             func = StoredFunc(self.controller.update_status)
@@ -274,7 +293,7 @@ class ConnectionManager:
         self.controller.add_to_history(self.history)
         self.controller.open_page(NotebookPage.SERVERS)
 
-    def _update_mods(self, raise_window: bool) -> None:
+    def _update_mods(self, raise_window: bool, menu_only: bool = False) -> None:
         # NOTE: fast enqueue all mods in auto mode
         prefs = self.controller.get_prefs()
 
@@ -312,11 +331,11 @@ class ConnectionManager:
         update_signatures(self.missing_mods, prefs.paths.version)
         # TODO: just push steam path directly
         rebuild_symlinks(prefs.paths.config)
-        self._connect_steam()
+        self._connect_steam(menu_only)
 
     @call_on_thread(waiting_for_mods, show_cancel=True)
-    def update_and_connect(self, raise_window: bool) -> None:
+    def update_and_connect(self, raise_window: bool, menu_only: bool = False) -> None:
         if len(self.missing_mods) > 0:
-            self._update_mods(raise_window)
+            self._update_mods(raise_window, menu_only)
         else:
-            self._connect_steam()
+            self._connect_steam(menu_only)

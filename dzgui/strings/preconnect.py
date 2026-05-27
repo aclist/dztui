@@ -1,5 +1,6 @@
 update_mods = "Update mods and connect"
 connect = "Connect"
+connect_last = "Load to menu screen"
 back = "Back"
 cancel = "Cancel"
 warnings = "Warnings"
