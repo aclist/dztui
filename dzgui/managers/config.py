@@ -60,7 +60,7 @@ class ConfigManager:
         seen = set()
         ips.append(fqip)
         # NOTE: Preserve linear order of records while deduplicating
-        unique = deque(maxlen=10)
+        unique = deque(maxlen=10)  # type: ignore
         for i in range(len(ips) - 1, -1, -1):
             if ips[i] not in seen:
                 seen.add(ips[i])
