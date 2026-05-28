@@ -38,7 +38,12 @@ QUEUE_CHECK_DELAY = 200
 
 class ServerTreeView(ContextMixin, TreeView):  # type: ignore
     def __init__(
-        self, controller: "Controller", enum: ServerTab, menu: ContextMenuGroup
+        self,
+        controller: "Controller",
+        enum: ServerTab,
+        menu: ContextMenuGroup,
+        show_empty: bool = False,
+        show_full: bool = False,
     ) -> None:
         super().__init__(controller, menu=menu)
 
@@ -48,7 +53,7 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
 
         self.loaded = False
 
-        self.filter_man = FilterManager()
+        self.filter_man = FilterManager(show_empty, show_full)
         self.proxy_man = ProxyModelManager(self.filter_man)
         model = self.proxy_man.get_proxy_model()
         self.set_model(model)
