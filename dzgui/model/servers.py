@@ -14,6 +14,7 @@ from dzgui.const.constants import (
 )
 from dzgui.const.enum import FilterMode, Preferences, ServerTab
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
+from dzgui.strings import dialogs
 from dzgui.util.strings import api_warn_msg, dialog
 from dzgui.views.dialogs.generic import ExceptionDialog
 
@@ -130,7 +131,7 @@ class ServerModelManager:
 
         servers = []
         ports = range(1, 256)
-        failure_func = StoredFunc(self._cleanup_on_failure)
+        failure_func = StoredFunc(self._cleanup_on_lan_failure)
 
         event = threading.Event()
         with ThreadPoolExecutor() as executor:
@@ -404,6 +405,16 @@ class ServerModelManager:
         self.emitter.emit("servers_loaded", self.enum)
         if self.first_iteration:
             self._update_maps()
+
+    def _cleanup_on_lan_failure(self, show_dialog: bool = True) -> None:
+        if self.preserve_on_fail is False:
+            self.tv.set_model(None)
+            filter_man = self.tv.get_filter_man()
+            filter_man.set_unique_maps([])
+
+        if show_dialog:
+            dialog = ExceptionDialog(self.controller, dialogs.load_error_lan)
+            dialog.run()
 
     def _cleanup_on_failure(self, show_dialog: bool = True) -> None:
         # TODO: disable map, keyword, and filter widgets if model is None
