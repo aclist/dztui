@@ -147,7 +147,7 @@ def connect(client: str, addr: str, appid: int, name: str, mods: list[str]) -> i
 
 
 def load_to_menu(client: str, addr: str, appid: int, name: str, mods: list[str]) -> int:
-    """Loads to the menu screen with the selected mods; used for server restarts"""
+    """Loads to the menu screen with the selected mods; used for AFK/pre-joining"""
     concat = concat_mods(mods)
     client_args = concat_bash_args(client)
     params = [
