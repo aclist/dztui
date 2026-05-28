@@ -107,7 +107,7 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         )
         self.ok = Gtk.Button(label=preconnect.update_mods, halign=Gtk.Align.END)
         self.connect_last = Gtk.Button(
-            label=preconnect.connect_last, halign=Gtk.Align.END
+            label=preconnect.connect_last, halign=Gtk.Align.END, tooltip_text=preconnect.connect_last_tooltip
         )
 
         # TODO: abstract
