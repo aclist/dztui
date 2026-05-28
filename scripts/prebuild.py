@@ -53,7 +53,8 @@ def untar(file: str, glob: str, renamed: str) -> None:
 
 def install_deps() -> None:
     pip = build_dir.joinpath(f"{CPYTHON_BUILD}/bin/pip")
-    subprocess.run([pip, "install", root])
+    proc = subprocess.run([pip, "install", root])
+    return proc.returncode
 
 
 def repackage() -> None:
@@ -66,7 +67,9 @@ def repackage() -> None:
 def rebuild_cpython() -> None:
     if cpython_dir.is_dir() is False:
         get_cpython()
-    install_deps()
+    code = install_deps()
+    if code != 0:
+        return
     repackage()
     return get_packaged_version()
 
