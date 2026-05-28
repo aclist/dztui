@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 class FilterManager:
-    def __init__(self) -> None:
+    def __init__(self, show_empty: bool = False, show_full: bool = False) -> None:
 
         self.map_store = ModelFactory().make_map_store()
 
@@ -17,10 +17,10 @@ class FilterManager:
         self.default_filters = {
             strings.filter_1pp: True,
             strings.filter_day: True,
-            strings.filter_empty: False,
+            strings.filter_empty: show_empty,
             strings.filter_3pp: True,
             strings.filter_night: True,
-            strings.filter_full: False,
+            strings.filter_full: show_full,
             strings.filter_lowpop: True,
             strings.filter_nonascii: False,
             strings.filter_duplicate: False,
