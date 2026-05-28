@@ -36,6 +36,7 @@
 - Preconnect warnings/failsafes like filesize
 - Save filters per server context between sessions
 - Preboot progress dialog
+- Choose to jump into splash screen instead of server
 
 
 ## Changed
@@ -51,6 +52,8 @@
 - Suppress log messages from imported modules
 - Embed Workshop link in Options menu
 - Disable overlay scrollbars on server tables
+- Reduce size of geolocation DB on disk (~100MB)
+- Enable LAN page Empty/Full filters on first run of app
 
 ## Dropped
 - Debug mode
@@ -66,7 +69,6 @@
 
 ## Unreleased
 - Load offline mods
-- Choose to jump into splash screen instead of server
 - Local documentation
 - Raw debug command in context menu
 

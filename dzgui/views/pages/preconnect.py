@@ -106,6 +106,9 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             label=preconnect.back, halign=Gtk.Align.END, hexpand=True
         )
         self.ok = Gtk.Button(label=preconnect.update_mods, halign=Gtk.Align.END)
+        self.connect_last = Gtk.Button(
+            label=preconnect.connect_last, halign=Gtk.Align.END, tooltip_text=preconnect.connect_last_tooltip
+        )
 
         # TODO: abstract
         self.raise_window = Gtk.CheckButton(
@@ -126,13 +129,14 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             spacing=5,
         )
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
-        for button in self.back, self.ok:
+        for button in self.back, self.ok, self.connect_last:
             box.add(button)
         for el in self.raise_window, box:
             self.button_box.add(el)
 
         self.back.connect("clicked", self._on_back_clicked)
         self.ok.connect("clicked", self._on_ok_clicked)
+        self.connect_last.connect("clicked", self._on_connect_last_clicked)
 
         self.title = Gtk.Label(label="")
         add_class(self.title, "preconnect-heading")
@@ -212,6 +216,9 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         if is_ctrl_mask(event):
             if event.keyval == Gdk.KEY_u:
                 self.ok.emit("clicked")
+
+    def _on_connect_last_clicked(self, button: Gtk.Button) -> None:
+        self.controller.update_and_load_to_menu(self.raise_window.get_active())
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
         self.controller.update_and_connect(self.raise_window.get_active())
@@ -307,6 +314,11 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
             suffix = f" Need to download {pretty} MiB of mod updates."
             prefix = preconnect.total_mods
             self.mod_count.set_text(f"{prefix}{str(total_mods)}.{suffix}")
+
+        if prereqs.is_last_server:
+            self.connect_last.show()
+        else:
+            self.connect_last.hide()
 
         self._process_warnings(prereqs)
         if self.tree.is_visible():

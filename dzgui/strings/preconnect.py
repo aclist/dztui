@@ -1,5 +1,9 @@
 update_mods = "Update mods and connect"
 connect = "Connect"
+connect_last = "Load to menu screen"
+connect_last_tooltip = (
+    "Launch DayZ with these mods (if any) and\ngo to the menu screen without connecting."
+)
 back = "Back"
 cancel = "Cancel"
 warnings = "Warnings"

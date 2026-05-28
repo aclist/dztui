@@ -61,6 +61,8 @@ class Details:
 
 @dataclass(slots=True)
 class Record:
+    # TODO: investigate whether this enum is still being used;
+    # can this be frozen?
     """
     The gameport field is manipulated by the RowType.CONN_BY_IP method
     """
@@ -507,6 +509,10 @@ def fqip_to_record(addr: str) -> Optional[Record]:
     if len(r) != 3:
         return None
     return Record(r[0], int(r[1]), int(r[2]))
+
+
+def record_to_fqip(record: Record) -> str:
+    return f"{record.ip}:{record.gameport}:{record.qport}"
 
 
 def response_to_fqip(res: dict) -> str:

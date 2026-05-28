@@ -611,6 +611,7 @@ atomic_buttons = AtomicButton(
     keys_tooltip="Toggles the keybindings dialog",
 )
 
+gtk_theme_missing = "No GTK theme provided"
 steam_icon_missing = "Steam icon not found in IconTheme"
 
 missing_changelog = "Error: failed to read changelog"

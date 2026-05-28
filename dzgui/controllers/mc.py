@@ -409,9 +409,12 @@ class Controller(GObject.GObject):
         saved_tree = self.get_servers().get_saved()
         ServerModelManager(self, saved_tree).remove_by_record(record)
 
-    def add_to_history(self, record: dict[str, Any]) -> None:
+    def add_to_history(self, row: dict[str, Any], record: "Record") -> None:
         tv = self.get_servers().get_recent()
-        ServerModelManager(self, tv).add_to_history(record)
+        ServerModelManager(self, tv).add_to_history((row, record))
+
+    # def append_to_history(self, record: "Record") -> None:
+    #     self.config_man.append_to_history_file(record)
 
     def remove_from_history(self, record: "Record") -> None:
         # NOTE: remove action is only possible from history tree context menu,
@@ -507,6 +510,9 @@ class Controller(GObject.GObject):
     def set_start_tab(self) -> None:
         ind = self.config_man.get_start_tab()
         self.get_servers().notebook.set_current_page(ind)
+
+    def update_and_load_to_menu(self, raise_window: bool) -> None:
+        self.connection_man.update_and_connect(raise_window, menu_only=True)
 
     def update_and_connect(self, raise_window: bool) -> None:
         self.connection_man.update_and_connect(raise_window)

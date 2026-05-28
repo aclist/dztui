@@ -456,6 +456,5 @@ def get_pretty_version(steam_path: Path, appid: int) -> str | None:
         vers = get_dayz_version(pe_file_path)
         dayz_version = dayz_version_to_str(vers)
         return dayz_version
-    except Exception as e:
-        print(e)
+    except Exception:
         return None
