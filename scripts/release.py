@@ -26,9 +26,12 @@ pyapp_dir = build_dir.joinpath("pyapp-latest")
 if pyapp_dir.is_dir() is False:
     get_pyapp()
 
+# TODO: get resulting filename from this function
 packaged_version = rebuild_cpython()
 assert packaged_version == version
 cpython = build_dir.joinpath("airgapped.tar.gz")
+
+# TODO: parse pyproject directly
 
 entrypoint = "dzgui.main:main"
 env = os.environ
@@ -60,7 +63,7 @@ if proc.returncode == 0:
     output_exe.rename(release_exe)
     tarpath = output.joinpath(tarname)
     with tarfile.open(tarpath, "w:gz") as tar:
-        info = tar.gettarinfo(subfile)
+        info = tar.gettarinfo(subfolder)
         info.uname = appname
         info.name = appname
         with open(subfolder, "rb") as f:
