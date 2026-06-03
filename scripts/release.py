@@ -5,6 +5,7 @@ import tarfile
 
 from pathlib import Path
 
+from concat_licenses import concat_license
 from prebuild import get_pyapp, rebuild_cpython
 
 
@@ -44,17 +45,25 @@ env["PYAPP_FULL_ISOLATION"] = "true"
 env["PYAPP_DISTRIBUTION_PATH"] = str(cpython)
 env["PYAPP_DISTRIBUTION_PYTHON_PATH"] = "python/bin/python3"
 
+subfolder = output.joinpath(stem)
+subfolder.mkdir(parents=True)
+
+combined_licenses = concat_licenses()
+license_file = subfolder.joinpath("LICENSE")
+license_file.write_text(combined_licenses)
+
+
 proc = subprocess.run(["cargo", "build", "--release"], env=env, cwd=pyapp_dir)
 if proc.returncode == 0:
     output_exe = build_dir.joinpath("pyapp-latest/target/release/pyapp")
-    release_exe = output.joinpath(appname)
+    release_exe = subfolder.joinpath(appname)
     output_exe.rename(release_exe)
     tarpath = output.joinpath(tarname)
     with tarfile.open(tarpath, "w:gz") as tar:
-        info = tar.gettarinfo(release_exe)
+        info = tar.gettarinfo(subfile)
         info.uname = appname
         info.name = appname
-        with open(release_exe, "rb") as f:
+        with open(subfolder, "rb") as f:
             tar.addfile(info, f)
     print(f"Wrote tarfile to '{tarpath}'")
 
