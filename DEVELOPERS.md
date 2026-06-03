@@ -13,11 +13,6 @@ git submodule update --recursive --init
 sphinx-build -M html source build -a
 
 # Building standalone DZGUI release binaries
-1. Run `./scripts/dl_pyapp.sh`
-# TODO: secondary script that packs this archive
-2. Download cpython 3.13, linux, gnu, v3
-https://github.com/astral-sh/python-build-standalone/releases/download/20251014/cpython-3.13.9%2B20251014-x86_64_v3-unknown-linux-gnu-install_only_stripped.tar.gz
-3. Explicitly install dependencies into site-packages
-4. Pack back into a tarball
-5. Run `python3 scripts/release.py`
-6. Generate a release and tag against the bundled `dzgui` executable
+1. Set up the build target: `rustup target add x86_64-unknown-linux-musl`
+2. Run `python3 scripts/release.py`
+3. Generate a release and tag against the bundled `dzgui` executable
