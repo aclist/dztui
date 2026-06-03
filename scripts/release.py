@@ -5,9 +5,9 @@ import tarfile
 
 from pathlib import Path
 
-from concat_licenses import concat_licenses
+from concat_licenses import concat_license
+from parse_toml import get_entrypoint
 from prebuild import get_pyapp, rebuild_cpython
-
 
 root = Path(__file__).resolve().parents[1]
 output = root.joinpath("dist")
@@ -31,9 +31,7 @@ packaged_version = rebuild_cpython()
 assert packaged_version == version
 cpython = build_dir.joinpath("airgapped.tar.gz")
 
-# TODO: parse pyproject directly
-
-entrypoint = "dzgui.main:main"
+entrypoint = get_entrypoint()
 env = os.environ
 env["PYAPP_PROJECT_VERSION"] = version
 env["PYAPP_PROJECT_NAME"] = appname
@@ -51,7 +49,7 @@ env["PYAPP_DISTRIBUTION_PYTHON_PATH"] = "python/bin/python3"
 subfolder = output.joinpath(stem)
 subfolder.mkdir(parents=True)
 
-combined_licenses = concat_licenses()
+combined_licenses = concat_license()
 license_file = subfolder.joinpath("LICENSE")
 license_file.write_text(combined_licenses)
 
