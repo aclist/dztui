@@ -62,14 +62,28 @@ if proc.returncode == 0:
     tarpath = output.joinpath(tarname)
     with tarfile.open(tarpath, "w:gz") as tar:
         info = tar.gettarinfo(subfolder)
+        info.type = tarfile.DIRTYPE
         info.uname = appname
         info.name = appname
-        with open(subfolder, "rb") as f:
-            tar.addfile(info, f)
+        #with open(subfolder, "rb") as f:
+        #    tar.add(info, f)
+
+        tar.add(subfolder, arcname="dzgui")
+
+        #for file in subfolder.iterdir():
+        #    info = tar.gettarinfo(file)
+        #    info.uname = appname
+        #    info.name = appname
+        #    with open(file, "rb") as f:
+        #        tar.addfile(info, f)
     print(f"Wrote tarfile to '{tarpath}'")
 
 proc = subprocess.run([release_exe, "-v"], capture_output=True, text=True)
 assert proc.stdout.rstrip() == version
 
 release_exe.unlink()
+license_file.unlink()
+subfolder.rmdir()
 Path(wheel).unlink()
+
+# TODO: clean up staging directory
