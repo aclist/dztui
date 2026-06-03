@@ -13,10 +13,12 @@ This file includes the combined licenses to the following components:
     - PyGObject
     - python-a2s
 
-which are collectively bundled as a turnkey application and used to run the DZGUI utility.\n\n
+When shipped as a binary installer, these components are collectively bundled
+as a turnkey application and used to run the DZGUI utility.\n\n
 """
 DZGUI_HEADER = "DZGUI application"
 LICENSE_FILE = "LICENSE"
+
 
 class CombinedLicense:
     def __init__(self) -> None:
@@ -34,10 +36,11 @@ class CombinedLicense:
     def get_text(self) -> str:
         return self.text
 
+
 def concat_license() -> str:
     combined = CombinedLicense()
     root = Path(__file__).resolve().parents[1]
-    licenses = root.joinpath("licenses")
+    licenses = root.joinpath("docs/licenses")
 
     main_license = root.joinpath(LICENSE_FILE)
     combined.add_header(DZGUI_HEADER)
