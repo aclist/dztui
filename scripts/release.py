@@ -5,7 +5,7 @@ import tarfile
 
 from pathlib import Path
 
-from concat_licenses import concat_license
+from concat_licenses import concat_licenses
 from prebuild import get_pyapp, rebuild_cpython
 
 
