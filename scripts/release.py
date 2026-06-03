@@ -4,9 +4,7 @@ import subprocess
 import tarfile
 
 from pathlib import Path
-
 from prebuild import get_pyapp, rebuild_cpython
-
 
 root = Path(__file__).resolve().parents[1]
 output = root.joinpath("dist")
@@ -16,6 +14,7 @@ builder = build.ProjectBuilder(root)
 wheel = builder.build("wheel", output_directory=output)
 stem = Path(wheel).stem
 tarname = f"{stem}.tar.gz"
+
 
 metadata = stem.split("-")
 appname = metadata[0]
@@ -44,9 +43,18 @@ env["PYAPP_FULL_ISOLATION"] = "true"
 env["PYAPP_DISTRIBUTION_PATH"] = str(cpython)
 env["PYAPP_DISTRIBUTION_PYTHON_PATH"] = "python/bin/python3"
 
-proc = subprocess.run(["cargo", "build", "--release"], env=env, cwd=pyapp_dir)
+target = "x86_64-unknown-linux-musl"
+build_params = [ "cargo", "build", "--release", "--target", target]
+
+proc = subprocess.run(
+    build_params,
+    env=env,
+    cwd=pyapp_dir,
+)
+
+# TODO: set proper release tags on tarfile
 if proc.returncode == 0:
-    output_exe = build_dir.joinpath("pyapp-latest/target/release/pyapp")
+    output_exe = build_dir.joinpath(f"pyapp-latest/target/{target}/release/pyapp")
     release_exe = output.joinpath(appname)
     output_exe.rename(release_exe)
     tarpath = output.joinpath(tarname)
