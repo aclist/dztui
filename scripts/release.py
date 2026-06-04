@@ -7,11 +7,11 @@ from pathlib import Path
 from prebuild import get_pyapp, rebuild_cpython
 
 root = Path(__file__).resolve().parents[1]
-output = root.joinpath("dist")
+dist_dir = root.joinpath("dist")
 build_dir = root.joinpath("build")
 
 builder = build.ProjectBuilder(root)
-wheel = builder.build("wheel", output_directory=output)
+wheel = builder.build("wheel", output_directory=dist_dir)
 stem = Path(wheel).stem
 tarname = f"{stem}.tar.gz"
 
@@ -24,6 +24,7 @@ pyapp_dir = build_dir.joinpath("pyapp-latest")
 if pyapp_dir.is_dir() is False:
     get_pyapp()
 
+# TODO: rename version and filepath from subscript
 packaged_version = rebuild_cpython()
 assert packaged_version == version
 cpython = build_dir.joinpath("airgapped.tar.gz")
@@ -43,8 +44,8 @@ env["PYAPP_FULL_ISOLATION"] = "true"
 env["PYAPP_DISTRIBUTION_PATH"] = str(cpython)
 env["PYAPP_DISTRIBUTION_PYTHON_PATH"] = "python/bin/python3"
 
-target = "x86_64-unknown-linux-musl"
-build_params = [ "cargo", "build", "--release", "--target", target]
+platform = "x86_64-unknown-linux-musl"
+build_params = ["cargo", "build", "--release", "--target-dir", str(dist_dir), "--target", platform]
 
 proc = subprocess.run(
     build_params,
@@ -54,10 +55,11 @@ proc = subprocess.run(
 
 # TODO: set proper release tags on tarfile
 if proc.returncode == 0:
-    output_exe = build_dir.joinpath(f"pyapp-latest/target/{target}/release/pyapp")
-    release_exe = output.joinpath(appname)
+    output_exe = dist_dir.joinpath("pyapp")
+    release_exe = dist_dir.joinpath(appname)
     output_exe.rename(release_exe)
-    tarpath = output.joinpath(tarname)
+
+    tarpath = dist_dir.joinpath(tarname)
     with tarfile.open(tarpath, "w:gz") as tar:
         info = tar.gettarinfo(release_exe)
         info.uname = appname
