@@ -9,6 +9,11 @@ from concat_licenses import concat_license
 from parse_toml import get_entrypoint
 from prebuild import get_pyapp, rebuild_cpython
 
+def update_uname(info: tarfile.TarInfo) -> tarfile.TarInfo:
+    info.uname = "dzgui"
+    info.gname = "users"
+    return info
+
 root = Path(__file__).resolve().parents[1]
 output = root.joinpath("dist")
 build_dir = root.joinpath("build")
@@ -60,30 +65,18 @@ if proc.returncode == 0:
     release_exe = subfolder.joinpath(appname)
     output_exe.rename(release_exe)
     tarpath = output.joinpath(tarname)
+
     with tarfile.open(tarpath, "w:gz") as tar:
         info = tar.gettarinfo(subfolder)
-        info.type = tarfile.DIRTYPE
-        info.uname = appname
-        info.name = appname
-        #with open(subfolder, "rb") as f:
-        #    tar.add(info, f)
-
-        tar.add(subfolder, arcname="dzgui")
-
-        #for file in subfolder.iterdir():
-        #    info = tar.gettarinfo(file)
-        #    info.uname = appname
-        #    info.name = appname
-        #    with open(file, "rb") as f:
-        #        tar.addfile(info, f)
+        tar.add(subfolder, arcname="dzgui", filter=update_uname)
     print(f"Wrote tarfile to '{tarpath}'")
 
 proc = subprocess.run([release_exe, "-v"], capture_output=True, text=True)
 assert proc.stdout.rstrip() == version
 
+# TODO: clean up staging directory
 release_exe.unlink()
 license_file.unlink()
 subfolder.rmdir()
 Path(wheel).unlink()
 
-# TODO: clean up staging directory
