@@ -278,10 +278,11 @@ class ConnectionManager:
         self.thread_man.show_cancel(False)
         self.thread_man.update_dialog(waiting_for_launch)
         while True:
-            # TODO: check cancel event
-            if self.controller.get_exit_event().is_set():
+            if self.is_cancel_pending():
                 # TODO: some facility to also close spawned steam process
                 return
+            # if self.controller.get_exit_event().is_set():
+            #    return
             if is_dayz_running():
                 break
             time.sleep(1)
@@ -293,17 +294,27 @@ class ConnectionManager:
         self.controller.add_to_history(self.history, self.record)
         self.controller.open_page(NotebookPage.SERVERS)
 
+    def is_cancel_pending(self) -> bool:
+        if self.controller.get_exit_event().is_set():
+            return True
+        if self.controller.get_cancel_event().is_set():
+            self.controller.clear_cancel_event()
+            return True
+        return False
+
     def _update_mods(self, raise_window: bool, menu_only: bool = False) -> None:
         # NOTE: fast enqueue all mods in auto mode
         prefs = self.controller.get_prefs()
 
         for title, mod, stamp, size in self.missing_mods:
+            if self.is_cancel_pending():
+                return
             # TODO: check cancel and exit events
-            if self.controller.get_exit_event().is_set():
-                return
-            if self.controller.get_cancel_event().is_set():
-                self.controller.clear_cancel_event()
-                return
+            # if self.controller.get_exit_event().is_set():
+            #    return
+            # if self.controller.get_cancel_event().is_set():
+            #    self.controller.clear_cancel_event()
+            #    return
             enqueue_mod(mod, self.appid)
             time.sleep(3)
 
@@ -316,13 +327,17 @@ class ConnectionManager:
 
             # NOTE: Steam updates mod chunks in parallel, will finish at the same time
             while mod_path.is_dir() is False:
+                if self.is_cancel_pending():
+                    return
                 time.sleep(1)
             while True:
-                if self.controller.get_exit_event().is_set():
+                if self.is_cancel_pending():
                     return
-                if self.controller.get_cancel_event().is_set():
-                    self.controller.clear_cancel_event()
-                    return
+                # if self.controller.get_exit_event().is_set():
+                #     return
+                # if self.controller.get_cancel_event().is_set():
+                #     self.controller.clear_cancel_event()
+                #     return
                 cur_size = get_mod_dir_size(mod_path)
                 if cur_size == size:
                     break
