@@ -45,7 +45,15 @@ env["PYAPP_DISTRIBUTION_PATH"] = str(cpython)
 env["PYAPP_DISTRIBUTION_PYTHON_PATH"] = "python/bin/python3"
 
 platform = "x86_64-unknown-linux-musl"
-build_params = ["cargo", "build", "--release", "--target-dir", str(dist_dir), "--target", platform]
+build_params = [
+    "cargo",
+    "build",
+    "--release",
+    "--target-dir",
+    str(dist_dir),
+    "--target",
+    platform,
+]
 
 proc = subprocess.run(
     build_params,
