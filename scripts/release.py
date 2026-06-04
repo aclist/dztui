@@ -10,10 +10,12 @@ from concat_licenses import concat_license
 from parse_toml import get_entrypoint
 from prebuild import get_pyapp, rebuild_cpython
 
+
 def update_uname(info: tarfile.TarInfo) -> tarfile.TarInfo:
     info.uname = "dzgui"
     info.gname = "users"
     return info
+
 
 root = Path(__file__).resolve().parents[1]
 dist_dir = root.joinpath("dist")
@@ -52,7 +54,8 @@ env["PYAPP_DISTRIBUTION_PATH"] = str(cpython)
 env["PYAPP_DISTRIBUTION_PYTHON_PATH"] = "python/bin/python3"
 
 platform = "x86_64-unknown-linux-musl"
-tarname = f"{appname}-{platform}.tar.gz"
+build_name = f"{appname}-{version}-{platform}"
+tarname = f"{build_name}.tar.gz"
 tarpath = dist_dir.joinpath(tarname)
 
 build_params = [
@@ -74,12 +77,12 @@ proc = subprocess.run(
 if proc.returncode != 0:
     sys.exit(1)
 
-output_exe = dist_dir.joinpath("pyapp")
-release_exe = dist_dir.joinpath(appname)
-output_exe.rename(release_exe)
-
-subfolder = output.joinpath(stem)
+subfolder = dist_dir.joinpath(build_name)
 subfolder.mkdir(parents=True)
+
+output_exe = dist_dir.joinpath("pyapp")
+release_exe = subfolder.joinpath(appname)
+output_exe.rename(release_exe)
 
 combined_licenses = concat_license()
 license_file = subfolder.joinpath("LICENSE")
