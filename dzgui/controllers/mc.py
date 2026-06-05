@@ -533,5 +533,3 @@ class Controller(GObject.GObject):
             self.clear_cancel_event()
             return True
         return False
-
-
