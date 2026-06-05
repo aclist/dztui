@@ -62,8 +62,6 @@ build_params = [
     "cargo",
     "build",
     "--release",
-    "--target-dir",
-    str(dist_dir),
     "--target",
     platform,
 ]
@@ -80,7 +78,7 @@ if proc.returncode != 0:
 subfolder = dist_dir.joinpath(build_name)
 subfolder.mkdir(parents=True)
 
-output_exe = dist_dir.joinpath("pyapp")
+output_exe = pyapp_dir.joinpath(f"target/{platform}/release/pyapp")
 release_exe = subfolder.joinpath(appname)
 output_exe.rename(release_exe)
 
