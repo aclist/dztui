@@ -53,7 +53,7 @@ class UpdateManager:
                     func = StoredFunc(self._on_update_failure, msg)
                     self.thread_man.set_cleanup_func(func, destroy_first=True)
         except Exception as e:
-            func = StoredFunc(self._on_update_failure, e)
+            func = StoredFunc(self._on_update_failure, str(e))
             self.thread_man.set_cleanup_func(func, destroy_first=True)
             logger.warning(e)
 
