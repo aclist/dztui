@@ -39,6 +39,7 @@
 - Save filters per server context between sessions
 - Preboot progress dialog
 - Choose to jump into splash screen instead of server
+- Collapsible connection panel
 
 ## Changed
 - Conform to PEP 440 versioning for beta versions
