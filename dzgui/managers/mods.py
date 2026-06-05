@@ -15,6 +15,7 @@ from dzgui.const.constants import APP_NAME, APPID_DAYZ, APPID_DAYZ_EXP
 from dzgui.const.enum import Preferences
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.model.model_factory import FastInsertListStore, ModelFactory
+from dzgui.strings import dialogs
 from dzgui.util.format import format_mods
 from dzgui.util.strings import server_timeout
 from dzgui.views.dialogs.generic import ExceptionDialog
@@ -51,8 +52,7 @@ class ModManager:
         self.thread_man = ThreadingManager(controller)
         self._get_mods()
 
-    # TODO: dialog strings
-    @call_on_thread("getting mods")
+    @call_on_thread(dialogs.fetching_mods)
     def _get_mods(self) -> None:
         mods = get_delimited_mods(self.path)
         if len(mods) < 1:
@@ -95,8 +95,7 @@ class ModManager:
         mod = model.get_value(tree_iter, 2)
         return mod, tree_iter
 
-    # TODO: strings
-    @call_on_thread("deleting mods")
+    @call_on_thread(dialogs.deleting_mods)
     def delete_mods_on_system(self, mods: list[tuple[str, Gtk.TreeIter]]) -> None:
         for mod, _iter in mods:
             self.delete_single_mod(mod)
@@ -181,8 +180,7 @@ class ModManager:
                 model[path][4] = True
         self.emitter.emit("mods_highlighted")
 
-    # TODO: dialog strings
-    @call_on_thread("working")
+    @call_on_thread(dialogs.scanning_mods)
     def highlight_stale(self) -> None:
         stale = find_stale_mods(self.prefs.paths.config)
         func = StoredFunc(self._on_stale_mods_found, stale)
