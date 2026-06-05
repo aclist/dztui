@@ -85,9 +85,9 @@ class MaskedTree(Gtk.TreeView):
             self.store.append([self.icon, item])
 
 
-class PreConnectionAssistant(Gtk.ScrolledWindow):
+class PreConnectionAssistant(Gtk.Box):
     def __init__(self, controller: "Controller") -> None:
-        super().__init__()
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
         self.controller = controller
 
@@ -107,7 +107,9 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         )
         self.ok = Gtk.Button(label=preconnect.update_mods, halign=Gtk.Align.END)
         self.connect_last = Gtk.Button(
-            label=preconnect.connect_last, halign=Gtk.Align.END, tooltip_text=preconnect.connect_last_tooltip
+            label=preconnect.connect_last,
+            halign=Gtk.Align.END,
+            tooltip_text=preconnect.connect_last_tooltip,
         )
 
         # TODO: abstract
@@ -167,17 +169,17 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         self.tree_frame = HeadingFrame(self.tree_box, preconnect.mods)
 
         # TODO: abstract into components
-        # TODO: strings
         self.warning_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.warning_tree = MaskedTree(WARNING)
+        # TODO: strings
         self.warning_placeholder = Placeholder("No warnings.")
         self.warning_box.add(self.warning_tree)
         self.warning_box.add(self.warning_placeholder)
         self.warning_frame = HeadingFrame(self.warning_box, preconnect.warnings)
 
-        # TODO: strings
         self.error_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.error_tree = MaskedTree(ERROR)
+        # TODO: strings
         self.error_placeholder = Placeholder("No errors.")
         self.error_box.add(self.error_tree)
         self.error_box.add(self.error_placeholder)
@@ -188,9 +190,13 @@ class PreConnectionAssistant(Gtk.ScrolledWindow):
         self.box.add(self.tree_frame)
         self.box.add(self.warning_frame)
         self.box.add(self.error_frame)
-        self.box.add(self.button_box)
 
-        self.add(self.box)
+        self.scrolled_box = Gtk.ScrolledWindow(
+            vexpand=True, propagate_natural_height=True
+        )
+        self.scrolled_box.add(self.box)
+        self.add(self.scrolled_box)
+        self.add(self.button_box)
 
         self.connect("key-press-event", self._on_keypress)
         self.connect("map", self._on_map)

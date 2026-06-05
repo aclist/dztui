@@ -1,12 +1,14 @@
-from typing import TYPE_CHECKING
+from typing import Self, TYPE_CHECKING
 
-from dzgui.const.constants import UDP_PORT
+from dzgui.const.constants import CARET_DOWN, CARET_UP, UDP_PORT
 from dzgui.model.servers import ServerModelManager
 from dzgui.strings import connect_panel
 from dzgui.util.keys import is_ctrl_mask
 from dzgui.views.components.buttons import (
     AddButton,
     CopyIpButton,
+    Icon,
+    IconButton,
     SteamConnectButton,
 )
 from dzgui.views.components.entry import IpEntry, PortEntry
@@ -22,6 +24,38 @@ if TYPE_CHECKING:
 
 COLS = 1
 ROWS = 1
+
+
+class DockButton(IconButton):
+    def __init__(self, child: Gtk.Widget) -> None:
+        super().__init__(CARET_DOWN)
+
+        self.expanded = True
+        self.child = child
+        self.connect("clicked", self._on_click)
+
+        self.collapse_text = "Collapse the connection panel"
+        self.expand_text = "Expand the connection panel"
+
+        self.set_margin_top(10)
+        self.set_tooltip_text(self.collapse_text)
+
+    def collapse(self) -> None:
+        self.set_image(Icon(CARET_UP))
+        self.child.hide()
+        self.set_tooltip_text(self.expand_text)
+
+    def expand(self) -> None:
+        self.set_image(Icon(CARET_DOWN))
+        self.child.show()
+        self.set_tooltip_text(self.collapse_text)
+
+    def _on_click(self, button: Self) -> None:
+        if self.expanded:
+            self.collapse()
+        else:
+            self.expand()
+        self.expanded = not self.expanded
 
 
 class LanPanel(Gtk.Frame):
@@ -272,12 +306,17 @@ class ConnectPanel(Gtk.Box):
         emitter = self.controller.get_emitter()
         emitter.connect("lan_tab_toggled", self._on_lan_tab_toggled)
 
+        self.panel_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+
         self.lan = LanPanel(controller)
         self.fav = FavPanel(controller)
         self.add_panel = AddPanel(controller)
 
         for el in self.lan, self.fav, self.add_panel:
-            self.add(el)
+            self.panel_box.add(el)
+
+        self.add(DockButton(self.panel_box))
+        self.add(self.panel_box)
         self.lan.set_visible(False)
 
     def _on_lan_tab_toggled(self, emitter: "Emitter", state: bool) -> None:
