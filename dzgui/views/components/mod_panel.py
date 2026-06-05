@@ -22,10 +22,12 @@ class EnumeratedModButton(Gtk.Button):
         self.set_label(enum.dict["label"])
         self.set_tooltip_text(enum.dict["tooltip"])
 
+
 class ModPanelButton(EnumeratedModButton):
     def __init__(self, enum: ModButton) -> None:
         super().__init__(enum=enum)
 
+        self.enum = enum
         if enum is not ModButton.HIGHLIGHT_STALE:
             self.set_sensitive(False)
 
@@ -58,8 +60,13 @@ class ModSelectionPanel(Gtk.Box):
         self.unhighlight_stale_button = ModPanelButton(ModButton.UNHIGHLIGHT_STALE)
         self.select_stale_button = ModPanelButton(ModButton.SELECT_STALE)
 
-        for b in (self.highlight_stale_button, self.unhighlight_stale_button, self.select_stale_button):
+        for b in (
+            self.highlight_stale_button,
+            self.unhighlight_stale_button,
+            self.select_stale_button,
+        ):
             self.stale_panel.pack_start(b, NO_EXPAND, FILL, NO_PADDING)
+            b.connect("clicked", self._on_button_clicked)
 
         for el in header, self.main_panel, self.stale_panel:
             self.pack_start(el, NO_EXPAND, FILL, NO_PADDING)
