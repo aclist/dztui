@@ -2,10 +2,11 @@ import platform
 import sys
 
 from pathlib import Path
+from warnings import deprecated
 
 LIB = "libgirepository-2.0"
 
-
+@deprecated("currently unused")
 def is_debian() -> bool:
     """
     cf.
@@ -33,8 +34,7 @@ def is_debian() -> bool:
             return True
         id_like = release["ID_LIKE"]
         return id_like in strings
-    except Exception as e:
-        print(e)
+    except Exception:
         return False
 
 
@@ -45,7 +45,7 @@ def has_libgi() -> bool:
 
 
 def test_missing_lib() -> bool:
-    if is_debian() and has_libgi() is False:
-        # TODO: clean up warning
-        print(f"sudo apt install {LIB}")
+    msg = f"System is missing the required library '{LIB}'. Install it via your system package manager."
+    if has_libgi() is False:
+        print(msg)
         sys.exit(1)
