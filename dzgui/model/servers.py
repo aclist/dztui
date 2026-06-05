@@ -138,12 +138,8 @@ class ServerModelManager:
             futures = [executor.submit(Servers.test_ip, i, port, event) for i in ports]
             for future in as_completed(futures):
                 try:
-                    if self.controller.get_exit_event().is_set():
+                    if self.controller.is_cancel_pending():
                         event.set()
-                        return
-                    if self.controller.get_cancel_event().is_set():
-                        event.set()
-                        self.controller.clear_cancel_event()
                         return
                     res = future.result(timeout=LAN_TIMEOUT)
                     if res is None:
