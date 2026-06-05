@@ -8,6 +8,14 @@ git submodule update --recursive --init
 ### Install with dev dependencies
 uv pip install -e '.[dev]'
 
+This includes all dependencies for building, linting, testing, and checking in code.
+If you optionally want to install only a subset of dev tools, replace 'dev' with the following flag:
+
+build: package release deps
+docs: documentation tools
+lint: code linting, fixing, and type checking
+test: unit and integration tests
+
 ## Miscellaneous
 
 ### Setting up precommit hooks
