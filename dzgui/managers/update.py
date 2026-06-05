@@ -42,7 +42,7 @@ class UpdateManager:
                 with tarfile.open(TMP_TARBALL) as tar:
                     tar.extractall(TMP_PATH)
 
-                shutil.move(TMP_EXE, exe_path)
+                shutil.copy(TMP_EXE, exe_path)
 
                 proc = subprocess.run([exe_path, "self", "restore"])
                 if proc.returncode == 0:
