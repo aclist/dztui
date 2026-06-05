@@ -525,3 +525,13 @@ class Controller(GObject.GObject):
 
     def present_window(self) -> None:
         self.mediator.window.present_with_time(Gdk.CURRENT_TIME)
+
+    def is_cancel_pending(self) -> bool:
+        if self.get_exit_event().is_set():
+            return True
+        if self.get_cancel_event().is_set():
+            self.clear_cancel_event()
+            return True
+        return False
+
+

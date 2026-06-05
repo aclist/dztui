@@ -278,8 +278,7 @@ class ConnectionManager:
         self.thread_man.show_cancel(False)
         self.thread_man.update_dialog(waiting_for_launch)
         while True:
-            # TODO: check cancel event
-            if self.controller.get_exit_event().is_set():
+            if self.controller.is_cancel_pending():
                 # TODO: some facility to also close spawned steam process
                 return
             if is_dayz_running():
@@ -298,11 +297,7 @@ class ConnectionManager:
         prefs = self.controller.get_prefs()
 
         for title, mod, stamp, size in self.missing_mods:
-            # TODO: check cancel and exit events
-            if self.controller.get_exit_event().is_set():
-                return
-            if self.controller.get_cancel_event().is_set():
-                self.controller.clear_cancel_event()
+            if self.controller.is_cancel_pending():
                 return
             enqueue_mod(mod, self.appid)
             time.sleep(3)
@@ -316,12 +311,11 @@ class ConnectionManager:
 
             # NOTE: Steam updates mod chunks in parallel, will finish at the same time
             while mod_path.is_dir() is False:
+                if self.controller.is_cancel_pending():
+                    return
                 time.sleep(1)
             while True:
-                if self.controller.get_exit_event().is_set():
-                    return
-                if self.controller.get_cancel_event().is_set():
-                    self.controller.clear_cancel_event()
+                if self.controller.is_cancel_pending():
                     return
                 cur_size = get_mod_dir_size(mod_path)
                 if cur_size == size:
