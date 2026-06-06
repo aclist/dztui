@@ -8,7 +8,7 @@ from dzgui.views.components.buttons import LoggerAlertsButton
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GObject  # noqa E402
+from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.const.enum import ServerTab
@@ -33,14 +33,6 @@ class Statusbar(Gtk.Grid):
 
         self.attach(self.statusbar, 0, 0, 3, 1)
         self.attach_next_to(self.spinner, self.statusbar, Gtk.PositionType.RIGHT, 3, 1)
-
-        # TODO: pack version event box in right panel into hbox with update button
-        # TODO: spawns a modal or just jumps right to install page
-        # from dzgui.views.components.buttons import IconTextButton
-        # b = IconTextButton("dialog-information-symbolic", label="Updates available")
-        # b.set_halign(Gtk.Align.END)
-        # b.set_hexpand(True)
-        # self.attach_next_to(b, self.spinner, Gtk.PositionType.RIGHT, 3, 1)
 
         self.players = ""
 
@@ -92,12 +84,6 @@ class Statusbar(Gtk.Grid):
 
         self.set_by_context(enum, bar)
 
-    # TODO: unused
-    def _on_notebook_page_returned(
-        self, statusbar: Self, prior_context: NotebookPage
-    ) -> None:
-        self.pop(prior_context)
-
     def _on_server_row_changed(self, statusbar: Self) -> None:
         self.spinner.start()
 
@@ -131,12 +117,6 @@ class Statusbar(Gtk.Grid):
     def pop(self, context: Union["ServerTab", "NotebookPage"]) -> None:
         cid = self.statusbar.get_context_id(str(context))
         self.statusbar.pop(cid)
-
-    @deprecated("currently unused")
-    # def get_text(self) -> str:
-    #    area = self.statusbar.get_message_area()
-    #    label = area.get_children()[0]
-    #    return str(label.get_text())
 
     def set_by_context(
         self, context: Union[NotebookPage, "ServerTab"], string: str
