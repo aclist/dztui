@@ -273,7 +273,6 @@ def source_info_to_dict(ip: str, qport: int, info: "SourceInfo") -> dict[str, An
         res["ping"] = ping
         return res
     except Exception as e:
-        # TODO: generalized function
         msg = format_exception(e)
         msg += f" ({ip}:{qport})"
         logger.critical(msg)
