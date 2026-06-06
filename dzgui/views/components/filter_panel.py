@@ -333,6 +333,9 @@ class FilterPanel(Gtk.Box):
         self.emitter.emit("map_selection_changed", name)
 
     def set_filters(self, filters: dict[str, bool]) -> None:
-        for check in self.button_grid.checks:
-            label = check.get_label()
-            check.set_active(filters[label])
+        try:
+            for check in self.button_grid.checks:
+                label = check.get_label()
+                check.set_active(filters[label])
+        except Exception as e:
+            logger.warning(e)

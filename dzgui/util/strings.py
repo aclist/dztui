@@ -181,7 +181,7 @@ filter_lowpop = "Low pop"
 filter_nonascii = "Non-ASCII"
 filter_duplicate = "Duplicate"
 filter_official = "Official"
-filter_unofficial = "Unoffic."
+filter_unofficial = "Unofficial"
 filter_modded = "Modded"
 
 # maps
