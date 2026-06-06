@@ -14,6 +14,7 @@ from dzgui.init.update import check_updates
 from dzgui.const.constants import EXPAND, FILL
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings import preboot
+from dzgui.util.format import format_exception
 from dzgui.util.strings import dialog_header
 from dzgui.util.symlink import rebuild_symlinks
 from dzgui.views.components.buttons import ClipboardButton
@@ -175,8 +176,7 @@ class BootDialog(Gtk.Dialog):
             self.thread_man.set_cleanup_func(callback)
         except Exception as e:
             self.failed = True
-            # TODO: generic exception wrapper
-            self.exception = f"{type(e).__name__}: {e}"
+            self.exception = format_exception(e)
             callback = StoredFunc(self.update_status, Success.FAIL)
             self.thread_man.set_cleanup_func(callback)
 
