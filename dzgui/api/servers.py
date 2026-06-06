@@ -14,6 +14,7 @@ from typing import Any, Optional, TYPE_CHECKING, Union
 from dzgui.api.bm import map_id_to_record
 from dzgui.const.constants import APP_NAME, REQUEST_TIMEOUT
 from dzgui.const.endpoints import STEAM_SERVERS
+from dzgui.util.format import format_exception
 from dzgui.util import strings
 
 import a2s
@@ -273,7 +274,9 @@ def source_info_to_dict(ip: str, qport: int, info: "SourceInfo") -> dict[str, An
         return res
     except Exception as e:
         # TODO: generalized function
-        logger.critical(f"{type(e).__name__}: {e} ({ip}:{qport})")
+        msg = format_exception(e)
+        msg += f" ({ip}:{qport})"
+        logger.critical(msg)
         raise e
 
 

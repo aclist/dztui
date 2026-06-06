@@ -11,6 +11,7 @@ from dzgui.const.constants import (
 )
 from dzgui.const.enum import FilterMode
 from dzgui.model.servers import ServerModelManager
+from dzgui.util.format import format_exception
 from dzgui.util.strings import all_maps
 from dzgui.views.components.maps_combo import MapsCombo
 from dzgui.views.components.labels import BoldLabel
@@ -338,4 +339,5 @@ class FilterPanel(Gtk.Box):
                 label = check.get_label()
                 check.set_active(filters[label])
         except Exception as e:
-            logger.warning(e)
+            msg = format_exception(e)
+            logger.warning(msg)

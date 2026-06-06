@@ -238,8 +238,7 @@ class ConnectionManager:
     def query_modlist_and_present(self, record: Servers.Record) -> None:
         try:
             mods = self._query_modlist(record)
-        except Exception as e:
-            print(f"{type(e).__name__}: {e}")
+        except Exception:
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._server_timeout), destroy_first=True
             )

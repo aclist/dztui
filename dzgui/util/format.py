@@ -83,3 +83,7 @@ def format_player_count(model: Gtk.TreeModel | None, control: list) -> str:
 
 def embolden(text: str) -> str:
     return f"<b>{text}</b>"
+
+
+def format_exception(e: Exception) -> str:
+    return f"{type(e).__name__}: {e}"
