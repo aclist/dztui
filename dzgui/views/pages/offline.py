@@ -120,12 +120,12 @@ class OfflineLoader(Gtk.Box):
         if event.keyval == Gdk.KEY_Escape:
             self.back.emit("clicked")
 
-    def _on_selection_changed(self, sel) -> None:
+    def _on_selection_changed(self, sel: Gtk.TreeSelection) -> None:
         model, rows = sel.get_selected_rows()
         # TODO: update sub-statusbar with selected mods
         print(len(rows))
 
-    def populate(self, mods: Gtk.TreeModel) -> None:
+    def populate(self, mods: Gtk.TreeModel | None) -> None:
         self.local_mods.set_model(mods)
         # TODO: push existing model
         # TODO: set sensitivity of radio buttons

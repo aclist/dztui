@@ -37,6 +37,7 @@ from gi.repository import Gtk, Gdk, GLib, GObject  # noqa E402
 logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from dzgui.api.servers import Record
     from dzgui.const.enum import ServerTab
     from dzgui.managers.connection import Prerequisites
@@ -290,7 +291,7 @@ class Controller(GObject.GObject):
                 dialog = ExceptionDialog(self, str(e))
                 dialog.run()
 
-    def set_custom_folder(self) -> None:
+    def set_custom_folder(self) -> "Path" | None:
         picker = FolderPicker(self.mediator.window)
         return picker.pick_folder()
 
@@ -540,6 +541,6 @@ class Controller(GObject.GObject):
             return True
         return False
 
-    def open_offline(self, mods) -> None:
+    def open_offline(self, mods: Gtk.TreeModel | None) -> None:
         self.open_page(NotebookPage.OFFLINE)
         self.mediator.offline_loader.populate(mods)
