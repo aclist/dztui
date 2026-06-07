@@ -4,7 +4,7 @@ from typing import Any, Optional, TYPE_CHECKING
 from warnings import deprecated
 
 from dzgui.const.constants import APP_NAME, SEPARATOR
-from dzgui.util.keys import is_navkey
+from dzgui.util.keys import is_ctrl_mask, is_navkey
 from dzgui.views.mixins.cursor_mixin import CursorMixin
 
 import gi
@@ -86,6 +86,12 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         return [model[row] for row in rows]
 
     def _on_keypress(self, treeview: Gtk.TreeView, event: Gdk.EventKey) -> None:
+        from dzgui.views.trees.tree_servers import ServerTreeView
+        # NOTE: suppress popup search and delegate binding to server view (cf. request_keyword_focus)
+        if not isinstance(treeview, ServerTreeView):
+            if is_ctrl_mask(event) and event.keyval == Gdk.KEY_f:
+                return True
+
         if is_navkey(event.keyval):
             if self.get_model() is None:
                 return
