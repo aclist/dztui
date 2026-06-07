@@ -73,14 +73,9 @@ def get_local_signatures(version_file: Path) -> dict[str, int]:
     return hashes
 
 
-def enqueue_mod(mod: str, appid: int) -> None:
-    args = [
-        "steam",
-        f"steam://url/CommunityFilePage/{mod}+workshop_download_item",
-        str(appid),
-        mod,
-    ]
-    subprocess.Popen(["/usr/bin/env", "bash", *args])
+def enqueue_mod(client: str, mod: str, appid: int) -> None:
+    client_args = concat_bash_args(client)
+    subprocess.Popen([*client_args, "+workshop_download_item", str(appid), mod])
 
 
 def get_needs_update(
@@ -146,7 +141,7 @@ def connect(client: str, addr: str, appid: int, name: str, mods: list[str]) -> i
     return proc.returncode
 
 
-def load_to_menu(client: str, addr: str, appid: int, name: str, mods: list[str]) -> int:
+def load_to_menu(client: str, appid: int, name: str, mods: list[str]) -> int:
     """Loads to the menu screen with the selected mods; used for AFK/pre-joining"""
     concat = concat_mods(mods)
     client_args = concat_bash_args(client)
