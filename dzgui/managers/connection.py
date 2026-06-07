@@ -267,7 +267,7 @@ class ConnectionManager:
         if menu_only:
             rc = load_to_menu(client, addr, self.appid, playername, self.remote_mod_ids)
         else:
-            rc = connect(client, addr, self.appid, playername, self.remote_mod_ids)
+            rc = connect(client, self.appid, playername, self.remote_mod_ids)
         if rc != 0:
             # TODO: log/pop the error
             func = StoredFunc(self.controller.update_status)

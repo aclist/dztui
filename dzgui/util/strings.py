@@ -273,6 +273,7 @@ class Crumbs:
     thanks: str
     developers: str
     default: str
+    offline: str
 
 
 @dataclass(slots=True, frozen=True)
@@ -462,6 +463,7 @@ crumbs = Crumbs(
     thanks="Help > Special thanks",
     developers="Options > Developers",
     default="Servers > ",
+    offline="Mods > Play offline"
 )
 
 no_mods = "No local mods found."

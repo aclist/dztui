@@ -146,7 +146,7 @@ def connect(client: str, addr: str, appid: int, name: str, mods: list[str]) -> i
     return proc.returncode
 
 
-def load_to_menu(client: str, addr: str, appid: int, name: str, mods: list[str]) -> int:
+def load_to_menu(client: str, appid: int, name: str, mods: list[str]) -> int:
     """Loads to the menu screen with the selected mods; used for AFK/pre-joining"""
     concat = concat_mods(mods)
     client_args = concat_bash_args(client)
@@ -162,6 +162,22 @@ def load_to_menu(client: str, addr: str, appid: int, name: str, mods: list[str])
     proc = subprocess.run([*client_args, *params])
     return proc.returncode
 
+def launch_offline(client: str, addr: str, appid: int, name: str, mods: list[str], mission: str) -> int:
+    """Launch offline with specific mods/missions"""
+    concat = concat_mods(mods)
+    client_args = concat_bash_args(client)
+    params = [
+        "-applaunch",
+        str(appid),
+        "-nolauncher",
+        "-nosplash",
+        "-skipintro",
+        f"-name={name}",
+        f"-mod={concat}",
+        f"-mission={mission}"
+    ]
+    proc = subprocess.run([*client_args, *params])
+    return proc.returncode
 
 def find_user_id(path: Path) -> str | None:
     resolved_path = path / "config" / "loginusers.vdf"

@@ -103,6 +103,7 @@ class Preferences(EnumWithAttrs):
 
 
 class NotebookPage(EnumWithAttrs):
+    OFFLINE = {"crumbs": strings.crumbs.offline, "statusbar": True}
     CHANGELOG = {"crumbs": strings.crumbs.changelog, "statusbar": True}
     DEVELOPERS = {"crumbs": strings.crumbs.developers, "statusbar": False}
     HELP = {"crumbs": strings.crumbs._help, "statusbar": True}

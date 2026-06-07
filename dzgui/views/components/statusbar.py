@@ -1,5 +1,4 @@
 from typing import Self, Union, TYPE_CHECKING
-from warnings import deprecated
 
 from dzgui.const.enum import NotebookPage, ServerTab
 from dzgui.util.strings import esc_to_return, question_to_return
@@ -70,6 +69,7 @@ class Statusbar(Gtk.Grid):
             NotebookPage.CHANGELOG,
             NotebookPage.LOG,
             NotebookPage.CONNECTION,
+            NotebookPage.OFFLINE,
         ):
             self.set_by_context(enum, esc_to_return)
             return

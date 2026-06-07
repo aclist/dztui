@@ -26,7 +26,7 @@ from dzgui.model.servers import ServerModelManager
 from dzgui.util.diag import write_diagnostic
 from dzgui.util.format import format_player_count
 from dzgui.util.open_links import open_user_workshop, open_workshop_page
-from dzgui.views.dialogs.filepicker import FilePicker
+from dzgui.views.dialogs.filepicker import FilePicker, FolderPicker
 from dzgui.views.dialogs.generic import ExceptionDialog
 
 import gi
@@ -47,6 +47,7 @@ if TYPE_CHECKING:
     from dzgui.views.components.filter_panel import FilterPanel
     from dzgui.views.components.right_panel import RightPanel
     from dzgui.views.components.statusbar import Statusbar
+    from dzgui.views.pages.offline import OfflineLoader
     from dzgui.views.pages.options import Options
     from dzgui.views.pages.preconnect import PreConnectionAssistant
     from dzgui.views.pages.servers import ServerNotebook
@@ -72,6 +73,7 @@ class AppNavigation:
     filters: "FilterPanel"
     preconnect: "PreConnectionAssistant"
     options: "Options"
+    offline_loader: "OfflineLoader"
 
 
 class Controller(GObject.GObject):
@@ -287,6 +289,10 @@ class Controller(GObject.GObject):
             except Exception as e:
                 dialog = ExceptionDialog(self, str(e))
                 dialog.run()
+
+    def set_custom_folder(self) -> None:
+        picker = FolderPicker(self.mediator.window)
+        return picker.pick_folder()
 
     def update_api_key(self, key: Preferences, text: str) -> None:
         self.config_man.update_api_key(key, text)
@@ -533,3 +539,7 @@ class Controller(GObject.GObject):
             self.clear_cancel_event()
             return True
         return False
+
+    def open_offline(self, mods) -> None:
+        self.open_page(NotebookPage.OFFLINE)
+        self.mediator.offline_loader.populate(mods)

@@ -110,8 +110,13 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
 
         self.connection = PreConnectionAssistant(MainController)
 
+        from dzgui.views.pages.offline import OfflineLoader
+
+        self.offline = OfflineLoader(MainController)
+
         self.pages = {
             self.help: NotebookPage.HELP,
+            self.offline: NotebookPage.OFFLINE,
             self.clog: NotebookPage.CHANGELOG,
             self.keys: NotebookPage.KEYS,
             self.settings: NotebookPage.OPTIONS,
