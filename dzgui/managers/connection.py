@@ -88,6 +88,7 @@ class ConnectionManager:
         self.record: Record
         self.workshop: Path
 
+        self.client: str
         self.remote_mod_ids: list[str] = []
         self.missing_mods: list[tuple[str, str, int, int]] = []
 
@@ -171,6 +172,7 @@ class ConnectionManager:
         client = self.controller.query_config(Preferences.CLIENT)
         running = is_steam_running(client)
         steam_proc = SteamProcess(client_name, running)
+        self.client = client
 
         game_mode = prefs.is_game_mode
 
@@ -263,11 +265,10 @@ class ConnectionManager:
     def _connect_steam(self, menu_only: bool) -> None:
         addr = f"{self.record.ip}:{self.record.gameport}"
         playername = self.controller.query_config(Preferences.NAME)
-        client = self.controller.query_config(Preferences.CLIENT)
         if menu_only:
-            rc = load_to_menu(client, addr, self.appid, playername, self.remote_mod_ids)
+            rc = load_to_menu(self.client, self.appid, playername, self.remote_mod_ids)
         else:
-            rc = connect(client, addr, self.appid, playername, self.remote_mod_ids)
+            rc = connect(self.client, addr, self.appid, playername, self.remote_mod_ids)
         if rc != 0:
             # TODO: log/pop the error
             func = StoredFunc(self.controller.update_status)
@@ -298,7 +299,8 @@ class ConnectionManager:
         for title, mod, stamp, size in self.missing_mods:
             if self.controller.is_cancel_pending():
                 return
-            enqueue_mod(mod, self.appid)
+            enqueue_mod(self.client, mod, self.appid)
+            # NOTE: prevents rate limiting
             time.sleep(3)
 
         if raise_window is True:
