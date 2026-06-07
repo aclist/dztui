@@ -30,8 +30,6 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
         emitter.connect("mods_highlighted", self._on_mods_highlighted)
 
         self.set_fixed_height_mode(True)
-        self.set_headers_visible(True)
-
         self.set_model(None)
 
         for i, column_title in enumerate(strings.mod_cols):
@@ -64,6 +62,7 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
     def _on_mods_updated(self, emitter: "Emitter", msg: str, mods: int) -> None:
         if mods < 1:
             return
+        self.set_headers_visible(True)
         path = Gtk.TreePath.new_from_indices([0])
         self.set_cursor(path)
 
