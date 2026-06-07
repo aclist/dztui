@@ -327,10 +327,7 @@ class PreConnectionAssistant(Gtk.Box):
             self.connect_last.hide()
 
         self._process_warnings(prereqs)
-        if self.tree.is_visible():
-            self.tree.grab_focus()
-        else:
-            self.grab_focus()
+        self.tree.grab_focus()
 
     def mark_finished(self) -> None:
         self.mod_count.set_label(preconnect.all_updated)
