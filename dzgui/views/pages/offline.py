@@ -3,7 +3,7 @@ from typing import Self, Sequence, TYPE_CHECKING
 
 from dzgui.util import css
 import dzgui.api.pefile as PeFile
-from dzgui.const.constants import APPID_DAYZ_EXP, APPNAME_DAYZ, APPNAME_DAYZ_EXP_HUMAN
+from dzgui.const.constants import APPID_DAYZ, APPID_DAYZ_EXP, APPNAME_DAYZ, APPNAME_DAYZ_EXP_HUMAN
 from dzgui.const.enum import NotebookPage, Preferences
 from dzgui.strings import offline
 from dzgui.views.components.scrollable import NoOverlayScrolledWindow
@@ -22,8 +22,8 @@ if TYPE_CHECKING:
 
 
 class GenericBox(Gtk.Box):
-    def __init__(self, orientation: Gtk.Orientation) -> None:
-        super().__init__(orientation=orientation)
+    def __init__(self, orientation: Gtk.Orientation, spacing: int = 0) -> None:
+        super().__init__(orientation=orientation, spacing=spacing)
 
     def extend(self, els: Sequence[Gtk.Widget]) -> None:
         for el in els:
@@ -31,13 +31,13 @@ class GenericBox(Gtk.Box):
 
 
 class HBox(GenericBox):
-    def __init__(self) -> None:
-        super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
+    def __init__(self, spacing: int = 0) -> None:
+        super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=spacing)
 
 
 class VBox(GenericBox):
-    def __init__(self) -> None:
-        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+    def __init__(self, spacing: int = 0) -> None:
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=spacing)
 
 
 class PageHeading(Gtk.Label):
@@ -49,11 +49,10 @@ class PageHeading(Gtk.Label):
 
 class FolderHBox(HBox):
     def __init__(self, btn_label: str) -> None:
-        super().__init__()
+        super().__init__(spacing=5)
 
         self.set_margin_start(10)
         self.set_margin_bottom(10)
-        self.set_spacing(5)
 
         # TODO: use IconButton with folder-symbolic
         self.button = Gtk.Button(label=btn_label, halign=Gtk.Align.START)
@@ -119,6 +118,7 @@ class CustomModFrame(ModFrame):
         super().__init__(controller, heading)
 
         self.controller = controller
+        # TODO: descriptive text here explaining how this area works
         self.custom_hbox = FolderHBox(offline.custom_button)
         self.custom_hbox.get_button().connect("clicked", self._on_custom_button_clicked)
 
@@ -139,6 +139,9 @@ class RadioFrame(HeadingFrame):
 
         self.controller = controller
 
+        self.id_map = {APPNAME_DAYZ: APPID_DAYZ, APPNAME_DAYZ_EXP_HUMAN: APPID_DAYZ_EXP}
+        self.appid: APPID_DAYZ
+
         self.dayz = Gtk.RadioButton.new_with_label(None, APPNAME_DAYZ)
         self.dayz_exp = Gtk.RadioButton.new_with_label_from_widget(
             self.dayz, APPNAME_DAYZ_EXP_HUMAN
@@ -154,8 +157,19 @@ class RadioFrame(HeadingFrame):
         default_steam_path = self.controller.query_config(Preferences.DEFAULT)
         steam_path = Path(default_steam_path)
         dayz_exp = PeFile.get_pretty_version(steam_path, APPID_DAYZ_EXP)
+
+        self.dayz.connect("toggled", self._on_radio_toggled)
         if dayz_exp is None:
             self.dayz_exp.set_sensitive(False)
+
+    def _on_radio_toggled(self, radio: Gtk.RadioButton) -> None:
+        for el in self.dayz, self.dayz_exp:
+            if el.get_active():
+                label = el.get_label()
+                self.appid = self.id_map[label]
+
+    def get_appid(self) -> int:
+        return self.appid
 
 
 class OfflineLoader(Gtk.Box):
@@ -166,16 +180,18 @@ class OfflineLoader(Gtk.Box):
             margin_end=10,
         )
 
-        # TODO: wrap entire page in scrollable, see preconnect dialog
         # TODO: spacing between inner and outer scrollbars
         self.controller = controller
         self.controller.register_widget("offline_loader", self)
 
         self.add(PageHeading(offline.heading))
 
-        # TODO: descriptive text here explaining how this area works
         self.local_frame = ModFrame(controller, offline.local_frame)
         self.custom_frame = CustomModFrame(controller, offline.custom_frame)
+
+        # TODO: use ModelFactory
+        # TODO: suppress symlink column
+        self.custom_tree = OfflineModTreeView(controller)
 
         self.mission_hbox = FolderHBox(offline.mission_button)
         self.mission_frame = HeadingFrame.new_with_widget_and_label(
@@ -183,15 +199,12 @@ class OfflineLoader(Gtk.Box):
         )
 
         self.radio_frame = RadioFrame(controller)
-        # HeadingFrame.new_with_widget_and_label(self.radio_box, offline.version)
 
-        # TODO: abstraction
         self.scrollable = Gtk.ScrolledWindow(
             vexpand=True, propagate_natural_height=True
         )
-        # TODO: use same button anchoring logic as preconnect dialog
-        self.content_box = VBox()
-        self.content_box.set_spacing(5)
+
+        self.content_box = VBox(spacing=5)
         self.content_box.extend(
             [
                 self.local_frame,
@@ -201,25 +214,23 @@ class OfflineLoader(Gtk.Box):
             ]
         )
 
-        self.scrollable.add(self.content_box)
-        self.add(self.scrollable)
-
-        # TODO: use ModelFactory
-        # TODO: suppress symlink column
-        self.custom_tree = OfflineModTreeView(controller)
-
-        # TODO: share ConnectBox class with preconnect dialog
-        self.button_box = HBox()
-        self.back = Gtk.Button()
-        self.ok = Gtk.Button()
+        # TODO: share ConnectBox class with preconnect dialog?
+        self.button_box = HBox(spacing=5)
+        self.button_box.set_halign(Gtk.Align.END)
+        self.button_box.set_margin_top(5)
+        self.back = Gtk.Button(label="Back")
+        self.ok = Gtk.Button(label="Launch")
         self.back.connect("clicked", self._on_back_clicked)
         self.ok.connect("clicked", self._on_ok_clicked)
         self.connect("key-press-event", self._on_keypress)
 
         self.button_box.extend([self.back, self.ok])
 
+        self.scrollable.add(self.content_box)
+        self.add(self.scrollable)
+        self.add(self.button_box)
+
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
-        # TODO: consider dropping this
         if event.keyval == Gdk.KEY_Escape:
             self.back.emit("clicked")
 
@@ -230,16 +241,13 @@ class OfflineLoader(Gtk.Box):
         self.custom_frame.collapse_tree()
 
     def _on_back_clicked(self, button: Gtk.Button) -> None:
-        # FIXME: returns to server page and not parent mod page
-        # consider using a toggle button instead, and suppressing statusbar
-        self.controller.open_page(NotebookPage.SERVERS)
+        self.controller.open_page(NotebookPage.MODS)
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
+        appid = self.radio_frame.get_appid()
         """
         - collect symlinks to selected mods
             cf. rebuild_symlinks()
         - create symlinks for custom mods
-        - collect appid
         - collect mission folder
         """
-        pass
