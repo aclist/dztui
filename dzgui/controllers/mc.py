@@ -291,7 +291,7 @@ class Controller(GObject.GObject):
                 dialog = ExceptionDialog(self, str(e))
                 dialog.run()
 
-    def set_custom_folder(self) -> "Path" | None:
+    def set_custom_folder(self) -> Union["Path", None]:
         picker = FolderPicker(self.mediator.window)
         return picker.pick_folder()
 

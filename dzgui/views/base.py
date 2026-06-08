@@ -23,6 +23,7 @@ from dzgui.views.pages.help import Help
 from dzgui.views.pages.keys import Keybindings
 from dzgui.views.pages.log import Log
 from dzgui.views.pages.mods import Mods
+from dzgui.views.pages.offline import OfflineLoader
 from dzgui.views.pages.options import Options
 from dzgui.views.pages.preconnect import PreConnectionAssistant
 from dzgui.views.pages.servers import ServerNotebook
@@ -109,8 +110,6 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
         self.developers = Developers(MainController)
 
         self.connection = PreConnectionAssistant(MainController)
-
-        from dzgui.views.pages.offline import OfflineLoader
 
         self.offline = OfflineLoader(MainController)
 

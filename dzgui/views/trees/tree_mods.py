@@ -4,6 +4,7 @@ from typing import Any, TYPE_CHECKING
 from dzgui.const.constants import APP_NAME, HEX_RED
 from dzgui.const.enum import ContextMenuGroup
 from dzgui.util import strings, localize
+from dzgui.views.mixins.cursor_mixin import CursorMixin
 from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.views.mixins.mods_mixin import ModsMixin
 from dzgui.views.trees.tree_base import TreeView

@@ -15,12 +15,12 @@ class Mods(NoOverlayScrolledWindow):
     def __init__(self, controller: "Controller") -> None:
         super().__init__()
 
-        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-
-        self.controller = controller
-        self.emitter = controller.get_emitter()
         self.tree = ModTreeView(controller)
         self.tree.set_vexpand(True)
+
+        self.controller = controller
+        self.controller.register_widget("modtreeview", self.tree)
+        self.emitter = controller.get_emitter()
 
         self.offline_button = Gtk.Button(
             label="Play offline",
@@ -30,11 +30,11 @@ class Mods(NoOverlayScrolledWindow):
         )
         self.offline_button.connect("clicked", self._on_offline_clicked)
 
+        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.box.add(self.offline_button)
         self.box.add(self.tree)
 
         self.add(self.box)
-        self.controller.register_widget("modtreeview", self.tree)
 
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)

@@ -61,12 +61,14 @@ class ModManager:
             self.thread_man.set_cleanup_func(func)
             return
 
-        func = StoredFunc(self._on_mods_loaded, mods)
-        self.thread_man.set_cleanup_func(func)
-
-    def _on_mods_loaded(self, mods: list[list[Any]]) -> None:
         self.store = ModelFactory().make_mod_store()
         self.store.extend(mods)
+        func = StoredFunc(self._on_mods_loaded)
+        self.thread_man.set_cleanup_func(func)
+
+        # def _on_mods_loaded(self, mods: list[list[Any]]) -> None:
+
+    def _on_mods_loaded(self) -> None:
         self.treeview.set_model(self.store)
         msg = self.format_mod_statusbar()
         total_mods = len(self.store)
