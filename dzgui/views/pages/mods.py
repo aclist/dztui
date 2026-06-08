@@ -11,12 +11,14 @@ if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
 
 
-class Mods(NoOverlayScrolledWindow):
+class Mods(Gtk.Box):
     def __init__(self, controller: "Controller") -> None:
-        super().__init__()
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
+        self.box = NoOverlayScrolledWindow()
         self.tree = ModTreeView(controller)
         self.tree.set_vexpand(True)
+        self.box.add(self.tree)
 
         self.controller = controller
         self.controller.register_widget("modtreeview", self.tree)
@@ -30,18 +32,14 @@ class Mods(NoOverlayScrolledWindow):
         )
         self.offline_button.connect("clicked", self._on_offline_clicked)
 
-        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.box.add(self.offline_button)
-        self.box.add(self.tree)
-
+        self.add(self.offline_button)
         self.add(self.box)
 
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
 
     def _on_offline_clicked(self, button: Gtk.Button) -> None:
-        self.controller.open_offline(self.tree.get_model())
-        # TODO: add offline page
+        self.controller.open_offline()
 
     def _on_unmap(self, widget: Self) -> None:
         self.emitter.emit("mod_page_toggled", False)

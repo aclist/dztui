@@ -3,8 +3,8 @@ from typing import Any, TYPE_CHECKING
 
 from dzgui.const.constants import APP_NAME, HEX_RED
 from dzgui.const.enum import ContextMenuGroup
+from dzgui.managers.mods import ModManager
 from dzgui.util import strings, localize
-from dzgui.views.mixins.cursor_mixin import CursorMixin
 from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.views.mixins.mods_mixin import ModsMixin
 from dzgui.views.trees.tree_base import TreeView
@@ -25,7 +25,10 @@ logger = logging.getLogger(APP_NAME)
 class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
     def __init__(self, controller: "Controller") -> None:
         super().__init__(controller, menu=ContextMenuGroup.MOD)
+
         self.controller = controller
+        self.mod_man = ModManager(self, controller)
+
         emitter = self.controller.get_emitter()
         emitter.connect("mods_updated", self._on_mods_updated)
         emitter.connect("mods_highlighted", self._on_mods_highlighted)
@@ -56,6 +59,12 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
         self.connect("generic_treesel_changed", self._parent_selection_changed)
         self.connect("button-press-event", self.present_menu)
         self.connect("key-press-event", self.present_menu)
+
+    def get_mod_man(self) -> ModManager:
+        return self.mod_man
+
+    def load_mods(self) -> None:
+        self.mod_man.load_mods()
 
     def _on_mods_highlighted(self, emitter: "Emitter") -> None:
         self.get_selection().unselect_all()
@@ -106,3 +115,10 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
         val = model[it][3]
         formatted = localize.number(val)
         cell.set_property("text", formatted)
+
+    def set_menu(self, context: ContextMenuGroup) -> None:
+        self.menu = context
+
+class OfflineModTreeView(ModTreeView):
+    def __init__(self, controller: "Controller") -> None:
+        super().__init__(controller)

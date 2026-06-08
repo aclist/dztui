@@ -2,7 +2,7 @@ import logging
 import shutil
 
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from dzgui.api.mods import (
     get_delimited_mods,
@@ -40,20 +40,20 @@ class ModManager:
     this manager is instantiated each time the Mods page is opened
     """
 
-    def __init__(self, controller: "Controller") -> None:
+    def __init__(self, tree: Gtk.TreeView, controller: "Controller") -> None:
+        self.treeview = tree
         self.controller = controller
+
         self.emitter = controller.get_emitter()
         self.prefs = controller.get_prefs()
         self.path = controller.query_config(Preferences.DEFAULT)
-        self.treeview = self.controller.get_modtreeview()
 
         self.store: FastInsertListStore
 
         self.thread_man = ThreadingManager(controller)
-        self._get_mods()
 
     @call_on_thread(dialogs.fetching_mods)
-    def _get_mods(self) -> None:
+    def load_mods(self) -> None:
         mods = get_delimited_mods(self.path)
         if len(mods) < 1:
             msg = self.format_mod_statusbar()
@@ -65,8 +65,6 @@ class ModManager:
         self.store.extend(mods)
         func = StoredFunc(self._on_mods_loaded)
         self.thread_man.set_cleanup_func(func)
-
-        # def _on_mods_loaded(self, mods: list[list[Any]]) -> None:
 
     def _on_mods_loaded(self) -> None:
         self.treeview.set_model(self.store)

@@ -64,7 +64,7 @@ connect = "Connect"
 
 # Columns
 server_mod_cols = ["Mod", "ID", "Installed"]
-mod_cols = ["Mod", "Symlink", "Dir", "Size (MiB)", "Color"]
+mod_cols = ["Mod", "Symlink", "ID", "Size (MiB)", "Color"]
 log_cols = ["Timestamp", "Flag", "Traceback", "Message"]
 browser_cols = [
     "Name",

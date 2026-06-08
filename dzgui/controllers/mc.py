@@ -54,7 +54,7 @@ if TYPE_CHECKING:
     from dzgui.views.pages.servers import ServerNotebook
     from dzgui.views.trees.tree_log import LogTreeView
     from dzgui.views.trees.tree_menu import MenuTreeView
-    from dzgui.views.trees.tree_mods import ModTreeView
+    from dzgui.views.trees.tree_mods import ModTreeView, OfflineModTreeView
     from dzgui.views.trees.tree_servers import ServerTreeView
 
 
@@ -221,19 +221,29 @@ class Controller(GObject.GObject):
         open_user_workshop(uid, client)
 
     def load_mods(self) -> None:
-        self.mod_man = ModManager(self)
+        self.mediator.modtreeview.load_mods()
 
     def uncolorize_mods(self) -> None:
-        self.mod_man.uncolorize_mods()
+        mod_man = self.mediator.modtreeview.get_mod_man()
+        mod_man.uncolorize_mods()
 
     def highlight_stale(self) -> None:
-        self.mod_man.highlight_stale()
+        mod_man = self.mediator.modtreeview.get_mod_man()
+        mod_man.highlight_stale()
 
     def toggle_mod_selection(self, state: bool) -> None:
-        self.mod_man.toggle_mod_selection(state)
+        mod_man = self.mediator.modtreeview.get_mod_man()
+        mod_man.toggle_mod_selection(state)
 
-    def delete_mods(self) -> None:
-        self.mod_man.delete_mods()
+    def delete_mods(
+        self, treeview: Union["ModTreeView", "OfflineModTreeView"] = None
+    ) -> None:
+        if treeview is None:
+            view = self.mediator.modtreeview
+        else:
+            view = treeview
+        mod_man = view.get_mod_man()
+        mod_man.delete_mods()
 
     def get_mod_store(self) -> Gtk.TreeModel | None:
         return self.mediator.modtreeview.get_model()
@@ -260,7 +270,8 @@ class Controller(GObject.GObject):
             dialog.run()
 
     def select_colorized(self) -> None:
-        self.mod_man.select_colorized()
+        mod_man = self.mediator.modtreeview.get_mod_man()
+        mod_man.select_colorized()
 
     def get_all_tree_filters(self) -> dict[str, dict[str, bool]]:
         servers = self.get_servers()
@@ -293,7 +304,9 @@ class Controller(GObject.GObject):
 
     def set_custom_folder(self) -> Union["Path", None]:
         picker = FolderPicker(self.mediator.window)
-        return picker.pick_folder()
+        folder = picker.pick_folder()
+        picker.destroy()
+        return folder
 
     def update_api_key(self, key: Preferences, text: str) -> None:
         self.config_man.update_api_key(key, text)
@@ -541,6 +554,8 @@ class Controller(GObject.GObject):
             return True
         return False
 
-    def open_offline(self, mods: Gtk.TreeModel | None) -> None:
+    def open_offline(self) -> None:
         self.open_page(NotebookPage.OFFLINE)
-        self.mediator.offline_loader.populate(mods)
+        mod_man = self.mediator.modtreeview.get_mod_man()
+        store = mod_man.store
+        self.mediator.offline_loader.populate(store)

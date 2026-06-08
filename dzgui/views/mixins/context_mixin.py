@@ -44,6 +44,8 @@ class ContextMixin(TreeView):
         self.context_menu.connect("key-press-event", self._on_key)
 
         for row in group.value:
+            if row is None:
+                return
             item = self._process_dynamic_row(row)
             self.context_menu.append(item)
 

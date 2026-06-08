@@ -166,7 +166,9 @@ class PreConnectionAssistant(Gtk.Box):
         self.mods_placeholder = Placeholder("This server has no mods.")
         self.tree_box.add(self.mods_placeholder)
 
-        self.tree_frame = HeadingFrame(self.tree_box, preconnect.mods)
+        self.tree_frame = HeadingFrame.new_with_widget_and_label(
+            self.tree_box, preconnect.mods
+        )
 
         # TODO: abstract into components
         self.warning_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -175,7 +177,9 @@ class PreConnectionAssistant(Gtk.Box):
         self.warning_placeholder = Placeholder("No warnings.")
         self.warning_box.add(self.warning_tree)
         self.warning_box.add(self.warning_placeholder)
-        self.warning_frame = HeadingFrame(self.warning_box, preconnect.warnings)
+        self.warning_frame = HeadingFrame.new_with_widget_and_label(
+            self.warning_box, preconnect.warnings
+        )
 
         self.error_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.error_tree = MaskedTree(ERROR)
@@ -183,7 +187,9 @@ class PreConnectionAssistant(Gtk.Box):
         self.error_placeholder = Placeholder("No errors.")
         self.error_box.add(self.error_tree)
         self.error_box.add(self.error_placeholder)
-        self.error_frame = HeadingFrame(self.error_box, preconnect.errors)
+        self.error_frame = HeadingFrame.new_with_widget_and_label(
+            self.error_box, preconnect.errors
+        )
 
         self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.box.add(self.title)

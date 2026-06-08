@@ -187,12 +187,14 @@ class Options(Gtk.Box):
         if prefs.is_debug:
             grid.attach(developers, 1, 0, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
 
-        for frame in [
-            HeadingFrame(api_box, strings.options.api_keys),
-            HeadingFrame(prefs_grid, strings.options.prefs),
-            HeadingFrame(mods_grid, strings.options.mods),
-            HeadingFrame(version_grid, strings.options.version),
+        for pair in [
+            (api_box, strings.options.api_keys),
+            (prefs_grid, strings.options.prefs),
+            (mods_grid, strings.options.mods),
+            (version_grid, strings.options.version),
         ]:
+
+            frame = HeadingFrame.new_with_widget_and_label(*pair)
             grid.attach(frame, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
             row += 1
 
