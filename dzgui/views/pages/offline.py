@@ -84,19 +84,22 @@ class ModFrame(HeadingFrame):
         self.scrolled.set_margin_end(10)
         self.scrolled.set_size_request(600, 400)
         self.scrolled.add(self.tree)
+
         self.status = Gtk.Label(
             halign=Gtk.Align.START, margin_start=5, margin_top=3, margin_bottom=3
         )
 
-        self.vbox.pack_end(self.status, expand=False, fill=False, padding=0)
-        self.vbox.pack_end(self.scrolled, expand=False, fill=False, padding=0)
+        self.tree_vbox = VBox()
+        self.tree_vbox.extend([self.scrolled, self.status])
+
+        self.vbox.add(self.tree_vbox)
         self.frame.add(self.vbox)
 
         sel = self.tree.get_selection()
         sel.connect("changed", self._on_selection_changed)
 
     def collapse_tree(self) -> None:
-        self.scrolled.hide()
+        self.tree_vbox.hide()
 
     def get_tree(self) -> OfflineModTreeView:
         return self.tree
