@@ -12,7 +12,7 @@ from dzgui.const.constants import (
 )
 from dzgui.const.enum import NotebookPage, Preferences
 from dzgui.managers.offline import OfflineManager
-from dzgui.strings import offline
+from dzgui.strings import generic, offline
 from dzgui.views.components.buttons import IconTextButton
 from dzgui.views.components.frame import HeadingFrame
 from dzgui.views.components.scrollable import NoOverlayScrolledWindow
@@ -64,7 +64,9 @@ class FolderHBox(HBox):
 
         # TODO: alternate class for left-aligned icons
         self.button = IconTextButton(FOLDER, btn_label)
+        self.button.set_halign(Gtk.Align.START)
         self.button.set_image_position(Gtk.PositionType.LEFT)
+
         self.label = Gtk.Label()
         self.extend([self.button, self.label])
 
@@ -119,8 +121,7 @@ class ModFrame(HeadingFrame):
     def _on_selection_changed(self, sel: Gtk.TreeSelection) -> None:
         model, rows = sel.get_selected_rows()
         if len(rows) == 0:
-            # TODO recycle (util.format)
-            status = "Ctrl-click to select multiple; Shift-click to select a range."
+            status = generic.selectable_tree
         else:
             status = f"Mods selected: {len(rows)}"
         self.status.set_label(status)
@@ -148,6 +149,16 @@ class CustomModFrame(ModFrame):
         folder = self.controller.set_custom_folder()
         if folder is not None:
             self.custom_hbox.set_label(str(folder))
+        # TODO:
+        # self.controller.get_custom_mods()
+        from dzgui.managers.offline import OfflineManager
+
+        om = OfflineManager(self.controller)
+        store = om.parse_custom_mods(folder)
+
+        # FIXME: button should appear before tree vbox
+        self.tree.set_model(store)
+        self.tree_vbox.show()
 
     def get_mods(self) -> list[str]:
         rows = self.tree.get_selection().get_selected_rows()

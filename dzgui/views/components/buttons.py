@@ -48,10 +48,8 @@ class LargeIcon(Gtk.Image):
 
 
 class IconButton(Gtk.Button):
-    def __init__(
-        self, icon: str, margin: int = 0, halign: Gtk.Align = Gtk.Align.START
-    ) -> None:
-        super().__init__(halign=halign)
+    def __init__(self, icon: str, margin: int = 0) -> None:
+        super().__init__()
         self.icon = Icon(icon, l_margin=margin)
         self.set_image(self.icon)
         self.set_image_position(Gtk.PositionType.RIGHT)
@@ -59,10 +57,8 @@ class IconButton(Gtk.Button):
 
 
 class IconTextButton(IconButton):
-    def __init__(
-        self, icon: str, label: str, halign: Gtk.Align = Gtk.Align.START
-    ) -> None:
-        super().__init__(icon, margin=5, halign=halign)
+    def __init__(self, icon: str, label: str) -> None:
+        super().__init__(icon, margin=5)
         self.set_label(label)
 
 

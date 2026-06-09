@@ -29,12 +29,13 @@ class OfflineManager:
         self.custom_mods: list[str] | None
 
     # TODO: strings
-    @call_on_thread("parsing")
+    #@call_on_thread("parsing")
     def parse_custom_mods(self, folder: str) -> "FastInsertListStore":
         mods = get_custom_mods(Path(folder))
         store = ModelFactory().make_mod_store()
         store.extend(mods)
         # TODO: manipulate tree columns to only show name and size
+        # TODO: return store from cleanup function
         return store
 
     def setup(
