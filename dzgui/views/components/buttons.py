@@ -63,7 +63,6 @@ class IconTextButton(IconButton):
         self, icon: str, label: str, halign: Gtk.Align = Gtk.Align.START
     ) -> None:
         super().__init__(icon, margin=5, halign=halign)
-        print(icon)
         self.set_label(label)
 
 
