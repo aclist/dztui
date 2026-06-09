@@ -8,12 +8,14 @@ from dzgui.const.constants import (
     APPID_DAYZ_EXP,
     APPNAME_DAYZ,
     APPNAME_DAYZ_EXP_HUMAN,
+    FOLDER,
 )
 from dzgui.const.enum import NotebookPage, Preferences
 from dzgui.managers.offline import OfflineManager
 from dzgui.strings import offline
-from dzgui.views.components.scrollable import NoOverlayScrolledWindow
+from dzgui.views.components.buttons import IconTextButton
 from dzgui.views.components.frame import HeadingFrame
+from dzgui.views.components.scrollable import NoOverlayScrolledWindow
 from dzgui.views.trees.tree_mods import OfflineModTreeView
 
 
@@ -60,8 +62,9 @@ class FolderHBox(HBox):
         self.set_margin_start(10)
         self.set_margin_bottom(10)
 
-        # TODO: use IconButton with folder-symbolic
-        self.button = Gtk.Button(label=btn_label, halign=Gtk.Align.START)
+        # TODO: alternate class for left-aligned icons
+        self.button = IconTextButton(FOLDER, btn_label)
+        self.button.set_image_position(Gtk.PositionType.LEFT)
         self.label = Gtk.Label()
         self.extend([self.button, self.label])
 
@@ -200,7 +203,6 @@ class OfflineLoader(Gtk.Box):
             margin_end=10,
         )
 
-        # TODO: spacing between inner and outer scrollbars
         self.controller = controller
         self.controller.register_widget("offline_loader", self)
         self.offline_man = OfflineManager(controller)
