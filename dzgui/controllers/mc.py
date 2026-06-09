@@ -20,7 +20,6 @@ from dzgui.controllers.emitter import Emitter
 from dzgui.managers.config import ConfigManager
 from dzgui.managers.connection import ConnectionManager
 from dzgui.managers.contextmenu import ContextMenuManager
-from dzgui.managers.mods import ModManager
 from dzgui.managers.notes import NoteManager
 from dzgui.model.servers import ServerModelManager
 from dzgui.util.diag import write_diagnostic
@@ -236,7 +235,7 @@ class Controller(GObject.GObject):
         mod_man.toggle_mod_selection(state)
 
     def delete_mods(
-        self, treeview: Union["ModTreeView", "OfflineModTreeView"] = None
+        self, treeview: Union["ModTreeView", "OfflineModTreeView", None] = None
     ) -> None:
         if treeview is None:
             view = self.mediator.modtreeview

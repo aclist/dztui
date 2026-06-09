@@ -1,3 +1,4 @@
+from typing import Self
 from dzgui.util import css
 
 import gi
@@ -21,7 +22,7 @@ class HeadingFrame(Gtk.Box):
         self.add(self.frame)
 
     @classmethod
-    def new_with_widget_and_label(cls, widget: Gtk.Widget, label: str) -> None:
+    def new_with_widget_and_label(cls, widget: Gtk.Widget, label: str) -> Self:
         n = cls()
         n.frame.add(widget)
         n.label.set_label(label)

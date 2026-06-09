@@ -45,7 +45,7 @@ class ContextMixin(TreeView):
 
         for row in group.value:
             if row is None:
-                return
+                return False
             item = self._process_dynamic_row(row)
             self.context_menu.append(item)
 

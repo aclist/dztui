@@ -166,5 +166,5 @@ class ModelFactory:
     def make_server_store(self) -> FastInsertListStore:
         return self.new_model_from_class(ServerCols)
 
-    def convert_model_to_list(self, model: "FastInsertListStore") -> list:
-        return [[el for el in row] for row in model]
+    # def convert_model_to_list(self, model: "FastInsertListStore") -> list:
+    #     return [[el for el in row] for row in model]

@@ -104,7 +104,7 @@ class ModFrame(HeadingFrame):
     def get_tree(self) -> OfflineModTreeView:
         return self.tree
 
-    def pack_start(self, widget: Gtk.Widget) -> None:
+    def pack(self, widget: Gtk.Widget) -> None:
         self.vbox.pack_start(widget, expand=False, fill=False, padding=5)
 
     def set_model(self, model: "FastInsertListStore") -> None:
@@ -136,14 +136,13 @@ class CustomModFrame(ModFrame):
         self.custom_hbox = FolderHBox(offline.custom_button)
         self.custom_hbox.get_button().connect("clicked", self._on_custom_button_clicked)
 
-        self.pack_start(self.custom_hbox)
+        self.pack(self.custom_hbox)
 
     def _on_custom_button_clicked(self, button: Gtk.Button) -> None:
         # TODO: recycle for mission folder
         # TODO: propagate results back to parent
         folder = self.controller.set_custom_folder()
         if folder is not None:
-            # TODO: CustomModManager
             self.custom_hbox.set_label(str(folder))
 
 
@@ -154,7 +153,7 @@ class RadioFrame(HeadingFrame):
         self.controller = controller
 
         self.id_map = {APPNAME_DAYZ: APPID_DAYZ, APPNAME_DAYZ_EXP_HUMAN: APPID_DAYZ_EXP}
-        self.appid: APPID_DAYZ
+        self.appid = APPID_DAYZ
 
         self.dayz = Gtk.RadioButton.new_with_label(None, APPNAME_DAYZ)
         self.dayz_exp = Gtk.RadioButton.new_with_label_from_widget(
@@ -259,7 +258,8 @@ class OfflineLoader(Gtk.Box):
         self.controller.open_page(NotebookPage.MODS)
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
-        appid = self.radio_frame.get_appid()
+        # appid = self.radio_frame.get_appid()
+        # TODO; delegate to OfflineManager
         """
         - collect symlinks to selected mods
             cf. rebuild_symlinks()
