@@ -1,6 +1,7 @@
 import re
 
 from dzgui.util.localize import number
+from dzgui.strings.generic import selectable_tree
 from dzgui.util.strings import no_mods, no_servers, workshop
 
 import gi
@@ -46,8 +47,7 @@ def format_mods(size: int, mods: int) -> str:
         return no_mods
     l_size = number(size)
     plural = pluralize("mods", mods)
-    # TODO: strings
-    suffix = "Ctrl-click to select multiple; Shift-click to select a range."
+    suffix = selectable_tree
     return f"Found {mods:n} {plural} taking up {l_size} MiB. {suffix}"
 
 
