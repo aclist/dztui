@@ -162,7 +162,7 @@ def load_to_menu(client: str, appid: int, name: str, mods: list[str]) -> int:
     proc = subprocess.run([*client_args, *params])
     return proc.returncode
 
-def launch_offline(client: str, addr: str, appid: int, name: str, mods: list[str], mission: str) -> int:
+def launch_offline(client: str, appid: int, name: str, mods: list[str], mission: str) -> int:
     """Launch offline with specific mods/missions"""
     concat = concat_mods(mods)
     client_args = concat_bash_args(client)
