@@ -154,7 +154,7 @@ class PreConnectionAssistant(Gtk.Box):
         self.progress_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
         self.progress_box.add(self.mod_count)
 
-        self.scrolled = Gtk.ScrolledWindow()
+        self.scrolled = Gtk.ScrolledWindow(margin_end=10)
         self.scrolled.add(self.tree)
         self.scrolled.set_size_request(600, 400)
 

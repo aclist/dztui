@@ -3,7 +3,12 @@ from typing import Self, Sequence, TYPE_CHECKING
 
 from dzgui.util import css
 import dzgui.api.pefile as PeFile
-from dzgui.const.constants import APPID_DAYZ, APPID_DAYZ_EXP, APPNAME_DAYZ, APPNAME_DAYZ_EXP_HUMAN
+from dzgui.const.constants import (
+    APPID_DAYZ,
+    APPID_DAYZ_EXP,
+    APPNAME_DAYZ,
+    APPNAME_DAYZ_EXP_HUMAN,
+)
 from dzgui.const.enum import NotebookPage, Preferences
 from dzgui.strings import offline
 from dzgui.views.components.scrollable import NoOverlayScrolledWindow
@@ -76,6 +81,7 @@ class ModFrame(HeadingFrame):
         self.tree.set_model(None)
 
         self.scrolled = NoOverlayScrolledWindow()
+        self.scrolled.set_margin_end(10)
         self.scrolled.set_size_request(600, 400)
         self.scrolled.add(self.tree)
         self.status = Gtk.Label(
@@ -105,12 +111,17 @@ class ModFrame(HeadingFrame):
 
     def _on_selection_changed(self, sel: Gtk.TreeSelection) -> None:
         model, rows = sel.get_selected_rows()
-        status = f"Mods selected: {len(rows)}"
+        if len(rows) == 0:
+            # TODO recycle (util.format)
+            status = "Ctrl-click to select multiple; Shift-click to select a range."
+        else:
+            status = f"Mods selected: {len(rows)}"
         self.status.set_label(status)
 
     def set_cursor(self) -> None:
         path = Gtk.TreePath.new_from_indices([0])
         self.tree.set_cursor(path)
+        self.tree.get_selection().unselect_all()
 
 
 class CustomModFrame(ModFrame):
@@ -154,6 +165,7 @@ class RadioFrame(HeadingFrame):
 
         self.frame.add(self.radio_box)
 
+        # TODO: abstract out of here
         default_steam_path = self.controller.query_config(Preferences.DEFAULT)
         steam_path = Path(default_steam_path)
         dayz_exp = PeFile.get_pretty_version(steam_path, APPID_DAYZ_EXP)
