@@ -10,6 +10,7 @@ from dzgui.const.constants import (
     APPNAME_DAYZ_EXP_HUMAN,
 )
 from dzgui.const.enum import NotebookPage, Preferences
+from dzgui.managers.offline import OfflineManager
 from dzgui.strings import offline
 from dzgui.views.components.scrollable import NoOverlayScrolledWindow
 from dzgui.views.components.frame import HeadingFrame
@@ -145,6 +146,11 @@ class CustomModFrame(ModFrame):
         if folder is not None:
             self.custom_hbox.set_label(str(folder))
 
+    def get_mods(self) -> list[str]:
+        rows = self.tree.get_selection().get_selected_rows()
+        dirs = [str(col[0]) for col in rows]
+        return dirs
+
 
 class RadioFrame(HeadingFrame):
     def __init__(self, controller: "Controller") -> None:
@@ -197,13 +203,13 @@ class OfflineLoader(Gtk.Box):
         # TODO: spacing between inner and outer scrollbars
         self.controller = controller
         self.controller.register_widget("offline_loader", self)
+        self.offline_man = OfflineManager(controller)
 
         self.add(PageHeading(offline.heading))
 
         self.local_frame = ModFrame(controller, offline.local_frame)
         self.custom_frame = CustomModFrame(controller, offline.custom_frame)
 
-        # TODO: use ModelFactory
         # TODO: suppress symlink column
         self.custom_tree = OfflineModTreeView(controller)
 
@@ -259,10 +265,8 @@ class OfflineLoader(Gtk.Box):
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
         # appid = self.radio_frame.get_appid()
-        # TODO; delegate to OfflineManager
-        """
-        - collect symlinks to selected mods
-            cf. rebuild_symlinks()
-        - create symlinks for custom mods
-        - collect mission folder
-        """
+        # mission = self.mission_frame.get_mission()
+        # local_mods = self.local_frame.get_mods()
+        # custom_mods = self.custom_frame.get_mods()
+        # self.offline_man.setup(appid, mission, local_mods, custom_mods)
+        pass

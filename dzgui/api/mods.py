@@ -87,15 +87,18 @@ def get_mod_size(path: Path) -> float:
     return size
 
 
-def get_delimited_mods(steam_path: Path) -> list[Any]:
-    workshop_path = get_local_mod_path(steam_path)
-    mods = get_local_mods(workshop_path)
+def get_custom_mods(path: Path) -> list[Any]:
+    mods = get_local_mods(path)
+    # TODO: error handling
+    return parse_mods(mods)
+
+
+def parse_mods(mods: list[Path]) -> list[Any]:
     clean = []
     for mod in mods:
         mod_dir = mod.name
         symlink = _hash(mod_dir)
         # FIXME: malformed .cpp files could break this
-        # mention that mods may be downloading
         meta = parse_meta(mod)
         if meta is None:
             continue
@@ -104,6 +107,12 @@ def get_delimited_mods(steam_path: Path) -> list[Any]:
         clean.append([meta.name, symlink, mod_dir, size, False])
     clean.sort(key=lambda row: str(row[0]).casefold())
     return clean
+
+
+def get_delimited_mods(steam_path: Path) -> list[Any]:
+    workshop_path = get_local_mod_path(steam_path)
+    mods = get_local_mods(workshop_path)
+    return parse_mods(mods)
 
 
 def get_missing_mods(local: list, remote: list) -> list:
