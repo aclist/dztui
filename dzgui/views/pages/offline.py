@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pathlib import Path
 from typing import Self, Sequence, TYPE_CHECKING
 
@@ -17,7 +18,6 @@ from dzgui.views.components.buttons import IconTextButton
 from dzgui.views.components.frame import HeadingFrame
 from dzgui.views.components.scrollable import NoOverlayScrolledWindow
 from dzgui.views.trees.tree_mods import OfflineModTreeView
-
 
 
 import gi
@@ -108,6 +108,8 @@ class ModFrame(HeadingFrame):
 
     def get_mods(self) -> list[str]:
         model = self.tree.get_model()
+        if model is None:
+            return []
         return [row[1] for row in model]
 
     def collapse_tree(self) -> None:
@@ -139,7 +141,9 @@ class ModFrame(HeadingFrame):
 
 
 class CustomModFrame(ModFrame):
-    def __init__(self, parent: Gtk.Widget, controller: "Controller", heading: str) -> None:
+    def __init__(
+        self, parent: OfflineLoader, controller: "Controller", heading: str
+    ) -> None:
         super().__init__(controller, heading)
 
         self.parent = parent
@@ -155,8 +159,13 @@ class CustomModFrame(ModFrame):
 
         self.emitter.connect("custom_mods_loaded", self._on_custom_mods_loaded)
 
-
-    def _on_custom_mods_loaded(self, emitter: "Emitter", store: "FastInsertListStore", folder: str, has_duplicates: bool) -> None:
+    def _on_custom_mods_loaded(
+        self,
+        emitter: "Emitter",
+        store: "FastInsertListStore",
+        folder: str,
+        has_duplicates: bool,
+    ) -> None:
         if len(store) == 0:
             # TODO: pop error dialog area
             # block button access
@@ -170,7 +179,6 @@ class CustomModFrame(ModFrame):
             # TODO: pop relevant error
             # duplicates should block button access
             pass
-
 
     def _on_custom_button_clicked(self, button: Gtk.Button) -> None:
         self.parent.parse_mods()
