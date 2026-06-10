@@ -111,6 +111,13 @@ class ModFrame(HeadingFrame):
         sel = self.tree.get_selection()
         sel.connect("changed", self._on_selection_changed)
 
+        # TODO: warnings area
+        # valid warnings (one at a time):
+        # - name collision within custom mods
+        # - name collision b/w custom and local (permissible)
+        # - no mods
+        # - not a valid mission
+
     def get_mods(self) -> list[str]:
         model = self.tree.get_model()
         if model is None:
@@ -295,6 +302,10 @@ class OfflineLoader(Gtk.Box):
         self.add(self.button_box)
 
     def _on_mission_clicked(self, button: Gtk.Button) -> None:
+        # process path, cf. set_custom_folder()
+        # file = path / "init.c"
+        # if not file.exists():
+        # pop warning
         pass
 
     def parse_mods(self) -> None:

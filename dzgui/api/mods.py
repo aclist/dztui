@@ -122,10 +122,7 @@ def get_missing_mods(local: list, remote: list) -> list:
 def _hash(uid: str, use_custom: bool = False) -> str:
     md5 = hashlib.md5()
     md5.update(uid.encode("ascii"))
-    if use_custom:
-        prefix = "@C"
-    else:
-        prefix = "@"
+    prefix = "@C" if use_custom else "@"
     return prefix + md5.hexdigest()[:8]
 
 
