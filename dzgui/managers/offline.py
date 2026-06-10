@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from dzgui.api.mods import get_custom_mods
 from dzgui.api.steam import launch_offline
 from dzgui.const.enum import Preferences
-from dzgui.managers.threading import call_on_thread, ThreadingManager
+from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.model.model_factory import FastInsertListStore, ModelFactory
 from dzgui.strings import dialogs
 from dzgui.util.symlink import clone_symlinks
@@ -21,6 +21,7 @@ class OfflineManager:
         super().__init__()
 
         self.controller = controller
+        self.emitter = controller.get_emitter()
         self.thread_man = ThreadingManager(controller)
 
         self.appid: int
@@ -29,14 +30,21 @@ class OfflineManager:
         self.custom_mods: list[str] | None
 
     # TODO: strings
-    #@call_on_thread("parsing")
-    def parse_custom_mods(self, folder: str) -> "FastInsertListStore":
+    @call_on_thread("parsing")
+    def parse_custom_mods(self, local_mods: list[str], folder: str) -> "FastInsertListStore":
         mods = get_custom_mods(Path(folder))
         store = ModelFactory().make_mod_store()
         store.extend(mods)
-        # TODO: manipulate tree columns to only show name and size
+
+        has_duplicates = False
+        for row in store:
+            if row[1] in local_mods:
+                row[-1]=True
+                has_duplicates = True
+
+        func = self.emitter.emit("custom_mods_loaded", store, folder, has_duplicates)
+        self.thread_man.set_cleanup_func(func)
         # TODO: return store from cleanup function
-        return store
 
     def setup(
         self,

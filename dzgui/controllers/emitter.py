@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 import gi
-
 gi.require_version("Gtk", "3.0")
 from gi.repository.Gtk import ListStore  # noqa E402
 from gi.repository import Gdk, GObject  # noqa E402
@@ -153,4 +152,8 @@ class Emitter(GObject.GObject):
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def lan_page_initialized(self) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object, str))
+    def custom_mods_loaded(self, store: "FastInsertListStore", folder: str) -> None:
         pass

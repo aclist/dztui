@@ -19,6 +19,7 @@ from dzgui.views.components.scrollable import NoOverlayScrolledWindow
 from dzgui.views.trees.tree_mods import OfflineModTreeView
 
 
+
 import gi
 
 gi.require_version("Gtk", "3.0")
@@ -133,36 +134,45 @@ class ModFrame(HeadingFrame):
 
 
 class CustomModFrame(ModFrame):
-    def __init__(self, controller: "Controller", heading: str) -> None:
+    def __init__(self, parent: Gtk.Widget, controller: "Controller", heading: str) -> None:
         super().__init__(controller, heading)
 
+        self.parent = parent
+
         self.controller = controller
+        self.emitter = controller.get_emitter()
+
         # TODO: descriptive text here explaining how this area works
         self.custom_hbox = FolderHBox(offline.custom_button)
         self.custom_hbox.get_button().connect("clicked", self._on_custom_button_clicked)
 
         self.pack(self.custom_hbox)
 
+        self.emitter.connect("custom_mods_loaded", self._on_custom_mods_loaded)
+
+
+    def _on_custom_mods_loaded(self, store: "FastInsertListStore", folder: str, has_duplicates: bool) -> None:
+        if len(store) == 0:
+            # TODO: pop error dialog area
+            # block button access
+            pass
+        else:
+            self.custom_hbox.set_label(folder)
+            self.tree.set_model(store)
+            self.tree_vbox.show()
+
+        if has_duplicates:
+            # TODO: pop relevant error
+            # duplicates should block button access
+            pass
+
+
     def _on_custom_button_clicked(self, button: Gtk.Button) -> None:
-        # TODO: recycle for mission folder
-        # TODO: propagate results back to parent
-        folder = self.controller.set_custom_folder()
-        if folder is not None:
-            self.custom_hbox.set_label(str(folder))
-        # TODO:
-        # self.controller.get_custom_mods()
-        from dzgui.managers.offline import OfflineManager
-
-        om = OfflineManager(self.controller)
-        store = om.parse_custom_mods(folder)
-
-        # FIXME: button should appear before tree vbox
-        self.tree.set_model(store)
-        self.tree_vbox.show()
+        self.parent.parse_mods()
 
     def get_mods(self) -> list[str]:
         rows = self.tree.get_selection().get_selected_rows()
-        dirs = [str(col[0]) for col in rows]
+        dirs = [str(col[1]) for col in rows]
         return dirs
 
 
@@ -263,6 +273,14 @@ class OfflineLoader(Gtk.Box):
         self.add(self.scrollable)
         self.add(self.button_box)
 
+    def parse_mods(self) -> None:
+        # TODO:
+        local_mods = self.local_frame.get_mods()
+        folder = self.controller.set_custom_folder()
+        if folder is not None:
+            # TODO:
+            self.offline_man.parse_custom_mods(local_mods, folder)
+
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
         if event.keyval == Gdk.KEY_Escape:
             self.back.emit("clicked")
@@ -270,6 +288,7 @@ class OfflineLoader(Gtk.Box):
     def populate(self, store: "FastInsertListStore") -> None:
         self.local_frame.set_model(store)
         # TODO: toggle if empty model, show warning label
+        # NOTE: there may be no local mods
         # TODO: suppress trees if there are no mods
         self.custom_frame.collapse_tree()
 
@@ -277,6 +296,9 @@ class OfflineLoader(Gtk.Box):
         self.controller.open_page(NotebookPage.MODS)
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
+        # TODO; block button access if no mods are selected
+        # TODO: consider hooking up to emitter and changing button state whenever mods are selected
+
         # appid = self.radio_frame.get_appid()
         # mission = self.mission_frame.get_mission()
         # local_mods = self.local_frame.get_mods()
