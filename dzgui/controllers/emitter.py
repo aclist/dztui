@@ -155,6 +155,6 @@ class Emitter(GObject.GObject):
     def lan_page_initialized(self) -> None:
         pass
 
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object, str))
-    def custom_mods_loaded(self, store: "FastInsertListStore", folder: str) -> None:
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object, str, bool))
+    def custom_mods_loaded(self, store: "FastInsertListStore", folder: str, has_duplicates: bool) -> None:
         pass

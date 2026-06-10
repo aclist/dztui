@@ -27,6 +27,7 @@ from gi.repository import Gtk, Gdk  # noqa
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
     from dzgui.model.model_factory import FastInsertListStore
 
 
@@ -105,6 +106,10 @@ class ModFrame(HeadingFrame):
         sel = self.tree.get_selection()
         sel.connect("changed", self._on_selection_changed)
 
+    def get_mods(self) -> list[str]:
+        model = self.tree.get_model()
+        return [row[1] for row in model]
+
     def collapse_tree(self) -> None:
         self.tree_vbox.hide()
 
@@ -151,7 +156,7 @@ class CustomModFrame(ModFrame):
         self.emitter.connect("custom_mods_loaded", self._on_custom_mods_loaded)
 
 
-    def _on_custom_mods_loaded(self, store: "FastInsertListStore", folder: str, has_duplicates: bool) -> None:
+    def _on_custom_mods_loaded(self, emitter: "Emitter", store: "FastInsertListStore", folder: str, has_duplicates: bool) -> None:
         if len(store) == 0:
             # TODO: pop error dialog area
             # block button access
@@ -274,7 +279,7 @@ class OfflineLoader(Gtk.Box):
         self.add(self.button_box)
 
     def parse_mods(self) -> None:
-        # TODO:
+        # TODO: check method on custom frame
         local_mods = self.local_frame.get_mods()
         folder = self.controller.set_custom_folder()
         if folder is not None:

@@ -115,9 +115,12 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
         val = model[it][3]
         formatted = localize.number(val)
         cell.set_property("text", formatted)
+        # NOTE: reapply color property after float conversion
+        self._format_color(column, cell, model, it, data)
 
     def set_menu(self, context: ContextMenuGroup) -> None:
         self.menu = context
+
 
 class OfflineModTreeView(ModTreeView):
     def __init__(self, controller: "Controller") -> None:
