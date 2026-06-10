@@ -231,7 +231,7 @@ class OfflineLoader(Gtk.Box):
         self.add(PageHeading(offline.heading))
 
         self.local_frame = ModFrame(controller, offline.local_frame)
-        self.custom_frame = CustomModFrame(controller, offline.custom_frame)
+        self.custom_frame = CustomModFrame(self, controller, offline.custom_frame)
 
         # TODO: suppress symlink column
         self.custom_tree = OfflineModTreeView(controller)

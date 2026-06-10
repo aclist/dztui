@@ -10,6 +10,7 @@ from dzgui.api.mods import remove_stale_signatures as remove_stale
 from dzgui.config.ipdb import get_ipdb
 from dzgui.const.constants import HEX_GREEN, HEX_RED
 from dzgui.init.coords import get_local_coords
+from dzgui.init.dayz import is_dayz_installed
 from dzgui.init.update import check_updates
 from dzgui.const.constants import EXPAND, FILL
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
@@ -119,6 +120,7 @@ class BootDialog(Gtk.Dialog):
         self.error_box.hide()
 
         steps = [
+            (StoredFunc(is_dayz_installed, self.xdg.config), preboot.dayz, False),
             (StoredFunc(rebuild_symlinks, self.xdg.config), preboot.symlinks, False),
             (
                 StoredFunc(remove_stale, self.xdg.config, self.xdg.version),
@@ -126,6 +128,7 @@ class BootDialog(Gtk.Dialog):
                 False,
             ),
             (StoredFunc(get_ipdb, self.xdg.ips), preboot.geo, False),
+            # TODO: handle IP DB failure and use coords fallback
             (StoredFunc(get_local_coords, self.xdg.ips), preboot.coords, True),
             (StoredFunc(check_updates, self.version), preboot.updates, True),
         ]

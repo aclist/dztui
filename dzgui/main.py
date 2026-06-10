@@ -11,7 +11,6 @@ from dzgui.const.enum import Preferences
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
 from dzgui.config.xdg import get_xdg_paths, parse_filepaths
-from dzgui.init.dayz import is_dayz_installed
 from dzgui.init.flock import lock_acquire
 from dzgui.init.migrate import (
     has_new_config,
@@ -124,17 +123,8 @@ def main() -> None:
         if has_steam_client() is False:
             EarlyAlertDialog(init.requires_steam)
 
-    is_dayz_installed(XDG.config)
-
     bootwin = BootWindow(XDG, version)
     local_coords, latest_release = bootwin.get_results()
-
-    # rebuild_symlinks(XDG.config)
-    # remove_stale_signatures(XDG.config, XDG.version)
-
-    ## TODO: handle IP DB failure and use coords fallback
-    # local_coords = get_local_coords(XDG.ips)
-    # latest_release = check_updates(version)
 
     use_miles = lookup(XDG.config, Preferences.DIST)
     prefs = UserPrefs(

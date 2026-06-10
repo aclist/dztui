@@ -5,7 +5,7 @@ from dzgui.api.mods import get_custom_mods
 from dzgui.api.steam import launch_offline
 from dzgui.const.enum import Preferences
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
-from dzgui.model.model_factory import FastInsertListStore, ModelFactory
+from dzgui.model.model_factory import ModelFactory
 from dzgui.strings import dialogs
 from dzgui.util.symlink import clone_symlinks
 
@@ -31,7 +31,7 @@ class OfflineManager:
 
     # TODO: strings
     @call_on_thread("parsing")
-    def parse_custom_mods(self, local_mods: list[str], folder: str) -> "FastInsertListStore":
+    def parse_custom_mods(self, local_mods: list[str], folder: str) -> None:
         mods = get_custom_mods(Path(folder))
         store = ModelFactory().make_mod_store()
         store.extend(mods)
@@ -44,7 +44,6 @@ class OfflineManager:
 
         func = StoredFunc(self.emitter.emit, "custom_mods_loaded", store, folder, has_duplicates)
         self.thread_man.set_cleanup_func(func)
-        # TODO: return store from cleanup function
 
     def setup(
         self,
