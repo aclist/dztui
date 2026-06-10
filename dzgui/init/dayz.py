@@ -6,7 +6,7 @@ from pathlib import Path
 from dzgui.config.query import lookup
 from dzgui.const.constants import APPID_DAYZ, APP_NAME, LIBRARYFOLDERS_PATH
 from dzgui.const.enum import Preferences
-from dzgui.strings.errors import dayz_not_installed
+from dzgui.strings.errors import dayz_not_found
 from dzgui.views.dialogs.early_alert import EarlyAlertDialog
 
 import dzgui.api.pefile as PeFile

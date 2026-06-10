@@ -42,7 +42,7 @@ class OfflineManager:
                 row[-1]=True
                 has_duplicates = True
 
-        func = self.emitter.emit("custom_mods_loaded", store, folder, has_duplicates)
+        func = StoredFunc(self.emitter.emit, "custom_mods_loaded", store, folder, has_duplicates)
         self.thread_man.set_cleanup_func(func)
         # TODO: return store from cleanup function
 

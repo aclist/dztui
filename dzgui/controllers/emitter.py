@@ -7,6 +7,7 @@ from gi.repository import Gdk, GObject  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.const.enum import NotebookPage, ServerTab
+    from dzgui.model.model_factory import FastInsertListStore
 
 
 # TODO: if servers fail to load, may leave dangling widgets waiting for a signal
