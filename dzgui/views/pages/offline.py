@@ -102,11 +102,11 @@ class ModFrame(HeadingFrame):
         self.tree_vbox.extend([self.scrolled, self.status])
 
         self.vbox.pack_end(self.tree_vbox, expand=True, fill=True, padding=3)
-        # self.vbox.add(self.tree_vbox)
         self.frame.add(self.vbox)
-        #self.none_label = Gtk.Label(label="No mods found", halign=Gtk.Align.START)
-        #self.vbox.pack_end(self.none_label, expand=True, fill=True, padding=3)
-        #self.none_label.hide()
+        # self.vbox.add(self.tree_vbox)
+        # self.none_label = Gtk.Label(label="No mods found", halign=Gtk.Align.START)
+        # self.vbox.pack_end(self.none_label, expand=True, fill=True, padding=3)
+        # self.none_label.hide()
 
         sel = self.tree.get_selection()
         sel.connect("changed", self._on_selection_changed)
@@ -330,5 +330,6 @@ class OfflineLoader(Gtk.Box):
         # mission = self.mission_frame.get_mission()
         # local_mods = self.local_frame.get_mods()
         # custom_mods = self.custom_frame.get_mods()
+        # cf. api.mods._hash(uid, use_custom=True)
         # self.offline_man.setup(appid, mission, local_mods, custom_mods)
         pass

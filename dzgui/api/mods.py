@@ -119,10 +119,14 @@ def get_missing_mods(local: list, remote: list) -> list:
     return [mod for mod in remote if mod not in local]
 
 
-def _hash(uid: str) -> str:
+def _hash(uid: str, use_custom: bool = False) -> str:
     md5 = hashlib.md5()
     md5.update(uid.encode("ascii"))
-    return "@" + md5.hexdigest()[:8]
+    if use_custom:
+        prefix = "@C"
+    else:
+        prefix = "@"
+    return prefix + md5.hexdigest()[:8]
 
 
 def remove_stale_signatures(config: Path, versions: Path) -> None:
