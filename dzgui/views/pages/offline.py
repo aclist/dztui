@@ -59,7 +59,7 @@ class PageHeading(Gtk.Label):
 
 class FolderHBox(HBox):
     def __init__(self, btn_label: str) -> None:
-        super().__init__(spacing=5)
+        super().__init__(spacing=10)
 
         self.set_margin_start(10)
         self.set_margin_bottom(10)
@@ -87,10 +87,11 @@ class ModFrame(HeadingFrame):
 
         self.tree = OfflineModTreeView(controller)
         self.tree.set_model(None)
+        self.tree.set_valign(Gtk.Align.FILL)
 
         self.scrolled = NoOverlayScrolledWindow()
-        self.scrolled.set_margin_end(10)
-        self.scrolled.set_size_request(600, 400)
+        self.scrolled.set_margin_end(5)
+        self.scrolled.set_vexpand(True)
         self.scrolled.add(self.tree)
 
         self.status = Gtk.Label(
@@ -100,8 +101,12 @@ class ModFrame(HeadingFrame):
         self.tree_vbox = VBox()
         self.tree_vbox.extend([self.scrolled, self.status])
 
-        self.vbox.add(self.tree_vbox)
+        self.vbox.pack_end(self.tree_vbox, expand=True, fill=True, padding=3)
+        # self.vbox.add(self.tree_vbox)
         self.frame.add(self.vbox)
+        #self.none_label = Gtk.Label(label="No mods found", halign=Gtk.Align.START)
+        #self.vbox.pack_end(self.none_label, expand=True, fill=True, padding=3)
+        #self.none_label.hide()
 
         sel = self.tree.get_selection()
         sel.connect("changed", self._on_selection_changed)
@@ -249,10 +254,13 @@ class OfflineLoader(Gtk.Box):
         # TODO: suppress symlink column
         self.custom_tree = OfflineModTreeView(controller)
 
+        # TODO: custom class
         self.mission_hbox = FolderHBox(offline.mission_button)
         self.mission_frame = HeadingFrame.new_with_widget_and_label(
             self.mission_hbox, offline.mission_frame
         )
+        self.mission_button = self.mission_hbox.get_button()
+        self.mission_button.connect("clicked", self._on_mission_clicked)
 
         self.radio_frame = RadioFrame(controller)
 
@@ -286,8 +294,12 @@ class OfflineLoader(Gtk.Box):
         self.add(self.scrollable)
         self.add(self.button_box)
 
+    def _on_mission_clicked(self, button: Gtk.Button) -> None:
+        pass
+
     def parse_mods(self) -> None:
         # TODO: check method on custom frame
+        # TODO: delegate folderpicker to offline manager
         local_mods = self.local_frame.get_mods()
         folder = self.controller.set_custom_folder()
         if folder is not None:
@@ -300,6 +312,8 @@ class OfflineLoader(Gtk.Box):
 
     def populate(self, store: "FastInsertListStore") -> None:
         self.local_frame.set_model(store)
+        if store is None:
+            self.local_frame.collapse_tree()
         # TODO: toggle if empty model, show warning label
         # NOTE: there may be no local mods
         # TODO: suppress trees if there are no mods
