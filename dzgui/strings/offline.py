@@ -9,3 +9,6 @@ custom_frame = "Custom mods"
 custom_button = "Set custom mod folder"
 
 local_frame = "Installed mods"
+
+no_mods = "No valid mods found"
+no_mission = "Not a valid mission"
