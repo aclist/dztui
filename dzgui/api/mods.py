@@ -48,35 +48,42 @@ def get_local_mods(workshop_path: Path) -> list[Path]:
     mods = [file for file in workshop_path.iterdir() if file.is_dir()]
     return mods
 
+def is_mission(path: Path) -> None:
+    # TODO: parse integrity of other files
+    file = path / "init.c"
+    return file.exists()
 
 def parse_meta(file: Path) -> ModMeta | None:
     mod = file / "meta.cpp"
     if mod.exists() is False:
         return None
-    with open(file / "meta.cpp", "r") as f:
-        st = f.read()
-        lex = shlex.shlex(st)
-        lex.whitespace += "=;"
-        v = []
-        while True:
-            tok = lex.get_token()
-            if not tok:
-                break
-            if tok == "protocol" or tok == "publishedid":
-                ntok = lex.get_token()
-            elif tok == "timestamp":
-                # NOTE: some malformed .NET tick conversions result in numbers < 0
-                ntok = lex.get_token()
-                if ntok == "-":
-                    ntok += str(lex.get_token())
-            elif tok == "name":
-                ntok = lex.get_token()
+    try:
+        with open(file / "meta.cpp", "r") as f:
+            st = f.read()
+            lex = shlex.shlex(st)
+            lex.whitespace += "=;"
+            v = []
+            while True:
+                tok = lex.get_token()
+                if not tok:
+                    break
+                if tok == "protocol" or tok == "publishedid":
+                    ntok = lex.get_token()
+                elif tok == "timestamp":
+                    # NOTE: some malformed .NET tick conversions result in numbers < 0
+                    ntok = lex.get_token()
+                    if ntok == "-":
+                        ntok += str(lex.get_token())
+                elif tok == "name":
+                    ntok = lex.get_token()
+                    if ntok is not None:
+                        ntok = ntok.split('"')[1]
                 if ntok is not None:
-                    ntok = ntok.split('"')[1]
-            if ntok is not None:
-                v.append(ntok)
-        meta = ModMeta(*v)
-        return meta
+                    v.append(ntok)
+            return ModMeta(*v)
+    except Exception as e:
+        logger.critical(e)
+        return None
 
 
 def get_mod_size(path: Path) -> float:
@@ -98,7 +105,6 @@ def parse_mods(mods: list[Path]) -> list[Any]:
     for mod in mods:
         mod_dir = mod.name
         symlink = _hash(mod_dir)
-        # FIXME: malformed .cpp files could break this
         meta = parse_meta(mod)
         if meta is None:
             continue
