@@ -53,13 +53,13 @@ def is_mission(path: Path) -> bool:
     file = path / "init.c"
     return file.exists()
 
-def tokenize(mod: Path) -> dict[Any] | None:
+def tokenize(mod: Path) -> dict[str, Any] | None:
     file = mod.joinpath("meta.cpp")
     delimiter=r"\s*=\s*"
     modmeta = {}
     try:
-        with open(file, "r", encoding="utf-8") as file:
-            for line in file:
+        with open(file, "r", encoding="utf-8") as f:
+            for line in f:
                 line = line.strip().rstrip(";")
                 if not line:
                     continue
