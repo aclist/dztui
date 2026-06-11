@@ -199,7 +199,7 @@ class CustomModFrame(ModFrame):
         self.custom_hbox.hide_label()
         self.tree_vbox.hide()
 
-    def present_tree(self, folder: str, store: "FastInsertListStore") -> None:
+    def present_tree(self, store: "FastInsertListStore", folder: str) -> None:
         self.custom_hbox.set_label(folder)
         self.tree.set_model(store)
         self.tree_vbox.show()
@@ -214,7 +214,7 @@ class CustomModFrame(ModFrame):
         if len(store) == 0:
             self.hide_tree()
         else:
-            self.present_tree()
+            self.present_tree(store, folder)
 
     def _on_custom_button_clicked(self, button: Gtk.Button) -> None:
         local_mods = self.get_mods()
