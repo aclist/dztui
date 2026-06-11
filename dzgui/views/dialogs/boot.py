@@ -140,7 +140,7 @@ class BootDialog(Gtk.Dialog):
 
         GLib.timeout_add(100, self.pulse_spinner)
 
-    def _on_keypress(self, Self, event: Gdk.EventKey) -> None:
+    def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
         if event.keyval == Gdk.KEY_Escape:
             self.exit_button.emit("clicked")
 

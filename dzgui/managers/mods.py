@@ -68,6 +68,8 @@ class ModManager:
 
     def _on_mods_loaded(self) -> None:
         self.treeview.set_model(self.store)
+        if self.store is None:
+            return
         msg = self.format_mod_statusbar()
         total_mods = len(self.store)
         self.emitter.emit("mods_updated", msg, total_mods)
@@ -124,6 +126,8 @@ class ModManager:
             pass
 
     def _on_mods_deleted(self, iters: list[Gtk.TreeIter]) -> None:
+        if self.store is None:
+            return
         for _iter in iters:
             self.store.remove(_iter)
         remove_stale_signatures(self.prefs.paths.config, self.prefs.paths.version)

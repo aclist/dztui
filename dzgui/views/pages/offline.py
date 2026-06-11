@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Self, Sequence, TYPE_CHECKING
+from typing import Self, Sequence, TYPE_CHECKING, Union
 
 from dzgui.util import css
 import dzgui.api.pefile as PeFile
@@ -76,6 +76,7 @@ class FolderHBox(HBox):
         return self.button
 
     def set_label(self, label: str) -> None:
+        # TODO: strings
         prefix = "Current folder: "
         self.label.set_label(prefix + label)
 
@@ -155,7 +156,7 @@ class ModFrame(HeadingFrame):
     def pack(self, widget: Gtk.Widget) -> None:
         self.vbox.pack_start(widget, expand=False, fill=False, padding=5)
 
-    def set_model(self, model: "FastInsertListStore") -> None:
+    def set_model(self, model: Union["FastInsertListStore", None]) -> None:
         self.tree.set_model(model)
         self.tree.mod_man.store = model
         self.set_cursor()
@@ -173,11 +174,6 @@ class ModFrame(HeadingFrame):
         path = Gtk.TreePath.new_from_indices([0])
         self.tree.set_cursor(path)
         self.tree.get_selection().unselect_all()
-
-#class LocalModFrame(ModFrame):
-#    def __init__(self, controller: "Controller", label: str) -> None:
-#        super().__init__(controller=controller, label=label)
-
 
 
 class CustomModFrame(ModFrame):
@@ -210,6 +206,7 @@ class CustomModFrame(ModFrame):
     ) -> None:
         if len(store) == 0:
             # TODO: abstract into single method
+            # TODO: strings
             self.set_error("No valid mods found")
             self.show_errors()
             self.custom_hbox.hide_label()
@@ -293,7 +290,7 @@ class OfflineLoader(Gtk.Box):
         self.local_frame = ModFrame(self, controller, offline.local_frame)
         self.custom_frame = CustomModFrame(self, controller, offline.custom_frame)
 
-        # TODO: suppress symlink column
+        # TODO: dynamically calculate new symlink hashes
         self.custom_tree = OfflineModTreeView(controller)
 
         self.mission_hbox = FolderHBox(offline.mission_button)
@@ -366,13 +363,10 @@ class OfflineLoader(Gtk.Box):
         self.controller.open_page(NotebookPage.MODS)
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
-        # TODO; block button access if no mods are selected
-        # TODO: consider hooking up to emitter and changing button state whenever mods are selected
-
         # appid = self.radio_frame.get_appid()
         # mission = self.mission_frame.get_mission()
         # local_mods = self.local_frame.get_mods()
         # custom_mods = self.custom_frame.get_mods()
         # cf. api.mods._hash(uid, use_custom=True)
-        # offline_man.setup(appid, mission, local_mods, custom_mods)
+        # self.offline_man.setup(appid, mission, local_mods, custom_mods)
         pass

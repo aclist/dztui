@@ -48,7 +48,7 @@ def get_local_mods(workshop_path: Path) -> list[Path]:
     mods = [file for file in workshop_path.iterdir() if file.is_dir()]
     return mods
 
-def is_mission(path: Path) -> None:
+def is_mission(path: Path) -> bool:
     # TODO: parse integrity of other files
     file = path / "init.c"
     return file.exists()

@@ -37,8 +37,9 @@ class OfflineManager:
             return
         is_valid = is_mission(folder)
         if is_valid:
-            self.mission_folder = folder
-        self.emitter.emit("custom_mission_loaded", folder, is_valid)
+            # TODO: str
+            self.mission_folder = str(folder)
+        self.emitter.emit("custom_mission_loaded", str(folder), is_valid)
 
     def get_custom_mods(self, local_mods: list[str]) -> None:
         folder = self.open_folderpicker()

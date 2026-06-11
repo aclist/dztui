@@ -36,7 +36,6 @@ from gi.repository import Gtk, Gdk, GLib, GObject  # noqa E402
 logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from dzgui.api.servers import Record
     from dzgui.const.enum import ServerTab
     from dzgui.managers.connection import Prerequisites
