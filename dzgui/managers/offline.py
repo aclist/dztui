@@ -36,6 +36,7 @@ class OfflineManager:
         if folder is None:
             return
         is_valid = is_mission(folder)
+        # TODO: stop storing values in here
         if is_valid:
             # TODO: str
             self.mission_folder = str(folder)

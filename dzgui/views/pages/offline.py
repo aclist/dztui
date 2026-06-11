@@ -117,32 +117,26 @@ class ModFrame(HeadingFrame):
         sel.connect("changed", self._on_selection_changed)
 
         # TODO: inherit icons from warnings area in preconnect dialog
-        self.none_label = Gtk.Label(label="No mods found", halign=Gtk.Align.START, margin_start=10, margin_bottom=5)
-        self.vbox.pack_end(self.none_label, expand=True, fill=True, padding=3)
+        self.error_label = Gtk.Label(label="No mods found", halign=Gtk.Align.START, margin_start=10, margin_bottom=5)
+        self.vbox.pack_end(self.error_label, expand=True, fill=True, padding=3)
 
     def set_error(self, msg: str) -> None:
-        self.none_label.set_label(msg)
+        self.error_label.set_label(msg)
+        self.error_label.show()
 
     def hide_errors(self) -> None:
-        self.none_label.hide()
-
-    def show_errors(self) -> None:
-        self.none_label.show()
+        self.error_label.hide()
 
     def start_empty(self) -> None:
-        self.none_label.show()
+        self.error_label.show()
         self.collapse_tree()
 
     def hide_all(self) -> None:
-        self.none_label.hide()
+        self.error_label.hide()
         self.collapse_tree()
 
         # TODO: warnings area
-        # valid warnings (one at a time):
-        # - name collision within custom mods
-        # - name collision b/w custom and local (permissible)
-        # - no mods
-        # - not a valid mission
+        # name collision within custom mods
 
     def get_mods(self) -> list[str]:
         model, treeiters = self.tree.get_selection().get_selected_rows()
@@ -198,6 +192,18 @@ class CustomModFrame(ModFrame):
 
         self.emitter.connect("custom_mods_loaded", self._on_custom_mods_loaded)
 
+    def hide_tree(self) -> None:
+        # TODO: no mods message is different from collision message
+        self.set_error(offline.no_mods)
+        self.custom_hbox.hide_label()
+        self.tree_vbox.hide()
+
+    def present_tree(self, folder: str, store: "FastInsertListStore") -> None:
+        self.custom_hbox.set_label(folder)
+        self.tree.set_model(store)
+        self.tree_vbox.show()
+        self.hide_errors()
+
     def _on_custom_mods_loaded(
         self,
         emitter: "Emitter",
@@ -206,26 +212,18 @@ class CustomModFrame(ModFrame):
         has_duplicates: bool,
     ) -> None:
         if len(store) == 0:
-            # TODO: abstract into single method
-            # TODO: strings
-            self.set_error("No valid mods found")
-            self.show_errors()
-            self.custom_hbox.hide_label()
-            self.tree_vbox.hide()
+            self.hide_tree()
         else:
-            self.hide_errors()
-            self.custom_hbox.set_label(folder)
-            self.tree.set_model(store)
-            self.tree_vbox.show()
+            self.present_tree()
 
-        # TODO: look for duplicates within own dirs
         if has_duplicates:
-            # block button access
+            # TODO: block button access
+            # TODO: update error message
+            # cf hide_tree
             pass
 
     def _on_custom_button_clicked(self, button: Gtk.Button) -> None:
         local_mods = self.get_mods()
-        # TODO: emitter calls back to this widget
         self.parent.offline_man.get_custom_mods(local_mods)
 
 class MissionFrame(HeadingFrame):
@@ -250,9 +248,8 @@ class MissionFrame(HeadingFrame):
     def _on_mission_loaded(self, emitter: "Emitter", folder: str, is_valid: bool) -> None:
         self.mission_hbox.set_label(folder)
         if not is_valid:
-            # TODO: strings
             self.warning.show()
-            self.warning.set_label("Not a valid mission")
+            self.warning.set_label(offline.no_mission)
         else:
             self.warning.hide()
 
