@@ -53,7 +53,8 @@ def is_mission(path: Path) -> bool:
     file = path / "init.c"
     return file.exists()
 
-def tokenize(file: str) -> dict[Any] | None:
+def tokenize(mod: Path) -> dict[Any] | None:
+    file = mod.joinpath("meta.cpp")
     delimiter=r"\s*=\s*"
     modmeta = {}
     try:
