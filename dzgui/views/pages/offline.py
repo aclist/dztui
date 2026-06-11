@@ -66,11 +66,13 @@ class FolderHBox(HBox):
         self.set_margin_bottom(5)
 
         # TODO: alternate class for left-aligned icons
-        self.button = IconTextButton(FOLDER, btn_label)
+        self.button = IconTextButton(FOLDER, btn_label, Gtk.PositionType.LEFT)
         self.button.set_halign(Gtk.Align.START)
         self.button.set_image_position(Gtk.PositionType.LEFT)
 
-        self.scrolled_label = Gtk.ScrolledWindow(propagate_natural_width=True, halign=Gtk.Align.START)
+        self.scrolled_label = Gtk.ScrolledWindow(
+            propagate_natural_width=True, halign=Gtk.Align.START
+        )
         self.label = Gtk.Label()
         self.scrolled_label.add(self.label)
         self.extend([self.button, self.scrolled_label])
@@ -88,7 +90,9 @@ class FolderHBox(HBox):
 
 
 class ModFrame(HeadingFrame):
-    def __init__(self, parent: OfflineLoader, controller: "Controller", label: str) -> None:
+    def __init__(
+        self, parent: OfflineLoader, controller: "Controller", label: str
+    ) -> None:
         super().__init__(heading=label)
 
         self.parent = parent
@@ -118,7 +122,12 @@ class ModFrame(HeadingFrame):
 
         # TODO: inherit icons from warnings area in preconnect dialog
         # TODO: strings
-        self.error_label = Gtk.Label(label="No mods found", halign=Gtk.Align.START, margin_start=10, margin_bottom=5)
+        self.error_label = Gtk.Label(
+            label="No mods found",
+            halign=Gtk.Align.START,
+            margin_start=10,
+            margin_bottom=5,
+        )
         self.vbox.pack_end(self.error_label, expand=True, fill=True, padding=3)
 
     def set_error(self, msg: str) -> None:
@@ -220,6 +229,7 @@ class CustomModFrame(ModFrame):
         local_mods = self.get_mods()
         self.parent.offline_man.get_custom_mods(local_mods)
 
+
 class MissionFrame(HeadingFrame):
     def __init__(self, parent: OfflineLoader, controller: "Controller") -> None:
         super().__init__(heading=offline.mission_frame)
@@ -232,14 +242,18 @@ class MissionFrame(HeadingFrame):
         self.mission_button = self.mission_hbox.get_button()
         self.mission_button.connect("clicked", self._on_mission_button_clicked)
 
-        self.warning = Gtk.Label(halign=Gtk.Align.START, margin_start=10, margin_bottom=5)
+        self.warning = Gtk.Label(
+            halign=Gtk.Align.START, margin_start=10, margin_bottom=5
+        )
         self.vbox = VBox()
         self.vbox.extend([self.mission_hbox, self.warning])
         self.frame.add(self.vbox)
 
         self.emitter.connect("custom_mission_loaded", self._on_mission_loaded)
 
-    def _on_mission_loaded(self, emitter: "Emitter", folder: str, is_valid: bool) -> None:
+    def _on_mission_loaded(
+        self, emitter: "Emitter", folder: str, is_valid: bool
+    ) -> None:
         self.mission_hbox.set_label(folder)
         if not is_valid:
             self.warning.show()
