@@ -145,10 +145,10 @@ class ModFrame(HeadingFrame):
         # - not a valid mission
 
     def get_mods(self) -> list[str]:
-        model = self.tree.get_model()
+        model, treeiters = self.tree.get_selection().get_selected_rows()
         if model is None:
             return []
-        return [row[1] for row in model]
+        return [model[_iter][1] for _iter in treeiters]
 
     def collapse_tree(self) -> None:
         self.tree_vbox.hide()
@@ -211,7 +211,9 @@ class CustomModFrame(ModFrame):
             self.set_error("No valid mods found")
             self.show_errors()
             self.custom_hbox.hide_label()
+            self.tree_vbox.hide()
         else:
+            self.hide_errors()
             self.custom_hbox.set_label(folder)
             self.tree.set_model(store)
             self.tree_vbox.show()
@@ -225,13 +227,6 @@ class CustomModFrame(ModFrame):
         local_mods = self.get_mods()
         # TODO: emitter calls back to this widget
         self.parent.offline_man.get_custom_mods(local_mods)
-
-    def get_mods(self) -> list[str]:
-        model, rows = self.tree.get_selection().get_selected_rows()
-        if model is None:
-            return
-        dirs = [str(col[1]) for col in rows]
-        return dirs
 
 class MissionFrame(HeadingFrame):
     def __init__(self, parent: OfflineLoader, controller: "Controller") -> None:
