@@ -36,9 +36,9 @@ class FilePicker(Gtk.FileChooserDialog):
 
 
 class FolderPicker(Gtk.FileChooserDialog):
-    def __init__(self, parent: Gtk.Window) -> None:
+    def __init__(self, parent: Gtk.Window, title: str) -> None:
         super().__init__(
-            title=picker.title,
+            title=title,
             action=Gtk.FileChooserAction.SELECT_FOLDER,
             parent=parent,
             resizable=True,

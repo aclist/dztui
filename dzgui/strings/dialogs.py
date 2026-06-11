@@ -16,3 +16,6 @@ checking_api = "Checking API key"
 running = "Running"
 failed = "FAILED"
 ok = "OK"
+
+mission_dialog = "Set a mission folder location"
+custom_mod_dialog = "Set location to a custom mods folder"

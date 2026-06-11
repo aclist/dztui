@@ -30,9 +30,8 @@ class OfflineManager:
         self.local_mods: list[str] | None
         self.custom_mods: list[str] | None
 
-
     def get_mission(self) -> None:
-        folder = self.open_folderpicker()
+        folder = self.open_folderpicker(dialogs.mission_dialog)
         if folder is None:
             return
         is_valid = is_mission(folder)
@@ -43,7 +42,7 @@ class OfflineManager:
         self.emitter.emit("custom_mission_loaded", str(folder), is_valid)
 
     def get_custom_mods(self, local_mods: list[str]) -> None:
-        folder = self.open_folderpicker()
+        folder = self.open_folderpicker(dialogs.custom_mod_dialog)
         if folder is None:
             return
         self.parse_custom_mods(local_mods, folder)
@@ -54,7 +53,9 @@ class OfflineManager:
         store = ModelFactory().make_mod_store()
         store.extend(mods)
 
-        func = StoredFunc(lambda: self.emitter.emit("custom_mods_loaded", store, folder))
+        func = StoredFunc(
+            lambda: self.emitter.emit("custom_mods_loaded", store, folder)
+        )
         self.thread_man.set_cleanup_func(func)
 
     def setup(
@@ -91,8 +92,8 @@ class OfflineManager:
 
         launch_offline(client, self.appid, name, combined_mods, self.mission_folder)
 
-    def open_folderpicker(self) -> Union["Path", None]:
-        picker = FolderPicker(self.controller.get_window())
+    def open_folderpicker(self, title: str) -> Union["Path", None]:
+        picker = FolderPicker(self.controller.get_window(), title)
         folder = picker.pick_folder()
         picker.destroy()
         return folder
