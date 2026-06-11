@@ -25,7 +25,7 @@ from dzgui.model.servers import ServerModelManager
 from dzgui.util.diag import write_diagnostic
 from dzgui.util.format import format_player_count
 from dzgui.util.open_links import open_user_workshop, open_workshop_page
-from dzgui.views.dialogs.filepicker import FilePicker, FolderPicker
+from dzgui.views.dialogs.filepicker import FilePicker
 from dzgui.views.dialogs.generic import ExceptionDialog
 
 import gi
@@ -300,12 +300,6 @@ class Controller(GObject.GObject):
             except Exception as e:
                 dialog = ExceptionDialog(self, str(e))
                 dialog.run()
-
-    def set_custom_folder(self) -> Union["Path", None]:
-        picker = FolderPicker(self.mediator.window)
-        folder = picker.pick_folder()
-        picker.destroy()
-        return folder
 
     def update_api_key(self, key: Preferences, text: str) -> None:
         self.config_man.update_api_key(key, text)
