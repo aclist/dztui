@@ -65,7 +65,6 @@ def tokenize(file: str) -> dict[Any] | None:
                 els = re.split(delimiter, line, maxsplit=1)
                 if len(els) == 2:
                     key, value = els
-                    print(value)
                     modmeta[key.strip()] = value.strip('"')
         return modmeta
     except Exception as e:
