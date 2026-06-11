@@ -62,7 +62,7 @@ class FolderHBox(HBox):
         super().__init__(spacing=10)
 
         self.set_margin_start(10)
-        self.set_margin_bottom(10)
+        self.set_margin_bottom(5)
 
         # TODO: alternate class for left-aligned icons
         self.button = IconTextButton(FOLDER, btn_label)
@@ -76,13 +76,18 @@ class FolderHBox(HBox):
         return self.button
 
     def set_label(self, label: str) -> None:
-        self.label.set_label(label)
+        prefix = "Current folder: "
+        self.label.set_label(prefix + label)
+
+    def hide_label(self) -> None:
+        self.label.hide()
 
 
 class ModFrame(HeadingFrame):
-    def __init__(self, controller: "Controller", label: str) -> None:
+    def __init__(self, parent: OfflineLoader, controller: "Controller", label: str) -> None:
         super().__init__(heading=label)
 
+        self.parent = parent
         self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
         self.tree = OfflineModTreeView(controller)
@@ -103,13 +108,30 @@ class ModFrame(HeadingFrame):
 
         self.vbox.pack_end(self.tree_vbox, expand=True, fill=True, padding=3)
         self.frame.add(self.vbox)
-        # self.vbox.add(self.tree_vbox)
-        # self.none_label = Gtk.Label(label="No mods found", halign=Gtk.Align.START)
-        # self.vbox.pack_end(self.none_label, expand=True, fill=True, padding=3)
-        # self.none_label.hide()
 
         sel = self.tree.get_selection()
         sel.connect("changed", self._on_selection_changed)
+
+        # TODO: inherit icons from warnings area in preconnect dialog
+        self.none_label = Gtk.Label(label="No mods found", halign=Gtk.Align.START, margin_start=10, margin_bottom=5)
+        self.vbox.pack_end(self.none_label, expand=True, fill=True, padding=3)
+
+    def set_error(self, msg: str) -> None:
+        self.none_label.set_label(msg)
+
+    def hide_errors(self) -> None:
+        self.none_label.hide()
+
+    def show_errors(self) -> None:
+        self.none_label.show()
+
+    def start_empty(self) -> None:
+        self.none_label.show()
+        self.collapse_tree()
+
+    def hide_all(self) -> None:
+        self.none_label.hide()
+        self.collapse_tree()
 
         # TODO: warnings area
         # valid warnings (one at a time):
@@ -145,18 +167,24 @@ class ModFrame(HeadingFrame):
         else:
             status = f"Mods selected: {len(rows)}"
         self.status.set_label(status)
+        self.parent.check_button()
 
     def set_cursor(self) -> None:
         path = Gtk.TreePath.new_from_indices([0])
         self.tree.set_cursor(path)
         self.tree.get_selection().unselect_all()
 
+#class LocalModFrame(ModFrame):
+#    def __init__(self, controller: "Controller", label: str) -> None:
+#        super().__init__(controller=controller, label=label)
+
+
 
 class CustomModFrame(ModFrame):
     def __init__(
         self, parent: OfflineLoader, controller: "Controller", heading: str
     ) -> None:
-        super().__init__(controller, heading)
+        super().__init__(parent, controller, heading)
 
         self.parent = parent
 
@@ -170,6 +198,8 @@ class CustomModFrame(ModFrame):
         self.pack(self.custom_hbox)
 
         self.emitter.connect("custom_mods_loaded", self._on_custom_mods_loaded)
+        # TODO: move to mission frame
+        self.emitter.connect("custom_mission_loaded", lambda _, __, ___: print(_, __, ___))
 
     def _on_custom_mods_loaded(
         self,
@@ -179,24 +209,29 @@ class CustomModFrame(ModFrame):
         has_duplicates: bool,
     ) -> None:
         if len(store) == 0:
-            # TODO: pop error dialog area
-            # block button access
-            pass
+            # TODO: abstract into single method
+            self.set_error("No valid mods found")
+            self.show_errors()
+            self.custom_hbox.hide_label()
         else:
             self.custom_hbox.set_label(folder)
             self.tree.set_model(store)
             self.tree_vbox.show()
 
+        # TODO: look for duplicates within own dirs
         if has_duplicates:
-            # TODO: pop relevant error
-            # duplicates should block button access
+            # block button access
             pass
 
     def _on_custom_button_clicked(self, button: Gtk.Button) -> None:
-        self.parent.parse_mods()
+        local_mods = self.get_mods()
+        # TODO: emitter calls back to this widget
+        self.parent.offline_man.get_custom_mods(local_mods)
 
     def get_mods(self) -> list[str]:
-        rows = self.tree.get_selection().get_selected_rows()
+        model, rows = self.tree.get_selection().get_selected_rows()
+        if model is None:
+            return
         dirs = [str(col[1]) for col in rows]
         return dirs
 
@@ -255,19 +290,19 @@ class OfflineLoader(Gtk.Box):
 
         self.add(PageHeading(offline.heading))
 
-        self.local_frame = ModFrame(controller, offline.local_frame)
+        self.local_frame = ModFrame(self, controller, offline.local_frame)
         self.custom_frame = CustomModFrame(self, controller, offline.custom_frame)
 
         # TODO: suppress symlink column
         self.custom_tree = OfflineModTreeView(controller)
 
-        # TODO: custom class
         self.mission_hbox = FolderHBox(offline.mission_button)
+        # TODO: custom class
         self.mission_frame = HeadingFrame.new_with_widget_and_label(
             self.mission_hbox, offline.mission_frame
         )
         self.mission_button = self.mission_hbox.get_button()
-        self.mission_button.connect("clicked", self._on_mission_clicked)
+        self.mission_button.connect("clicked", self._on_mission_button_clicked)
 
         self.radio_frame = RadioFrame(controller)
 
@@ -290,7 +325,7 @@ class OfflineLoader(Gtk.Box):
         self.button_box.set_halign(Gtk.Align.END)
         self.button_box.set_margin_top(5)
         self.back = Gtk.Button(label="Back")
-        self.ok = Gtk.Button(label="Launch")
+        self.ok = Gtk.Button(label="Launch", sensitive=False)
         self.back.connect("clicked", self._on_back_clicked)
         self.ok.connect("clicked", self._on_ok_clicked)
         self.connect("key-press-event", self._on_keypress)
@@ -301,34 +336,31 @@ class OfflineLoader(Gtk.Box):
         self.add(self.scrollable)
         self.add(self.button_box)
 
-    def _on_mission_clicked(self, button: Gtk.Button) -> None:
-        # process path, cf. set_custom_folder()
-        # file = path / "init.c"
-        # if not file.exists():
-        # pop warning
-        pass
-
-    def parse_mods(self) -> None:
-        # TODO: check method on custom frame
-        # TODO: delegate folderpicker to offline manager
+    def check_button(self) -> None:
         local_mods = self.local_frame.get_mods()
-        folder = self.controller.set_custom_folder()
-        if folder is not None:
-            # TODO:
-            self.offline_man.parse_custom_mods(local_mods, folder)
+        custom_mods = self.custom_frame.get_mods()
+        if len(local_mods) == 0 and len(custom_mods) == 0:
+            self.ok.set_sensitive(False)
+        else:
+            self.ok.set_sensitive(True)
+
+    # TODO: put in separate class
+    def _on_mission_button_clicked(self, button: Gtk.Button) -> None:
+        self.offline_man.get_mission()
 
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
         if event.keyval == Gdk.KEY_Escape:
             self.back.emit("clicked")
 
-    def populate(self, store: "FastInsertListStore") -> None:
+    def populate(self, store: Union["FastInsertListStore", None]) -> None:
         self.local_frame.set_model(store)
         if store is None:
-            self.local_frame.collapse_tree()
-        # TODO: toggle if empty model, show warning label
-        # NOTE: there may be no local mods
-        # TODO: suppress trees if there are no mods
-        self.custom_frame.collapse_tree()
+            self.local_frame.start_empty()
+        else:
+            self.local_frame.show_errors()
+
+        # NOTE: suppress custom tree until explicitly loaded
+        self.custom_frame.hide_all()
 
     def _on_back_clicked(self, button: Gtk.Button) -> None:
         self.controller.open_page(NotebookPage.MODS)
@@ -342,5 +374,5 @@ class OfflineLoader(Gtk.Box):
         # local_mods = self.local_frame.get_mods()
         # custom_mods = self.custom_frame.get_mods()
         # cf. api.mods._hash(uid, use_custom=True)
-        # self.offline_man.setup(appid, mission, local_mods, custom_mods)
+        # offline_man.setup(appid, mission, local_mods, custom_mods)
         pass
