@@ -83,14 +83,14 @@ def get_mod_size(path: Path) -> float:
 def get_custom_mods(path: Path) -> list[Any]:
     mods = get_local_mods(path)
     # TODO: error handling
-    return parse_mods(mods)
+    return parse_mods(mods, use_custom=True)
 
 
-def parse_mods(mods: list[Path]) -> list[Any]:
+def parse_mods(mods: list[Path], use_custom: bool = False) -> list[Any]:
     clean = []
     for mod in mods:
         mod_dir = mod.name
-        symlink = _hash(mod_dir)
+        symlink = _hash(mod_dir, use_custom)
         meta = tokenize(mod)
         if meta is None:
             continue
