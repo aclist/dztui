@@ -48,7 +48,7 @@ class ModManager:
         self.prefs = controller.get_prefs()
         self.path = controller.query_config(Preferences.DEFAULT)
 
-        self.store: FastInsertListStore
+        self.store: FastInsertListStore | None = None
 
         self.thread_man = ThreadingManager(controller)
 
