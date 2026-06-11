@@ -1,13 +1,14 @@
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
-from dzgui.api.mods import get_custom_mods
+from dzgui.api.mods import is_mission, get_custom_mods
 from dzgui.api.steam import launch_offline
 from dzgui.const.enum import Preferences
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.model.model_factory import ModelFactory
 from dzgui.strings import dialogs
 from dzgui.util.symlink import clone_symlinks
+from dzgui.views.dialogs.filepicker import FolderPicker
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
@@ -29,18 +30,36 @@ class OfflineManager:
         self.local_mods: list[str] | None
         self.custom_mods: list[str] | None
 
-    # TODO: strings
-    @call_on_thread("parsing")
+
+    def get_mission(self) -> None:
+        folder = self.open_folderpicker()
+        if folder is None:
+            return
+        is_valid = is_mission(folder)
+        if is_valid:
+            self.mission_folder = folder
+        self.emitter.emit("custom_mission_loaded", folder, is_valid)
+
+    def get_custom_mods(self, local_mods: list[str]) -> None:
+        folder = self.open_folderpicker()
+        if folder is None:
+            return
+        self.parse_custom_mods(local_mods, folder)
+
+    @call_on_thread(dialogs.parsing_mods)
     def parse_custom_mods(self, local_mods: list[str], folder: str) -> None:
         mods = get_custom_mods(Path(folder))
         store = ModelFactory().make_mod_store()
         store.extend(mods)
 
         has_duplicates = False
+        seen = set()
         for row in store:
-            if row[1] in local_mods:
+            mod_id = row[1]
+            if mod_id in seen:
                 row[-1]=True
                 has_duplicates = True
+            seen.add(mod_id)
 
         func = StoredFunc(lambda: self.emitter.emit("custom_mods_loaded", store, folder, has_duplicates))
         self.thread_man.set_cleanup_func(func)
@@ -54,7 +73,6 @@ class OfflineManager:
     ) -> None:
 
         self.appid = appid
-        self.mission_folder = mission
         self.local_mods = local_mods
         self.custom_mods = custom_mods
 
@@ -79,3 +97,9 @@ class OfflineManager:
             combined_mods.extend(new_symlinks)
 
         launch_offline(client, self.appid, name, combined_mods, self.mission_folder)
+
+    def open_folderpicker(self) -> Union["Path", None]:
+        picker = FolderPicker(self.controller.get_window())
+        folder = picker.pick_folder()
+        picker.destroy()
+        return folder
