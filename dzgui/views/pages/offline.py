@@ -100,6 +100,7 @@ class ModFrame(HeadingFrame):
 
         self.tree = OfflineModTreeView(controller)
         self.tree.set_model(None)
+        self.tree.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         self.tree.set_valign(Gtk.Align.FILL)
 
         self.scrolled = NoOverlayScrolledWindow()
