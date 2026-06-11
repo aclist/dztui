@@ -9,6 +9,7 @@ load_error_lan = "Failed to find any servers on your network.\nCheck the server 
 fetching_mods = "Fetching mod metadata"
 deleting_mods = "Deleting mods"
 scanning_mods = "Scanning mods"
+parsing_mods = "Parsing mods"
 
 checking_api = "Checking API key"
 
