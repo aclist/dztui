@@ -62,6 +62,7 @@ class FolderHBox(HBox):
         super().__init__(spacing=10)
 
         self.set_margin_start(10)
+        self.set_margin_end(10)
         self.set_margin_bottom(5)
 
         # TODO: alternate class for left-aligned icons
@@ -69,8 +70,10 @@ class FolderHBox(HBox):
         self.button.set_halign(Gtk.Align.START)
         self.button.set_image_position(Gtk.PositionType.LEFT)
 
+        self.scrolled_label = Gtk.ScrolledWindow(propagate_natural_width=True, halign=Gtk.Align.START)
         self.label = Gtk.Label()
-        self.extend([self.button, self.label])
+        self.scrolled_label.add(self.label)
+        self.extend([self.button, self.scrolled_label])
 
     def get_button(self) -> Gtk.Button:
         return self.button
@@ -194,8 +197,6 @@ class CustomModFrame(ModFrame):
         self.pack(self.custom_hbox)
 
         self.emitter.connect("custom_mods_loaded", self._on_custom_mods_loaded)
-        # TODO: move to mission frame
-        self.emitter.connect("custom_mission_loaded", lambda _, __, ___: print(_, __, ___))
 
     def _on_custom_mods_loaded(
         self,
@@ -231,6 +232,37 @@ class CustomModFrame(ModFrame):
             return
         dirs = [str(col[1]) for col in rows]
         return dirs
+
+class MissionFrame(HeadingFrame):
+    def __init__(self, parent: OfflineLoader, controller: "Controller") -> None:
+        super().__init__(heading=offline.mission_frame)
+
+        self.parent = parent
+        self.controller = controller
+        self.emitter = controller.get_emitter()
+
+        self.mission_hbox = FolderHBox(offline.mission_button)
+        self.mission_button = self.mission_hbox.get_button()
+        self.mission_button.connect("clicked", self._on_mission_button_clicked)
+
+        self.warning = Gtk.Label(halign=Gtk.Align.START, margin_start=10, margin_bottom=5)
+        self.vbox = VBox()
+        self.vbox.extend([self.mission_hbox, self.warning])
+        self.frame.add(self.vbox)
+
+        self.emitter.connect("custom_mission_loaded", self._on_mission_loaded)
+
+    def _on_mission_loaded(self, emitter: "Emitter", folder: str, is_valid: bool) -> None:
+        self.mission_hbox.set_label(folder)
+        if not is_valid:
+            # TODO: strings
+            self.warning.show()
+            self.warning.set_label("Not a valid mission")
+        else:
+            self.warning.hide()
+
+    def _on_mission_button_clicked(self, button: Gtk.Button) -> None:
+        self.parent.offline_man.get_mission()
 
 
 class RadioFrame(HeadingFrame):
@@ -290,17 +322,8 @@ class OfflineLoader(Gtk.Box):
         self.local_frame = ModFrame(self, controller, offline.local_frame)
         self.custom_frame = CustomModFrame(self, controller, offline.custom_frame)
 
-        # TODO: dynamically calculate new symlink hashes
         self.custom_tree = OfflineModTreeView(controller)
-
-        self.mission_hbox = FolderHBox(offline.mission_button)
-        # TODO: custom class
-        self.mission_frame = HeadingFrame.new_with_widget_and_label(
-            self.mission_hbox, offline.mission_frame
-        )
-        self.mission_button = self.mission_hbox.get_button()
-        self.mission_button.connect("clicked", self._on_mission_button_clicked)
-
+        self.mission_frame = MissionFrame(self, controller)
         self.radio_frame = RadioFrame(controller)
 
         self.scrollable = Gtk.ScrolledWindow(
@@ -341,10 +364,6 @@ class OfflineLoader(Gtk.Box):
         else:
             self.ok.set_sensitive(True)
 
-    # TODO: put in separate class
-    def _on_mission_button_clicked(self, button: Gtk.Button) -> None:
-        self.offline_man.get_mission()
-
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
         if event.keyval == Gdk.KEY_Escape:
             self.back.emit("clicked")
@@ -355,7 +374,6 @@ class OfflineLoader(Gtk.Box):
             self.local_frame.start_empty()
         else:
             self.local_frame.hide_errors()
-
         # NOTE: suppress custom tree until explicitly loaded
         self.custom_frame.hide_all()
 
@@ -368,5 +386,6 @@ class OfflineLoader(Gtk.Box):
         # local_mods = self.local_frame.get_mods()
         # custom_mods = self.custom_frame.get_mods()
         # cf. api.mods._hash(uid, use_custom=True)
+        # TODO: dynamically calculate new symlink hashes
         # self.offline_man.setup(appid, mission, local_mods, custom_mods)
         pass
