@@ -156,7 +156,7 @@ class Emitter(GObject.GObject):
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object, str, bool))
-    def custom_mods_loaded(self, store: "FastInsertListStore", folder: str, has_duplicates: bool) -> None:
+    def custom_mods_loaded(self, store: "FastInsertListStore", folder: str) -> None:
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(str, bool))

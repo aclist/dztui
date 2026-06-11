@@ -117,6 +117,7 @@ class ModFrame(HeadingFrame):
         sel.connect("changed", self._on_selection_changed)
 
         # TODO: inherit icons from warnings area in preconnect dialog
+        # TODO: strings
         self.error_label = Gtk.Label(label="No mods found", halign=Gtk.Align.START, margin_start=10, margin_bottom=5)
         self.vbox.pack_end(self.error_label, expand=True, fill=True, padding=3)
 
@@ -209,18 +210,11 @@ class CustomModFrame(ModFrame):
         emitter: "Emitter",
         store: "FastInsertListStore",
         folder: str,
-        has_duplicates: bool,
     ) -> None:
         if len(store) == 0:
             self.hide_tree()
         else:
             self.present_tree()
-
-        if has_duplicates:
-            # TODO: block button access
-            # TODO: update error message
-            # cf hide_tree
-            pass
 
     def _on_custom_button_clicked(self, button: Gtk.Button) -> None:
         local_mods = self.get_mods()
@@ -373,11 +367,12 @@ class OfflineLoader(Gtk.Box):
         self.controller.open_page(NotebookPage.MODS)
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
+        # TODO: grab all values in one pass
         # appid = self.radio_frame.get_appid()
         # mission = self.mission_frame.get_mission()
         # local_mods = self.local_frame.get_mods()
         # custom_mods = self.custom_frame.get_mods()
         # cf. api.mods._hash(uid, use_custom=True)
-        # TODO: dynamically calculate new symlink hashes
+        # TODO: set up all symlinks prior to launch, including custom ones
         # self.offline_man.setup(appid, mission, local_mods, custom_mods)
         pass

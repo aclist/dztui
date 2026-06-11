@@ -54,16 +54,7 @@ class OfflineManager:
         store = ModelFactory().make_mod_store()
         store.extend(mods)
 
-        has_duplicates = False
-        seen = set()
-        for row in store:
-            mod_id = row[1]
-            if mod_id in seen:
-                row[-1]=True
-                has_duplicates = True
-            seen.add(mod_id)
-
-        func = StoredFunc(lambda: self.emitter.emit("custom_mods_loaded", store, folder, has_duplicates))
+        func = StoredFunc(lambda: self.emitter.emit("custom_mods_loaded", store, folder))
         self.thread_man.set_cleanup_func(func)
 
     def setup(
