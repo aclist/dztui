@@ -1,9 +1,8 @@
 import sys
-from typing import Literal, TYPE_CHECKING
+from typing import Any, Literal, Self, TYPE_CHECKING
 
 # import time
 from enum import Enum
-from typing import Any, Self
 
 # TODO: import dialog titles
 from dzgui.api.mods import remove_stale_signatures as remove_stale
@@ -60,7 +59,7 @@ class BootDialog(Gtk.Dialog):
         self.view.set_model(self.store)
 
         # TODO: capture sigint in early dialogs
-        self.connect("key-press-event", lambda _, __: self.exit_button.emit("clicked"))
+        self.connect("key-press-event", self._on_keypress)
 
         for i, column_title in enumerate(["Task", "State"]):
             renderer = Gtk.CellRendererText()
@@ -140,6 +139,10 @@ class BootDialog(Gtk.Dialog):
         self.steps = iter(steps)
 
         GLib.timeout_add(100, self.pulse_spinner)
+
+    def _on_keypress(self, Self, event: Gdk.EventKey) -> None:
+        if event.keyval == Gdk.KEY_Escape:
+            self.exit_button.emit("clicked")
 
     def pulse_spinner(self) -> Literal[True]:
         for row in self.store:
