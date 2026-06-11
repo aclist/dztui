@@ -60,6 +60,21 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
         self.connect("button-press-event", self.present_menu)
         self.connect("key-press-event", self.present_menu)
 
+        self.connect("button-press-event", self.on_row_click)
+
+    def on_row_click(self, widget: Gtk.Widget, event: Gdk.EventButton) -> None:
+        if event.state is Gdk.ModifierType.CONTROL_MASK and event.button == 1:
+            path_info = widget.get_path_at_pos(int(event.x), int(event.y))
+            if path_info is None:
+                return
+            path, column, cellx, celly = path_info
+            _iter = self.get_model().get_iter(path)
+            if self.get_selection().iter_is_selected(_iter):
+                self.get_selection().unselect_iter(_iter)
+            else:
+                self.get_selection().select_iter(_iter)
+            return True
+
     def get_mod_man(self) -> ModManager:
         return self.mod_man
 
