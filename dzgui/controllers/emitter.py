@@ -158,3 +158,7 @@ class Emitter(GObject.GObject):
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object, str, bool))
     def custom_mods_loaded(self, store: "FastInsertListStore", folder: str, has_duplicates: bool) -> None:
         pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(str, bool))
+    def custom_mission_loaded(self, folder: str, is_valid: bool) -> None:
+        pass
