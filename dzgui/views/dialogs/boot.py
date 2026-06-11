@@ -225,7 +225,7 @@ class BootDialog(Gtk.Dialog):
             return
         if state == dialogs.ok:
             cell.set_property(prop, HEX_GREEN)
-        elif state == dialogs.running:
+        elif state == dialogs.failed:
             cell.set_property(prop, HEX_RED)
         else:
             cell.set_property(prop, None)
