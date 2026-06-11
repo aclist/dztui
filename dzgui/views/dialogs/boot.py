@@ -14,7 +14,7 @@ from dzgui.init.dayz import is_dayz_installed
 from dzgui.init.update import check_updates
 from dzgui.const.constants import EXPAND, FILL
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
-from dzgui.strings import preboot
+from dzgui.strings import preboot, dialogs
 from dzgui.util.format import format_exception
 from dzgui.util.strings import dialog_header
 from dzgui.util.symlink import rebuild_symlinks
@@ -58,6 +58,9 @@ class BootDialog(Gtk.Dialog):
 
         self.view = Gtk.TreeView(enable_search=False, headers_visible=False)
         self.view.set_model(self.store)
+
+        # TODO: capture sigint in early dialogs
+        self.connect("key-press-event", lambda _, __: self.exit_button.emit("clicked"))
 
         for i, column_title in enumerate(["Task", "State"]):
             renderer = Gtk.CellRendererText()
@@ -184,10 +187,10 @@ class BootDialog(Gtk.Dialog):
             self.thread_man.set_cleanup_func(callback)
 
     def update_task(self, task: str) -> None:
-        self.store.append((task, "Running", True, 0))
+        self.store.append((task, dialogs.running, True, 0))
 
     def update_status(self, state: Success) -> None:
-        d = {Success.OK: "OK", Success.FAIL: "FAILED"}
+        d = {Success.OK: dialogs.ok, Success.FAIL: dialogs.failed}
         msg = d[state]
         self.store[len(self.store) - 1][1] = msg
         self.iter_step()
@@ -200,7 +203,7 @@ class BootDialog(Gtk.Dialog):
         it: Gtk.TreeIter,
         data: Any,
     ) -> None:
-        if model[it][1] == "Running":
+        if model[it][1] == dialogs.running:
             cell.set_property("visible", True)
         else:
             cell.set_property("visible", False)
@@ -217,9 +220,9 @@ class BootDialog(Gtk.Dialog):
         state = model[it][1]
         if column.get_sort_column_id() != 1:
             return
-        if state == "OK":
+        if state == dialogs.ok:
             cell.set_property(prop, HEX_GREEN)
-        elif state == "FAILED":
+        elif state == dialogs.running:
             cell.set_property(prop, HEX_RED)
         else:
             cell.set_property(prop, None)

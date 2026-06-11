@@ -11,3 +11,7 @@ deleting_mods = "Deleting mods"
 scanning_mods = "Scanning mods"
 
 checking_api = "Checking API key"
+
+running = "Running"
+failed = "FAILED"
+ok = "OK"
