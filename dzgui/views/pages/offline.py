@@ -354,7 +354,7 @@ class OfflineLoader(Gtk.Box):
         if store is None:
             self.local_frame.start_empty()
         else:
-            self.local_frame.show_errors()
+            self.local_frame.hide_errors()
 
         # NOTE: suppress custom tree until explicitly loaded
         self.custom_frame.hide_all()
