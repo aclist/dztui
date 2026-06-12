@@ -12,7 +12,7 @@ from dzgui.const.constants import (
     ERROR,
     FOLDER,
 )
-from dzgui.const.enum import NotebookPage
+from dzgui.const.enum import ContextMenuGroup, NotebookPage
 from dzgui.managers.offline import OfflineManager
 from dzgui.strings import generic, offline
 from dzgui.views.components.buttons import Icon, IconTextButton
@@ -259,6 +259,7 @@ class CustomModFrame(ModFrame):
     ) -> None:
         super().__init__(parent, controller, heading)
 
+        self.tree.set_menu(ContextMenuGroup.MOD_OFFLINE)
         self.parent = parent
 
         self.controller = controller

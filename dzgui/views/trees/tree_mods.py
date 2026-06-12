@@ -23,8 +23,10 @@ logger = logging.getLogger(APP_NAME)
 
 
 class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
-    def __init__(self, controller: "Controller") -> None:
-        super().__init__(controller, menu=ContextMenuGroup.MOD)
+    def __init__(
+        self, controller: "Controller", menu: ContextMenuGroup = ContextMenuGroup.MOD
+    ) -> None:
+        super().__init__(controller, menu=menu)
 
         self.controller = controller
         self.mod_man = ModManager(self, controller)

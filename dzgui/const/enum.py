@@ -185,6 +185,7 @@ class ContextMenuGroup(Enum):
 
     SERVER_MOD = (ContextMenu.OPEN_WORKSHOP,)
     MOD = (ContextMenu.OPEN_WORKSHOP, ContextMenu.DELETE_MOD)
+    MOD_OFFLINE = (None,)
     LOG = (ContextMenu.COPY_LOG_CLIPBOARD,)
     SERVER_BROWSER = (
         ContextMenu.CONNECT,
