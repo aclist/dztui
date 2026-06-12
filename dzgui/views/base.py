@@ -70,7 +70,6 @@ class OuterWindow(Gtk.Window):
         MainController.set_start_tab()
         self.grid.hide_widgets_on_init()
 
-        # TODO: POC, trigger page change here
         MainController.loaded = True
         MainController.populate_model(MainController.get_active_treeview())
 
