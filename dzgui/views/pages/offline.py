@@ -102,6 +102,8 @@ class FolderHBox(HBox):
         self.button.set_halign(Gtk.Align.START)
         self.button.set_image_position(Gtk.PositionType.LEFT)
 
+        self.set_can_focus(True)
+
         self.scrolled_label = Gtk.ScrolledWindow(
             propagate_natural_width=True, halign=Gtk.Align.START
         )
@@ -166,6 +168,7 @@ class FolderHBox(HBox):
         self.unset_button.hide()
         self.pop.set_label(error, msg)
         self.pop.popup()
+        self.grab_focus()
 
 
 class ModFrame(HeadingFrame):
