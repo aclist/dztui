@@ -5,7 +5,7 @@ from typing import Callable, TYPE_CHECKING, Union
 import dzgui.api.pefile as PeFile
 from dzgui.api.mods import is_mission, get_custom_mods
 from dzgui.api.steam import launch_offline
-from dzgui.const.constants import APP_NAME
+from dzgui.const.constants import APP_NAME, APPID_DAYZ_EXP
 from dzgui.const.enum import Preferences
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.model.model_factory import ModelFactory

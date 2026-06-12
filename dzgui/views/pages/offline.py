@@ -12,7 +12,7 @@ from dzgui.const.constants import (
     ERROR,
     FOLDER,
 )
-from dzgui.const.enum import NotebookPage, Preferences
+from dzgui.const.enum import NotebookPage
 from dzgui.managers.offline import OfflineManager
 from dzgui.strings import generic, offline
 from dzgui.views.components.buttons import Icon, IconTextButton
@@ -130,9 +130,6 @@ class FolderHBox(HBox):
         self.spinner.hide()
         self.spinner.stop()
 
-    def get_spinner(self) -> None:
-        return self.spinner
-
     def _on_unmap(self, widget: Self) -> None:
         self.unset_button.hide()
         self.label.set_label("")
@@ -216,7 +213,6 @@ class ModFrame(HeadingFrame):
         model, treeiters = self.tree.get_selection().get_selected_rows()
         if model is None:
             return []
-        # TODO: include mod paths for custom mods
         if type(self) is CustomModFrame:
             return [model[_iter][2] for _iter in treeiters]
         else:
@@ -459,11 +455,9 @@ class OfflineLoader(Gtk.Box):
             self.back.emit("clicked")
 
     def populate(self, store: Union["FastInsertListStore", None]) -> None:
-        # NOTE: suppress custom tree until explicitly loaded
         if store is None:
             return
         self.local_frame.start(store)
-        # self.custom_frame.start(store)
 
     def _on_back_clicked(self, button: Gtk.Button) -> None:
         self.controller.open_page(NotebookPage.MODS)

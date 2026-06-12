@@ -33,7 +33,9 @@ def rebuild_symlinks(config: Path) -> None:
     clone_symlinks(steam_path)
 
 
-def create_custom_symlinks(steam_path: Path, custom_dir: Path, uids: list[str]) -> None:
+def create_custom_symlinks(
+    steam_path: Path, custom_dir: Path, uids: list[str]
+) -> list[str]:
     dayz_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
     links = []
     for uid in uids:
@@ -45,7 +47,6 @@ def create_custom_symlinks(steam_path: Path, custom_dir: Path, uids: list[str]) 
             source.symlink_to(target)
     clone_symlinks(steam_path)
     return links
-
 
 
 def clone_symlinks(steam_path: Path) -> None:
