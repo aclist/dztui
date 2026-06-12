@@ -1,20 +1,22 @@
 from __future__ import annotations
-from pathlib import Path
+from enum import Enum
 from typing import Self, Sequence, TYPE_CHECKING, Union
 
 from dzgui.util import css
-import dzgui.api.pefile as PeFile
 from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
     APPNAME_DAYZ,
     APPNAME_DAYZ_EXP_HUMAN,
+    EDIT_DELETE,
+    ERROR,
     FOLDER,
 )
 from dzgui.const.enum import NotebookPage, Preferences
 from dzgui.managers.offline import OfflineManager
 from dzgui.strings import generic, offline
-from dzgui.views.components.buttons import IconTextButton
+from dzgui.views.components.buttons import Icon, IconTextButton
+from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.frame import HeadingFrame
 from dzgui.views.components.scrollable import NoOverlayScrolledWindow
 from dzgui.views.trees.tree_mods import OfflineModTreeView
@@ -23,12 +25,17 @@ from dzgui.views.trees.tree_mods import OfflineModTreeView
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk  # noqa
+from gi.repository import Gtk, Gdk, GObject  # noqa
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.controllers.emitter import Emitter
     from dzgui.model.model_factory import FastInsertListStore
+
+
+class FolderError(Enum):
+    NO_VALID_MODS = 1
+    NO_VALID_MISSION = 2
 
 
 class GenericBox(Gtk.Box):
@@ -57,15 +64,40 @@ class PageHeading(Gtk.Label):
         css.add_class(self, "page-heading")
 
 
+class ErrorPopover(Gtk.Popover):
+    def __init__(self) -> None:
+        super().__init__(position=Gtk.PositionType.RIGHT)
+
+        self.hbox = HBox()
+        self.label = Gtk.Label(label="", margin_start=10, margin_end=10)
+        error_icon = Icon(ERROR, margin_start=10)
+        self.hbox.extend([error_icon, self.label])
+        self.add(self.hbox)
+        self.show_all()
+        self.popdown()
+
+    def set_label(self, error: FolderError, msg: str) -> None:
+        match error:
+            case FolderError.NO_VALID_MODS:
+                prefix = offline.no_mods
+            case FolderError.NO_VALID_MISSION:
+                prefix = offline.no_mission
+        self.label.set_label(f"{prefix}: '{msg}'")
+
+
 class FolderHBox(HBox):
-    def __init__(self, btn_label: str) -> None:
+    def __init__(self, controller: "Controller", btn_label: str, eb_text: str) -> None:
         super().__init__(spacing=10)
 
-        self.set_margin_start(10)
+        self.set_margin_start(5)
         self.set_margin_end(10)
         self.set_margin_bottom(5)
 
-        # TODO: alternate class for left-aligned icons
+        self.folder = ""
+        self.controller = controller
+        self.emitter = controller.get_emitter()
+
+        self.eb = InfoEventBox(eb_text, controller)
         self.button = IconTextButton(FOLDER, btn_label, Gtk.PositionType.LEFT)
         self.button.set_halign(Gtk.Align.START)
         self.button.set_image_position(Gtk.PositionType.LEFT)
@@ -75,18 +107,68 @@ class FolderHBox(HBox):
         )
         self.label = Gtk.Label()
         self.scrolled_label.add(self.label)
-        self.extend([self.button, self.scrolled_label])
+
+        self.unset_button = IconTextButton(EDIT_DELETE, offline.unset_button)
+        self.unset_button.connect("clicked", self._on_unset_clicked)
+
+        self.spinner = Gtk.Spinner()
+        self.extend(
+            [self.eb, self.button, self.spinner, self.scrolled_label, self.unset_button]
+        )
+
+        self.pop = ErrorPopover()
+        self.pop.set_relative_to(self.button)
+
+        self.connect("map", self._on_map)
+        self.connect("unmap", self._on_unmap)
+
+    def start_spinner(self) -> None:
+        self.spinner.show()
+        self.spinner.start()
+
+    def stop_spinner(self) -> None:
+        self.spinner.hide()
+        self.spinner.stop()
+
+    def get_spinner(self) -> None:
+        return self.spinner
+
+    def _on_unmap(self, widget: Self) -> None:
+        self.unset_button.hide()
+        self.label.set_label("")
+        self.scrolled_label.hide()
+
+    def _on_map(self, widget: Self) -> None:
+        self.spinner.hide()
+        self.scrolled_label.show()
+        self.unset_button.hide()
+
+    def _on_unset_clicked(self, button: Gtk.Button) -> None:
+        self.label.set_label("")
+        self.unset_button.hide()
+        # FIXME: rename signal
+        self.emitter.emit("custom_mods_unloaded", self)
 
     def get_button(self) -> Gtk.Button:
         return self.button
 
-    def set_label(self, label: str) -> None:
-        # TODO: strings
-        prefix = "Current folder: "
-        self.label.set_label(prefix + label)
-
     def hide_label(self) -> None:
         self.label.hide()
+
+    def get_folder(self) -> str:
+        return self.folder
+
+    def set_folder(self, folder: str) -> None:
+        prefix = offline.folder_prefix
+        self.folder = folder
+        self.label.set_markup(prefix + folder)
+        self.label.show()
+        self.unset_button.show()
+
+    def present_error(self, error: FolderError, msg: str) -> None:
+        self.unset_button.hide()
+        self.pop.set_label(error, msg)
+        self.pop.popup()
 
 
 class ModFrame(HeadingFrame):
@@ -120,39 +202,29 @@ class ModFrame(HeadingFrame):
         sel = self.tree.get_selection()
         sel.connect("changed", self._on_selection_changed)
 
-        # TODO: inherit icons from warnings area in preconnect dialog
-        # TODO: strings
-        self.error_label = Gtk.Label(
-            label="No mods found",
-            halign=Gtk.Align.START,
-            margin_start=10,
-            margin_bottom=5,
-        )
-        self.vbox.pack_end(self.error_label, expand=True, fill=True, padding=3)
+        self.connect("unmap", self._on_unmap)
 
-    def set_error(self, msg: str) -> None:
-        self.error_label.set_label(msg)
-        self.error_label.show()
+    def _on_unmap(self, widget: Self) -> None:
+        self.tree.set_model(None)
+        self.tree_vbox.hide()
 
-    def hide_errors(self) -> None:
-        self.error_label.hide()
-
-    def start_empty(self) -> None:
-        self.error_label.show()
-        self.collapse_tree()
-
-    def hide_all(self) -> None:
-        self.error_label.hide()
-        self.collapse_tree()
-
-        # TODO: warnings area
-        # name collision within custom mods
+    def start(self, store: "FastInsertListStore") -> None:
+        self.tree.set_model(store)
+        self.show_tree()
 
     def get_mods(self) -> list[str]:
         model, treeiters = self.tree.get_selection().get_selected_rows()
         if model is None:
             return []
-        return [model[_iter][1] for _iter in treeiters]
+        # TODO: include mod paths for custom mods
+        if type(self) is CustomModFrame:
+            return [model[_iter][2] for _iter in treeiters]
+        else:
+            # NOTE: pre-existing, canonical symlinks to published mods
+            return [model[_iter][1] for _iter in treeiters]
+
+    def show_tree(self) -> None:
+        self.tree_vbox.show()
 
     def collapse_tree(self) -> None:
         self.tree_vbox.hide()
@@ -175,6 +247,8 @@ class ModFrame(HeadingFrame):
         else:
             status = f"Mods selected: {len(rows)}"
         self.status.set_label(status)
+        # TODO: cleaner delegation
+        # simply send int value or use emitter
         self.parent.check_button()
 
     def set_cursor(self) -> None:
@@ -194,25 +268,39 @@ class CustomModFrame(ModFrame):
         self.controller = controller
         self.emitter = controller.get_emitter()
 
-        # TODO: descriptive text here explaining how this area works
-        self.custom_hbox = FolderHBox(offline.custom_button)
+        self.custom_hbox = FolderHBox(
+            controller, offline.custom_button, offline.custom_eventbox
+        )
         self.custom_hbox.get_button().connect("clicked", self._on_custom_button_clicked)
 
         self.pack(self.custom_hbox)
 
         self.emitter.connect("custom_mods_loaded", self._on_custom_mods_loaded)
+        self.emitter.connect("custom_mods_unloaded", self._on_custom_mods_unloaded)
+
+        self.connect("map", self._on_map)
+
+    def _on_map(self, widget: Self) -> None:
+        self.hide_tree()
+
+    def _on_custom_mods_unloaded(self, emitter: "Emitter", widget: FolderHBox) -> None:
+        # TODO: kludgy workaround for generic button emitting global signal
+        if widget == self.custom_hbox:
+            self.hide_tree()
 
     def hide_tree(self) -> None:
-        # TODO: no mods message is different from collision message
-        self.set_error(offline.no_mods)
         self.custom_hbox.hide_label()
+        self.tree.set_model(None)
         self.tree_vbox.hide()
 
+    def present_error(self, folder: str) -> None:
+        self.hide_tree()
+        self.custom_hbox.present_error(FolderError.NO_VALID_MODS, folder)
+
     def present_tree(self, store: "FastInsertListStore", folder: str) -> None:
-        self.custom_hbox.set_label(folder)
+        self.custom_hbox.set_folder(folder)
         self.tree.set_model(store)
         self.tree_vbox.show()
-        self.hide_errors()
 
     def _on_custom_mods_loaded(
         self,
@@ -220,14 +308,19 @@ class CustomModFrame(ModFrame):
         store: "FastInsertListStore",
         folder: str,
     ) -> None:
+        self.custom_hbox.stop_spinner()
         if len(store) == 0:
-            self.hide_tree()
+            self.present_error(folder)
         else:
             self.present_tree(store, folder)
 
     def _on_custom_button_clicked(self, button: Gtk.Button) -> None:
-        local_mods = self.get_mods()
-        self.parent.offline_man.get_custom_mods(local_mods)
+        callback = self.custom_hbox.start_spinner
+        # TODO: cleaner delegation
+        self.parent.offline_man.find_custom_mods(callback)
+
+    def get_folder(self) -> str:
+        return self.custom_hbox.get_folder()
 
 
 class MissionFrame(HeadingFrame):
@@ -238,35 +331,33 @@ class MissionFrame(HeadingFrame):
         self.controller = controller
         self.emitter = controller.get_emitter()
 
-        self.mission_hbox = FolderHBox(offline.mission_button)
+        self.mission_hbox = FolderHBox(
+            controller, offline.mission_button, offline.mission_eventbox
+        )
         self.mission_button = self.mission_hbox.get_button()
         self.mission_button.connect("clicked", self._on_mission_button_clicked)
 
-        self.warning = Gtk.Label(
-            halign=Gtk.Align.START, margin_start=10, margin_bottom=5
-        )
-        self.vbox = VBox()
-        self.vbox.extend([self.mission_hbox, self.warning])
-        self.frame.add(self.vbox)
+        self.frame.add(self.mission_hbox)
 
         self.emitter.connect("custom_mission_loaded", self._on_mission_loaded)
 
     def _on_mission_loaded(
         self, emitter: "Emitter", folder: str, is_valid: bool
     ) -> None:
-        self.mission_hbox.set_label(folder)
-        if not is_valid:
-            self.warning.show()
-            self.warning.set_label(offline.no_mission)
+        if is_valid:
+            self.mission_hbox.set_folder(folder)
         else:
-            self.warning.hide()
+            self.mission_hbox.present_error(FolderError.NO_VALID_MISSION, folder)
 
     def _on_mission_button_clicked(self, button: Gtk.Button) -> None:
         self.parent.offline_man.get_mission()
 
+    def get_mission(self) -> str:
+        return self.mission_hbox.get_folder()
+
 
 class RadioFrame(HeadingFrame):
-    def __init__(self, controller: "Controller") -> None:
+    def __init__(self, parent: OfflineLoader, controller: "Controller") -> None:
         super().__init__(heading=offline.version)
 
         self.controller = controller
@@ -286,13 +377,10 @@ class RadioFrame(HeadingFrame):
 
         self.frame.add(self.radio_box)
 
-        # TODO: abstract out of here
-        default_steam_path = self.controller.query_config(Preferences.DEFAULT)
-        steam_path = Path(default_steam_path)
-        dayz_exp = PeFile.get_pretty_version(steam_path, APPID_DAYZ_EXP)
-
+        # TODO: cleaner delegation
+        has_dayz_exp = parent.offline_man.has_dayz_exp()
         self.dayz.connect("toggled", self._on_radio_toggled)
-        if dayz_exp is None:
+        if has_dayz_exp is False:
             self.dayz_exp.set_sensitive(False)
 
     def _on_radio_toggled(self, radio: Gtk.RadioButton) -> None:
@@ -315,6 +403,7 @@ class OfflineLoader(Gtk.Box):
 
         self.controller = controller
         self.controller.register_widget("offline_loader", self)
+        self.emitter = controller.get_emitter()
         self.offline_man = OfflineManager(controller)
 
         self.add(PageHeading(offline.heading))
@@ -324,7 +413,7 @@ class OfflineLoader(Gtk.Box):
 
         self.custom_tree = OfflineModTreeView(controller)
         self.mission_frame = MissionFrame(self, controller)
-        self.radio_frame = RadioFrame(controller)
+        self.radio_frame = RadioFrame(self, controller)
 
         self.scrollable = Gtk.ScrolledWindow(
             vexpand=True, propagate_natural_height=True
@@ -343,7 +432,7 @@ class OfflineLoader(Gtk.Box):
         # TODO: share ConnectBox class with preconnect dialog?
         self.button_box = HBox(spacing=5)
         self.button_box.set_halign(Gtk.Align.END)
-        self.button_box.set_margin_top(5)
+        self.button_box.set_margin_top(15)
         self.back = Gtk.Button(label="Back")
         self.ok = Gtk.Button(label="Launch", sensitive=False)
         self.back.connect("clicked", self._on_back_clicked)
@@ -365,28 +454,24 @@ class OfflineLoader(Gtk.Box):
             self.ok.set_sensitive(True)
 
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
+        # FIXME: widget is not always in focus
         if event.keyval == Gdk.KEY_Escape:
             self.back.emit("clicked")
 
     def populate(self, store: Union["FastInsertListStore", None]) -> None:
-        self.local_frame.set_model(store)
-        if store is None:
-            self.local_frame.start_empty()
-        else:
-            self.local_frame.hide_errors()
         # NOTE: suppress custom tree until explicitly loaded
-        self.custom_frame.hide_all()
+        if store is None:
+            return
+        self.local_frame.start(store)
+        # self.custom_frame.start(store)
 
     def _on_back_clicked(self, button: Gtk.Button) -> None:
         self.controller.open_page(NotebookPage.MODS)
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
-        # TODO: grab all values in one pass
-        # appid = self.radio_frame.get_appid()
-        # mission = self.mission_frame.get_mission()
-        # local_mods = self.local_frame.get_mods()
-        # custom_mods = self.custom_frame.get_mods()
-        # cf. api.mods._hash(uid, use_custom=True)
-        # TODO: set up all symlinks prior to launch, including custom ones
-        # self.offline_man.setup(appid, mission, local_mods, custom_mods)
-        pass
+        appid = self.radio_frame.get_appid()
+        mission = self.mission_frame.get_mission()
+        local_mods = self.local_frame.get_mods()
+        custom_folder = self.custom_frame.get_folder()
+        custom_mods = self.custom_frame.get_mods()
+        self.offline_man.launch(appid, mission, local_mods, custom_folder, custom_mods)

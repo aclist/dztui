@@ -162,9 +162,12 @@ def load_to_menu(client: str, appid: int, name: str, mods: list[str]) -> int:
     proc = subprocess.run([*client_args, *params])
     return proc.returncode
 
-def launch_offline(client: str, appid: int, name: str, mods: list[str], mission: str) -> int:
+
+def launch_offline(
+    client: str, appid: int, name: str, mods: list[str], mission: str
+) -> int:
     """Launch offline with specific mods/missions"""
-    concat = concat_mods(mods)
+    symlinks = ";".join(mods)
     client_args = concat_bash_args(client)
     params = [
         "-applaunch",
@@ -173,11 +176,12 @@ def launch_offline(client: str, appid: int, name: str, mods: list[str], mission:
         "-nosplash",
         "-skipintro",
         f"-name={name}",
-        f"-mod={concat}",
-        f"-mission={mission}"
+        f"-mod={symlinks}",
+        f"-mission={mission}",
     ]
     proc = subprocess.run([*client_args, *params])
     return proc.returncode
+
 
 def find_user_id(path: Path) -> str | None:
     resolved_path = path / "config" / "loginusers.vdf"

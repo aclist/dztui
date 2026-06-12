@@ -12,3 +12,9 @@ local_frame = "Installed mods"
 
 no_mods = "No valid mods found"
 no_mission = "Not a valid mission"
+
+custom_eventbox = "Set the root folder. Mods must be in atomic folders and have a meta.cpp file at a minimum."
+mission_eventbox = "Select a single mission folder containing an init.c file."
+
+folder_prefix = "<b>Current folder: </b>"
+unset_button = "Unset folder"

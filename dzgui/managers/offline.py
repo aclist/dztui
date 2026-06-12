@@ -1,17 +1,23 @@
+import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import Callable, TYPE_CHECKING, Union
 
+import dzgui.api.pefile as PeFile
 from dzgui.api.mods import is_mission, get_custom_mods
 from dzgui.api.steam import launch_offline
+from dzgui.const.constants import APP_NAME
 from dzgui.const.enum import Preferences
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.model.model_factory import ModelFactory
 from dzgui.strings import dialogs
-from dzgui.util.symlink import clone_symlinks
+from dzgui.util.symlink import create_custom_symlinks
 from dzgui.views.dialogs.filepicker import FolderPicker
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
+    from dzgui.model.model_factory import FastInsertListStore
+
+logger = logging.getLogger(APP_NAME)
 
 
 class OfflineManager:
@@ -35,65 +41,73 @@ class OfflineManager:
         if folder is None:
             return
         is_valid = is_mission(folder)
-        # TODO: stop storing values in here
-        if is_valid:
-            # TODO: str
-            self.mission_folder = str(folder)
         self.emitter.emit("custom_mission_loaded", str(folder), is_valid)
 
-    def get_custom_mods(self, local_mods: list[str]) -> None:
+    def find_custom_mods(self, callback: Callable) -> None:
         folder = self.open_folderpicker(dialogs.custom_mod_dialog)
+        window = self.controller.get_window()
+        window.set_sensitive(False)
         if folder is None:
+            window.set_sensitive(True)
             return
-        self.parse_custom_mods(local_mods, folder)
+        # NOTE: starts spinner in calling UI
+        callback()
+        self.parse_custom_mods(folder)
 
-    @call_on_thread(dialogs.parsing_mods)
-    def parse_custom_mods(self, local_mods: list[str], folder: str) -> None:
+    @call_on_thread(dialogs.parsing_mods, show_dialog=False)
+    def parse_custom_mods(self, folder: str) -> None:
         mods = get_custom_mods(Path(folder))
         store = ModelFactory().make_mod_store()
         store.extend(mods)
-
-        func = StoredFunc(
-            lambda: self.emitter.emit("custom_mods_loaded", store, folder)
-        )
+        func = StoredFunc(self.post_mod_loading, store, folder)
         self.thread_man.set_cleanup_func(func)
 
-    def setup(
-        self,
-        appid: int,
-        mission: str = "",
-        local_mods: list[str] | None = None,
-        custom_mods: list[str] | None = None,
-    ) -> None:
-
-        self.appid = appid
-        self.local_mods = local_mods
-        self.custom_mods = custom_mods
-
-        self.launch()
+    def post_mod_loading(self, store: "FastInsertListStore", folder: str) -> None:
+        window = self.controller.get_window()
+        window.set_sensitive(True)
+        self.emitter.emit("custom_mods_loaded", store, folder)
 
     @call_on_thread(dialogs.waiting_for_launch)
-    def launch(self) -> None:
+    def launch(
+        self,
+        appid: int,
+        mission: str,
+        local_mods: list[str],
+        custom_folder: str,
+        custom_mods: list[str],
+    ) -> None:
+
+        # NOTE: local_mods and custom_mods are lists of symlinks
         client = self.controller.query_config(Preferences.CLIENT)
         name = self.controller.query_config(Preferences.NAME)
         steam_path = self.controller.query_config(Preferences.DEFAULT)
 
-        new_symlinks: list[str] = []
-
         combined_mods: list[str] = []
-        if self.local_mods is not None:
-            combined_mods.extend(self.local_mods)
 
-        if self.custom_mods is not None:
-            # TODO: new function that creates symlinks in game path
-            # based on selected mods
-            clone_symlinks(Path(steam_path))
+        if len(local_mods) > 0:
+            combined_mods.extend(local_mods)
+
+        if len(custom_mods) > 0:
+            new_symlinks = create_custom_symlinks(
+                Path(steam_path), Path(custom_folder), custom_mods
+            )
             combined_mods.extend(new_symlinks)
-
-        launch_offline(client, self.appid, name, combined_mods, self.mission_folder)
+        launch_offline(client, appid, name, combined_mods, mission)
 
     def open_folderpicker(self, title: str) -> Union["Path", None]:
         picker = FolderPicker(self.controller.get_window(), title)
         folder = picker.pick_folder()
         picker.destroy()
         return folder
+
+    def has_dayz_exp(self) -> bool:
+        try:
+            default_steam_path = self.controller.query_config(Preferences.DEFAULT)
+            steam_path = Path(default_steam_path)
+            dayz_exp = PeFile.get_pretty_version(steam_path, APPID_DAYZ_EXP)
+            if dayz_exp is None:
+                return False
+            return True
+        except Exception as e:
+            logger.warning(e)
+            return False

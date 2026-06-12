@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 import gi
 
@@ -9,6 +9,7 @@ from gi.repository import Gdk, GObject  # noqa E402
 if TYPE_CHECKING:
     from dzgui.const.enum import NotebookPage, ServerTab
     from dzgui.model.model_factory import FastInsertListStore
+    from dzgui.views.pages.offline import FolderHBox
 
 
 # TODO: if servers fail to load, may leave dangling widgets waiting for a signal
@@ -160,6 +161,14 @@ class Emitter(GObject.GObject):
     def custom_mods_loaded(self, store: "FastInsertListStore", folder: str) -> None:
         pass
 
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
+    def custom_mods_unloaded(self, widget: "FolderHBox") -> None:
+        pass
+
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(str, bool))
     def custom_mission_loaded(self, folder: str, is_valid: bool) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def invalid_custom_mods(self) -> None:
         pass

@@ -32,10 +32,12 @@ HEX_GREEN = "#32CD32"
 HEX_RED = "#FF0000"
 HEX_ORANGE = "#FFAC1C"
 
+# FIXME: normalize icon names
 CARET_DOWN = "go-down-symbolic"
 CARET_UP = "go-up-symbolic"
 CLIPBOARD = "edit-copy-symbolic"
 FOLDER = "folder-symbolic"
+EDIT_DELETE = "edit-delete-symbolic"
 ERROR = "dialog-error-symbolic"
 HELP_BUBBLE = "help-about-symbolic"
 INPUT_KEYBOARD = "input-keyboard-symbolic"
