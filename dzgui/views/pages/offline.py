@@ -120,6 +120,7 @@ class FolderHBox(HBox):
 
         self.pop = ErrorPopover()
         self.pop.set_relative_to(self.button)
+        self.pop.connect("unmap", lambda _: self.grab_focus())
 
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
@@ -166,11 +167,11 @@ class FolderHBox(HBox):
         self.unset_button.show()
 
     def present_error(self, error: FolderError, msg: str) -> None:
+        self.folder = ""
+        self.label.set_text("")
         self.unset_button.hide()
         self.pop.set_label(error, msg)
         self.pop.popup()
-        self.grab_focus()
-
 
 class ModFrame(HeadingFrame):
     def __init__(
