@@ -99,6 +99,7 @@ class Statusbar(Gtk.Grid):
         self.spinner.stop()
         # FIXME: CalcDist is being called when table is not loaded
         if dist is None:
+            self.set_by_context(context, "")
             return
         else:
             pretty = self.append_distance(dist)

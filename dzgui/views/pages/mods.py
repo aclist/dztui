@@ -1,4 +1,5 @@
 from typing import Self, TYPE_CHECKING
+from dzgui.const.enum import NotebookPage
 from dzgui.views.components.scrollable import NoOverlayScrolledWindow
 from dzgui.views.trees.tree_mods import ModTreeView
 
@@ -20,6 +21,7 @@ class Mods(Gtk.Box):
         self.tree.set_vexpand(True)
         self.box.add(self.tree)
 
+        self.statusbar_cache = ""
         self.controller = controller
         self.controller.register_widget("modtreeview", self.tree)
         self.emitter = controller.get_emitter()
@@ -39,6 +41,7 @@ class Mods(Gtk.Box):
         self.connect("unmap", self._on_unmap)
 
     def _on_offline_clicked(self, button: Gtk.Button) -> None:
+        self.statusbar_cache = self.controller.get_statusbar().get_cache()
         self.controller.open_offline()
 
     def _on_unmap(self, widget: Self) -> None:
@@ -46,6 +49,13 @@ class Mods(Gtk.Box):
 
     def _on_map(self, widget: Self) -> None:
         self.emitter.emit("mod_page_toggled", True)
+        # TODO: delegation
+        # NOTE: handles going back from offline mods page
+        # more generic cache restoration method
+        if len(self.statusbar_cache) > 0:
+            self.controller.get_statusbar().set_by_context(
+                NotebookPage.MODS, self.statusbar_cache
+            )
 
     def grab_content_area(self) -> None:
         self.tree.grab_focus()
