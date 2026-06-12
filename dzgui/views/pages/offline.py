@@ -143,6 +143,7 @@ class FolderHBox(HBox):
         self.unset_button.hide()
 
     def _on_unset_clicked(self, button: Gtk.Button) -> None:
+        self.folder = ""
         self.label.set_label("")
         self.unset_button.hide()
         # FIXME: rename signal
@@ -348,6 +349,7 @@ class MissionFrame(HeadingFrame):
             self.mission_hbox.set_folder(folder)
         else:
             self.mission_hbox.present_error(FolderError.NO_VALID_MISSION, folder)
+        self.parent.check_button()
 
     def _on_mission_button_clicked(self, button: Gtk.Button) -> None:
         self.parent.offline_man.get_mission()
@@ -438,6 +440,7 @@ class OfflineLoader(Gtk.Box):
         self.back.connect("clicked", self._on_back_clicked)
         self.ok.connect("clicked", self._on_ok_clicked)
         self.connect("key-press-event", self._on_keypress)
+        self.emitter.connect("custom_mods_unloaded", lambda _, __: self.check_button())
 
         self.button_box.extend([self.back, self.ok])
 
@@ -448,7 +451,8 @@ class OfflineLoader(Gtk.Box):
     def check_button(self) -> None:
         local_mods = self.local_frame.get_mods()
         custom_mods = self.custom_frame.get_mods()
-        if len(local_mods) == 0 and len(custom_mods) == 0:
+        mission = self.mission_frame.get_mission()
+        if len(local_mods) == 0 and len(custom_mods) == 0 and len(mission) == 0:
             self.ok.set_sensitive(False)
         else:
             self.ok.set_sensitive(True)
