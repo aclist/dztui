@@ -1,4 +1,5 @@
 import logging
+import time
 from pathlib import Path
 from typing import Callable, TYPE_CHECKING, Union
 
@@ -7,10 +8,11 @@ from dzgui.api.mods import is_mission, get_custom_mods
 from dzgui.api.steam import launch_offline
 from dzgui.const.constants import APP_NAME, APPID_DAYZ_EXP
 from dzgui.const.enum import Preferences
+from dzgui.init.proc import is_dayz_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.model.model_factory import ModelFactory
 from dzgui.strings import dialogs
-from dzgui.util.symlink import create_custom_symlinks
+from dzgui.util.symlink import create_custom_symlinks, symlink_mission
 from dzgui.views.dialogs.filepicker import FolderPicker
 
 if TYPE_CHECKING:
@@ -92,7 +94,15 @@ class OfflineManager:
                 Path(steam_path), Path(custom_folder), custom_mods
             )
             combined_mods.extend(new_symlinks)
-        launch_offline(client, appid, name, combined_mods, mission)
+
+        if len(mission) > 0:
+            relative_link = symlink_mission(Path(steam_path), mission)
+
+        launch_offline(client, appid, name, combined_mods, relative_link)
+        while True:
+            if is_dayz_running():
+                break
+            time.sleep(1)
 
     def open_folderpicker(self, title: str) -> Union["Path", None]:
         picker = FolderPicker(self.controller.get_window(), title)

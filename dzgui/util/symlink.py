@@ -49,6 +49,17 @@ def create_custom_symlinks(
     clone_symlinks(steam_path)
     return links
 
+def symlink_mission(steam_path: Path, target: str) -> None:
+    dayz_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
+    for file in dayz_path.iterdir():
+        if file.is_symlink() and str(file.stem)[:2] == "@C":
+            file.unlink()
+    stem = Path(target).name
+    suffix = _hash(stem, use_custom=True)
+    source = dayz_path.joinpath(suffix)
+    source.symlink_to(Path(target))
+    return suffix
+
 
 def clone_symlinks(steam_path: Path) -> None:
     """
