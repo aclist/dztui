@@ -25,6 +25,8 @@ class Statusbar(Gtk.Grid):
         self.controller.register_widget("statusbar", self)
         self.emitter = controller.get_emitter()
 
+        self.prior_enum: NotebookPage
+        self.prior_status: str
         self.playercount = ""
         self.statusbar = Gtk.Statusbar()
 
@@ -71,6 +73,7 @@ class Statusbar(Gtk.Grid):
             NotebookPage.CONNECTION,
             NotebookPage.OFFLINE,
         ):
+            self.prior_enum = enum
             self.set_by_context(enum, esc_to_return)
             return
 
@@ -80,8 +83,9 @@ class Statusbar(Gtk.Grid):
             case NotebookPage.KEYS:
                 bar = question_to_return
             case _:
-                return
+                bar = self.prior_status
 
+        self.prior_enum = enum
         self.set_by_context(enum, bar)
 
     def _on_server_row_changed(self, statusbar: Self) -> None:
@@ -97,6 +101,10 @@ class Statusbar(Gtk.Grid):
         context: Union["ServerTab", NotebookPage],
     ) -> None:
         self.spinner.stop()
+
+        if type(context) is NotebookPage:
+            self.prior_enum = context
+        self.prior_status = ""
         # FIXME: CalcDist is being called when table is not loaded
         if dist is None:
             self.set_by_context(context, "")
@@ -122,6 +130,8 @@ class Statusbar(Gtk.Grid):
     def set_by_context(
         self, context: Union[NotebookPage, "ServerTab"], string: str
     ) -> None:
+        if context != NotebookPage.KEYS:
+            self.prior_status = string
         meta = self.statusbar.get_context_id(str(context))
         self.statusbar.push(meta, string)
         self.set_cache(string)
