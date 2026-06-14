@@ -95,6 +95,7 @@ class OfflineManager:
             )
             combined_mods.extend(new_symlinks)
 
+        relative_link = ""
         if len(mission) > 0:
             relative_link = symlink_mission(Path(steam_path), mission)
 

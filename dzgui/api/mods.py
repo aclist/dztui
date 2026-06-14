@@ -85,6 +85,7 @@ def get_mod_size(path: Path) -> float:
 
 
 def get_custom_mods(path: Path) -> list[Any]:
+    # TODO: rename this function for clarity ("get local vs. get custom")
     mods = get_local_mods(path)
     # TODO: error handling
     return parse_mods(mods, use_custom=True)
