@@ -12,6 +12,7 @@ from dzgui.api.servers import get_rules, fqip_to_record
 from dzgui.const.constants import (
     APP_NAME,
     APPID_DAYZ,
+    DAYZ_COMMUNITY_ROOT,
     LIBRARYFOLDERS_PATH,
     WORKSHOP_PATH,
 )
@@ -50,6 +51,9 @@ def get_local_mods(workshop_path: Path) -> list[Path]:
 
 def is_mission(path: Path) -> bool:
     # TODO: parse integrity of other files
+    parent = path.parent.name
+    if parent != DAYZ_COMMUNITY_ROOT:
+        return False
     file = path / "init.c"
     return file.exists()
 

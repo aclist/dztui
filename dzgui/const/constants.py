@@ -83,3 +83,5 @@ LOG_FILTERS = ("CRITICAL", "WARNING", "INFO", "DEBUG")
 TMP_PATH = "/tmp"
 TMP_TARBALL = "/tmp/dzgui.tar.gz"
 TMP_EXE = "/tmp/dzgui/dzgui"
+
+DAYZ_COMMUNITY_ROOT = "Missions"

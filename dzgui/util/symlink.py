@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 
 from dzgui.api.mods import get_local_mod_path, get_local_mod_ids, _hash
-from dzgui.const.constants import APPID_DAYZ, APPID_DAYZ_EXP, APP_NAME
+from dzgui.const.constants import APPID_DAYZ, APPID_DAYZ_EXP, APP_NAME, DAYZ_COMMUNITY_ROOT
 from dzgui.const.enum import Preferences
 from dzgui.config.query import lookup
 
@@ -11,18 +11,23 @@ import dzgui.api.pefile as PeFile
 logger = logging.getLogger(APP_NAME)
 
 
+def expunge_link(file: Path) -> None:
+    if not file.is_symlink():
+        return
+    # NOTE: unlink stale symlinks
+    if file.exists() is False:
+        file.unlink()
+    if str(file.stem)[:2] == "@C":
+        file.unlink()
+
 def rebuild_symlinks(config: Path) -> None:
     # TODO: pass direct path as argument
     path = lookup(config, Preferences.DEFAULT)
     steam_path = Path(path)
     dayz_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
     for file in dayz_path.iterdir():
-        # NOTE: unlink stale symlinks
-        if file.is_symlink() and file.exists() is False:
-            file.unlink()
-        # NOTE: expunge ephemeral (custom) symlinks
-        if file.is_symlink() and str(file.stem)[:2] == "@C":
-            file.unlink()
+        expunge_link(file)
+
     workshop = get_local_mod_path(steam_path)
     # NOTE: create symlinks for missing mods
     for mod_id in get_local_mod_ids(steam_path):
@@ -49,16 +54,21 @@ def create_custom_symlinks(
     clone_symlinks(steam_path)
     return links
 
+
 def symlink_mission(steam_path: Path, target: str) -> None:
     dayz_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
     for file in dayz_path.iterdir():
-        if file.is_symlink() and str(file.stem)[:2] == "@C":
-            file.unlink()
-    stem = Path(target).name
-    suffix = _hash(stem, use_custom=True)
-    source = dayz_path.joinpath(suffix)
-    source.symlink_to(Path(target))
-    return suffix
+        expunge_link(file)
+    path = Path(target)
+    stem = path.name
+    parent = path.parent
+    suffix = _hash(str(parent), use_custom=True)
+    source = dayz_path.joinpath(DAYZ_COMMUNITY_ROOT)
+    try:
+        source.symlink_to(parent)
+    except Exception:
+        return ""
+    return f"{DAYZ_COMMUNITY_ROOT}/{stem}"
 
 
 def clone_symlinks(steam_path: Path) -> None:
