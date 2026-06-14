@@ -240,6 +240,7 @@ class ModFrame(HeadingFrame):
         if model is None:
             return []
         if type(self) is CustomModFrame:
+            # NOTE: custom mod dirs to be hashed
             return [model[_iter][2] for _iter in treeiters]
         else:
             # NOTE: pre-existing, canonical symlinks to published mods
