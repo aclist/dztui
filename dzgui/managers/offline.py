@@ -12,7 +12,7 @@ from dzgui.init.proc import is_dayz_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.model.model_factory import ModelFactory
 from dzgui.strings import dialogs
-from dzgui.util.symlink import create_custom_symlinks, clone_symlinks, symlink_mission
+from dzgui.util.symlink import create_custom_symlinks, symlink_mission
 from dzgui.views.dialogs.filepicker import FolderPicker
 
 if TYPE_CHECKING:

@@ -55,14 +55,13 @@ def create_custom_symlinks(
     return links
 
 
-def symlink_mission(steam_path: Path, target: str) -> None:
+def symlink_mission(steam_path: Path, target: str) -> str:
     dayz_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
     for file in dayz_path.iterdir():
         expunge_link(file)
     path = Path(target)
     stem = path.name
     parent = path.parent
-    suffix = _hash(str(parent), use_custom=True)
     source = dayz_path.joinpath(DAYZ_COMMUNITY_ROOT)
     try:
         source.symlink_to(parent)

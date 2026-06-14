@@ -202,7 +202,7 @@ class ModFrame(HeadingFrame):
 
         self.no_mods = HBox(spacing=10)
         no_mods_icon = Icon(WARNING, margin_start=10)
-        no_mods_label = Gtk.Label(offline.no_local_mods, halign=Gtk.Align.START)
+        no_mods_label = Gtk.Label(label=offline.no_local_mods, halign=Gtk.Align.START)
         self.no_mods.extend([no_mods_icon, no_mods_label])
 
         self.vbox.pack_end(self.no_mods, expand=True, fill=True, padding=3)
