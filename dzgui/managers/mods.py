@@ -66,6 +66,9 @@ class ModManager:
         func = StoredFunc(self._on_mods_loaded)
         self.thread_man.set_cleanup_func(func)
 
+    def set_store(self, store: "FastInsertListStore") -> None:
+        self.store = store
+
     def _on_mods_loaded(self) -> None:
         self.treeview.set_model(self.store)
         if self.store is None:

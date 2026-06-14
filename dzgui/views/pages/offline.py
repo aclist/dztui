@@ -11,6 +11,7 @@ from dzgui.const.constants import (
     EDIT_DELETE,
     ERROR,
     FOLDER,
+    WARNING,
 )
 from dzgui.const.enum import ContextMenuGroup, NotebookPage
 from dzgui.managers.offline import OfflineManager
@@ -173,6 +174,7 @@ class FolderHBox(HBox):
         self.pop.set_label(error, msg)
         self.pop.popup()
 
+
 class ModFrame(HeadingFrame):
     def __init__(
         self, parent: OfflineLoader, controller: "Controller", label: str
@@ -198,20 +200,39 @@ class ModFrame(HeadingFrame):
         self.tree_vbox = VBox()
         self.tree_vbox.extend([self.scrolled, self.status])
 
+        self.no_mods = HBox(spacing=10)
+        no_mods_icon = Icon(WARNING, margin_start=10)
+        no_mods_label = Gtk.Label(offline.no_local_mods, halign=Gtk.Align.START)
+        self.no_mods.extend([no_mods_icon, no_mods_label])
+
+        self.vbox.pack_end(self.no_mods, expand=True, fill=True, padding=3)
         self.vbox.pack_end(self.tree_vbox, expand=True, fill=True, padding=3)
         self.frame.add(self.vbox)
 
         sel = self.tree.get_selection()
         sel.connect("changed", self._on_selection_changed)
 
+        self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
+
+    def start_empty(self) -> None:
+        self.tree_vbox.hide()
+        self.no_mods.show()
+
+    def _on_map(self, widget: Self) -> None:
+        self.no_mods.hide()
+        self.tree.set_model(None)
+        self.tree_vbox.hide()
 
     def _on_unmap(self, widget: Self) -> None:
         self.tree.set_model(None)
         self.tree_vbox.hide()
+        self.no_mods.hide()
 
     def start(self, store: "FastInsertListStore") -> None:
+        # TODO: this manipulates mod man store out of band
         self.tree.set_model(store)
+        self.tree.mod_man.set_store(store)
         self.show_tree()
 
     def get_mods(self) -> list[str]:
@@ -294,6 +315,7 @@ class CustomModFrame(ModFrame):
         self.custom_hbox.hide_label()
         self.tree.set_model(None)
         self.tree_vbox.hide()
+        self.no_mods.hide()
 
     def present_error(self, folder: str) -> None:
         self.hide_tree()
@@ -459,12 +481,12 @@ class OfflineLoader(Gtk.Box):
             self.ok.set_sensitive(True)
 
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
-        # FIXME: widget is not always in focus
         if event.keyval == Gdk.KEY_Escape:
             self.back.emit("clicked")
 
     def populate(self, store: Union["FastInsertListStore", None]) -> None:
         if store is None:
+            self.local_frame.start_empty()
             return
         self.local_frame.start(store)
 
