@@ -20,7 +20,6 @@ from dzgui.controllers.emitter import Emitter
 from dzgui.managers.config import ConfigManager
 from dzgui.managers.connection import ConnectionManager
 from dzgui.managers.contextmenu import ContextMenuManager
-from dzgui.managers.mods import ModManager
 from dzgui.managers.notes import NoteManager
 from dzgui.model.servers import ServerModelManager
 from dzgui.util.diag import write_diagnostic
@@ -47,12 +46,13 @@ if TYPE_CHECKING:
     from dzgui.views.components.filter_panel import FilterPanel
     from dzgui.views.components.right_panel import RightPanel
     from dzgui.views.components.statusbar import Statusbar
+    from dzgui.views.pages.offline import OfflineLoader
     from dzgui.views.pages.options import Options
     from dzgui.views.pages.preconnect import PreConnectionAssistant
     from dzgui.views.pages.servers import ServerNotebook
     from dzgui.views.trees.tree_log import LogTreeView
     from dzgui.views.trees.tree_menu import MenuTreeView
-    from dzgui.views.trees.tree_mods import ModTreeView
+    from dzgui.views.trees.tree_mods import ModTreeView, OfflineModTreeView
     from dzgui.views.trees.tree_servers import ServerTreeView
 
 
@@ -72,6 +72,7 @@ class AppNavigation:
     filters: "FilterPanel"
     preconnect: "PreConnectionAssistant"
     options: "Options"
+    offline_loader: "OfflineLoader"
 
 
 class Controller(GObject.GObject):
@@ -218,19 +219,29 @@ class Controller(GObject.GObject):
         open_user_workshop(uid, client)
 
     def load_mods(self) -> None:
-        self.mod_man = ModManager(self)
+        self.mediator.modtreeview.load_mods()
 
     def uncolorize_mods(self) -> None:
-        self.mod_man.uncolorize_mods()
+        mod_man = self.mediator.modtreeview.get_mod_man()
+        mod_man.uncolorize_mods()
 
     def highlight_stale(self) -> None:
-        self.mod_man.highlight_stale()
+        mod_man = self.mediator.modtreeview.get_mod_man()
+        mod_man.highlight_stale()
 
     def toggle_mod_selection(self, state: bool) -> None:
-        self.mod_man.toggle_mod_selection(state)
+        mod_man = self.mediator.modtreeview.get_mod_man()
+        mod_man.toggle_mod_selection(state)
 
-    def delete_mods(self) -> None:
-        self.mod_man.delete_mods()
+    def delete_mods(
+        self, treeview: Union["ModTreeView", "OfflineModTreeView", None] = None
+    ) -> None:
+        if treeview is None:
+            view = self.mediator.modtreeview
+        else:
+            view = treeview
+        mod_man = view.get_mod_man()
+        mod_man.delete_mods()
 
     def get_mod_store(self) -> Gtk.TreeModel | None:
         return self.mediator.modtreeview.get_model()
@@ -257,7 +268,8 @@ class Controller(GObject.GObject):
             dialog.run()
 
     def select_colorized(self) -> None:
-        self.mod_man.select_colorized()
+        mod_man = self.mediator.modtreeview.get_mod_man()
+        mod_man.select_colorized()
 
     def get_all_tree_filters(self) -> dict[str, dict[str, bool]]:
         servers = self.get_servers()
@@ -533,3 +545,9 @@ class Controller(GObject.GObject):
             self.clear_cancel_event()
             return True
         return False
+
+    def open_offline(self) -> None:
+        self.open_page(NotebookPage.OFFLINE)
+        mod_man = self.mediator.modtreeview.get_mod_man()
+        store = mod_man.store
+        self.mediator.offline_loader.populate(store)

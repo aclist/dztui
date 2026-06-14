@@ -103,6 +103,7 @@ class Preferences(EnumWithAttrs):
 
 
 class NotebookPage(EnumWithAttrs):
+    OFFLINE = {"crumbs": strings.crumbs.offline, "statusbar": True}
     CHANGELOG = {"crumbs": strings.crumbs.changelog, "statusbar": True}
     DEVELOPERS = {"crumbs": strings.crumbs.developers, "statusbar": False}
     HELP = {"crumbs": strings.crumbs._help, "statusbar": True}
@@ -184,6 +185,7 @@ class ContextMenuGroup(Enum):
 
     SERVER_MOD = (ContextMenu.OPEN_WORKSHOP,)
     MOD = (ContextMenu.OPEN_WORKSHOP, ContextMenu.DELETE_MOD)
+    MOD_OFFLINE = (None,)
     LOG = (ContextMenu.COPY_LOG_CLIPBOARD,)
     SERVER_BROWSER = (
         ContextMenu.CONNECT,

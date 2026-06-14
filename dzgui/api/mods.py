@@ -1,6 +1,6 @@
 import hashlib
 import logging
-import shlex
+import re
 
 from concurrent.futures import wait
 from concurrent.futures import ThreadPoolExecutor
@@ -12,6 +12,7 @@ from dzgui.api.servers import get_rules, fqip_to_record
 from dzgui.const.constants import (
     APP_NAME,
     APPID_DAYZ,
+    DAYZ_COMMUNITY_ROOT,
     LIBRARYFOLDERS_PATH,
     WORKSHOP_PATH,
 )
@@ -48,36 +49,32 @@ def get_local_mods(workshop_path: Path) -> list[Path]:
     mods = [file for file in workshop_path.iterdir() if file.is_dir()]
     return mods
 
+def is_mission(path: Path) -> bool:
+    # TODO: parse integrity of other files
+    parent = path.parent.name
+    if parent != DAYZ_COMMUNITY_ROOT:
+        return False
+    file = path / "init.c"
+    return file.exists()
 
-def parse_meta(file: Path) -> ModMeta | None:
-    mod = file / "meta.cpp"
-    if mod.exists() is False:
+def tokenize(mod: Path) -> dict[str, Any] | None:
+    file = mod.joinpath("meta.cpp")
+    delimiter=r"\s*=\s*"
+    modmeta = {}
+    try:
+        with open(file, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip().rstrip(";")
+                if not line:
+                    continue
+                els = re.split(delimiter, line, maxsplit=1)
+                if len(els) == 2:
+                    key, value = els
+                    modmeta[key.strip()] = value.strip('"')
+        return modmeta
+    except Exception as e:
+        logger.critical(e)
         return None
-    with open(file / "meta.cpp", "r") as f:
-        st = f.read()
-        lex = shlex.shlex(st)
-        lex.whitespace += "=;"
-        v = []
-        while True:
-            tok = lex.get_token()
-            if not tok:
-                break
-            if tok == "protocol" or tok == "publishedid":
-                ntok = lex.get_token()
-            elif tok == "timestamp":
-                # NOTE: some malformed .NET tick conversions result in numbers < 0
-                ntok = lex.get_token()
-                if ntok == "-":
-                    ntok += str(lex.get_token())
-            elif tok == "name":
-                ntok = lex.get_token()
-                if ntok is not None:
-                    ntok = ntok.split('"')[1]
-            if ntok is not None:
-                v.append(ntok)
-        meta = ModMeta(*v)
-        return meta
-
 
 def get_mod_size(path: Path) -> float:
     s = 0
@@ -87,33 +84,43 @@ def get_mod_size(path: Path) -> float:
     return size
 
 
-def get_delimited_mods(steam_path: Path) -> list[Any]:
-    workshop_path = get_local_mod_path(steam_path)
-    mods = get_local_mods(workshop_path)
+def get_custom_mods(path: Path) -> list[Any]:
+    # TODO: rename this function for clarity ("get local vs. get custom")
+    mods = get_local_mods(path)
+    # TODO: error handling
+    return parse_mods(mods, use_custom=True)
+
+
+def parse_mods(mods: list[Path], use_custom: bool = False) -> list[Any]:
     clean = []
     for mod in mods:
         mod_dir = mod.name
-        symlink = _hash(mod_dir)
-        # FIXME: malformed .cpp files could break this
-        # mention that mods may be downloading
-        meta = parse_meta(mod)
+        symlink = _hash(mod_dir, use_custom)
+        meta = tokenize(mod)
         if meta is None:
             continue
         size = get_mod_size(mod)
         # NOTE: final col is cell renderer highlight toggle
-        clean.append([meta.name, symlink, mod_dir, size, False])
+        clean.append([meta["name"], symlink, mod_dir, size, False])
     clean.sort(key=lambda row: str(row[0]).casefold())
     return clean
+
+
+def get_delimited_mods(steam_path: Path) -> list[Any]:
+    workshop_path = get_local_mod_path(steam_path)
+    mods = get_local_mods(workshop_path)
+    return parse_mods(mods)
 
 
 def get_missing_mods(local: list, remote: list) -> list:
     return [mod for mod in remote if mod not in local]
 
 
-def _hash(uid: str) -> str:
+def _hash(uid: str, use_custom: bool = False) -> str:
     md5 = hashlib.md5()
     md5.update(uid.encode("ascii"))
-    return "@" + md5.hexdigest()[:8]
+    prefix = "@C" if use_custom else "@"
+    return prefix + md5.hexdigest()[:8]
 
 
 def remove_stale_signatures(config: Path, versions: Path) -> None:

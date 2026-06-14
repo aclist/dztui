@@ -23,6 +23,8 @@ from dzgui.views.pages.help import Help
 from dzgui.views.pages.keys import Keybindings
 from dzgui.views.pages.log import Log
 from dzgui.views.pages.mods import Mods
+
+from dzgui.views.pages.offline import OfflineLoader
 from dzgui.views.pages.options import Options
 from dzgui.views.pages.preconnect import PreConnectionAssistant
 from dzgui.views.pages.servers import ServerNotebook
@@ -68,7 +70,6 @@ class OuterWindow(Gtk.Window):
         MainController.set_start_tab()
         self.grid.hide_widgets_on_init()
 
-        # TODO: POC, trigger page change here
         MainController.loaded = True
         MainController.populate_model(MainController.get_active_treeview())
 
@@ -110,8 +111,11 @@ class Notebook(ScrollableMixin, Gtk.Notebook):  # type: ignore
 
         self.connection = PreConnectionAssistant(MainController)
 
+        self.offline = OfflineLoader(MainController)
+
         self.pages = {
             self.help: NotebookPage.HELP,
+            self.offline: NotebookPage.OFFLINE,
             self.clog: NotebookPage.CHANGELOG,
             self.keys: NotebookPage.KEYS,
             self.settings: NotebookPage.OPTIONS,

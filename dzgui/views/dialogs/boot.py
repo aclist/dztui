@@ -1,19 +1,19 @@
 import sys
-from typing import Literal, TYPE_CHECKING
+from typing import Any, Literal, Self, TYPE_CHECKING
 
 # import time
 from enum import Enum
-from typing import Any, Self
 
 # TODO: import dialog titles
 from dzgui.api.mods import remove_stale_signatures as remove_stale
 from dzgui.config.ipdb import get_ipdb
 from dzgui.const.constants import HEX_GREEN, HEX_RED
 from dzgui.init.coords import get_local_coords
+from dzgui.init.dayz import is_dayz_installed
 from dzgui.init.update import check_updates
 from dzgui.const.constants import EXPAND, FILL
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
-from dzgui.strings import preboot
+from dzgui.strings import preboot, dialogs
 from dzgui.util.format import format_exception
 from dzgui.util.strings import dialog_header
 from dzgui.util.symlink import rebuild_symlinks
@@ -57,6 +57,9 @@ class BootDialog(Gtk.Dialog):
 
         self.view = Gtk.TreeView(enable_search=False, headers_visible=False)
         self.view.set_model(self.store)
+
+        # TODO: capture sigint in early dialogs
+        self.connect("key-press-event", self._on_keypress)
 
         for i, column_title in enumerate(["Task", "State"]):
             renderer = Gtk.CellRendererText()
@@ -119,6 +122,7 @@ class BootDialog(Gtk.Dialog):
         self.error_box.hide()
 
         steps = [
+            (StoredFunc(is_dayz_installed, self.xdg.config), preboot.dayz, False),
             (StoredFunc(rebuild_symlinks, self.xdg.config), preboot.symlinks, False),
             (
                 StoredFunc(remove_stale, self.xdg.config, self.xdg.version),
@@ -126,6 +130,7 @@ class BootDialog(Gtk.Dialog):
                 False,
             ),
             (StoredFunc(get_ipdb, self.xdg.ips), preboot.geo, False),
+            # TODO: handle IP DB failure and use coords fallback
             (StoredFunc(get_local_coords, self.xdg.ips), preboot.coords, True),
             (StoredFunc(check_updates, self.version), preboot.updates, True),
         ]
@@ -134,6 +139,10 @@ class BootDialog(Gtk.Dialog):
         self.steps = iter(steps)
 
         GLib.timeout_add(100, self.pulse_spinner)
+
+    def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
+        if event.keyval == Gdk.KEY_Escape:
+            self.exit_button.emit("clicked")
 
     def pulse_spinner(self) -> Literal[True]:
         for row in self.store:
@@ -181,10 +190,10 @@ class BootDialog(Gtk.Dialog):
             self.thread_man.set_cleanup_func(callback)
 
     def update_task(self, task: str) -> None:
-        self.store.append((task, "Running", True, 0))
+        self.store.append((task, dialogs.running, True, 0))
 
     def update_status(self, state: Success) -> None:
-        d = {Success.OK: "OK", Success.FAIL: "FAILED"}
+        d = {Success.OK: dialogs.ok, Success.FAIL: dialogs.failed}
         msg = d[state]
         self.store[len(self.store) - 1][1] = msg
         self.iter_step()
@@ -197,7 +206,7 @@ class BootDialog(Gtk.Dialog):
         it: Gtk.TreeIter,
         data: Any,
     ) -> None:
-        if model[it][1] == "Running":
+        if model[it][1] == dialogs.running:
             cell.set_property("visible", True)
         else:
             cell.set_property("visible", False)
@@ -214,9 +223,9 @@ class BootDialog(Gtk.Dialog):
         state = model[it][1]
         if column.get_sort_column_id() != 1:
             return
-        if state == "OK":
+        if state == dialogs.ok:
             cell.set_property(prop, HEX_GREEN)
-        elif state == "FAILED":
+        elif state == dialogs.failed:
             cell.set_property(prop, HEX_RED)
         else:
             cell.set_property(prop, None)

@@ -71,6 +71,7 @@ class Statusbar(Gtk.Grid):
             NotebookPage.CHANGELOG,
             NotebookPage.LOG,
             NotebookPage.CONNECTION,
+            NotebookPage.OFFLINE,
         ):
             self.prior_enum = enum
             self.set_by_context(enum, esc_to_return)
@@ -106,6 +107,7 @@ class Statusbar(Gtk.Grid):
         self.prior_status = ""
         # FIXME: CalcDist is being called when table is not loaded
         if dist is None:
+            self.set_by_context(context, "")
             return
         else:
             pretty = self.append_distance(dist)

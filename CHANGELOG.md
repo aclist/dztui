@@ -40,6 +40,7 @@
 - Preboot progress dialog
 - Choose to jump into splash screen instead of server
 - Collapsible connection panel
+- Play offline (load mods directly)
 
 ## Changed
 - Conform to PEP 440 versioning for beta versions

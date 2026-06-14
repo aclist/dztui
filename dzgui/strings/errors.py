@@ -3,3 +3,4 @@ api_validation_error = (
 )
 
 api_popover = "API key validation failed."
+dayz_not_found = "Could not find a valid DayZ installation."

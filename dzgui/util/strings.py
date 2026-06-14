@@ -64,7 +64,7 @@ connect = "Connect"
 
 # Columns
 server_mod_cols = ["Mod", "ID", "Installed"]
-mod_cols = ["Mod", "Symlink", "Dir", "Size (MiB)", "Color"]
+mod_cols = ["Mod", "Symlink", "ID", "Size (MiB)", "Color"]
 log_cols = ["Timestamp", "Flag", "Traceback", "Message"]
 browser_cols = [
     "Name",
@@ -273,6 +273,7 @@ class Crumbs:
     thanks: str
     developers: str
     default: str
+    offline: str
 
 
 @dataclass(slots=True, frozen=True)
@@ -462,6 +463,7 @@ crumbs = Crumbs(
     thanks="Help > Special thanks",
     developers="Options > Developers",
     default="Servers > ",
+    offline="Mods > Play offline"
 )
 
 no_mods = "No local mods found."

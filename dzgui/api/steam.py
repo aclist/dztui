@@ -158,6 +158,26 @@ def load_to_menu(client: str, appid: int, name: str, mods: list[str]) -> int:
     return proc.returncode
 
 
+def launch_offline(
+    client: str, appid: int, name: str, mods: list[str], mission: str
+) -> int:
+    """Launch offline with specific mods/missions"""
+    symlinks = ";".join(mods)
+    client_args = concat_bash_args(client)
+    params = [
+        "-applaunch",
+        str(appid),
+        "-nolauncher",
+        "-nosplash",
+        "-skipintro",
+        f"-name={name}",
+        f"-mod={symlinks}",
+        f"-mission={mission}",
+    ]
+    proc = subprocess.run([*client_args, *params])
+    return proc.returncode
+
+
 def find_user_id(path: Path) -> str | None:
     resolved_path = path / "config" / "loginusers.vdf"
     try:

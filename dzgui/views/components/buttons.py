@@ -31,40 +31,61 @@ if TYPE_CHECKING:
 
 
 class Icon(Gtk.Image):
-    def __init__(self, name: str, l_margin: int = 0) -> None:
+    def __init__(self, name: str, margin_start: int = 0, margin_end: int = 0) -> None:
         super().__init__(
             icon_name=name,
             icon_size=Gtk.IconSize.BUTTON,
-            margin_start=l_margin,
+            margin_start=margin_start,
+            margin_end=margin_end,
             ypad=2,
         )
 
 
 class LargeIcon(Gtk.Image):
-    def __init__(self, name: str, l_margin: int = 5) -> None:
+    def __init__(self, name: str, margin_start: int = 5, margin_end: int = 0) -> None:
         super().__init__(
-            icon_name=name, icon_size=Gtk.IconSize.LARGE_TOOLBAR, margin_start=l_margin
+            icon_name=name,
+            icon_size=Gtk.IconSize.LARGE_TOOLBAR,
+            margin_start=margin_start,
+            margin_end=margin_end,
         )
 
 
 class IconButton(Gtk.Button):
-    def __init__(self, icon: str, margin: int = 0) -> None:
+    def __init__(
+        self,
+        icon: str,
+        position: Gtk.PositionType = Gtk.PositionType.RIGHT,
+        margin_start: int = 0,
+        margin_end: int = 0,
+    ) -> None:
         super().__init__()
-        self.icon = Icon(icon, l_margin=margin)
+        self.icon = Icon(icon, margin_start=margin_start, margin_end=margin_end)
         self.set_image(self.icon)
-        self.set_image_position(Gtk.PositionType.RIGHT)
+        self.set_image_position(position)
+        # self.set_image_position(Gtk.PositionType.RIGHT)
         self.set_focus_on_click(False)
 
 
 class IconTextButton(IconButton):
-    def __init__(self, icon: str, label: str) -> None:
-        super().__init__(icon, margin=5)
+    def __init__(
+        self, icon: str, label: str, position: Gtk.PositionType = Gtk.PositionType.RIGHT
+    ) -> None:
+        match position:
+            case Gtk.PositionType.RIGHT:
+                super().__init__(icon, position, margin_start=5)
+            case Gtk.PositionType.LEFT:
+                super().__init__(icon, position, margin_end=5)
+            case _:
+                raise ValueError("Unsupported position type")
         self.set_label(label)
 
 
 class LargeIconTextButton(IconButton):
-    def __init__(self, icon: str, label: str) -> None:
-        super().__init__(icon)
+    def __init__(
+        self, icon: str, label: str, position: Gtk.PositionType = Gtk.PositionType.RIGHT
+    ) -> None:
+        super().__init__(icon, position)
         self.set_label(label)
         self.set_image(LargeIcon(icon))
 

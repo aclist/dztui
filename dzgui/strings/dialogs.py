@@ -9,5 +9,13 @@ load_error_lan = "Failed to find any servers on your network.\nCheck the server 
 fetching_mods = "Fetching mod metadata"
 deleting_mods = "Deleting mods"
 scanning_mods = "Scanning mods"
+parsing_mods = "Parsing mods"
 
 checking_api = "Checking API key"
+
+running = "Running"
+failed = "FAILED"
+ok = "OK"
+
+mission_dialog = "Set a mission folder location"
+custom_mod_dialog = "Set location to a custom mods folder"

@@ -8,7 +8,7 @@ from dzgui.util.clip import copy_clipboard
 from dzgui.util.open_links import open_workshop_page
 
 from dzgui.views.dialogs.note import NoteDialog
-from dzgui.views.trees.tree_mods import ModTreeView
+from dzgui.views.trees.tree_mods import ModTreeView, OfflineModTreeView
 from dzgui.views.trees.tree_log import LogTreeView
 from dzgui.views.trees.tree_servers import ServerTreeView
 from dzgui.views.trees.tree_server_mods import ServerModTreeView
@@ -27,7 +27,13 @@ if TYPE_CHECKING:
 class ContextMenuManager:
     def __init__(
         self,
-        treeview: LogTreeView | ModTreeView | ServerTreeView | ServerModTreeView,
+        treeview: (
+            LogTreeView
+            | ModTreeView
+            | ServerTreeView
+            | ServerModTreeView
+            | OfflineModTreeView
+        ),
         controller: "Controller",
     ) -> None:
         self.controller = controller
@@ -72,10 +78,10 @@ class ContextMenuManager:
                 case ContextMenu.SHOW_MODS:
                     self.controller.get_modlist(record)
 
-        if isinstance(self.treeview, ModTreeView):
+        if isinstance(self.treeview, (ModTreeView, OfflineModTreeView)):
             match action:
                 case ContextMenu.DELETE_MOD:
-                    self.controller.delete_mods()
+                    self.controller.delete_mods(self.treeview)
                 case ContextMenu.OPEN_WORKSHOP:
                     self.open_mod_page()
 

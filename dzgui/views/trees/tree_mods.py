@@ -3,6 +3,7 @@ from typing import Any, TYPE_CHECKING
 
 from dzgui.const.constants import APP_NAME, HEX_RED
 from dzgui.const.enum import ContextMenuGroup
+from dzgui.managers.mods import ModManager
 from dzgui.util import strings, localize
 from dzgui.views.mixins.context_mixin import ContextMixin
 from dzgui.views.mixins.mods_mixin import ModsMixin
@@ -22,9 +23,14 @@ logger = logging.getLogger(APP_NAME)
 
 
 class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
-    def __init__(self, controller: "Controller") -> None:
-        super().__init__(controller, menu=ContextMenuGroup.MOD)
+    def __init__(
+        self, controller: "Controller", menu: ContextMenuGroup = ContextMenuGroup.MOD
+    ) -> None:
+        super().__init__(controller, menu=menu)
+
         self.controller = controller
+        self.mod_man = ModManager(self, controller)
+
         emitter = self.controller.get_emitter()
         emitter.connect("mods_updated", self._on_mods_updated)
         emitter.connect("mods_highlighted", self._on_mods_highlighted)
@@ -55,6 +61,33 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
         self.connect("generic_treesel_changed", self._parent_selection_changed)
         self.connect("button-press-event", self.present_menu)
         self.connect("key-press-event", self.present_menu)
+
+        self.connect("button-press-event", self.on_row_click)
+
+    def on_row_click(self, widget: Gtk.TreeView, event: Gdk.EventButton) -> bool:
+        if event.state is Gdk.ModifierType.CONTROL_MASK and event.button == 1:
+            path_info = widget.get_path_at_pos(int(event.x), int(event.y))
+            if path_info is None:
+                return False
+            path, column, cellx, celly = path_info
+            model = self.get_model()
+            if model is None:
+                return False
+            if path is None:
+                return False
+            _iter = model.get_iter(path)
+            if self.get_selection().iter_is_selected(_iter):
+                self.get_selection().unselect_iter(_iter)
+            else:
+                self.get_selection().select_iter(_iter)
+            return True
+        return False
+
+    def get_mod_man(self) -> ModManager:
+        return self.mod_man
+
+    def load_mods(self) -> None:
+        self.mod_man.load_mods()
 
     def _on_mods_highlighted(self, emitter: "Emitter") -> None:
         self.get_selection().unselect_all()
@@ -105,3 +138,13 @@ class ModTreeView(ModsMixin, ContextMixin, TreeView):  # type: ignore
         val = model[it][3]
         formatted = localize.number(val)
         cell.set_property("text", formatted)
+        # NOTE: reapply color property after float conversion
+        self._format_color(column, cell, model, it, data)
+
+    def set_menu(self, context: ContextMenuGroup) -> None:
+        self.menu = context
+
+
+class OfflineModTreeView(ModTreeView):
+    def __init__(self, controller: "Controller") -> None:
+        super().__init__(controller)

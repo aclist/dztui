@@ -33,3 +33,36 @@ class FilePicker(Gtk.FileChooserDialog):
                 self.destroy()
                 return Path(file)
         return None
+
+
+class FolderPicker(Gtk.FileChooserDialog):
+    def __init__(self, parent: Gtk.Window, title: str) -> None:
+        super().__init__(
+            title=title,
+            action=Gtk.FileChooserAction.SELECT_FOLDER,
+            parent=parent,
+            resizable=True,
+        )
+        self.add_buttons("_Cancel", Gtk.ResponseType.CANCEL)
+        self.add_buttons("_OK", Gtk.ResponseType.OK)
+        self.set_default_response(Gtk.ResponseType.OK)
+
+    def pick_folder(self) -> Path | None:
+        res = self.run()
+        if res in (Gtk.ResponseType.CANCEL, Gtk.ResponseType.DELETE_EVENT):
+            self.destroy()
+            return None
+        if res == Gtk.ResponseType.OK:
+            folder = self.get_current_folder()
+            if folder is None:
+                try:
+                    uri = self.get_uri()
+                    if uri is None:
+                        return None
+                    return Path.from_uri(uri)
+                except Exception:
+                    # FIXME: edge cases
+                    return Path("/")
+            self.destroy()
+            return Path(folder)
+        return None
