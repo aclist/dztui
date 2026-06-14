@@ -73,14 +73,9 @@ def get_local_signatures(version_file: Path) -> dict[str, int]:
     return hashes
 
 
-def enqueue_mod(mod: str, appid: int) -> None:
-    args = [
-        "steam",
-        f"steam://url/CommunityFilePage/{mod}+workshop_download_item",
-        str(appid),
-        mod,
-    ]
-    subprocess.Popen(["/usr/bin/env", "bash", *args])
+def enqueue_mod(client: str, mod: str, appid: int) -> None:
+    client_args = concat_bash_args(client)
+    subprocess.Popen([*client_args, "+workshop_download_item", str(appid), mod])
 
 
 def get_needs_update(
