@@ -1,5 +1,9 @@
+from pathlib import Path
+
 from typing import Self, TYPE_CHECKING
-from dzgui.const.enum import NotebookPage
+from dzgui.api.steam import find_user_id
+from dzgui.const.enum import NotebookPage, Preferences
+from dzgui.views.components.buttons import SteamWorkshopButton
 from dzgui.views.components.scrollable import NoOverlayScrolledWindow
 from dzgui.views.trees.tree_mods import ModTreeView
 
@@ -26,6 +30,19 @@ class Mods(Gtk.Box):
         self.controller.register_widget("modtreeview", self.tree)
         self.emitter = controller.get_emitter()
 
+        # TODO: move
+        default_steam_path = self.controller.query_config(Preferences.DEFAULT)
+        steam_path = Path(default_steam_path)
+        uid = find_user_id(steam_path)
+
+        pretty_uid = "" if uid is None else uid
+        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        workshop_button = SteamWorkshopButton()
+        workshop_button.set_margin_top(10)
+        workshop_button.set_margin_bottom(10)
+        workshop_button.connect(
+            "clicked", lambda _: self.controller.open_user_workshop(pretty_uid)
+        )
         self.offline_button = Gtk.Button(
             label="Play offline",
             halign=Gtk.Align.START,
@@ -34,7 +51,10 @@ class Mods(Gtk.Box):
         )
         self.offline_button.connect("clicked", self._on_offline_clicked)
 
-        self.add(self.offline_button)
+        hbox.add(workshop_button)
+        hbox.add(self.offline_button)
+
+        self.add(hbox)
         self.add(self.box)
 
         self.connect("map", self._on_map)

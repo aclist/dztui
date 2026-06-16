@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from dzgui.api import pefile as PeFile
-from dzgui.api.steam import find_user_id
+
 from dzgui.config import query
 from dzgui.const.constants import (
     APPID_DAYZ,
@@ -19,7 +19,8 @@ from dzgui.const.endpoints import STEAM_API_SETUP, BM_API_SETUP
 from dzgui.const.enum import Preferences, ServerTab
 from dzgui.strings import errors, options
 from dzgui.util import strings, css, open_links
-from dzgui.views.components.buttons import SteamWorkshopButton
+
+# from dzgui.views.components.buttons import SteamWorkshopButton
 from dzgui.views.components.labels import LeftLabel
 from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.buttons import WebButton
@@ -134,16 +135,6 @@ class Options(Gtk.Box):
             [LeftLabel(strings.options.name), self.player_box],
         ]
 
-        eb = InfoEventBox(options.workshop_eventbox, controller)
-
-        workshop_button = SteamWorkshopButton()
-        workshop_button.connect(
-            "clicked", lambda _: self.controller.open_user_workshop(self.uid)
-        )
-        mod_rows = [
-            [LeftLabel(options.workshop_label), workshop_button, eb],
-        ]
-
         self.dayz_version_label = Gtk.Label(label=strings.null)
         self.dayz_exp_version_label = Gtk.Label(label=strings.null)
 
@@ -169,7 +160,6 @@ class Options(Gtk.Box):
         api_box.add(api_links_box)
 
         prefs_grid = self._make_grid(pref_rows)
-        mods_grid = self._make_grid(mod_rows)
         version_grid = self._make_grid(version_rows)
 
         col = 1
@@ -190,7 +180,6 @@ class Options(Gtk.Box):
         for pair in [
             (api_box, strings.options.api_keys),
             (prefs_grid, strings.options.prefs),
-            (mods_grid, strings.options.mods),
             (version_grid, strings.options.version),
         ]:
 
@@ -416,9 +405,6 @@ class Options(Gtk.Box):
         bm = self.controller.query_config(Preferences.BM)
 
         steam_path = Path(default_steam_path)
-        # NOTE: this is a best effort guess at the most recent user
-        uid = find_user_id(steam_path)
-        self.uid = "" if uid is None else uid
 
         self.old_steam = steam
         self.old_bm = bm

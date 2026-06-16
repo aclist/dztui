@@ -80,8 +80,8 @@ class ContextMenuManager:
 
         if isinstance(self.treeview, (ModTreeView, OfflineModTreeView)):
             match action:
-                case ContextMenu.DELETE_MOD:
-                    self.controller.delete_mods(self.treeview)
+                case ContextMenu.UNSUB_MOD:
+                    self.controller.unsub_mods(self.treeview)
                 case ContextMenu.OPEN_WORKSHOP:
                     self.open_mod_page()
 

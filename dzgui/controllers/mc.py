@@ -233,7 +233,7 @@ class Controller(GObject.GObject):
         mod_man = self.mediator.modtreeview.get_mod_man()
         mod_man.toggle_mod_selection(state)
 
-    def delete_mods(
+    def unsub_mods(
         self, treeview: Union["ModTreeView", "OfflineModTreeView", None] = None
     ) -> None:
         if treeview is None:
@@ -241,7 +241,7 @@ class Controller(GObject.GObject):
         else:
             view = treeview
         mod_man = view.get_mod_man()
-        mod_man.delete_mods()
+        mod_man.unsub_mods()
 
     def get_mod_store(self) -> Gtk.TreeModel | None:
         return self.mediator.modtreeview.get_model()

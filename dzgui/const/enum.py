@@ -168,7 +168,7 @@ class ContextMenu(EnumWithAttrs):
     COPY_LOG_CLIPBOARD = {"label": strings.copy_log}
     COPY_SERVER_IP = {"label": strings.copy_ip}
     COPY_SERVER_NAME = {"label": strings.copy_name}
-    DELETE_MOD = {"label": strings.delete_mod}
+    UNSUB_MOD = {"label": strings.unsub_mod}
     OPEN_WORKSHOP = {"label": strings.open_workshop}
     REFRESH_PLAYERS = {"label": strings.refresh_players}
     REMOVE_HISTORY = {"label": strings.remove_history}
@@ -184,7 +184,7 @@ class ContextMenuGroup(Enum):
     """
 
     SERVER_MOD = (ContextMenu.OPEN_WORKSHOP,)
-    MOD = (ContextMenu.OPEN_WORKSHOP, ContextMenu.DELETE_MOD)
+    MOD = (ContextMenu.OPEN_WORKSHOP, ContextMenu.UNSUB_MOD)
     MOD_OFFLINE = (None,)
     LOG = (ContextMenu.COPY_LOG_CLIPBOARD,)
     SERVER_BROWSER = (
@@ -250,9 +250,9 @@ class ModButton(EnumWithAttrs):
         "label": strings.mod_panel.unhighlight_stale,
         "tooltip": strings.mod_panel.unhighlight_stale_tooltip,
     }
-    DELETE_SELECTED = {
-        "label": strings.mod_panel.delete_selected,
-        "tooltip": strings.mod_panel.delete_selected_tooltip,
+    UNSUB_SELECTED = {
+        "label": strings.mod_panel.unsub_selected,
+        "tooltip": strings.mod_panel.unsub_selected_tooltip,
     }
     SELECT_STALE = {
         "label": strings.mod_panel.select_stale,
