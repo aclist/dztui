@@ -302,7 +302,7 @@ class ConnectionManager:
         for title, mod, stamp, size in self.missing_mods:
             if self.controller.is_cancel_pending():
                 return
-            subscribe(key, mod)
+            subscribe(key, int(mod))
             time.sleep(RATE_LIMIT_THRESHOLD)
 
         if raise_window is True:
