@@ -12,10 +12,10 @@ import dzgui.api.servers as Servers
 
 from dzgui.api.steam import (
     connect,
-    enqueue_mod,
     get_remote_signatures,
     get_needs_update,
     load_to_menu,
+    subscribe,
 )
 
 from dzgui.api.mods import (
@@ -30,6 +30,7 @@ from dzgui.const.constants import (
     APPID_DAYZ_EXP,
     APPNAME_DAYZ,
     APPNAME_DAYZ_EXP_HUMAN,
+    RATE_LIMIT_THRESHOLD,
 )
 from dzgui.const.enum import NotebookPage, Preferences
 from dzgui.init.proc import is_dayz_running, is_steam_running
@@ -294,15 +295,15 @@ class ConnectionManager:
         self.controller.open_page(NotebookPage.SERVERS)
 
     def _update_mods(self, raise_window: bool, menu_only: bool = False) -> None:
-        # NOTE: fast enqueue all mods in auto mode
         prefs = self.controller.get_prefs()
+        config_man = self.controller.get_config_man()
+        key = config_man.lookup(Preferences.STEAM)
 
         for title, mod, stamp, size in self.missing_mods:
             if self.controller.is_cancel_pending():
                 return
-            enqueue_mod(self.client, mod, self.appid)
-            # NOTE: prevents rate limiting
-            time.sleep(3)
+            subscribe(key, mod)
+            time.sleep(RATE_LIMIT_THRESHOLD)
 
         if raise_window is True:
             logger.info("Bringing window to foreground")

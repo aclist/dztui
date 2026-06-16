@@ -3,20 +3,25 @@ import logging
 import os
 import requests
 import subprocess
+from typing import Union
+from warnings import deprecated
 
 from shlex import shlex
 from pathlib import Path
 
 from dzgui.init.prereqs import has_steam_client
+from dzgui.api.mods import _hash
 from dzgui.const.constants import (
+    APPID_DAYZ,
     APP_NAME,
     DEBIAN_STEAM_PATH,
     DEFAULT_STEAM_PATH,
     FLATPAK_STEAM_PATH,
     UBUNTU_STEAM_PATH,
+    REQUEST_TIMEOUT,
     VDF_PATH,
 )
-from dzgui.const.endpoints import STEAM_PUBLISHED_FILES
+from dzgui.const.endpoints import SUB_ENDPOINT, STEAM_PUBLISHED_FILES, UNSUB_ENDPOINT
 from dzgui.strings import wizard
 from dzgui.util.bash import concat_bash_args
 
@@ -53,8 +58,6 @@ def get_steam_paths() -> list[tuple[Path, str]]:
 
 
 def concat_mods(mods: list[str]) -> str:
-    from dzgui.util.symlink import _hash
-
     hashes = []
     for mod in mods:
         md5sum = _hash(mod)
@@ -73,21 +76,16 @@ def get_local_signatures(version_file: Path) -> dict[str, int]:
     return hashes
 
 
-def enqueue_mod(client: str, mod: str, appid: int) -> None:
-    client_args = concat_bash_args(client)
-    subprocess.Popen([*client_args, "+workshop_download_item", str(appid), mod])
-
-
 def get_needs_update(
     version_file: Path, remote_hashes: list[tuple[str, str, int, int]]
 ) -> list[tuple[str, str, int, int]]:
     local_hashes = get_local_signatures(version_file)
     needs_update: list[tuple[str, str, int, int]] = []
-    for title, _id, _hash, size in remote_hashes:
+    for title, _id, mod_hash, size in remote_hashes:
         if _id not in local_hashes:
-            needs_update.append((title, _id, _hash, size))
+            needs_update.append((title, _id, mod_hash, size))
         elif _hash != local_hashes[_id]:
-            needs_update.append((title, _id, _hash, size))
+            needs_update.append((title, _id, mod_hash, size))
         else:
             continue
     return needs_update
@@ -232,6 +230,28 @@ def vdf2json(path: Path) -> str:
                     jbuf += "\n"
 
 
+def update_workshop(key: str, mod: int, endpoint: str) -> None:
+    payload: dict[str, Union[int, str]] = {
+        "publishedfileid": mod,
+        "appid": APPID_DAYZ,
+        "key": key,
+        "list_type": 1,
+        "notify_client": 1,
+    }
+    try:
+        res = requests.post(endpoint, params=payload, timeout=REQUEST_TIMEOUT)
+        res.raise_for_status()
+    except Exception as e:
+        logger.critical(e)
+
+
+def subscribe(key: str, mod: int) -> None:
+    update_workshop(key, mod, SUB_ENDPOINT)
+
+
+def unsubscribe(key: str, mod: int) -> None:
+    update_workshop(key, mod, UNSUB_ENDPOINT)
+
 def gen_shortcut() -> None:
     # TODO:
     """
@@ -244,3 +264,8 @@ def gen_shortcut() -> None:
     # or get right-most 32 bits
     # STEAMID_64 & 0xFFFFFFFF
     pass
+
+@deprecated("Use subscribe()")
+def enqueue_mod(client: str, mod: str, appid: int) -> None:
+    client_args = concat_bash_args(client)
+    subprocess.Popen([*client_args, "+workshop_download_item", str(appid), mod])
