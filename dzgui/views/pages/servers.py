@@ -16,7 +16,7 @@ logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
-    from dzgui.controllers.mc import Emitter
+    from dzgui.controllers.emitter import Emitter
 
 
 class ScrollableTree(Gtk.ScrolledWindow):

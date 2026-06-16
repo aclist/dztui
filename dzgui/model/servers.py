@@ -374,7 +374,7 @@ class ServerModelManager:
         proxy = self._get_proxy_man().get_proxy_model()
         self.tv.set_model(proxy)
 
-        if self.controller.get_active_treeview().get_enum == ServerTab.SAVED:
+        if self.controller.get_active_treeview().get_enum() == ServerTab.SAVED:
             self.emitter.emit("servers_loaded", self.enum)
 
         filter_man = self.tv.get_filter_man()
