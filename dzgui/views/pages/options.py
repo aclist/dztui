@@ -20,9 +20,7 @@ from dzgui.const.enum import Preferences, ServerTab
 from dzgui.strings import errors, options
 from dzgui.util import strings, css, open_links
 
-# from dzgui.views.components.buttons import SteamWorkshopButton
 from dzgui.views.components.labels import LeftLabel
-from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.buttons import WebButton
 from dzgui.views.components.frame import HeadingFrame
 from dzgui.views.components.misc import ClientCombo
