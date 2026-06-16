@@ -1,8 +1,10 @@
 import re
 from collections.abc import Iterator
 from typing import Any
+from warnings import deprecated
 
 
+@deprecated("Use dzgui.api.steam.unsubscribe()")
 class WorkshopACF:
     def __init__(self, file: str) -> None:
         super().__init__()
