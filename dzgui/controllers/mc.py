@@ -523,11 +523,11 @@ class Controller(GObject.GObject):
         ind = self.config_man.get_start_tab()
         self.get_servers().notebook.set_current_page(ind)
 
-    def update_and_load_to_menu(self, raise_window: bool) -> None:
-        self.connection_man.update_and_connect(raise_window, menu_only=True)
+    def update_and_load_to_menu(self) -> None:
+        self.connection_man.update_and_connect(menu_only=True)
 
-    def update_and_connect(self, raise_window: bool) -> None:
-        self.connection_man.update_and_connect(raise_window)
+    def update_and_connect(self) -> None:
+        self.connection_man.update_and_connect()
 
     def update_status(self) -> None:
         self.mediator.preconnect.mark_finished()

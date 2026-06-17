@@ -112,18 +112,6 @@ class PreConnectionAssistant(Gtk.Box):
             tooltip_text=preconnect.connect_last_tooltip,
         )
 
-        # TODO: abstract
-        self.raise_window = Gtk.CheckButton(
-            label="Foreground DZGUI while downloading",
-            halign=Gtk.Align.END,
-            hexpand=True,
-            valign=Gtk.Align.END,
-            visible=False,
-            has_tooltip=True,
-            sensitive=False,
-            tooltip_text="Foreground the DZGUI window after mod downloads are queued",
-            active=True,
-        )
         self.button_box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
             valign=Gtk.Align.END,
@@ -133,8 +121,7 @@ class PreConnectionAssistant(Gtk.Box):
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         for button in self.back, self.ok, self.connect_last:
             box.add(button)
-        for el in self.raise_window, box:
-            self.button_box.add(el)
+        self.button_box.add(box)
 
         self.back.connect("clicked", self._on_back_clicked)
         self.ok.connect("clicked", self._on_ok_clicked)
@@ -217,8 +204,6 @@ class PreConnectionAssistant(Gtk.Box):
         for child in widgets:
             child.set_visible(True)
 
-        self.raise_window.set_visible(False)
-        self.raise_window.set_sensitive(False)
         self.ok.set_sensitive(True)
         self.ok.set_label(preconnect.update_mods)
 
@@ -230,10 +215,10 @@ class PreConnectionAssistant(Gtk.Box):
                 self.ok.emit("clicked")
 
     def _on_connect_last_clicked(self, button: Gtk.Button) -> None:
-        self.controller.update_and_load_to_menu(self.raise_window.get_active())
+        self.controller.update_and_load_to_menu()
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
-        self.controller.update_and_connect(self.raise_window.get_active())
+        self.controller.update_and_connect()
 
     def _on_back_clicked(self, button: Gtk.Button) -> None:
         self.controller.open_page(NotebookPage.SERVERS)
@@ -317,10 +302,6 @@ class PreConnectionAssistant(Gtk.Box):
 
         if prereqs.required_space == 0:
             self.ok.set_label(preconnect.connect)
-            self.raise_window.set_visible(False)
-        else:
-            self.raise_window.set_visible(True)
-            self.raise_window.set_sensitive(True)
 
             pretty = number(prereqs.required_space)
             suffix = f" Need to download {pretty} MiB of mod updates."
