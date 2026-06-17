@@ -34,9 +34,17 @@ class OfflineManager:
         self.thread_man = ThreadingManager(controller)
 
         self.appid: int
-        self.mission_folder: str
         self.local_mods: list[str] | None
         self.custom_mods: list[str] | None
+
+    # TODO: more robust test
+    def is_custom_folder_valid(self, folder: str) -> bool:
+        return Path(folder).exists()
+
+    # TODO: set properties as members of offline manager on demand and check them here
+    # rather than passing strings again
+    def is_mission_valid(self, folder: str) -> bool:
+        return is_mission(Path(folder))
 
     def get_mission(self) -> None:
         folder = self.open_folderpicker(dialogs.mission_dialog)
