@@ -1,6 +1,6 @@
 from __future__ import annotations
 from enum import Enum
-from typing import Self, Sequence, TYPE_CHECKING, Union
+from typing import Self, TYPE_CHECKING, Union
 
 from dzgui.util import css
 from dzgui.const.constants import (
