@@ -37,7 +37,7 @@ class OfflineManager:
         self.local_mods: list[str] | None
         self.custom_mods: list[str] | None
 
-    # TODO; more robust test
+    # TODO: more robust test
     def is_custom_folder_valid(self, folder: str) -> bool:
         return Path(folder).exists()
 
