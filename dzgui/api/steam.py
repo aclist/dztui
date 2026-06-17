@@ -71,21 +71,21 @@ def get_local_signatures(version_file: Path) -> dict[str, int]:
     for line in lines:
         data = line.split(",")
         _id = data[0]
-        _hash = int(data[1])
-        hashes[_id] = _hash
+        mod_hash = int(data[1])
+        hashes[_id] = mod_hash
     return hashes
 
 
 def get_needs_update(
     version_file: Path, remote_hashes: list[tuple[str, str, int, int]]
 ) -> list[tuple[str, str, int, int]]:
-    local_hashes = get_local_signatures(version_file)
+    local_stamps = get_local_signatures(version_file)
     needs_update: list[tuple[str, str, int, int]] = []
-    for title, _id, mod_hash, size in remote_hashes:
-        if _id not in local_hashes:
-            needs_update.append((title, _id, mod_hash, size))
-        elif _hash != local_hashes[_id]:
-            needs_update.append((title, _id, mod_hash, size))
+    for title, _id, stamp, size in remote_hashes:
+        if _id not in local_stamps:
+            needs_update.append((title, _id, stamp, size))
+        elif stamp != local_stamps[_id]:
+            needs_update.append((title, _id, stamp, size))
         else:
             continue
     return needs_update
@@ -252,6 +252,7 @@ def subscribe(key: str, mod: int) -> None:
 def unsubscribe(key: str, mod: int) -> None:
     update_workshop(key, mod, UNSUB_ENDPOINT)
 
+
 def gen_shortcut() -> None:
     # TODO:
     """
@@ -264,6 +265,7 @@ def gen_shortcut() -> None:
     # or get right-most 32 bits
     # STEAMID_64 & 0xFFFFFFFF
     pass
+
 
 @deprecated("Use subscribe()")
 def enqueue_mod(client: str, mod: str, appid: int) -> None:
