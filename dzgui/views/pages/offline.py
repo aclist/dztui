@@ -38,6 +38,7 @@ if TYPE_CHECKING:
 class FolderError(Enum):
     NO_VALID_MODS = 1
     NO_VALID_MISSION = 2
+    FOLDER_CHANGED = 3
 
 
 class PageHeading(Gtk.Label):
@@ -65,6 +66,10 @@ class ErrorPopover(Gtk.Popover):
                 prefix = offline.no_mods
             case FolderError.NO_VALID_MISSION:
                 prefix = offline.no_mission
+            case FolderError.FOLDER_CHANGED:
+                prefix = offline.folder_changed
+                self.label.set_label(prefix)
+                return
         self.label.set_label(f"{prefix}: '{msg}'")
 
 
@@ -104,6 +109,11 @@ class FolderHBox(HBox):
         self.pop = ErrorPopover()
         self.pop.set_relative_to(self.button)
         self.pop.connect("unmap", lambda _: self.grab_focus())
+
+        self.sidepop = ErrorPopover()
+        self.sidepop.set_position(Gtk.PositionType.BOTTOM)
+        self.sidepop.set_relative_to(self.scrolled_label)
+        self.sidepop.connect("unmap", lambda _: self.grab_focus())
 
         self.connect("map", self._on_map)
         self.connect("unmap", self._on_unmap)
@@ -150,6 +160,10 @@ class FolderHBox(HBox):
         self.unset_button.show()
 
     def present_error(self, error: FolderError, msg: str) -> None:
+        if error == FolderError.FOLDER_CHANGED:
+            self.sidepop.set_label(error, msg)
+            self.sidepop.popup()
+            return
         self.folder = ""
         self.label.set_text("")
         self.unset_button.hide()
@@ -300,6 +314,9 @@ class CustomModFrame(ModFrame):
         self.tree_vbox.hide()
         self.no_mods.hide()
 
+    def present_folder_changed(self, folder: str) -> None:
+        self.custom_hbox.present_error(FolderError.FOLDER_CHANGED, folder)
+
     def present_error(self, folder: str) -> None:
         self.hide_tree()
         self.custom_hbox.present_error(FolderError.NO_VALID_MODS, folder)
@@ -362,6 +379,9 @@ class MissionFrame(HeadingFrame):
 
     def get_mission(self) -> str:
         return self.mission_hbox.get_folder()
+
+    def present_folder_changed(self, folder: str) -> None:
+        self.mission_hbox.present_error(FolderError.FOLDER_CHANGED, folder)
 
 
 class RadioFrame(HeadingFrame):
@@ -482,4 +502,12 @@ class OfflineLoader(Gtk.Box):
         local_mods = self.local_frame.get_mods()
         custom_folder = self.custom_frame.get_folder()
         custom_mods = self.custom_frame.get_mods()
+
+        if custom_folder and not self.offline_man.is_custom_folder_valid(custom_folder):
+            self.custom_frame.present_folder_changed(mission)
+            return
+
+        if mission and not self.offline_man.is_mission_valid(mission):
+            self.mission_frame.present_folder_changed(mission)
+            return
         self.offline_man.launch(appid, mission, local_mods, custom_folder, custom_mods)
