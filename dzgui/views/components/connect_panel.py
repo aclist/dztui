@@ -20,7 +20,8 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk  # noqa E402
 
 if TYPE_CHECKING:
-    from dzgui.controllers.mc import Controller, Emitter
+    from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
 
 COLS = 1
 ROWS = 1

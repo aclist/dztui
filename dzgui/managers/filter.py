@@ -89,8 +89,9 @@ class FilterManager:
                 continue
             self.append_map([m])
 
+    # TODO: currently unused
     def get_unique_maps(self) -> list[str]:
-        return [row[0] for row in self.map_store if row != "All maps"]
+        return [row[0] for row in self.map_store if row[0] != "All maps"]
 
     def get_all_filters(self) -> tuple:
         map_name = self.get_active_map_name()

@@ -208,6 +208,8 @@ class SteamWorkshopButton(SteamTextButton):
     def __init__(self) -> None:
         super().__init__(label=buttons.workshop)
         self.set_tooltip_text(buttons.workshop_tooltip)
+        self.set_margin_top(10)
+        self.set_margin_bottom(10)
 
 
 class AddButton(IconTextButton):

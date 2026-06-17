@@ -233,7 +233,7 @@ class Controller(GObject.GObject):
         mod_man = self.mediator.modtreeview.get_mod_man()
         mod_man.toggle_mod_selection(state)
 
-    def delete_mods(
+    def unsub_mods(
         self, treeview: Union["ModTreeView", "OfflineModTreeView", None] = None
     ) -> None:
         if treeview is None:
@@ -241,7 +241,7 @@ class Controller(GObject.GObject):
         else:
             view = treeview
         mod_man = view.get_mod_man()
-        mod_man.delete_mods()
+        mod_man.unsub_mods()
 
     def get_mod_store(self) -> Gtk.TreeModel | None:
         return self.mediator.modtreeview.get_model()
@@ -523,11 +523,11 @@ class Controller(GObject.GObject):
         ind = self.config_man.get_start_tab()
         self.get_servers().notebook.set_current_page(ind)
 
-    def update_and_load_to_menu(self, raise_window: bool) -> None:
-        self.connection_man.update_and_connect(raise_window, menu_only=True)
+    def update_and_load_to_menu(self) -> None:
+        self.connection_man.update_and_connect(menu_only=True)
 
-    def update_and_connect(self, raise_window: bool) -> None:
-        self.connection_man.update_and_connect(raise_window)
+    def update_and_connect(self) -> None:
+        self.connection_man.update_and_connect()
 
     def update_status(self) -> None:
         self.mediator.preconnect.mark_finished()

@@ -1,17 +1,22 @@
 import logging
-import shutil
+import time
 
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from dzgui.api.steam import unsubscribe
 from dzgui.api.mods import (
     get_delimited_mods,
-    get_local_mod_path,
     find_stale_mods,
     _hash,
     remove_stale_signatures,
 )
-from dzgui.const.constants import APP_NAME, APPID_DAYZ, APPID_DAYZ_EXP
+from dzgui.const.constants import (
+    APP_NAME,
+    APPID_DAYZ,
+    APPID_DAYZ_EXP,
+    RATE_LIMIT_THRESHOLD,
+)
 from dzgui.const.enum import Preferences
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.model.model_factory import FastInsertListStore, ModelFactory
@@ -77,7 +82,7 @@ class ModManager:
         total_mods = len(self.store)
         self.emitter.emit("mods_updated", msg, total_mods)
 
-    def delete_mods(self) -> None:
+    def unsub_mods(self) -> None:
         sel = self.treeview.get_selection()
         model, pathlist = sel.get_selected_rows()
         # NOTE: reverse when multiple selection
@@ -88,7 +93,7 @@ class ModManager:
                 continue
             mod, _iter = res
             mods.append((mod, _iter))
-        self.delete_mods_on_system(mods)
+        self.unsub_all_mods(mods)
 
     def get_mod_from_tree_path(
         self, tree_path: Gtk.TreePath
@@ -101,24 +106,28 @@ class ModManager:
         return mod, tree_iter
 
     @call_on_thread(dialogs.deleting_mods)
-    def delete_mods_on_system(self, mods: list[tuple[str, Gtk.TreeIter]]) -> None:
+    def unsub_all_mods(self, mods: list[tuple[str, Gtk.TreeIter]]) -> None:
         for mod, _iter in mods:
-            self.delete_single_mod(mod)
+            self.unsub_atomic_mod(mod)
 
         iters = [_iter for mod, _iter in mods]
-        func = StoredFunc(self._on_mods_deleted, iters)
+        func = StoredFunc(self._on_mods_unsubbed, iters)
         self.thread_man.set_cleanup_func(func)
 
-    def delete_single_mod(self, mod: str) -> None:
+    def unsub_atomic_mod(self, mod: str) -> None:
+        config_man = self.controller.get_config_man()
+        key = config_man.lookup(Preferences.STEAM)
+        unsubscribe(key, int(mod))
+
         steam_path = Path(self.path)
-        mods_path = get_local_mod_path(steam_path)
         app_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)
 
-        md5 = _hash(mod)
-        symlink = app_path / md5
-        symlink.unlink()
-        shutil.rmtree(mods_path / mod)
-
+        try:
+            md5 = _hash(mod)
+            symlink = app_path / md5
+            symlink.unlink()
+        except Exception as e:
+            logger.warning(e)
         # NOTE: second pass to unlink DAYZ_EXP mods
         # TODO: test this with working APPID_DAYZ_EXP installation
         try:
@@ -127,8 +136,9 @@ class ModManager:
             symlink.unlink()
         except PeFile.AppNotInstalledError:
             pass
+        time.sleep(RATE_LIMIT_THRESHOLD)
 
-    def _on_mods_deleted(self, iters: list[Gtk.TreeIter]) -> None:
+    def _on_mods_unsubbed(self, iters: list[Gtk.TreeIter]) -> None:
         if self.store is None:
             return
         for _iter in iters:

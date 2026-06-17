@@ -1,6 +1,11 @@
 # internal
-STEAM_PUBLISHED_FILES = "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?format=json"
-STEAM_SERVERS = "https://api.steampowered.com/IGameServersService/GetServerList/v1/?"
+STEAM_PUBLISHED_FILES = (
+    "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1"
+)
+STEAM_SERVERS = "https://api.steampowered.com/IGameServersService/GetServerList/v1"
+SUB_ENDPOINT = "https://api.steampowered.com/IPublishedFileService/Subscribe/v1"
+UNSUB_ENDPOINT = "https://api.steampowered.com/IPublishedFileService/Unsubscribe/v1"
+
 BM_SERVERS = "https://api.battlemetrics.com/servers?"
 GITHUB = "https://github.com/aclist"
 GITHUB_RELEASES = "https://api.github.com/repos/aclist/dztui/releases/latest"

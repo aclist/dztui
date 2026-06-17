@@ -12,10 +12,10 @@ import dzgui.api.servers as Servers
 
 from dzgui.api.steam import (
     connect,
-    enqueue_mod,
     get_remote_signatures,
     get_needs_update,
     load_to_menu,
+    subscribe,
 )
 
 from dzgui.api.mods import (
@@ -30,6 +30,7 @@ from dzgui.const.constants import (
     APPID_DAYZ_EXP,
     APPNAME_DAYZ,
     APPNAME_DAYZ_EXP_HUMAN,
+    RATE_LIMIT_THRESHOLD,
 )
 from dzgui.const.enum import NotebookPage, Preferences
 from dzgui.init.proc import is_dayz_running, is_steam_running
@@ -293,20 +294,16 @@ class ConnectionManager:
         self.controller.add_to_history(self.history, self.record)
         self.controller.open_page(NotebookPage.SERVERS)
 
-    def _update_mods(self, raise_window: bool, menu_only: bool = False) -> None:
-        # NOTE: fast enqueue all mods in auto mode
+    def _update_mods(self, menu_only: bool = False) -> None:
         prefs = self.controller.get_prefs()
+        config_man = self.controller.get_config_man()
+        key = config_man.lookup(Preferences.STEAM)
 
         for title, mod, stamp, size in self.missing_mods:
             if self.controller.is_cancel_pending():
                 return
-            enqueue_mod(self.client, mod, self.appid)
-            # NOTE: prevents rate limiting
-            time.sleep(3)
-
-        if raise_window is True:
-            logger.info("Bringing window to foreground")
-            GLib.idle_add(self.controller.present_window)
+            subscribe(key, int(mod))
+            time.sleep(RATE_LIMIT_THRESHOLD)
 
         for title, mod, stamp, size in self.missing_mods:
             mod_path = self.workshop / mod
@@ -330,8 +327,8 @@ class ConnectionManager:
         self._connect_steam(menu_only)
 
     @call_on_thread(waiting_for_mods, show_cancel=True)
-    def update_and_connect(self, raise_window: bool, menu_only: bool = False) -> None:
+    def update_and_connect(self, menu_only: bool = False) -> None:
         if len(self.missing_mods) > 0:
-            self._update_mods(raise_window, menu_only)
+            self._update_mods(menu_only)
         else:
             self._connect_steam(menu_only)

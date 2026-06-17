@@ -1,6 +1,6 @@
 from __future__ import annotations
 from enum import Enum
-from typing import Self, Sequence, TYPE_CHECKING, Union
+from typing import Self, TYPE_CHECKING, Union
 
 from dzgui.util import css
 from dzgui.const.constants import (
@@ -16,6 +16,7 @@ from dzgui.const.constants import (
 from dzgui.const.enum import ContextMenuGroup, NotebookPage
 from dzgui.managers.offline import OfflineManager
 from dzgui.strings import generic, offline
+from dzgui.views.components.box import HBox, VBox
 from dzgui.views.components.buttons import Icon, IconTextButton
 from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.frame import HeadingFrame
@@ -37,25 +38,6 @@ if TYPE_CHECKING:
 class FolderError(Enum):
     NO_VALID_MODS = 1
     NO_VALID_MISSION = 2
-
-
-class GenericBox(Gtk.Box):
-    def __init__(self, orientation: Gtk.Orientation, spacing: int = 0) -> None:
-        super().__init__(orientation=orientation, spacing=spacing)
-
-    def extend(self, els: Sequence[Gtk.Widget]) -> None:
-        for el in els:
-            self.add(el)
-
-
-class HBox(GenericBox):
-    def __init__(self, spacing: int = 0) -> None:
-        super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=spacing)
-
-
-class VBox(GenericBox):
-    def __init__(self, spacing: int = 0) -> None:
-        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=spacing)
 
 
 class PageHeading(Gtk.Label):

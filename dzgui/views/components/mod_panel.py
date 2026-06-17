@@ -11,7 +11,8 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
 if TYPE_CHECKING:
-    from dzgui.controllers.mc import Controller, Emitter
+    from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
 
 
 class EnumeratedModButton(Gtk.Button):
@@ -48,7 +49,7 @@ class ModSelectionPanel(Gtk.Box):
         buttons = (
             ModButton.SELECT_ALL,
             ModButton.UNSELECT_ALL,
-            ModButton.DELETE_SELECTED,
+            ModButton.UNSUB_SELECTED,
         )
         for button in buttons:
             b = EnumeratedModButton(button)
@@ -100,8 +101,8 @@ class ModSelectionPanel(Gtk.Box):
                 self.controller.toggle_mod_selection(True)
             case ModButton.UNSELECT_ALL:
                 self.controller.toggle_mod_selection(False)
-            case ModButton.DELETE_SELECTED:
-                self.controller.delete_mods()
+            case ModButton.UNSUB_SELECTED:
+                self.controller.unsub_mods()
             case ModButton.HIGHLIGHT_STALE:
                 self.controller.highlight_stale()
             case ModButton.UNHIGHLIGHT_STALE:

@@ -52,7 +52,7 @@ show_mods = "Show server-side mods"
 show_details = "Show server details"
 refresh_players = "Refresh player count"
 open_workshop = "Open in Steam Workshop"
-delete_mod = "Delete mod"
+unsub_mod = "Unsubscribe mod"
 copy_name = "Copy name to clipboard"
 copy_ip = "Copy IP to clipboard"
 copy_log = "Copy record(s) to clipboard"
@@ -215,8 +215,8 @@ class ModPanelStrings:
     unhighlight_stale_tooltip: str
     highlight_stale: str
     highlight_stale_tooltip: str
-    delete_selected: str
-    delete_selected_tooltip: str
+    unsub_selected: str
+    unsub_selected_tooltip: str
     unselect_all: str
     unselect_all_tooltip: str
     select_all: str
@@ -337,8 +337,8 @@ mod_panel = ModPanelStrings(
         "Shows locally-installed mods which are not used by any server "
         "in your Saved Servers"
     ),
-    delete_selected="Delete selected",
-    delete_selected_tooltip="Deletes selected mods from the system",
+    unsub_selected="Unsubscribe selected",
+    unsub_selected_tooltip="Unsubscribes from selected mods",
     unselect_all="Unselect all",
     unselect_all_tooltip="Bulk unselects all mods",
     select_all="Select all",
@@ -463,7 +463,7 @@ crumbs = Crumbs(
     thanks="Help > Special thanks",
     developers="Options > Developers",
     default="Servers > ",
-    offline="Mods > Play offline"
+    offline="Mods > Play offline",
 )
 
 no_mods = "No local mods found."
