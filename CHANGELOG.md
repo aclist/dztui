@@ -57,6 +57,7 @@
 - Disable overlay scrollbars on server tables
 - Reduce size of geolocation DB on disk (~100MB)
 - Enable LAN page Empty/Full filters on first run of app
+- Propagate subscribed mods to Steam client
 
 ## Dropped
 - Debug mode
