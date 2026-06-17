@@ -12,7 +12,7 @@ from dzgui.init.proc import is_dayz_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.model.model_factory import ModelFactory
 from dzgui.strings import dialogs
-from dzgui.util.symlink import create_custom_symlinks, symlink_mission
+from dzgui.util.symlink import create_custom_symlinks, rebuild_symlinks, symlink_mission
 from dzgui.views.dialogs.filepicker import FolderPicker
 
 if TYPE_CHECKING:
@@ -96,6 +96,8 @@ class OfflineManager:
 
         if len(local_mods) > 0:
             combined_mods.extend(local_mods)
+            config = self.controller.get_prefs().paths.config
+            rebuild_symlinks(config)
 
         if len(custom_mods) > 0:
             new_symlinks = create_custom_symlinks(
