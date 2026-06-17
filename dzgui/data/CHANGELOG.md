@@ -40,6 +40,7 @@
 - Preboot progress dialog
 - Choose to jump into splash screen instead of server
 - Collapsible connection panel
+- Play offline (load mods directly)
 
 ## Changed
 - Conform to PEP 440 versioning for beta versions
@@ -56,6 +57,7 @@
 - Disable overlay scrollbars on server tables
 - Reduce size of geolocation DB on disk (~100MB)
 - Enable LAN page Empty/Full filters on first run of app
+- Propagate subscribed mods to Steam client
 
 ## Dropped
 - Debug mode

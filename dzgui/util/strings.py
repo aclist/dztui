@@ -367,6 +367,7 @@ thanks = Thanks(
         "Johnofwrong",
         "MatheusLasserr",
         "nolan-perez",
+        "OnniSaarni",
         "scandalouss",
         "SnackSBR",
         "StevelDusa",
