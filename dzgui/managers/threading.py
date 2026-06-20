@@ -81,6 +81,11 @@ class ThreadingManager:
     def set_job_count(self, jobs: int) -> None:
         self.jobs = jobs
 
+    def update_emitter(self, signal: str) -> None:
+        if self.controller:
+            emitter = self.controller.get_emitter()
+        GLib.idle_add(lambda: emitter.emit(signal))
+
     def update_dialog(self, msg: str) -> None:
         GLib.idle_add(lambda: self.wait_dialog.update_text(msg))
 
