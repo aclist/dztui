@@ -307,12 +307,12 @@ class PreConnectionAssistant(Gtk.Box):
             self.mod_count.set_text(msg)
 
         if prereqs.required_space != 0:
-            self.ok.set_label(preconnect.connect)
-
             pretty = number(prereqs.required_space)
             suffix = f" Need to download {pretty} MiB of mod updates."
             prefix = preconnect.total_mods
             self.mod_count.set_text(f"{prefix}{str(total_mods)}.{suffix}")
+        else:
+            self.ok.set_label(preconnect.connect)
 
         if prereqs.is_last_server:
             self.connect_last.show()
