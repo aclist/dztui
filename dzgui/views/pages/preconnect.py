@@ -23,6 +23,7 @@ from gi.repository import Gdk, Gtk  # noqa E402
 if TYPE_CHECKING:
     from dzgui.managers.connection import Prerequisites
     from dzgui.controllers.mc import Controller
+    from dzgui.controllers.emitter import Emitter
 
 
 @dataclass
@@ -191,8 +192,13 @@ class PreConnectionAssistant(Gtk.Box):
         self.add(self.scrolled_box)
         self.add(self.button_box)
 
+        emitter = self.controller.get_emitter()
+        emitter.connect("all_mods_synched", self._on_mods_synched)
         self.connect("key-press-event", self._on_keypress)
         self.connect("map", self._on_map)
+
+    def _on_mods_synched(self, emitter: "Emitter") -> None:
+        self.tree.mark_mods_synched()
 
     def _on_map(self, widget: Self) -> None:
         widgets = (
@@ -297,10 +303,10 @@ class PreConnectionAssistant(Gtk.Box):
             self._hide_mod_area()
         else:
             self._show_mod_area()
-            msg = "All mods are up to date."
+            msg = preconnect.up_to_date
             self.mod_count.set_text(msg)
 
-        if prereqs.required_space == 0:
+        if prereqs.required_space != 0:
             self.ok.set_label(preconnect.connect)
 
             pretty = number(prereqs.required_space)
