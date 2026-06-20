@@ -13,7 +13,6 @@ from gi.repository import Gtk, GLib, Gdk, Pango  # noqa
 
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
-    from dzgui.controllers.emitter import Emitter
 
 
 class ServerModTreeView(ContextMixin, TreeView):  # type: ignore
