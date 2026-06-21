@@ -1,6 +1,7 @@
 import json
 import pytest
 
+from dzgui.const.boilerplate import config_boilerplate
 from dzgui.config.query import get_config
 from dzgui.config.xdg import get_xdg_paths, parse_filepaths
 from dzgui.config import convert
@@ -11,7 +12,11 @@ pytestmark = pytest.mark.config
 
 @pytest.fixture
 def legacy_config():
-    return fixture_path("dztuirc_one")
+    return fixture_path("dztuirc_1")
+
+@pytest.fixture
+def unset_values():
+    return fixture_path("dztuirc_3")
 
 
 @pytest.fixture
@@ -60,8 +65,8 @@ def test_contains_invalid_values(keys, config):
 @pytest.mark.parametrize(
     "fixture, expect",
     [
-        ("dztuirc_one", (False, True, True)),
-        ("dztuirc_two", (False, False, False)),
+        ("dztuirc_1", (False, True, True)),
+        ("dztuirc_2", (False, False, False)),
     ],
 )
 def test_bool_conversion(fixture, expect):
@@ -85,6 +90,13 @@ def test_key_conversion(legacy_config):
     ]
     for key in keys:
         assert key not in j
+
+def test_missing_values(unset_values):
+    j = convert.rc2json(unset_values)
+    j = json.loads(j)
+    assert j.keys() == config_boilerplate.keys()
+
+
 
 
 # TODO: test that when a config file is created from scratch, it contains all values
