@@ -5,6 +5,7 @@ import shutil
 from warnings import deprecated
 
 from dzgui.const.constants import (
+    APP_NAME,
     DAYZ_BINARY,
     STEAM_CMD,
     FLATPAK_APPID,
@@ -12,6 +13,10 @@ from dzgui.const.constants import (
     FLATPAK_RUN_CMD,
     FLATPAK_SANDBOX,
 )
+
+from dzgui.util.format import format_exception
+
+logger = logging.getLogger(APP_NAME)
 
 
 # TODO: move to util.proc
@@ -22,7 +27,9 @@ def is_dayz_running() -> bool:
     for proc in psutil.process_iter():
         try:
             procs.append(proc.cmdline())
-        except Exception:
+        except Exception as e:
+            msg = format_exception(e)
+            logger.warning(msg)
             continue
     return any(substring in item for sublist in procs for item in sublist)
 
