@@ -205,7 +205,6 @@ class Controller(GObject.GObject):
                     self.mediator.grid.notebook.settings.populate_settings()
                 except Exception as e:
                     msg = format_exception(e)
-                    print(msg)
                     logger.critical(msg)
                     return
             case ButtonType.MODS:
