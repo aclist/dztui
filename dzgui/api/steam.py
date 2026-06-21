@@ -10,7 +10,6 @@ from shlex import shlex
 from pathlib import Path
 
 from dzgui.init.prereqs import has_steam_client
-from dzgui.api.mods import _hash
 from dzgui.const.constants import (
     APPID_DAYZ,
     APP_NAME,
@@ -58,6 +57,9 @@ def get_steam_paths() -> list[tuple[Path, str]]:
 
 
 def concat_mods(mods: list[str]) -> str:
+    # TODO: circular import workaround
+    from dzgui.api.mods import _hash
+
     hashes = []
     for mod in mods:
         md5sum = _hash(mod)
@@ -170,8 +172,10 @@ def launch_offline(
         "-skipintro",
         f"-name={name}",
         f"-mod={symlinks}",
-        f"-mission={mission}",
     ]
+    if len(mission) > 0:
+        arg = f"-mission={mission}"
+        params.append(arg)
     proc = subprocess.run([*client_args, *params])
     return proc.returncode
 

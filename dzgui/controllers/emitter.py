@@ -172,3 +172,7 @@ class Emitter(GObject.GObject):
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def invalid_custom_mods(self) -> None:
         pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def all_mods_synched(self) -> None:
+        pass

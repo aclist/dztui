@@ -392,7 +392,7 @@ class Options(Gtk.Box):
         if prefs.paths.config.is_file() is False:
             dialog = ExceptionDialog(self.controller, strings.config_not_found)
             dialog.run()
-            raise Exception
+            raise OSError(f"Config file '{prefs.paths.config}' not found")
 
         config = query.get_config(prefs.paths.config)
 

@@ -12,10 +12,10 @@ from dzgui.api.mods import (
     remove_stale_signatures,
 )
 from dzgui.const.constants import (
+    API_RATE_LIMIT,
     APP_NAME,
     APPID_DAYZ,
     APPID_DAYZ_EXP,
-    RATE_LIMIT_THRESHOLD,
 )
 from dzgui.const.enum import Preferences
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
@@ -116,6 +116,7 @@ class ModManager:
         for mod, _iter in mods:
             self.unsub_atomic_mod(mod)
             self.thread_man.increment_dialog()
+            time.sleep(API_RATE_LIMIT)
 
         iters = [_iter for mod, _iter in mods]
         func = StoredFunc(self._on_mods_unsubbed, iters)
@@ -143,7 +144,7 @@ class ModManager:
             symlink.unlink()
         except PeFile.AppNotInstalledError:
             pass
-        time.sleep(RATE_LIMIT_THRESHOLD)
+        time.sleep(API_RATE_LIMIT)
 
     def _on_mods_unsubbed(self, iters: list[Gtk.TreeIter]) -> None:
         if self.store is None:

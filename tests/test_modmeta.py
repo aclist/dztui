@@ -1,17 +1,13 @@
 import pytest
+from pathlib import Path
+
 from dzgui.api.mods import tokenize
 from tests.fixtures import fixture_path
 
 @pytest.mark.mods
-@pytest.mark.parametrize("fixture", [
-    fixture_path("cpp/meta1.cpp"),
-    fixture_path("cpp/meta2.cpp"),
-    fixture_path("cpp/meta3.cpp"),
-    fixture_path("cpp/meta4.cpp"),
-    fixture_path("cpp/meta5.cpp"),
-    fixture_path("cpp/meta6.cpp"),
-    ]
-)
-def test_modmeta(fixture: str) -> None:
-    meta = tokenize(fixture)
+@pytest.mark.parametrize("i", range(1, 7))
+def test_modmeta(i: int) -> None:
+    fixture = fixture_path(f"cpp/mod{i}")
+    path = Path(fixture)
+    meta = tokenize(path)
     assert meta["name"] == "ModName"

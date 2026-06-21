@@ -25,17 +25,17 @@ from dzgui.api.mods import (
     update_signatures,
 )
 from dzgui.const.constants import (
+    API_RATE_LIMIT,
     APP_NAME,
     APPID_DAYZ,
     APPID_DAYZ_EXP,
     APPNAME_DAYZ,
     APPNAME_DAYZ_EXP_HUMAN,
-    RATE_LIMIT_THRESHOLD,
 )
 from dzgui.const.enum import NotebookPage, Preferences
 from dzgui.init.proc import is_dayz_running, is_steam_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
-from dzgui.strings.dialogs import waiting_for_launch, waiting_for_mods
+from dzgui.strings.dialogs import waiting_for_launch, waiting_for_mods, waiting_for_directories
 from dzgui.strings.server_mods import checkmark, resync
 from dzgui.util.format import format_mib
 from dzgui.util.strings import dialog, server_timeout
@@ -276,7 +276,6 @@ class ConnectionManager:
             self.thread_man.set_cleanup_func(func)
             return
 
-        self.thread_man.show_cancel(False)
         self.thread_man.update_dialog(waiting_for_launch)
         while True:
             # FIXME: cancel should not be visible here per setting above
@@ -303,8 +302,9 @@ class ConnectionManager:
             if self.controller.is_cancel_pending():
                 return
             subscribe(key, int(mod))
-            time.sleep(RATE_LIMIT_THRESHOLD)
+            time.sleep(API_RATE_LIMIT)
 
+        self.thread_man.update_dialog(waiting_for_directories)
         for title, mod, stamp, size in self.missing_mods:
             mod_path = self.workshop / mod
 
@@ -322,8 +322,12 @@ class ConnectionManager:
                 time.sleep(1)
 
         update_signatures(self.missing_mods, prefs.paths.version)
-        # TODO: just push steam path directly
         rebuild_symlinks(prefs.paths.config)
+
+        # NOTE: update table status in main loop
+        self.thread_man.update_emitter("all_mods_synched")
+
+        # TODO: just push steam path directly
         self._connect_steam(menu_only)
 
     @call_on_thread(waiting_for_mods, show_cancel=True)

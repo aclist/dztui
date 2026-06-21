@@ -48,6 +48,10 @@ class ServerModTreeView(ContextMixin, TreeView):  # type: ignore
                 case _:
                     pass
 
+    def mark_mods_synched(self) -> None:
+        for row in self.mod_store:
+            row[2] = server_mods.checkmark
+
     # TODO: could be problematic if user downloads mods out of band
     def _on_row_activated(
         self,
