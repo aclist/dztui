@@ -3,6 +3,8 @@ import shlex
 from pathlib import Path
 from typing import Any
 
+from dzgui.const.boilerplate import config_boilerplate
+
 
 """
 Convert legacy dztuirc to config.json
@@ -89,4 +91,8 @@ def rc2json(file: Path) -> str:
     keys["ip_list"] = ips
     keys["use_miles"] = False
     keys["start_tab"] = 0
+    # NOTE: workaround for DZGUI 6 logic (see #375)
+    for key in config_boilerplate.keys():
+        if key not in keys:
+            keys[key] = config_boilerplate[key]
     return json.dumps(keys, indent=2)
