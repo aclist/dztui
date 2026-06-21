@@ -18,19 +18,16 @@ fav_label=""
 name=""
 
 #Set to 1 to perform dry-run and print launch options
-debug=""
+debug="1"
 
 #Toggle stable/testing branch
 branch="testing"
-
-#Start in fullscreen
-fullscreen="false"
 
 #Steam API key
 steam_api=""
 
 #Auto-install mods
-auto_install="0"
+auto_install="2"
 
 #Automod staging directory
 staging_dir="/tmp"
