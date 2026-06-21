@@ -170,8 +170,10 @@ def launch_offline(
         "-skipintro",
         f"-name={name}",
         f"-mod={symlinks}",
-        f"-mission={mission}",
     ]
+    if len(mission) > 0:
+        arg = f"-mission={mission}"
+        params.append(arg)
     proc = subprocess.run([*client_args, *params])
     return proc.returncode
 

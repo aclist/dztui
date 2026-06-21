@@ -23,7 +23,7 @@ from dzgui.managers.contextmenu import ContextMenuManager
 from dzgui.managers.notes import NoteManager
 from dzgui.model.servers import ServerModelManager
 from dzgui.util.diag import write_diagnostic
-from dzgui.util.format import format_player_count
+from dzgui.util.format import format_exception, format_player_count
 from dzgui.util.open_links import open_user_workshop, open_workshop_page
 from dzgui.views.dialogs.filepicker import FilePicker
 from dzgui.views.dialogs.generic import ExceptionDialog
@@ -203,7 +203,9 @@ class Controller(GObject.GObject):
                 try:
                     # TODO: where to put config file check
                     self.mediator.grid.notebook.settings.populate_settings()
-                except Exception:
+                except Exception as e:
+                    msg = format_exception(e)
+                    logger.critical(msg)
                     return
             case ButtonType.MODS:
                 self.load_mods()
