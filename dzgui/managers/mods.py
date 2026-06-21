@@ -23,6 +23,7 @@ from dzgui.model.model_factory import FastInsertListStore, ModelFactory
 from dzgui.strings import dialogs
 from dzgui.util.format import format_mods
 from dzgui.util.strings import server_timeout
+from dzgui.util.symlink import rebuild_symlinks
 from dzgui.views.dialogs.generic import ExceptionDialog
 
 
@@ -66,9 +67,13 @@ class ModManager:
             self.thread_man.set_cleanup_func(func)
             return
 
+        prefs = self.controller.get_prefs()
+        rebuild_symlinks(prefs.paths.config)
+
         self.store = ModelFactory().make_mod_store()
         self.store.extend(mods)
         func = StoredFunc(self._on_mods_loaded)
+
         self.thread_man.set_cleanup_func(func)
 
     def set_store(self, store: "FastInsertListStore") -> None:
@@ -93,6 +98,7 @@ class ModManager:
                 continue
             mod, _iter = res
             mods.append((mod, _iter))
+        self.thread_man.set_job_count(len(mods))
         self.unsub_all_mods(mods)
 
     def get_mod_from_tree_path(
@@ -109,6 +115,7 @@ class ModManager:
     def unsub_all_mods(self, mods: list[tuple[str, Gtk.TreeIter]]) -> None:
         for mod, _iter in mods:
             self.unsub_atomic_mod(mod)
+            self.thread_man.increment_dialog()
             time.sleep(API_RATE_LIMIT)
 
         iters = [_iter for mod, _iter in mods]
