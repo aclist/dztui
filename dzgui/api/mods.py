@@ -49,6 +49,7 @@ def get_local_mods(workshop_path: Path) -> list[Path]:
     mods = [file for file in workshop_path.iterdir() if file.is_dir()]
     return mods
 
+
 def is_mission(path: Path) -> bool:
     # TODO: parse integrity of other files
     parent = path.parent.name
@@ -57,9 +58,10 @@ def is_mission(path: Path) -> bool:
     file = path / "init.c"
     return file.exists()
 
+
 def tokenize(mod: Path) -> dict[str, Any] | None:
     file = mod.joinpath("meta.cpp")
-    delimiter=r"\s*=\s*"
+    delimiter = r"\s*=\s*"
     modmeta = {}
     try:
         with open(file, "r", encoding="utf-8") as f:
@@ -75,6 +77,7 @@ def tokenize(mod: Path) -> dict[str, Any] | None:
     except Exception as e:
         logger.critical(e)
         return None
+
 
 def get_mod_size(path: Path) -> float:
     s = 0
@@ -123,20 +126,27 @@ def _hash(uid: str, use_custom: bool = False) -> str:
     return prefix + md5.hexdigest()[:8]
 
 
-def remove_stale_signatures(config: Path, versions: Path) -> None:
+def remove_stale_signatures(
+    config: Path, versions: Path, ids: list[int] | None = None
+) -> None:
     if versions.is_file() is False:
         logger.warning("Creating new version signatures file")
         versions.touch()
         return
+
     path = lookup(config, Preferences.DEFAULT)
     steam_path = Path(path)
-    ids = get_local_mod_ids(steam_path)
+    if ids is None:
+        local_ids = get_local_mod_ids(steam_path)
+
     with open(versions, "r") as f:
         lines = f.readlines()
-    for line in lines:
-        uid = int(line.split(",")[0])
-        if uid not in ids:
-            lines.remove(line)
+
+    if ids is None:
+        lines = [line for line in lines if int(line.split(",")[0]) in local_ids]
+    else:
+        lines = [line for line in lines if int(line.split(",")[0]) not in ids]
+
     with open(versions, "w") as f:
         for line in lines:
             f.write(line)
