@@ -118,8 +118,7 @@ class ModManager:
             self.thread_man.increment_dialog()
             time.sleep(API_RATE_LIMIT)
 
-        iters = [_iter for mod, _iter in mods]
-        func = StoredFunc(self._on_mods_unsubbed, iters)
+        func = StoredFunc(self._on_mods_unsubbed, mods)
         self.thread_man.set_cleanup_func(func)
 
     def unsub_atomic_mod(self, mod: str) -> None:
@@ -146,18 +145,21 @@ class ModManager:
             pass
         time.sleep(API_RATE_LIMIT)
 
-    def _on_mods_unsubbed(self, iters: list[Gtk.TreeIter]) -> None:
+    def _on_mods_unsubbed(self, mod_iter: list[tuple[str, Gtk.TreeIter]]) -> None:
+        mods = [int(mod) for mod, _iter in mod_iter]
+        iters = [_iter for mod, _iter in mod_iter]
         if self.store is None:
             return
         for _iter in iters:
             self.store.remove(_iter)
-        remove_stale_signatures(self.prefs.paths.config, self.prefs.paths.version)
+        # TODO: process config path in called function
+        remove_stale_signatures(self.prefs.paths.config, self.prefs.paths.version, mods)
         model = self.treeview.get_model()
         if model is None:
             return
-        mods = len(model)
+        total_mods = len(model)
         msg = self.format_mod_statusbar()
-        self.emitter.emit("mods_updated", msg, mods)
+        self.emitter.emit("mods_updated", msg, total_mods)
 
     def uncolorize_mods(self) -> None:
         model = self.treeview.get_model()
