@@ -81,8 +81,8 @@ class Emitter(GObject.GObject):
     def distcalc_started(self) -> None:
         pass
 
-    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(bool,))
-    def mod_page_toggled(self, state: bool) -> None:
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(bool, int))
+    def mod_page_toggled(self, state: bool, mods: int) -> None:
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(bool,))

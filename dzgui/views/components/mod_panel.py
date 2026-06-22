@@ -80,14 +80,18 @@ class ModSelectionPanel(Gtk.Box):
         self.highlight_stale_button.set_sensitive(True)
 
     def _on_mods_updated(self, emitter: "Emitter", msg: str, mods: int) -> None:
-        if mods < 1:
-            self.main_panel.set_sensitive(False)
-            self.stale_panel.set_sensitive(False)
+        self._toggle_panel_sensitivity(mods)
+
+    def _toggle_panel_sensitivity(self, mods: int) -> None:
+        state = bool(mods)
+        for el in self.main_panel, self.stale_panel:
+            el.set_sensitive(state)
 
     def _on_mods_highlighted(self, emitter: "Emitter") -> None:
         self.swap_sensitive(True)
 
-    def _on_mod_page_toggled(self, emitter: "Emitter", state: bool) -> None:
+    def _on_mod_page_toggled(self, emitter: "Emitter", state: bool, mods: int) -> None:
+        self._toggle_panel_sensitivity(mods)
         self.set_visible(state)
 
     def swap_sensitive(self, state: bool) -> None:

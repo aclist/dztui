@@ -64,10 +64,15 @@ class Mods(Gtk.Box):
         self.controller.open_offline()
 
     def _on_unmap(self, widget: Self) -> None:
-        self.emitter.emit("mod_page_toggled", False)
+        self.emitter.emit("mod_page_toggled", False, 0)
 
     def _on_map(self, widget: Self) -> None:
-        self.emitter.emit("mod_page_toggled", True)
+        model = self.tree.get_model()
+        if model is None:
+            mods = 0
+        else:
+            mods = len(model)
+        self.emitter.emit("mod_page_toggled", True, mods)
         # TODO: delegation
         # NOTE: handles going back from offline mods page
         # more generic cache restoration method
