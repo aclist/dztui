@@ -338,6 +338,7 @@ class ServerModelManager:
     def _cleanup_when_no_model(self) -> None:
         self.emitter.emit("saved_servers_changed")
 
+    @call_on_thread(dialog.scanning, show_cancel=True)
     def _dump_history(self) -> None:
         history = self.controller.get_prefs().paths.history
         try:
@@ -395,8 +396,10 @@ class ServerModelManager:
         self.first_iteration = False
 
     def _cleanup_on_success(self) -> None:
-        proxy = self._get_proxy_man().get_proxy_model()
+        proxy = self.proxy_man.get_proxy_model()
         self.tv.set_model(proxy)
+        if self.preserve_on_fail is True:
+            self.proxy_man.wipe_cache()
 
         self.emitter.emit("servers_loaded", self.enum)
         if self.first_iteration:
