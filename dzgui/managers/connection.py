@@ -35,7 +35,11 @@ from dzgui.const.constants import (
 from dzgui.const.enum import NotebookPage, Preferences
 from dzgui.init.proc import is_dayz_running, is_steam_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
-from dzgui.strings.dialogs import waiting_for_launch, waiting_for_mods, waiting_for_directories
+from dzgui.strings.dialogs import (
+    waiting_for_launch,
+    waiting_for_mods,
+    waiting_for_directories,
+)
 from dzgui.strings.server_mods import checkmark, resync
 from dzgui.util.format import format_mib
 from dzgui.util.strings import dialog, server_timeout
@@ -144,20 +148,13 @@ class ConnectionManager:
         remote_mods: list[list[str]] = []
         if res.is_modded():
             try:
-                remote_mods = self._query_modlist(record)
+                remote_mods, missing_mods = self._query_modlist(record)
+                self.missing_mods = missing_mods
                 self.remote_mod_ids = [mod[1] for mod in remote_mods]
             except Exception as e:
                 logger.warning(e)
                 self.thread_man.set_cleanup_func(failure_func, destroy_first=True)
                 return
-
-            hashes = get_remote_signatures(self.remote_mod_ids)
-            version_file = prefs.paths.version
-            self.missing_mods = get_needs_update(version_file, hashes)
-
-            for mod in remote_mods:
-                if any(mod[1] in tuple for tuple in self.missing_mods):
-                    mod[2] = resync
 
             if local_version is not None:
                 pefile_path = PeFile.get_pefile_path(steam_path, info.game_id)
@@ -226,6 +223,7 @@ class ConnectionManager:
         mods = Servers.get_rules(record)
         steam_path = self.controller.query_config(Preferences.DEFAULT)
         local = get_local_mod_ids(steam_path)
+
         alpha_mods: list[list[str]] = [
             [
                 mod.name,
@@ -235,12 +233,23 @@ class ConnectionManager:
             for mod in mods
         ]
         alpha_mods.sort(key=lambda x: x[0])
-        return alpha_mods
+
+        prefs = self.controller.get_prefs()
+        version_file = prefs.paths.version
+
+        remote_mod_ids = [mod[1] for mod in alpha_mods]
+        hashes = get_remote_signatures(remote_mod_ids)
+        missing_mods = get_needs_update(version_file, hashes)
+        for mod in alpha_mods:
+            if any(mod[1] in tuple for tuple in missing_mods):
+                mod[2] = resync
+
+        return alpha_mods, missing_mods
 
     @call_on_thread(dialog.querying)
     def query_modlist_and_present(self, record: Servers.Record) -> None:
         try:
-            mods = self._query_modlist(record)
+            mods, missing_mods = self._query_modlist(record)
         except Exception:
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._server_timeout), destroy_first=True
