@@ -145,7 +145,6 @@ class ConnectionManager:
             binary_missing = True
 
         prefs = self.controller.get_prefs()
-        # remote_mods: list[list[str]] = []
         if res.is_modded():
             try:
                 remote_mods, missing_mods = self._query_modlist(record)
