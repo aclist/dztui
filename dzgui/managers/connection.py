@@ -145,7 +145,7 @@ class ConnectionManager:
             binary_missing = True
 
         prefs = self.controller.get_prefs()
-        remote_mods: list[list[str]] = []
+        # remote_mods: list[list[str]] = []
         if res.is_modded():
             try:
                 remote_mods, missing_mods = self._query_modlist(record)
@@ -219,7 +219,9 @@ class ConnectionManager:
             StoredFunc(self._present_details_dialog, details), destroy_first=True
         )
 
-    def _query_modlist(self, record: Servers.Record) -> list[list[str]]:
+    def _query_modlist(
+        self, record: Servers.Record
+    ) -> tuple[list[list[str]], list[tuple[str, str, int, int]]]:
         mods = Servers.get_rules(record)
         steam_path = self.controller.query_config(Preferences.DEFAULT)
         local = get_local_mod_ids(steam_path)
