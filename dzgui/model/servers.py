@@ -338,7 +338,7 @@ class ServerModelManager:
     def _cleanup_when_no_model(self) -> None:
         self.emitter.emit("saved_servers_changed")
 
-    @call_on_thread(dialog.scanning, show_cancel=True)
+    @call_on_thread(dialogs.checking_history, show_cancel=True)
     def _dump_history(self) -> None:
         history = self.controller.get_prefs().paths.history
         try:
