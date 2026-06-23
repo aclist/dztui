@@ -80,6 +80,7 @@ class FilterManager:
         if maps is None:
             return
         if len(maps) < 1:
+            self.reinit_map_store()
             return
 
         self.reinit_map_store()
