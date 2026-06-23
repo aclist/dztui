@@ -14,6 +14,7 @@ parser.add_argument("-u", "--uninstall", action="store_true", help=flags.uninsta
 parser.add_argument("-d", "--debug", action="store_true", help=flags.debug)
 args = parser.parse_args()
 
+
 def uninstall() -> None:
     # TODO: uninstall data files (-u)
     # -u removes state, log, freedesktop
@@ -21,6 +22,7 @@ def uninstall() -> None:
     # XDG_STATE_HOME/dzgui
     # XDG_DATA_HOME/dzgui
     pass
+
 
 def main() -> None:
     lock = lock_acquire()  # noqa
@@ -39,6 +41,7 @@ def main() -> None:
     print(f"{APP_NAME} {version}")
     test_libgi_missing()
 
-    # NOTE: only import ligbi modules after the above check
+    # NOTE: only import ligbirepository modules after the above check
     from dzgui.app_init import load_gui
+
     load_gui(version, args.debug)
