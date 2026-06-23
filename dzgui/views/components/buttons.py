@@ -141,6 +141,8 @@ class RefreshButton(IconTextButton):
 
     def _on_refresh_clicked(self, button: Self) -> None:
         """Spawned in a thread"""
+        if self.controller.get_active_treeview().is_loaded() is False:
+            return
         self.is_clicked = True
         self.controller.refresh_tree()
         # TODO: get server tab enum
