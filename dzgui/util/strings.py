@@ -130,7 +130,6 @@ servers = {
     "Enter/space/double-click": "connect to server",
     "Right-click/Ctrl-l": "additional context menus",
     "Ctrl-r": "refresh players",
-    "Ctrl-p": "refresh ping",
     "Ctrl-f": "jump to keyword search field",
     "Ctrl-m": "jump to maps field",
     "Ctrl-d": "select default LAN port",
@@ -148,8 +147,8 @@ servers = {
 vim = {
     "j": "Move down a row/scroll up",
     "k": "Move up a row/scroll down",
-    "l": "Jump to main area from sidebar",
-    "h": "Jump to sidebar from main area",
+    "h": "Jump to main area from sidebar",
+    "l": "Jump to sidebar from main area",
     "g": "Jump to first row/top of page",
     "G": "Jump to last row/bottom of page",
 }

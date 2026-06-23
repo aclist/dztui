@@ -44,7 +44,7 @@ def has_libgi() -> bool:
     return exists
 
 
-def test_missing_lib() -> bool:
+def test_libgi_missing() -> None:
     msg = f"System is missing the required library '{LIB}'. Install it via your system package manager."
     if has_libgi() is False:
         print(msg)
