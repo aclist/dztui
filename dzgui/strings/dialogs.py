@@ -11,7 +11,6 @@ fetching_mods = "Fetching mod metadata"
 deleting_mods = "Unsubscribing mods"
 scanning_mods = "Scanning mods"
 parsing_mods = "Parsing mods"
-checking_history = "Checking history"
 
 checking_api = "Checking API key"
 
