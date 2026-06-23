@@ -289,13 +289,14 @@ def query_direct(ip: str, qport: int, timeout: float = 3.0) -> dict[str, Any] | 
 
 
 def get_details(record: Record) -> Details:
+    # TODO: exceptions are handled internally here, but get_rules delegates them to caller
     ip = record.ip
     qport = record.qport
     default_str = strings.none_provided
 
     try:
         info = a2s.info((ip, qport))
-    except TimeoutError:
+    except (TimeoutError, a2s.exceptions.BrokenMessageError):
         return Details(None, default_str, False)
     try:
         rules = dayzquery.dayz_rules((ip, qport))
