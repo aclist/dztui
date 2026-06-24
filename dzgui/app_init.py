@@ -13,6 +13,7 @@ from dzgui.init.migrate import (
     copy_state_files,
     migrate_cols_file,
 )
+from dzgui.init.flock import lock_acquire
 from dzgui.init.prereqs import has_steam_client
 from dzgui.strings import boot
 
@@ -31,9 +32,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(APP_NAME)
 
+
 # TODO: profile load time
 def make_parents(path: "Path") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+
 
 def setup_logger(log_path: "Path") -> None:
     _format = (
@@ -46,7 +49,10 @@ def setup_logger(log_path: "Path") -> None:
     logger.setLevel(logging.DEBUG)
     logger.addHandler(fh)
 
+
 def load_gui(version: str, is_debug: bool) -> None:
+    lock = lock_acquire()  # noqa
+
     set_locale()
     # NOTE: consider aborting this check if steam deck
     xdg_paths = get_xdg_paths()
