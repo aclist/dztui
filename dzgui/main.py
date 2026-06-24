@@ -3,7 +3,6 @@ import sys
 import warnings
 
 from dzgui.const.constants import APP_NAME
-from dzgui.init.flock import lock_acquire
 from dzgui.init.libgi import test_libgi_missing
 from dzgui.init.prefix import get_version
 from dzgui.util.strings import flags
@@ -25,8 +24,6 @@ def uninstall() -> None:
 
 
 def main() -> None:
-    lock = lock_acquire()  # noqa
-
     if args.version is True:
         print(get_version())
         sys.exit(0)
