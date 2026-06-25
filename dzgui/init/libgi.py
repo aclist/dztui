@@ -1,6 +1,7 @@
 import platform
 import sys
 
+from ctypes.util import find_library
 from pathlib import Path
 from warnings import deprecated
 
@@ -39,9 +40,7 @@ def is_debian() -> bool:
 
 
 def has_libgi() -> bool:
-    parent_dir = Path("/usr/lib64")
-    exists = any(LIB in subdir.name for subdir in parent_dir.iterdir())
-    return exists
+    return bool(find_library("girepository-2.0"))
 
 
 def test_libgi_missing() -> None:
