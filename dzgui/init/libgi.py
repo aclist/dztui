@@ -2,10 +2,10 @@ import platform
 import sys
 
 from ctypes.util import find_library
-from pathlib import Path
 from warnings import deprecated
 
 LIB = "libgirepository-2.0"
+
 
 @deprecated("currently unused")
 def is_debian() -> bool:
