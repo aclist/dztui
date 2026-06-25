@@ -26,7 +26,7 @@ You can install it via the following set of commands:
 .. code:: console
 
    sudo apt update
-   sudo apt install libgirepository-2.0
+   sudo apt install libgirepository-2.0-0
 
 Next steps
 ---------------
