@@ -51,8 +51,7 @@ def setup_logger(log_path: "Path") -> None:
     logger.addHandler(fh)
 
 
-
-def copy_bare_configs(config: "Path", resolution: "Path") -> None:
+def copy_bare_configs(config: "Path", resolution: "Path") -> tuple[bool, bool]:
     # NOTE: temporary workaround for #375
     conf = "config.json"
     state = [
@@ -63,13 +62,16 @@ def copy_bare_configs(config: "Path", resolution: "Path") -> None:
         "dzg.columns.json",
         "dzg.notes.json",
         "ips.csv",
-        ".month"
+        ".month",
     ]
+    config_changed = False
+    state_changed = False
     if APP_NAME_LOWER not in str(config):
         new_file = config.parent / APP_NAME_LOWER / conf
-        make_parents(new_file)
         if config.is_file():
+            make_parents(new_file)
             shutil.copy(config, new_file)
+            config_changed = True
     if APP_NAME_LOWER not in str(resolution):
         state_path = resolution.parent
         for state_file in state:
@@ -78,6 +80,9 @@ def copy_bare_configs(config: "Path", resolution: "Path") -> None:
                 new_file = state_path / APP_NAME_LOWER / state_file
                 make_parents(new_file)
                 shutil.copy(old_file, new_file)
+                state_changed = True
+    return (config_changed, state_changed)
+
 
 def load_gui(version: str, is_debug: bool) -> None:
     lock = lock_acquire()  # noqa
