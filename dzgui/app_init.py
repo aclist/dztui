@@ -1,9 +1,10 @@
 import logging
 import os
+import shutil
 from typing import TYPE_CHECKING
 
 
-from dzgui.const.constants import APP_NAME
+from dzgui.const.constants import APP_NAME, APP_NAME_LOWER
 from dzgui.const.enum import Preferences
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
@@ -50,6 +51,34 @@ def setup_logger(log_path: "Path") -> None:
     logger.addHandler(fh)
 
 
+
+def copy_bare_configs(config: "Path", resolution: "Path") -> None:
+    # NOTE: temporary workaround for #375
+    conf = "config.json"
+    state = [
+        "dzg.history",
+        "dzg.versions",
+        "dzg.res.json",
+        "dzg.filters.json",
+        "dzg.columns.json",
+        "dzg.notes.json",
+        "ips.csv",
+        ".month"
+    ]
+    if APP_NAME_LOWER not in str(config):
+        new_file = config.parent / APP_NAME_LOWER / conf
+        make_parents(new_file)
+        if config.is_file():
+            shutil.copy(config, new_file)
+    if APP_NAME_LOWER not in str(resolution):
+        state_path = resolution.parent
+        for state_file in state:
+            old_file = state_path / state_file
+            if old_file.is_file():
+                new_file = state_path / APP_NAME_LOWER / state_file
+                make_parents(new_file)
+                shutil.copy(old_file, new_file)
+
 def load_gui(version: str, is_debug: bool) -> None:
     lock = lock_acquire()  # noqa
 
@@ -57,6 +86,8 @@ def load_gui(version: str, is_debug: bool) -> None:
     # NOTE: consider aborting this check if steam deck
     xdg_paths = get_xdg_paths()
     XDG = parse_filepaths(xdg_paths)
+
+    copy_bare_configs(XDG.config, XDG.resolution)
 
     if XDG.resolution.parent.is_dir() is False:
         make_parents(XDG.resolution)
