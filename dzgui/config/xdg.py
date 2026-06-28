@@ -29,9 +29,9 @@ def is_writeable(path_str: str) -> bool:
     if not path.exists():
         try:
             path.mkdir(parents=True)
+            path.unlink()
         except OSError:
             return False
-        path.unlink()
         return True
 
     try:
@@ -55,11 +55,12 @@ def get_xdg_paths() -> dict:
 
     resolved_paths = {}
     for path in xdg_paths:
-        rp = os.environ.get(path)
-        if rp is not None and is_writeable(rp):
-            resolved_paths[path] = Path(rp)
+        real_path = os.environ.get(path)
+        if real_path is not None and is_writeable(real_path):
+            new_path = Path(real_path)
         else:
-            resolved_paths[path] = xdg_paths[path] / APP_NAME_LOWER
+            new_path = xdg_paths[path]
+        resolved_paths[path] = new_path / APP_NAME_LOWER
     return resolved_paths
 
 
