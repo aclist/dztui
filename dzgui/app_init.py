@@ -70,18 +70,24 @@ def copy_bare_configs(config: "Path", resolution: "Path") -> tuple[bool, bool]:
         new_file = config
         old_file = config.parent.parent / conf
         if old_file.is_file():
-            make_parents(new_file)
-            shutil.copy(old_file, new_file)
-            config_changed = True
+            try:
+                make_parents(new_file)
+                shutil.copy(old_file, new_file)
+                config_changed = True
+            except Exception as e:
+                logger.critical(e)
     if resolution.parent.exists() is False:
         state_path = resolution.parent
         for state_file in state:
             old_file = state_path.parent / state_file
             if old_file.is_file():
-                new_file = state_path / state_file
-                make_parents(new_file)
-                shutil.copy(old_file, new_file)
-                state_changed = True
+                try:
+                    new_file = state_path / state_file
+                    make_parents(new_file)
+                    shutil.copy(old_file, new_file)
+                    state_changed = True
+                except Exception as e:
+                    logger.critical(e)
     return (config_changed, state_changed)
 
 

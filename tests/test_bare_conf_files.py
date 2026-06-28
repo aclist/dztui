@@ -10,6 +10,7 @@ from pathlib import Path
 CONF_STRING = "DZGUI_CONF\n"
 STATE_STRING = "DZGUI_STATE\n"
 
+
 @pytest.fixture
 def state_files():
     state = [
@@ -28,7 +29,12 @@ def state_files():
 @pytest.fixture
 def xdg_paths():
     paths = []
-    routes = {"XDG_CONFIG_HOME": "", "XDG_STATE_HOME": "", "XDG_DATA_HOME": "", "XDG_CACHE_HOME": ""}
+    routes = {
+        "XDG_CONFIG_HOME": "",
+        "XDG_STATE_HOME": "",
+        "XDG_DATA_HOME": "",
+        "XDG_CACHE_HOME": "",
+    }
     for route in routes:
         tmp = tempfile.TemporaryDirectory(delete=False)
         routes[route] = tmp.name
@@ -37,23 +43,27 @@ def xdg_paths():
     env = get_xdg_paths()
     return parse_filepaths(env)
 
+
 @pytest.mark.mods
 def test_config_file_import(xdg_paths, state_files):
 
+    # NOTE: write bare files in root
     tmp_conf = xdg_paths.config.parent.parent
     tmp_conf_file = tmp_conf / xdg_paths.config.name
     tmp_conf_file.write_text(CONF_STRING)
 
     tmp_state = xdg_paths.resolution.parent.parent
-    tmp_state_file = tmp_state / xdg_paths.resolution.name
-
     for file in state_files:
         tmp_state.joinpath(file).write_text(STATE_STRING)
-    config_changed, state_changed = copy_bare_configs(xdg_paths.config, xdg_paths.resolution)
+    # NOTE: function should move files into "dzgui" subdirectory
+    config_changed, state_changed = copy_bare_configs(
+        xdg_paths.config, xdg_paths.resolution
+    )
 
-    assert (tmp_conf / xdg_paths.config.name).read_text() == CONF_STRING
+    assert xdg_paths.config.read_text() == CONF_STRING
     for file in state_files:
-        assert (tmp_state / file).read_text() == STATE_STRING
+        expected = xdg_paths.resolution.parent.joinpath(file)
+        assert expected.read_text() == STATE_STRING
 
     assert config_changed is True
     assert state_changed is True
@@ -67,11 +77,11 @@ def test_config_file_no_import(xdg_paths, state_files):
     tmp_conf_file = xdg_paths.config
     tmp_conf_file.write_text(CONF_STRING)
 
-    tmp_state_file = xdg_paths.resolution
-
     for file in state_files:
         xdg_paths.resolution.parent.joinpath(file).write_text(STATE_STRING)
 
-    config_changed, state_changed = copy_bare_configs(xdg_paths.config, xdg_paths.resolution)
+    config_changed, state_changed = copy_bare_configs(
+        xdg_paths.config, xdg_paths.resolution
+    )
     assert config_changed is False
     assert state_changed is False

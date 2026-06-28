@@ -121,7 +121,6 @@ class BootDialog(Gtk.Dialog):
 
         self.error_box.hide()
 
-        print(self.xdg.ips)
         steps = [
             (StoredFunc(is_dayz_installed, self.xdg.config), preboot.dayz, False),
             (StoredFunc(rebuild_symlinks, self.xdg.config), preboot.symlinks, False),
