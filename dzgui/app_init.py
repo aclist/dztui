@@ -66,18 +66,19 @@ def copy_bare_configs(config: "Path", resolution: "Path") -> tuple[bool, bool]:
     ]
     config_changed = False
     state_changed = False
-    if APP_NAME_LOWER not in str(config):
-        new_file = config.parent / APP_NAME_LOWER / conf
-        if config.is_file():
+    if config.parent.exists() is False:
+        new_file = config
+        old_file = config.parent.parent / conf
+        if old_file.is_file():
             make_parents(new_file)
-            shutil.copy(config, new_file)
+            shutil.copy(old_file, new_file)
             config_changed = True
-    if APP_NAME_LOWER not in str(resolution):
+    if resolution.parent.exists() is False:
         state_path = resolution.parent
         for state_file in state:
-            old_file = state_path / state_file
+            old_file = state_path.parent / state_file
             if old_file.is_file():
-                new_file = state_path / APP_NAME_LOWER / state_file
+                new_file = state_path / state_file
                 make_parents(new_file)
                 shutil.copy(old_file, new_file)
                 state_changed = True

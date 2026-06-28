@@ -29,9 +29,9 @@ def is_writeable(path_str: str) -> bool:
     if not path.exists():
         try:
             path.mkdir(parents=True)
+            path.unlink()
         except OSError:
             return False
-        path.unlink()
         return True
 
     try:
