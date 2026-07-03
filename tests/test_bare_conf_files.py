@@ -4,7 +4,6 @@ import os
 
 from dzgui.app_init import copy_bare_configs
 from dzgui.config.xdg import get_xdg_paths, parse_filepaths
-from pathlib import Path
 
 
 CONF_STRING = "DZGUI_CONF\n"
@@ -28,7 +27,6 @@ def state_files():
 
 @pytest.fixture
 def xdg_paths():
-    paths = []
     routes = {
         "XDG_CONFIG_HOME": "",
         "XDG_STATE_HOME": "",
