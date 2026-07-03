@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Any, Sequence, TYPE_CHECKING
 
 from dzgui.const.enum import HELP_MENU_ROWS
-from dzgui.util.redact import redact_log
 from dzgui.util.strings import delimiter
 
 import gi
@@ -134,9 +133,7 @@ class ModelFactory:
         with open(path, "r") as f:
             lines = [line.split(delimiter) for line in f.read().splitlines()]
             for record in lines:
-                # NOTE: strips PII and API keys
-                clean = redact_log(record)
-                store.append(clean)
+                store.append(record)
         return store
 
     def new_model_from_class(self, cls: type) -> FastInsertListStore:
