@@ -73,7 +73,6 @@ def copy_bare_configs(config: "Path", resolution: "Path") -> tuple[bool, bool]:
     ]
     config_changed = False
     state_changed = False
-
     if config.parent.exists() is False:
         new_file = config
         old_file = config.parent.parent / conf
