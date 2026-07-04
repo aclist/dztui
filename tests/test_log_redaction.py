@@ -51,5 +51,4 @@ def test_log_redaction(log_error: str, expect: str) -> None:
 
     logger.critical(log_error)
     redacted = handler.pop()
-    print(redacted)
     assert expect == redacted
