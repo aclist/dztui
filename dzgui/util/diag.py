@@ -1,3 +1,4 @@
+import logging
 import os
 import platform
 
@@ -9,7 +10,9 @@ from dzgui.const.constants import APP_NAME
 from dzgui.const.enum import Preferences
 from dzgui.config.query import lookup
 from dzgui.init.prefix import get_version
-from dzgui.util.redact import redact
+from dzgui.util.redact import redact_home
+
+logger = logging.getLogger(APP_NAME)
 
 
 def get_cpu_model() -> str:
@@ -41,12 +44,16 @@ def write_diagnostic(config: Path, outfile: Path) -> None:
     # TODO: test availability on other distros
     date = datetime.now().isoformat()
 
-    distro = platform.freedesktop_os_release()["ID_LIKE"]
+    try:
+        distro = platform.freedesktop_os_release()["ID_LIKE"]
+    except Exception as e:
+        logger.warn(e)
+        distro = "Unknown"
+
     kernel = os.uname().release
     cpu = get_cpu_model()
     version = get_version()
 
-    branch = lookup(config, Preferences.BRANCH)
     debug = lookup(config, Preferences.DEBUG)
     install = lookup(config, Preferences.INSTALL)
     default = lookup(config, Preferences.DEFAULT)
@@ -54,8 +61,8 @@ def write_diagnostic(config: Path, outfile: Path) -> None:
     steam_path = Path(default)
     workshop_path = get_local_mod_path(steam_path)
 
-    steam_redacted = redact(default)
-    workshop_redacted = redact(str(workshop_path))
+    steam_redacted = redact_home(default)
+    workshop_redacted = redact_home(str(workshop_path))
 
     mods = get_local_mod_ids(steam_path)
     mods_pretty = print_mods(mods)
@@ -65,7 +72,7 @@ def write_diagnostic(config: Path, outfile: Path) -> None:
 
     # FIXME: extraneous newlines in lists of mods
     template = f"""\
-    {APP_NAME} version {version} ({branch})
+    {APP_NAME} version {version}
     Date: {date}
     ===============================
     Distribution: {distro}

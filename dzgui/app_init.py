@@ -4,7 +4,7 @@ import shutil
 from typing import TYPE_CHECKING
 
 
-from dzgui.const.constants import APP_NAME, APP_NAME_LOWER
+from dzgui.const.constants import APP_NAME
 from dzgui.const.enum import Preferences
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
@@ -21,6 +21,7 @@ from dzgui.strings import boot
 # from dzgui.util.map_count import get_map_count
 from dzgui.util.deck import is_steam_deck, is_game_mode
 from dzgui.util.localize import set_locale
+from dzgui.util.redact import RedactionFilter, REDACTION_PATTERNS
 from dzgui.util.strings import init
 
 from dzgui.views.base import App
@@ -40,13 +41,19 @@ def make_parents(path: "Path") -> None:
 
 
 def setup_logger(log_path: "Path") -> None:
+    # TODO: put in consts?
     _format = (
         "%(asctime)s␞%(levelname)s␞%(filename)s::%(funcName)s::%(lineno)s␞%(message)s"
     )
+
     fh = logging.FileHandler(log_path)
     formatter = logging.Formatter(_format)
     fh.setFormatter(formatter)
     fh.setLevel(logging.DEBUG)
+
+    _filter = RedactionFilter(patterns=REDACTION_PATTERNS)
+    fh.addFilter(_filter)
+
     logger.setLevel(logging.DEBUG)
     logger.addHandler(fh)
 

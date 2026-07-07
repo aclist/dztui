@@ -95,8 +95,3 @@ def test_missing_values(unset_values):
     j = convert.rc2json(unset_values)
     j = json.loads(j)
     assert j.keys() == config_boilerplate.keys()
-
-
-
-
-# TODO: test that when a config file is created from scratch, it contains all values

@@ -20,7 +20,6 @@ def test_steam(config):
     key = config["steam_api"]
     assert probe.test_steam_api(key)
 
-
 def test_bm(config):
     key = config["bm_api"]
     assert probe.test_bm_api(key)

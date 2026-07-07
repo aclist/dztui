@@ -288,6 +288,7 @@ class Options(Gtk.Box):
 
     def _on_api_change_failed(self, emitter: "Emitter") -> None:
         self.old_entry.set_text(self.old_text)
+        # TODO: use popover
         dialog = ExceptionDialog(self.controller, errors.api_validation_error)
         dialog.run()
 
