@@ -24,7 +24,7 @@ accordingly.
 
 ## Submitting a ticket
 
-Navigate to the GitHub [issue tracker](https://github.com/aclist/dzgui-devel/issues).
+Navigate to the GitHub [issue tracker](https://github.com/aclist/dztui/issues).
 From there, follow the onscreen prompts. You will be asked questions such as:
 
 - What version are you using?
