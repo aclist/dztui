@@ -1,17 +1,21 @@
 import json
 import logging
 import os
+import psutil
 import requests
 import subprocess
-from typing import Union
-from warnings import deprecated
+import vdf
 
 from shlex import shlex
 from pathlib import Path
+from typing import Any, Union
+from warnings import deprecated
 
+from dzgui.api.acf import ACF
 from dzgui.init.prereqs import has_steam_client
 from dzgui.const.constants import (
     APPID_DAYZ,
+    APPID_DAYZ_EXP,
     APP_NAME,
     DEBIAN_STEAM_PATH,
     DEFAULT_STEAM_PATH,
@@ -23,7 +27,6 @@ from dzgui.const.constants import (
 from dzgui.const.endpoints import SUB_ENDPOINT, STEAM_PUBLISHED_FILES, UNSUB_ENDPOINT
 from dzgui.strings import wizard
 from dzgui.util.bash import concat_bash_args
-
 
 logger = logging.getLogger(APP_NAME)
 
@@ -275,3 +278,112 @@ def gen_shortcut() -> None:
 def enqueue_mod(client: str, mod: str, appid: int) -> None:
     client_args = concat_bash_args(client)
     subprocess.Popen([*client_args, "+workshop_download_item", str(appid), mod])
+
+
+@deprecated("Cf. https://github.com/ValveSoftware/steam-for-linux/issues/9672")
+def get_registry() -> dict[str, Any] | None:
+    home = os.getenv("HOME")
+    try:
+        with open(f"{home}/.steam/registry.vdf") as f:
+            registry = vdf.load(f)
+        return registry
+    except Exception:
+        logger.critical(e)
+        return None
+
+
+def _is_dayz_running() -> bool:
+    registry = get_registry()
+    if registry is None:
+        return False
+    apps = registry["Registry"]["HKCU"]["Software"]["Valve"]["Steam"]["apps"].items()
+    for app in apps:
+        k, v = app
+        if k in (APPID_DAYZ, APPID_DAYZ_EXP):
+            try:
+                state = v["Running"]
+                # NOTE: 0 denotes False
+                return bool(int(state))
+            except Exception as e:
+                logger.critical(e)
+                return False
+    return False
+
+
+def _get_running_app() -> int | None:
+    registry = get_registry()
+    if registry is None:
+        return None
+    try:
+        return registry["Registry"]["HKCU"]["Software"]["Valve"]["Steam"][
+            "RunningAppID"
+        ]
+    except Exception:
+        return None
+
+
+# TODO: write tests
+def get_running_app() -> int | None:
+    PROC_NAME = "steam"
+    SUBPROC_NAME = "reaper"
+    FLAG = "AppId"
+
+    for proc in psutil.process_iter():
+        if proc.name() == PROC_NAME:
+            subprocs = proc.children()
+            filtered = (proc for proc in subprocs if proc.name() == SUBPROC_NAME)
+            try:
+                proc = next(filtered)
+            except StopIteration:
+                return None
+            args = proc.cmdline()
+            appid = (row for row in args if FLAG in row)
+            try:
+                return next(appid).split("=")[1]
+            except StopIteration:
+                return None
+    return None
+
+
+# TODO: write tests
+def get_app_allows_downloads(path: Path, appid: int) -> bool:
+    # TODO: move PeFile.get_app_path()
+    # TODO: root_path = PeFile.get_app_path(Preferences.DEFAULT, appid)
+    # acf = "{root_path}/appmanifest_{aid}.acf"
+    flag = ACF(acf).get_allows_downloads()
+    match flag:
+        # NOTE: adheres to global client setting
+        case 0:
+            return get_client_allows_downloads(Preferences.DEFAULT)
+        # NOTE: always allow
+        case 1:
+            return True
+        # NOTE: never allow
+        case 2:
+            return False
+        case _:
+            return True
+
+
+def get_client_allows_downloads(path: Path) -> bool:
+    config = path.joinpath("config/config.vdf")
+    try:
+        with open(config) as f:
+            settings = vdf.load(f)
+            # NOTE: "1" denotes "allow"
+            allow = bool(
+                int(
+                    settings["InstallConfigStore"]["Software"]["Valve"]["Steam"][
+                        "AllowDownloadsDuringGameplay"
+                    ]
+                )
+            )
+            return allow
+    except Exception as e:
+        logger.critical(e)
+        return True
+
+
+def is_dayz_running() -> bool:
+    appid = get_running_app()
+    return appid in (APPID_DAYZ, APPID_DAYZ_EXP)
