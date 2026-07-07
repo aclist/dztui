@@ -46,14 +46,10 @@ but we will do our best to support as many cool ideas as possible.
 
 ## Contributing code or documentation
 
-If you would like to take ownership or assist with an issue on the issue tracker, or
+If you would like to assist with an issue on the issue tracker or
 contribute a new change, please follow the guidelines below.
 
-Fork this repository and check out the code up to `prerelease/<latest-version>`.
-If there is no pending prerelease PR, you can base your changes off of
-the `testing` branch. You may later be asked to retarget your PR to the prerelease
-branch once a new one is made. This is because out-of-band PRs are consolidated into
-the next release before merging.
+Fork this repository and check out the code up to the `dzgui7` (development) branch.
 
 The following naming conventions apply for PRs:
 - fix/<your-fix> - patch/hotfix branches
@@ -61,11 +57,13 @@ The following naming conventions apply for PRs:
 - doc/<your-doc-branch> - documentation branches
 - infra/<your-infra-branch> - infrastructure branches
 
-Implement your changes and test them locally. If they work you may
+Implement your changes and test them locally. If they work, you may
 open a merge request, and then we review your changes. If everything is OK, it
-will be merged to `prerelease/<latest-version>`, then `testing`, and after a live
-testing phase, to `stable` as well.
+will be merged to `dzgui7`. After sufficient changes are consolidated into a new release,
+this branch will be tagged to a certain point in time and a binary release published.
 
 It is recommended to follow
-(Conventional Commits)[https://www.conventionalcommits.org/en/v1.0.0/], as this
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), as this
 integrates well with tooling and helps the project review your code.
+
+Please see DEVELOPERS.md for further details.
