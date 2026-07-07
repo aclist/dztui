@@ -31,6 +31,24 @@ from dzgui.util.bash import concat_bash_args
 logger = logging.getLogger(APP_NAME)
 
 
+class AppNotInstalledError(Exception):
+    """App not present in user's libraryfolders"""
+
+    pass
+
+
+class AppMovedError(Exception):
+    """VDF points to a nonexistent location on disk"""
+
+    pass
+
+
+class VDFLoadError(Exception):
+    """Malformed VDF or JSON conversion"""
+
+    pass
+
+
 def get_steam_paths() -> list[tuple[Path, str]]:
     paths = []
     if has_steam_client():
@@ -347,9 +365,8 @@ def get_running_app() -> int | None:
 
 # TODO: write tests
 def get_app_allows_downloads(path: Path, appid: int) -> bool:
-    # TODO: move PeFile.get_app_path()
-    # TODO: root_path = PeFile.get_app_path(Preferences.DEFAULT, appid)
-    # acf = "{root_path}/appmanifest_{aid}.acf"
+    root_path = get_app_path(Preferences.DEFAULT, appid)
+    acf = f"{root_path}/appmanifest_{aid}.acf"
     flag = ACF(acf).get_allows_downloads()
     match flag:
         # NOTE: adheres to global client setting
@@ -387,3 +404,30 @@ def get_client_allows_downloads(path: Path) -> bool:
 def is_dayz_running() -> bool:
     appid = get_running_app()
     return appid in (APPID_DAYZ, APPID_DAYZ_EXP)
+
+
+def get_app_path(folders_path: Path, appid: int) -> Path:
+    app_path = None
+
+    try:
+        with open(folders_path) as f:
+            folders = vdf.load(f)
+    except Exception:
+        raise VDFLoadError("Failed to parse libraryfolders")
+
+    for obj in folders["libraryfolders"]:
+        if str(appid) in folders["libraryfolders"][obj]["apps"]:
+            app_path = folders["libraryfolders"][obj]["path"]
+            if Path(app_path).exists():
+                break
+
+    if app_path is None:
+        raise AppNotInstalledError(
+            f"Failed to find a libraryfolder for the appid {appid}"
+        )
+    if Path(app_path).exists() is False:
+        raise AppMovedError(
+            f"The location '{app_path}' pointed to by '{appid}' no longer exists and may have been changed on the disk."
+        )
+
+    return Path(app_path)

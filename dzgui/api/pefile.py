@@ -14,7 +14,7 @@ from dzgui.const.constants import (
     DAYZ_BINARY,
     LIBRARYFOLDERS_PATH,
 )
-from dzgui.api.steam import vdf2json
+from dzgui.api.steam import get_app_path
 
 # https://learn.microsoft.com/en-us/windows/win32/debug/pe-format
 endian = "<"
@@ -257,25 +257,6 @@ class PeFileError(Exception):
 
     pass
 
-
-class AppNotInstalledError(Exception):
-    """App not present in user's libraryfolders"""
-
-    pass
-
-
-class AppMovedError(Exception):
-    """VDF points to a nonexistent location on disk"""
-
-    pass
-
-
-class VDFLoadError(Exception):
-    """Malformed VDF or JSON conversion"""
-
-    pass
-
-
 def parse_version_number(data: BinaryIO) -> FileVersion:
     # https://learn.microsoft.com/en-us/windows/win32/api/verrsrc/ns-verrsrc-vs_fixedfileinfo
     minor = struct.unpack("<L", data.read(4))[0] >> 16 & 0xFFFF
@@ -425,7 +406,7 @@ def get_pefile_path(steam_path: Path, appid: int) -> Path:
 
 
 # TODO: move to dzgui.api.steam
-def get_app_path(folders_path: Path, appid: int) -> Path:
+def _get_app_path(folders_path: Path, appid: int) -> Path:
     app_path = None
 
     try:
