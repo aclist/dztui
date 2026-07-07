@@ -392,7 +392,3 @@ def get_app_path(folders_path: Path, appid: int) -> Path:
         )
 
     return Path(app_path)
-
-
-p = Path("/home/ncase/.local/share/Steam")
-print(find_user_id(p))
