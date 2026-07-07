@@ -26,7 +26,7 @@ def state_files():
 
 
 @pytest.fixture
-def xdg_paths():
+def xdg_paths(monkeypatch):
     routes = {
         "XDG_CONFIG_HOME": "",
         "XDG_STATE_HOME": "",
@@ -37,7 +37,7 @@ def xdg_paths():
         tmp = tempfile.TemporaryDirectory(delete=False)
         routes[route] = tmp.name
     for k, v in routes.items():
-        os.environ[k] = v
+        monkeypatch.setenv(k, v)
     env = get_xdg_paths()
     return parse_filepaths(env)
 
