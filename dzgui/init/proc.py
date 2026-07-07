@@ -71,6 +71,7 @@ def has_cmd(cmd: str) -> bool:
     return False
 
 
+# TODO: drop, completely superseded by new methods
 @deprecated("dropped in favor of Gtk native methods")
 def foreground(cmd: str, pid: int) -> None:
     if cmd == "wmctrl":
