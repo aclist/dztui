@@ -204,55 +204,15 @@ def launch_offline(
 def find_user_id(path: Path) -> str | None:
     resolved_path = path / "config" / "loginusers.vdf"
     try:
-        vdf = vdf2json(resolved_path)
-        j = json.loads(vdf)
-        for user in j["users"]:
-            if j["users"][user]["MostRecent"] == "1":
-                return str(user)
-        return None
+        with open(resolved_path, "r") as f:
+            v = vdf.load(f)
+            for user in v["users"]:
+                if v["users"][user]["MostRecent"] == "1":
+                    return str(user)
+            return None
     except Exception as e:
         logger.warn(e)
         return None
-
-
-def vdf2json(path: Path) -> str:
-    def _istr(indent: int, string: str) -> str:
-        return (indent * "  ") + string
-
-    jbuf = "{\n"
-    indent = 1
-
-    with open(path, "r") as f:
-        st = f.read()
-    lex = shlex(st)
-
-    while True:
-        tok = lex.get_token()
-        if not tok:
-            return jbuf + "}\n"
-        if tok == "}":
-            indent -= 1
-            jbuf += _istr(indent, "}")
-            ntok = lex.get_token()
-            if ntok is not None:
-                lex.push_token(ntok)
-            if ntok and ntok != "}":
-                jbuf += ","
-            jbuf += "\n"
-        else:
-            ntok = lex.get_token()
-            if ntok == "{":
-                jbuf += _istr(indent, tok + ": {\n")
-                indent += 1
-            else:
-                if ntok is not None:
-                    jbuf += _istr(indent, tok + ": " + ntok)
-                    ntok = lex.get_token()
-                    if ntok is not None:
-                        lex.push_token(ntok)
-                    if ntok != "}":
-                        jbuf += ","
-                    jbuf += "\n"
 
 
 def update_workshop(key: str, mod: int, endpoint: str) -> None:
@@ -341,6 +301,7 @@ def _get_running_app() -> int | None:
 
 
 # TODO: write tests
+# TODO: consider moving to proc module
 def get_running_app() -> int | None:
     PROC_NAME = "steam"
     SUBPROC_NAME = "reaper"
@@ -431,3 +392,7 @@ def get_app_path(folders_path: Path, appid: int) -> Path:
         )
 
     return Path(app_path)
+
+
+p = Path("/home/ncase/.local/share/Steam")
+print(find_user_id(p))

@@ -20,21 +20,6 @@ from dzgui.util.format import format_exception
 logger = logging.getLogger(APP_NAME)
 
 
-# TODO: move to util.proc
-def is_dayz_running() -> bool:
-    """Subprocesses spawned from Steam will not show up in regular process tree"""
-    procs = []
-    substring = DAYZ_BINARY
-    for proc in psutil.process_iter():
-        try:
-            procs.append(proc.cmdline())
-        except Exception as e:
-            msg = format_exception(e)
-            logger.warning(msg)
-            continue
-    return any(substring in item for sublist in procs for item in sublist)
-
-
 def is_steam_running(cmd: str) -> bool:
     if cmd == STEAM_CMD:
         if has_cmd(STEAM_CMD) is False:
@@ -69,26 +54,3 @@ def has_cmd(cmd: str) -> bool:
     if shutil.which(cmd) is not None:
         return True
     return False
-
-
-# TODO: drop, completely superseded by new methods
-@deprecated("dropped in favor of Gtk native methods")
-def foreground(cmd: str, pid: int) -> None:
-    if cmd == "wmctrl":
-        proc = subprocess.run(["wmctrl", "-ilp"], capture_output=True, text=True)
-        lines = proc.stdout.splitlines()
-        for line in lines:
-            els = line.split(" ")
-            if str(pid) in els:
-                wid = els[0]
-                break
-        subprocess.run(["wmctrl", "-ia", wid])
-    elif cmd == "xdotool":
-        args = [cmd, "search", "--pid", str(pid)]
-        proc = subprocess.run([*args], capture_output=True, text=True)
-        lines = proc.stdout.splitlines()
-        ## NOTE: some forked subprocesses may fail, so skip over them
-        for line in lines:
-            subprocess.run(
-                ["xdotool", "windowactivate", line], stderr=subprocess.DEVNULL
-            )

@@ -405,32 +405,6 @@ def get_pefile_path(steam_path: Path, appid: int) -> Path:
     return pe_path
 
 
-# TODO: move to dzgui.api.steam
-def _get_app_path(folders_path: Path, appid: int) -> Path:
-    app_path = None
-
-    try:
-        j = json.loads(vdf2json(folders_path))
-    except Exception:
-        raise VDFLoadError("Failed to parse libraryfolders")
-
-    for obj in j["libraryfolders"]:
-        if str(appid) in j["libraryfolders"][obj]["apps"]:
-            app_path = j["libraryfolders"][obj]["path"]
-            if Path(app_path).exists():
-                break
-
-    if app_path is None:
-        raise AppNotInstalledError(
-            f"Failed to find a libraryfolder for the appid {appid}"
-        )
-    if Path(app_path).exists() is False:
-        raise AppMovedError(
-            f"The location '{app_path}' pointed to by '{appid}' no longer exists and may have been changed on the disk."
-        )
-
-    return Path(app_path)
-
 
 def get_pretty_version(steam_path: Path, appid: int) -> str | None:
     try:

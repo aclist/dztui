@@ -32,8 +32,9 @@ from dzgui.const.constants import (
     APPNAME_DAYZ,
     APPNAME_DAYZ_EXP_HUMAN,
 )
+from dzgui.api.steam import is_dayz_running
 from dzgui.const.enum import NotebookPage, Preferences
-from dzgui.init.proc import is_dayz_running, is_steam_running
+from dzgui.init.proc import is_steam_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings.dialogs import (
     waiting_for_launch,
