@@ -24,13 +24,8 @@ Please refer to the documentation for installation and setup instructions:
 
 Geolocation records from [DB-IP](https://db-ip.com) under [CC 4.0 license](https://creativecommons.org/licenses/by/4.0/)
 
-This tool uses [python-a2s](https://github.com/Yepoleb/python-a2s) and [dayzquery](https://github.com/Yepoleb/dayzquery) as submodules; licenses for these submodules can be found in the LICENSES file
-of the project root.
-
-Both the geolocation records and submodules listed above are not shipped with the source code, but are retrieved and assembled at runtime.
-
-Finally, executable versions of DZGUI shipped as release binaries are thin wrappers around the Python interpreter, and also retrieve and assemble the above dependencies at runtime on the end-user's
-machine, rather than using pre-compiled source code. Users wishing to review these dependencies can inspect the 'pyproject.toml' manifest in the project root.
+Executable versions of DZGUI published as release binaries ship with various runtime dependencies and the Python interpreter built in.
+Users wishing to review the licenses to these components can inspect the `LICENSE` file located in the release tarball.
 
 ## Disclaimer
 
