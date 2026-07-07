@@ -3,7 +3,6 @@ import re
 from typing import Literal
 
 api_filter = r"(.*&key=)([^&]*)(.*)"
-# FIXME: handle whitespace after directory name ($HOME root)
 home_filter = r"(/home/)([^\s'\/]*)(.*)"
 REDACTED = r"\1REDACTED\3"
 REDACTION_PATTERNS = [api_filter, home_filter]
