@@ -67,5 +67,5 @@ will be merged to `prerelease/<latest-version>`, then `testing`, and after a liv
 testing phase, to `stable` as well.
 
 It is recommended to follow
-(Conventional Commits)[https://www.conventionalcommits.org/en/v1.0.0/], as this
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), as this
 integrates well with tooling and helps the project review your code.
