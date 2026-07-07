@@ -8,7 +8,7 @@ If you are a developer, you can skip to the end.
 # Requesting help
 
 If you encounter a problem with DZGUI, you can submit tickets on the GitHub
-(issue tracker)[https://github.com/aclist/dzgui-devel/issues] under the
+[issue tracker](https://github.com/aclist/dztui/issues) under the
 `troubleshooting` tag.
 
 # How can I help the project?
@@ -24,7 +24,7 @@ accordingly.
 
 ## Submitting a ticket
 
-Navigate to the GitHub (issue tracker)[https://github.com/aclist/dzgui-devel/issues].
+Navigate to the GitHub [issue tracker](https://github.com/aclist/dzgui-devel/issues).
 From there, follow the onscreen prompts. You will be asked questions such as:
 
 - What version are you using?
@@ -67,5 +67,5 @@ will be merged to `prerelease/<latest-version>`, then `testing`, and after a liv
 testing phase, to `stable` as well.
 
 It is recommended to follow
-(Conventional Commits)[https://www.conventionalcommits.org/en/v1.0.0/], as this
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), as this
 integrates well with tooling and helps the project review your code.
