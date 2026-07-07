@@ -287,7 +287,7 @@ def get_registry() -> dict[str, Any] | None:
         with open(f"{home}/.steam/registry.vdf") as f:
             registry = vdf.load(f)
         return registry
-    except Exception:
+    except Exception as e:
         logger.critical(e)
         return None
 
@@ -339,7 +339,7 @@ def get_running_app() -> int | None:
             args = proc.cmdline()
             appid = (row for row in args if FLAG in row)
             try:
-                return next(appid).split("=")[1]
+                return str(next(appid).split("=")[1])
             except StopIteration:
                 return None
     return None
