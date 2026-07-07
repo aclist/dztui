@@ -424,6 +424,7 @@ def get_pefile_path(steam_path: Path, appid: int) -> Path:
     return pe_path
 
 
+# TODO: move to dzgui.api.steam
 def get_app_path(folders_path: Path, appid: int) -> Path:
     app_path = None
 
