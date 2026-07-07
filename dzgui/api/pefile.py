@@ -12,7 +12,6 @@ from dzgui.const.constants import (
     APPNAME_DAYZ,
     APPNAME_DAYZ_EXP,
     DAYZ_BINARY,
-    LIBRARYFOLDERS_PATH,
 )
 from dzgui.api.steam import get_app_path
 
@@ -400,7 +399,7 @@ def get_pefile_path(steam_path: Path, appid: int) -> Path:
     name = identifier[appid]
     binary = DAYZ_BINARY
 
-    app_path = get_app_path(steam_path / LIBRARYFOLDERS_PATH, appid)
+    app_path = get_app_path(steam_path, appid)
     pe_path = app_path / f"steamapps/common/{name}/{binary}"
     return pe_path
 

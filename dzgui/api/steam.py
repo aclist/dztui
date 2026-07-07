@@ -20,6 +20,7 @@ from dzgui.const.constants import (
     DEBIAN_STEAM_PATH,
     DEFAULT_STEAM_PATH,
     FLATPAK_STEAM_PATH,
+    LIBRARYFOLDERS_PATH,
     UBUNTU_STEAM_PATH,
     REQUEST_TIMEOUT,
     VDF_PATH,
@@ -326,13 +327,13 @@ def get_running_app() -> int | None:
 
 # TODO: write tests
 def get_app_allows_downloads(path: Path, appid: int) -> bool:
-    root_path = get_app_path(Preferences.DEFAULT, appid)
-    acf = f"{root_path}/appmanifest_{aid}.acf"
+    root_path = get_app_path(path, appid)
+    acf = root_path.joinpath(f"steamapps/appmanifest_{appid}.acf")
     flag = ACF(acf).get_allows_downloads()
     match flag:
         # NOTE: adheres to global client setting
         case 0:
-            return get_client_allows_downloads(Preferences.DEFAULT)
+            return get_client_allows_downloads(path)
         # NOTE: always allow
         case 1:
             return True
@@ -371,7 +372,7 @@ def get_app_path(folders_path: Path, appid: int) -> Path:
     app_path = None
 
     try:
-        with open(folders_path) as f:
+        with open(folders_path / LIBRARYFOLDERS_PATH) as f:
             folders = vdf.load(f)
     except Exception:
         raise VDFLoadError("Failed to parse libraryfolders")
