@@ -1,4 +1,3 @@
-import json
 import struct
 
 from dataclasses import dataclass
@@ -402,7 +401,6 @@ def get_pefile_path(steam_path: Path, appid: int) -> Path:
     app_path = get_app_path(steam_path, appid)
     pe_path = app_path / f"steamapps/common/{name}/{binary}"
     return pe_path
-
 
 
 def get_pretty_version(steam_path: Path, appid: int) -> str | None:

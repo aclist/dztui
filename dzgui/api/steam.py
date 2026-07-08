@@ -1,12 +1,10 @@
-import json
 import logging
 import os
 import psutil
 import requests
 import subprocess
-import vdf
+import vdf  # type: ignore
 
-from shlex import shlex
 from pathlib import Path
 from typing import Any, Union
 from warnings import deprecated
@@ -260,7 +258,7 @@ def enqueue_mod(client: str, mod: str, appid: int) -> None:
 
 
 @deprecated("Cf. https://github.com/ValveSoftware/steam-for-linux/issues/9672")
-def get_registry() -> dict[str, Any] | None:
+def get_registry() -> Any | None:
     home = os.getenv("HOME")
     try:
         with open(f"{home}/.steam/registry.vdf") as f:
@@ -294,9 +292,9 @@ def _get_running_app() -> int | None:
     if registry is None:
         return None
     try:
-        return registry["Registry"]["HKCU"]["Software"]["Valve"]["Steam"][
+        return int(registry["Registry"]["HKCU"]["Software"]["Valve"]["Steam"][
             "RunningAppID"
-        ]
+        ])
     except Exception:
         return None
 
@@ -319,7 +317,7 @@ def get_running_app() -> int | None:
             args = proc.cmdline()
             appid = (row for row in args if FLAG in row)
             try:
-                return str(next(appid).split("=")[1])
+                return int(next(appid).split("=")[1])
             except StopIteration:
                 return None
     return None

@@ -3,19 +3,14 @@ import subprocess
 import shutil
 import logging
 
-from warnings import deprecated
-
 from dzgui.const.constants import (
     APP_NAME,
-    DAYZ_BINARY,
     STEAM_CMD,
     FLATPAK_APPID,
     FLATPAK_CMD,
     FLATPAK_RUN_CMD,
     FLATPAK_SANDBOX,
 )
-
-from dzgui.util.format import format_exception
 
 logger = logging.getLogger(APP_NAME)
 

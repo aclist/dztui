@@ -141,7 +141,7 @@ class ModManager:
             app_path_exp = PeFile.get_nested_app_path(steam_path, APPID_DAYZ_EXP)
             symlink = app_path_exp / md5
             symlink.unlink()
-        except PeFile.AppNotInstalledError:
+        except Exception:
             pass
         time.sleep(API_RATE_LIMIT)
 
