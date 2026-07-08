@@ -405,7 +405,7 @@ def get_app_name(appid: int) -> str:
     if res.status_code != 200:
         return unknown
     try:
-        return res.json()[str(appid)]["data"]["name"]
+        return str(res.json()[str(appid)]["data"]["name"])
     except Exception as e:
         logger.debug(e)
         return unknown
