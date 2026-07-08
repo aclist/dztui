@@ -23,9 +23,15 @@ from dzgui.const.constants import (
     REQUEST_TIMEOUT,
     VDF_PATH,
 )
-from dzgui.const.endpoints import SUB_ENDPOINT, STEAM_PUBLISHED_FILES, UNSUB_ENDPOINT
+from dzgui.const.endpoints import (
+    APP_DETAILS,
+    SUB_ENDPOINT,
+    STEAM_PUBLISHED_FILES,
+    UNSUB_ENDPOINT,
+)
 from dzgui.strings import wizard
 from dzgui.util.bash import concat_bash_args
+from dzgui.util.strings import unknown
 
 logger = logging.getLogger(APP_NAME)
 
@@ -292,9 +298,9 @@ def _get_running_app() -> int | None:
     if registry is None:
         return None
     try:
-        return int(registry["Registry"]["HKCU"]["Software"]["Valve"]["Steam"][
-            "RunningAppID"
-        ])
+        return int(
+            registry["Registry"]["HKCU"]["Software"]["Valve"]["Steam"]["RunningAppID"]
+        )
     except Exception:
         return None
 
@@ -391,3 +397,15 @@ def get_app_path(folders_path: Path, appid: int) -> Path:
         )
 
     return Path(app_path)
+
+
+def get_app_name(appid: int) -> str:
+    payload = {"appids": [appid]}
+    res = requests.get(APP_DETAILS, params=payload)
+    if res.status_code != 200:
+        return unknown
+    try:
+        return res.json()[str(appid)]["data"]["name"]
+    except Exception as e:
+        logger.debug(e)
+        return unknown

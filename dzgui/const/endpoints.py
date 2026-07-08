@@ -5,6 +5,7 @@ STEAM_PUBLISHED_FILES = (
 STEAM_SERVERS = "https://api.steampowered.com/IGameServersService/GetServerList/v1"
 SUB_ENDPOINT = "https://api.steampowered.com/IPublishedFileService/Subscribe/v1"
 UNSUB_ENDPOINT = "https://api.steampowered.com/IPublishedFileService/Unsubscribe/v1"
+APP_DETAILS = "https://store.steampowered.com/api/appdetails?"
 
 BM_SERVERS = "https://api.battlemetrics.com/servers?"
 GITHUB = "https://github.com/aclist"
