@@ -60,7 +60,7 @@ class ModManager:
 
     @call_on_thread(dialogs.fetching_mods)
     def load_mods(self) -> None:
-        mods = get_delimited_mods(self.path)
+        mods = get_delimited_mods(Path(self.path))
         if len(mods) < 1:
             msg = self.format_mod_statusbar()
             func = StoredFunc(lambda: self.emitter.emit("mods_updated", msg, 0))
