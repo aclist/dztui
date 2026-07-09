@@ -344,6 +344,7 @@ def get_app_allows_downloads(path: Path, appid: int) -> bool:
         # NOTE: never allow
         case 2:
             return False
+        # NOTE: no other known values at this time
         case _:
             return True
 
