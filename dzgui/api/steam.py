@@ -344,13 +344,15 @@ def get_app_allows_downloads(path: Path, appid: int) -> bool:
         # NOTE: never allow
         case 2:
             return False
-        # NOTE: no other known values at this time
+        # NOTE: no other known values at this time, fallback (assume permits)
         case _:
             return True
 
+def get_config(path: Path) -> bool:
+    return path.joinpath("config/config.vdf")
 
 def get_client_allows_downloads(path: Path) -> bool:
-    config = path.joinpath("config/config.vdf")
+    config = get_config(path)
     try:
         with open(config) as f:
             settings = vdf.load(f)
