@@ -1,10 +1,8 @@
 import pytest
-import tempfile
 
 from _pytest.monkeypatch import MonkeyPatch
 from pathlib import Path
 
-from dzgui.api.acf import ACF
 from dzgui.api.steam import get_app_allows_downloads
 from tests.fixtures import fixture_path
 
