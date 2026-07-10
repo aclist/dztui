@@ -76,7 +76,7 @@ class OfflineManager:
         window.set_sensitive(True)
         self.emitter.emit("custom_mods_loaded", store, folder)
 
-    @call_on_thread(dialogs.waiting_for_launch)
+    @call_on_thread(dialogs.waiting_for_launch, show_cancel=True)
     def launch(
         self,
         appid: int,
