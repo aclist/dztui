@@ -345,7 +345,7 @@ def get_app_allows_downloads(path: Path, appid: int) -> bool:
         case _:
             return True
 
-def get_config(path: Path) -> bool:
+def get_config(path: Path) -> Path:
     return path.joinpath("config/config.vdf")
 
 def get_client_allows_downloads(path: Path) -> bool:
