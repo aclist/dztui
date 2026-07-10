@@ -1,0 +1,13 @@
+"InstallConfigStore"
+{
+	"Software"
+	{
+		"Valve"
+		{
+			"Steam"
+			{
+				"AllowDownloadsDuringGameplay"		"0"
+			}
+		}
+	}
+}
