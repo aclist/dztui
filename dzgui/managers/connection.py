@@ -225,7 +225,7 @@ class ConnectionManager:
     ) -> tuple[list[list[str]], list[tuple[str, str, int, int]]]:
         mods = Servers.get_rules(record)
         steam_path = self.controller.query_config(Preferences.DEFAULT)
-        local = get_local_mod_ids(steam_path)
+        local = get_local_mod_ids(Path(steam_path))
 
         alpha_mods: list[list[str]] = [
             [
