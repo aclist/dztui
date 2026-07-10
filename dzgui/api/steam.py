@@ -305,8 +305,6 @@ def _get_running_app() -> int | None:
         return None
 
 
-# TODO: write tests
-# TODO: consider moving to proc module
 def get_running_app() -> int | None:
     PROC_NAME = "steam"
     SUBPROC_NAME = "reaper"
@@ -329,7 +327,6 @@ def get_running_app() -> int | None:
     return None
 
 
-# TODO: write tests
 def get_app_allows_downloads(path: Path, appid: int) -> bool:
     root_path = get_app_path(path, appid)
     acf = root_path.joinpath(f"steamapps/appmanifest_{appid}.acf")
