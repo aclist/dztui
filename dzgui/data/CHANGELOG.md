@@ -41,6 +41,8 @@
 - Choose to jump into splash screen instead of server
 - Collapsible connection panel
 - Play offline (load mods directly)
+- Generate Steam shortcuts and cover art
+- Warn user if background downloads are disabled
 
 ## Changed
 - Conform to PEP 440 versioning for beta versions
