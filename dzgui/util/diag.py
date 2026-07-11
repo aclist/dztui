@@ -41,10 +41,10 @@ def print_mods(mods: list[int]) -> str:
 
 
 def write_diagnostic(config: Path, outfile: Path) -> None:
-    # TODO: test availability on other distros
     date = datetime.now().isoformat()
 
     try:
+        # FIXME: ID_LIKE not available on CachyOS
         distro = platform.freedesktop_os_release()["ID_LIKE"]
     except Exception as e:
         logger.warn(e)

@@ -64,6 +64,13 @@ radio_mi = "mi (miles)"
 label_dist = "Distance display"
 label_client = "Steam client"
 
+### Shortcuts page
+heading_shortcuts = "Create shortcuts"
+blurb_shortcuts = "You can optionally create shortcuts to facilitate launching DZGUI faster. Note that if you create a Steam shortcut, you <b>must restart Steam</b> for these changes to take effect."
+button_shortcuts = "Create shortcuts"
+checkbox_steam_shortcut = ("Add a shortcut to Steam", "This will not replace or update existing shortcuts.")
+checkbox_start_menu = ("Add a start menu shortcut", "Depends on local window manager settings. Will work on Steam Deck.")
+checkbox_desktop_shortcut = ("Add a desktop shortcut", "Depends on the option above.")
 
 ### Completion page
 heading_completion = "Setup complete"
