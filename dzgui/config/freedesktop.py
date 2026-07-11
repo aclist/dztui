@@ -10,7 +10,8 @@ from dzgui.util.dirs import copy_dzgui_to_xdg_data, find_icon_resource, make_par
 def get_share_path(exe_path: Path) -> Path:
     return exe_path.parent.parent
 
-def write_desktop_file(exe_path: Path) -> None:
+
+def write_desktop_file(exe_path: Path) -> Path:
     icon = find_icon_resource()
 
     template = f"""\
