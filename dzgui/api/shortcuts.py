@@ -59,7 +59,7 @@ class Shortcuts:
             logger.critical(e)
             raise e
 
-    def find_shortcuts_path(self, steam_path: Path) -> None:
+    def find_shortcuts_path(self, steam_path: Path) -> Path:
         uid = find_user_id_32(steam_path)
         self.user_config_path = steam_path.joinpath(f"userdata/{uid}/config")
         return self.user_config_path.joinpath("shortcuts.vdf")
