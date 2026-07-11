@@ -5,7 +5,7 @@ import shutil
 from importlib import resources
 from pathlib import Path
 
-from dzgui.const.constants import APP_NAME_LOWER, IMAGES_PATH
+from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, IMAGES_PATH
 
 logger = logging.getLogger(APP_NAME)
 
