@@ -18,6 +18,7 @@ from dzgui.const.constants import (
 from dzgui.const.boilerplate import config_boilerplate
 from dzgui.const.endpoints import BM_API_SETUP, STEAM_API_SETUP
 from dzgui.const.enum import Preferences
+from dzgui.config import freedesktop
 from dzgui.config.query import lookup
 from dzgui.init.migrate import migrate_legacy_conf
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
@@ -47,12 +48,6 @@ class PageNum(Enum):
     USER_PREFS = 6
     SHORTCUTS = 7
     FINAL = 8
-
-
-class Shortcut(Enum):
-    STEAM = 1
-    DESKTOP = 2
-    START = 3
 
 
 class DescriptionArea(Gtk.Box):
@@ -584,10 +579,9 @@ class Assistant(Gtk.Assistant):
 
 
 class CheckboxWithLabel(Gtk.Box):
-    def __init__(self, text: str, blurb_text: str, enum: Shortcut) -> None:
+    def __init__(self, text: str, blurb_text: str) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=5)
 
-        self.enum = enum
         self.button = Gtk.CheckButton(label=text)
         self.button.set_active(True)
         blurb = Gtk.Label(label=f"- {blurb_text}", halign=Gtk.Align.START, margin_start=20)
@@ -595,12 +589,14 @@ class CheckboxWithLabel(Gtk.Box):
         for el in self.button, blurb:
             self.add(el)
 
-    def get_enum(self) -> Shortcut:
-        return self.enum
+    def get_checkbox(self) -> Gtk.CheckButton:
+        return self.button
 
     def get_active(self) -> bool:
         return self.button.get_active()
 
+    def set_active(self, state: bool) -> None:
+        self.button.set_active(state)
 
 class ShortcutCreationPage(ScrolledWizardPage):
     def __init__(self, shortcut: Path) -> None:
@@ -617,29 +613,29 @@ class ShortcutCreationPage(ScrolledWizardPage):
         )
         self.page_type = Gtk.AssistantPageType.INTRO
 
-        # TODO: pass enums
-        for checkbox in (
-            (wizard.checkbox_steam_shortcut, Shortcut.STEAM),
-            (wizard.checkbox_desktop_shortcut, Shortcut.DESKTOP),
-            (wizard.checkbox_start_menu, Shortcut.START),
-        ):
-            box, enum = checkbox
-            label, blurb = box
-            checkbox = CheckboxWithLabel(label, blurb, enum)
-            self.checks_area.add(checkbox)
+        label, blurb = wizard.checkbox_steam_shortcut
+        self.steam_checkbox = CheckboxWithLabel(label, blurb)
+
+        label, blurb = wizard.checkbox_start_menu
+        self.start_menu_checkbox = CheckboxWithLabel(label, blurb)
+        cb = self.start_menu_checkbox.get_checkbox()
+        cb.connect("toggled", self._on_start_menu_toggled)
+
+        label, blurb = wizard.checkbox_desktop_shortcut
+        self.desktop_checkbox = CheckboxWithLabel(label, blurb)
+
+        for el in (self.steam_checkbox, self.start_menu_checkbox, self.desktop_checkbox):
+            self.checks_area.add(el)
 
         self.add_start(self.checks_area)
         self.show_all()
         self.connect("map", self._on_map)
 
-        """
-        TODO: checkboxes for:
-        [] steam shortcut (adds a new shortcut. it will not replace or update existing DZGUI shortcuts)
-        [] add to desktop (PATH)
-        [] add to start menu (free desktop)
-        checkbox with blurb below
-        # TODO: warn about how to back up
-        """
+    def _on_start_menu_toggled(self, button: Gtk.CheckButton) -> None:
+        state = button.get_active()
+        if not state:
+            self.desktop_checkbox.set_active(state)
+        self.desktop_checkbox.set_sensitive(state)
 
     def _on_map(self, page: "ScrolledWizardPage") -> None:
         EMITTER.emit("step_complete")
@@ -647,25 +643,16 @@ class ShortcutCreationPage(ScrolledWizardPage):
     def set_steam_path(self, path: Path) -> None:
         self.steam_path = path
 
-    # TODO: move elsewhere
-    def write_desktop_file(self) -> None:
-        # .local/share/applications/dzgui/dzgui.desktop
-        pass
-
     def create_shortcuts(self) -> None:
         # NOTE: best-effort, permissive even on failure (page is already marked as complete)
-        for box in self.checks_area.get_children():
-            if not box.get_active():
-                continue
-            match box.get_enum():
-                case Shortcut.STEAM:
-                    add_steam_shortcut(self.steam_path, self.shortcut_path)
-                case Shortcut.DESKTOP:
-                    pass
-                case Shortcut.START:
-                    pass
-                case _:
-                    pass
+        if self.steam_checkbox.get_active():
+            add_steam_shortcut(self.steam_path, self.shortcut_path)
+
+        if self.start_menu_checkbox.get_active():
+            desktop_file = freedesktop.write_desktop_file(self.shortcut_path)
+
+        if self.desktop_checkbox.get_active():
+            freedesktop.write_desktop_shortcut(desktop_file)
 
 
 class SteamPathPage(ScrolledWizardPage):
