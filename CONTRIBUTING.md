@@ -8,7 +8,7 @@ If you are a developer, you can skip to the end.
 # Requesting help
 
 If you encounter a problem with DZGUI, you can submit tickets on the GitHub
-(issue tracker)[https://github.com/aclist/dztui/issues] under the
+[issue tracker](https://github.com/aclist/dztui/issues) under the
 `troubleshooting` tag.
 
 # How can I help the project?
@@ -24,7 +24,7 @@ accordingly.
 
 ## Submitting a ticket
 
-Navigate to the GitHub (issue tracker)[https://github.com/aclist/dztui/issues].
+Navigate to the GitHub [issue tracker](https://github.com/aclist/dztui/issues).
 From there, follow the onscreen prompts. You will be asked questions such as:
 
 - What version are you using?
