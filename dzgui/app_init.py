@@ -127,11 +127,6 @@ def load_gui(version: str, is_debug: bool) -> None:
         if not wizard.is_setup_complete():
             return
 
-    # TODO: drop
-    # NOTE: implies that setup wizard failed or was closed
-    #if has_new_config(XDG.config) is False:
-    #    return
-
     setup_logger(XDG.debug)
     with open(XDG.debug, "w") as f:
         f.truncate(0)
