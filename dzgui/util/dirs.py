@@ -13,8 +13,11 @@ def copy_dzgui_to_xdg_data(exe_path: Path) -> None:
     dzgui = os.getenv("PYAPP")
     if dzgui is None:
         return
-    make_parents(exe_path)
-    shutil.copy(dzgui, exe_path)
+    try:
+        make_parents(exe_path)
+        shutil.copy(dzgui, exe_path)
+    except Exception as e:
+        logger.critical(e)
 
 def find_icon_resource() -> "Path":
     traversable = resources.files(APP_NAME_LOWER).joinpath(IMAGES_PATH)
