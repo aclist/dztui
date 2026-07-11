@@ -57,7 +57,7 @@ class Shortcuts:
                 shortcuts = vdf.binary_load(f)
             self.shortcuts = shortcuts
         except Exception as e:
-            logger.warning(e)
+            logger.critical(e)
             raise e
 
     def add_shortcut(
@@ -163,4 +163,4 @@ def add_steam_shortcut(steam_path: Path, exe_path: Path) -> None:
 
         copy_dzgui_to_xdg_data(exe_path)
     except Exception as e:
-        logger.warning(e)
+        logger.critical(e)
