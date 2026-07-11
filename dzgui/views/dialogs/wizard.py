@@ -484,8 +484,6 @@ class Assistant(Gtk.Assistant):
             ):
                 continue
             # NOTE: disabled for now on system-provided packages
-            # TODO: drop, for testing purposes
-            os.environ["PYAPP"] = str(Path.home().joinpath("dzgui/dzgui"))
             if isinstance(page, ShortcutCreationPage) and os.getenv("PYAPP") is None:
                 continue
             self._add_page(page, page.get_page_type())
