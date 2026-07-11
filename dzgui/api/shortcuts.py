@@ -27,10 +27,8 @@ class ShortcutMetadata:
 
 class Shortcuts:
     def __init__(self, steam_path: Path) -> None:
-        uid = find_user_id_32(steam_path)
-        self.uid = uid
-        self.user_config_path = steam_path.joinpath(f"userdata/{uid}/config")
-        self.shortcuts_path = self.user_config_path.joinpath("shortcuts.vdf")
+        self.user_config_path: Path
+        self.shortcuts_path = self.find_shortcuts_path(steam_path)
         self._load_shortcuts(self.shortcuts_path)
 
     @classmethod
@@ -56,9 +54,15 @@ class Shortcuts:
             with open(path, "rb") as f:
                 shortcuts = vdf.binary_load(f)
             self.shortcuts = shortcuts
+            logger.debug("Loaded shortcuts file")
         except Exception as e:
             logger.critical(e)
             raise e
+
+    def find_shortcuts_path(self, steam_path: Path) -> None:
+        uid = find_user_id_32(steam_path)
+        self.user_config_path = steam_path.joinpath(f"userdata/{uid}/config")
+        return self.user_config_path.joinpath("shortcuts.vdf")
 
     def add_shortcut(
         self, appname: str, start_dir: Path, exe_path: Path, icon: Path
@@ -94,8 +98,11 @@ class Shortcuts:
         dest.write_bytes(b)
 
     def _insert_at_last_index(self, entry: dict[str, Any]) -> None:
-        last = list(self.shortcuts["shortcuts"].keys())[-1]
-        n = int(last) + 1
+        try:
+            last = list(self.shortcuts["shortcuts"].keys())[-1]
+            n = int(last) + 1
+        except Exception:
+            n = 0
         self.shortcuts["shortcuts"][str(n)] = entry
 
     @classmethod
@@ -162,5 +169,6 @@ def add_steam_shortcut(steam_path: Path, exe_path: Path) -> None:
         shortcuts.add_grid_images(images)
 
         copy_dzgui_to_xdg_data(exe_path)
+        logger.debug("Finished creating Steam shortcut")
     except Exception as e:
         logger.critical(e)
