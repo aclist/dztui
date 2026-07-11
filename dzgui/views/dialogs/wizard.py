@@ -67,7 +67,7 @@ class Progress(Gtk.ProgressBar):
 
 class ScrolledWizardPage(Gtk.ScrolledWindow):
     def __init__(self, enum: PageNum, heading: str, description: str):
-        super().__init__()
+        super().__init__(overlay_scrolling=False)
 
         self.enum = enum
         self.page_type: Gtk.AssistantPageType
@@ -584,9 +584,11 @@ class CheckboxWithLabel(Gtk.Box):
 
         self.button = Gtk.CheckButton(label=text)
         self.button.set_active(True)
-        blurb = Gtk.Label(label=f"- {blurb_text}", halign=Gtk.Align.START, margin_start=20)
+        label = Gtk.Label(label="", halign=Gtk.Align.START, margin_start=20)
+        wrapped = textwrap.fill(blurb_text, width=100)
+        label.set_markup(f"- {wrapped}")
 
-        for el in self.button, blurb:
+        for el in self.button, label:
             self.add(el)
 
     def get_checkbox(self) -> Gtk.CheckButton:
@@ -597,6 +599,7 @@ class CheckboxWithLabel(Gtk.Box):
 
     def set_active(self, state: bool) -> None:
         self.button.set_active(state)
+
 
 class ShortcutCreationPage(ScrolledWizardPage):
     def __init__(self, shortcut: Path) -> None:
@@ -624,7 +627,11 @@ class ShortcutCreationPage(ScrolledWizardPage):
         label, blurb = wizard.checkbox_desktop_shortcut
         self.desktop_checkbox = CheckboxWithLabel(label, blurb)
 
-        for el in (self.steam_checkbox, self.start_menu_checkbox, self.desktop_checkbox):
+        for el in (
+            self.steam_checkbox,
+            self.start_menu_checkbox,
+            self.desktop_checkbox,
+        ):
             self.checks_area.add(el)
 
         self.add_start(self.checks_area)
