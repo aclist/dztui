@@ -12,6 +12,7 @@ This file includes the combined licenses to the following components:
     - psutil
     - PyGObject
     - python-a2s
+    - vdf
 
 When shipped as a binary installer, these components are collectively bundled
 as a turnkey application and used to run the DZGUI utility.\n\n
