@@ -15,6 +15,7 @@ from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
     APP_NAME,
+    DAYZ_BINARY,
     DEBIAN_STEAM_PATH,
     DEFAULT_STEAM_PATH,
     FLATPAK_STEAM_PATH,
@@ -309,21 +310,25 @@ def get_running_app() -> int | None:
     PROC_NAME = "steam"
     SUBPROC_NAME = "reaper"
     FLAG = "AppId"
-
-    for proc in psutil.process_iter():
-        if proc.name() == PROC_NAME:
-            subprocs = proc.children()
-            filtered = (proc for proc in subprocs if proc.name() == SUBPROC_NAME)
-            try:
-                proc = next(filtered)
-            except StopIteration:
-                return None
-            args = proc.cmdline()
-            appid = (row for row in args if FLAG in row)
-            try:
-                return int(next(appid).split("=")[1])
-            except StopIteration:
-                return None
+    # NOTE: may cause conflicts if multiple apps are running
+    try:
+        for proc in psutil.process_iter():
+            if proc.name() == PROC_NAME:
+                subprocs = proc.children()
+                filtered = (proc for proc in subprocs if proc.name() == SUBPROC_NAME)
+                try:
+                    proc = next(filtered)
+                except StopIteration:
+                    return None
+                args = proc.cmdline()
+                appid = (row for row in args if FLAG in row)
+                try:
+                    return int(next(appid).split("=")[1])
+                except StopIteration:
+                    return None
+    except Exception as e:
+        logger.debug(e)
+        return None
     return None
 
 
@@ -368,8 +373,16 @@ def get_client_allows_downloads(path: Path) -> bool:
 
 
 def is_dayz_running() -> bool:
-    appid = get_running_app()
-    return appid in (APPID_DAYZ, APPID_DAYZ_EXP)
+    """Subprocesses spawned from Steam will not show up in regular process tree"""
+    procs = []
+    substring = DAYZ_BINARY
+    for proc in psutil.process_iter():
+        try:
+            procs.append(proc.cmdline())
+        except Exception as e:
+            logger.warning(e)
+            continue
+    return any(substring in item for sublist in procs for item in sublist)
 
 
 def get_app_path(folders_path: Path, appid: int) -> Path:
