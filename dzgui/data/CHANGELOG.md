@@ -1,6 +1,7 @@
 # Changelog
 
-## Added
+## [7.0.0] Unreleased
+### Added
 - Setup wizard
 - Changelog text wrapping and formatting
 - Changelog ships with source
@@ -44,7 +45,7 @@
 - Generate Steam shortcuts and cover art
 - Warn user if background downloads are disabled
 
-## Changed
+### Changed
 - Conform to PEP 440 versioning for beta versions
 - Reduce padding on keys button
 - Boldface breadcrumbs
@@ -61,58 +62,58 @@
 - Enable LAN page Empty/Full filters on first run of app
 - Propagate subscribed mods to Steam client
 
-## Dropped
+### Dropped
 - Debug mode
 - Branch switching
 - Manual mod install mode (describe rationale)
 - Force update mods
 
-## Fixed
+### Fixed
 - Longstanding issue with left clicks not registering as tree selection changes after spamming keyboard input
 - Center server title text on server dialogs
 - Rare segfaults when changing maps (threading)
 - Moved dialogs out of threads
 
-## Unreleased
+### Unreleased
 - Load offline mods
 - Local documentation
 - Raw debug command in context menu
 
-## Developer-facing
+### Developer-facing
 - Add pyproject.toml file
 - Show deprecation warnings
 - Options -> Dev page
 
 ## [6.0.5] 2026-05-17
-## Changed
+### Changed
 - Update symlink hash logic to align with DZGUI 7 beta
 - Update A2S helper to latest commit
 
 ## [6.0.4] 2026-04-13
-## Fixed
+### Fixed
 - Update A2S module checksums to support servers with missing description field
 
 ## [6.0.3] 2026-04-12
-## Fixed
+### Fixed
 - Use GLibUnix namespace where available when setting up SIGINT callback
 
 ## [6.0.2] 2026-01-26
-## Fixed
+### Fixed
 - Explicitly use Python 3.13 when calling subprocesses
 - Raise error correctly from module
 - Do not spawn dialogs from inside of thread when fetching prereqs
-## Changed
+### Changed
 - Optimize time complexity of startup checks
 - Optimize coordinate calculation by using local records first
 - Rename some internal functions
 - Wrap entire startup process in dialog
 
 ## [6.0.1] 2026-01-16
-## Fixed
+### Fixed
 - Explicitly use Python 3.13 when calling subprocesses
 
 ## [6.0.0] 2026-01-14
-## Added
+### Added
 - Support DayZ Experimental
 - Ping display on server tables
 - Save descriptive text notes on a per-server basis
@@ -138,7 +139,7 @@
 - Commandline usage help text (GaryBlackbourne)
 - More descriptive help dialogs when initial dependencies are missing
 
-## Fixed
+### Fixed
 - Script failing to start when remote endpoints are unavailable (GaryBlackbourne)
 - Key stickiness when quickly navigating through entries in tables
 - Servers returning malformed A2S_INFO blocking server browser from loading
@@ -177,7 +178,7 @@
 - Path discovery during first-time setup when parsing filepaths with whitespaces
 - First-time setup dialog continuously triggering when DayZ install path had whitespaces in it
 
-## Changed
+### Changed
 - Require Python 3.13
 - Reduced global API cooldown from 60s to 30s
 - Clarify dialog messages when DayZ path could not be found
@@ -189,50 +190,50 @@
 - Rewrote distance calculation module (GaryBlackbourne)
 - Changed preferred client setting from radio toggle to combobox
 
-## Dropped
+### Dropped
 - Ping readout in statusbar
 - Extraneous information from right statusbar
 
 ## [5.8.3] 2026-01-04
-## Fixed
+### Fixed
 - Normalize checksum numbers and dates
 
 ## [5.8.2] 2026-01-04
-## Fixed
+### Fixed
 - Fix regression in symlink routine introduced by previous hotfix
 
 ## [5.8.1] 2025-12-27
-## Fixed
+### Fixed
 - Path discovery during first-time setup when parsing filepaths with whitespaces
 - First-time setup dialog continuously triggering when DayZ install path had whitespaces in it
 
 ## [5.8.0] 2025-07-06
-## Added
+### Added
 - Filter servers by official/unofficial status
 - Automatically fetch geolocation records
-## Changed
+### Changed
 - Updated internal versioning of helper files
-## Fixed
+### Fixed
 - Corrected erroneous 2024 date in prior changelog entries
 
 ## [5.7.0] 2025-04-17
-## Added
+### Added
 - Save application dimensions when quitting and restore on subsequent boot
-## Fixed
+### Fixed
 - Issues with the window exceeding the bounds of the screen when displaying some table contexts
-## Changed
+### Changed
 - More direct server ping query method that should return marginally more accurate times
 
 ## [5.6.7] 2025-04-04
-## Dropped
+### Dropped
 - Removed extraneous pre-boot API checks that could cause error messages to be printed if the user had not set up an API key yet
 
 ## [5.6.6] 2025-03-16
-## Changed
+### Changed
 - Update IP database records for 2025-03
 
 ## [5.6.5] 2025-03-04
-## Fixed
+### Fixed
 - Livonia server results being dropped from batch queries
 
 ## [5.6.4] 2025-02-10
