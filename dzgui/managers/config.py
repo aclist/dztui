@@ -55,8 +55,11 @@ class ConfigManager:
         self.update_config(Preferences.IP_LIST, ips)
 
     def update_history_file(self, fqip: str) -> None:
-        with open(self.prefs.paths.history, "r") as f:
-            ips = [line.rstrip() for line in f.readlines()]
+        try:
+            with open(self.prefs.paths.history, "r") as f:
+                ips = [line.rstrip() for line in f.readlines()]
+        except FileNotFoundError:
+            ips = []
 
         seen = set()
         ips.append(fqip)
