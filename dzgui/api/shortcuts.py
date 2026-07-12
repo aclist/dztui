@@ -162,7 +162,6 @@ def add_steam_shortcut(steam_path: Path, exe_path: Path) -> None:
         images = Path(str(traversable))
         icon = images.joinpath("icon.png")
 
-        # TEST: assert that record (start dir and exe combo) is in shortcuts after creation
         shortcuts = Shortcuts(Path(steam_path))
         shortcuts.add_shortcut(APP_NAME, start_dir, exe_path, icon)
         shortcuts.save_shortcuts()
