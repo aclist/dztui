@@ -1,4 +1,5 @@
 import logging
+import re
 
 from typing import TYPE_CHECKING
 from importlib import resources
@@ -32,15 +33,63 @@ class Changelog(HelpMenuMixin, ScrollableMixin, Gtk.ScrolledWindow):  # type: ig
 
         # TODO: should long text be wrapped?
         self.controller = controller
-        formatted = format_pango(changelog)
-        self.changelog_label = Gtk.Label(valign=Gtk.Align.START, margin=15)
-        self.changelog_label.set_markup(formatted)
-        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.box.add(self.changelog_label)
+        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5, margin_top=10)
         self.add(self.box)
 
         self.connect("key-press-event", self._on_keypress)
         self.connect("key-press-event", self._on_esc_keypress)
 
+        changes = self._parse(changelog)
+        self._generate_nodes(changes)
+        self.show_all()
+
     def grab_content_area(self) -> None:
         self.grab_focus()
+
+    def _parse_version(self, version: str) -> tuple[str, str]:
+        pattern = r"(^##\s\[)(.+)(\] )(.+$)"
+        match = re.match(pattern, version)
+        if match:
+            version = match.group(2)
+            date = match.group(4)
+            return version, date
+        raise ValueError("Changelog parse error")
+
+
+    def _generate_nodes(self, releases: list[tuple[str, list[str]]]) -> None:
+        for header, changes in releases:
+            for ind in (0, -1):
+                if changes[ind] == "":
+                    del changes[ind]
+            text = "\n".join(changes)
+            formatted = format_pango(text)
+
+            label = Gtk.Label(valign=Gtk.Align.START, margin=15, halign=Gtk.Align.START)
+            label.set_markup(formatted)
+
+            version, date = self._parse_version(header)
+            button_text = f"{version} ({date})"
+            button = Gtk.Button(label=button_text, margin_start=5)
+
+            expander = Gtk.Expander()
+            expander.set_label_widget(button)
+            expander.add(label)
+            self.box.add(expander)
+
+
+    def _parse(self, changelog: str) -> list[tuple[str, list[str]]]:
+        release = ""
+        releases: list[tuple[str, list[str]]] = []
+        release_notes: list[str] = []
+        for line in changelog.splitlines():
+            if line.startswith("# "):
+                continue
+            if line.startswith("## "):
+                if release != "":
+                    releases.append((release, release_notes))
+                    release_notes = []
+                    release = ""
+                release = line
+                continue
+            release_notes.append(line.rstrip())
+        return releases
