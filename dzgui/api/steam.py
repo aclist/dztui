@@ -39,19 +39,16 @@ logger = logging.getLogger(APP_NAME)
 
 class AppNotInstalledError(Exception):
     """App not present in user's libraryfolders"""
-
     pass
 
 
 class AppMovedError(Exception):
     """VDF points to a nonexistent location on disk"""
-
     pass
 
 
 class VDFLoadError(Exception):
     """Malformed VDF or JSON conversion"""
-
     pass
 
 
@@ -321,7 +318,6 @@ def get_running_app() -> int | None:
                     return None
     except Exception as e:
         logger.debug(e)
-        return None
     return None
 
 
