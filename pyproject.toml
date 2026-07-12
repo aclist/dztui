@@ -76,7 +76,7 @@ build-backend = "setuptools.build_meta"
 line-length = 88
 indent-width = 4
 extend-exclude = ["*lib/a2s"]
-lint.unfixable = ["F401"]
+lint.unfixable = ["F401", "I001"]
 
 [tool.ruff.format]
 quote-style = "double"
