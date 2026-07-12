@@ -272,6 +272,15 @@ class PreConnectionAssistant(Gtk.Box):
                 "It looks like DayZ is already running in the background. Exit DayZ before connecting."
             )
 
+        allows_dl, running_app = prereqs.allows_downloads
+        if allows_dl is False:
+            msg = (
+                f"The game '{running_app}' is currently running in Steam, but background downloads are not enabled.\n"
+                "Either stop the game first, or update your global Steam settings or the game's local settings.\n"
+                "Otherwise, mods may be queued for download but never update."
+                )
+            warnings.append(msg)
+
         self.add_warnings(warnings)
         self.add_errors(errors)
 

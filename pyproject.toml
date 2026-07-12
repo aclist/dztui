@@ -27,6 +27,7 @@ dependencies = [
     "psutil==7.1.3",
     "python-a2s",
     "requests==2.32.5",
+    "vdf==3.4"
 ]
 
 [project.scripts]

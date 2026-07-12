@@ -1,12 +1,18 @@
+import logging
 import re
+
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 from warnings import deprecated
 
+from dzgui.const.constants import APP_NAME
 
-@deprecated("Use dzgui.api.steam.unsubscribe()")
-class WorkshopACF:
-    def __init__(self, file: str) -> None:
+logger = logging.getLogger(APP_NAME)
+
+
+class ACF:
+    def __init__(self, file: Path) -> None:
         super().__init__()
 
         self.dict: dict[str, Any]
@@ -15,9 +21,10 @@ class WorkshopACF:
     def as_dict(self) -> dict[str, Any]:
         return self.dict
 
-    def load(self, file: str) -> None:
+    def load(self, file: Path) -> None:
         delimiter = r"\t\t"
         lines = []
+        # TODO: illegal file handling
         with open(file, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -26,6 +33,14 @@ class WorkshopACF:
                 els = re.split(delimiter, line, maxsplit=1)
                 lines.append(els)
         self.dict = self.parse(iter(lines))
+
+    @classmethod
+    def enquote(cls, s: str) -> str:
+        return f'"{s}"'
+
+    @classmethod
+    def dequote(cls, s: str) -> str:
+        return s.rstrip('"').lstrip('"')
 
     def parse(self, lines: Iterator[list[str]]) -> dict[str, str]:
         acf: dict[str, Any] = {}
@@ -54,6 +69,24 @@ class WorkshopACF:
         except StopIteration:
             return acf
 
+    def get_allows_downloads(self) -> int | None:
+        try:
+            # TODO: consider coercing strs to ints on initial import
+            flag = int(self.dict["AppState"]["AllowOtherDownloadsWhileRunning"])
+            return flag
+        except Exception as e:
+            logger.critical(e)
+            return None
+
+
+@deprecated(
+    "Serializing workshop files is no longer supported, use dzgui.api.steam.unsubscribe"
+)
+class WorkshopACF(ACF):
+    def __init__(self, file: Path) -> None:
+        super().__init__(file)
+
+    # TODO: break into workshop parser and generic acf parser
     def unpack(self, d: dict, lines: list[Any] = []) -> str:
         t1 = "AppWorkshop"
         t2 = ("WorkshopItemsInstalled", "WorkshopItemDetails")
@@ -78,18 +111,9 @@ class WorkshopACF:
             s += line + "\n"
         return s
 
-    def to_file(self, file: str) -> None:
+    def to_file(self, file: Path) -> None:
         s = self.unpack(self.dict)
-        with open(file, "w") as f:
-            f.write(s)
-
-    @classmethod
-    def enquote(cls, s: str) -> str:
-        return f'"{s}"'
-
-    @classmethod
-    def dequote(cls, s: str) -> str:
-        return s.rstrip('"').lstrip('"')
+        file.write_text(s)
 
     def delete(self, modid: int) -> None:
         del self.dict["AppWorkshop"]["WorkshopItemsInstalled"][modid]

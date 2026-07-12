@@ -1,0 +1,53 @@
+"AppState"
+{
+	"appid"		"222"
+	"Universe"		"1"
+	"name"		"TEST APP"
+	"StateFlags"		"4"
+	"installdir"		"TESTAPP"
+	"LastUpdated"		"0"
+	"LastPlayed"		"0"
+	"SizeOnDisk"		"0"
+	"StagingSize"		"0"
+	"buildid"		"0"
+	"LastOwner"		"0"
+	"DownloadType"		"2"
+	"UpdateResult"		"0"
+	"BytesToDownload"		"0"
+	"BytesDownloaded"		"0"
+	"BytesToStage"		"0"
+	"BytesStaged"		"0"
+	"TargetBuildID"		"0"
+	"AutoUpdateBehavior"		"0"
+	"AllowOtherDownloadsWhileRunning"		"2"
+	"ScheduledAutoUpdate"		"0"
+	"FullValidateAfterNextUpdate"		"1"
+	"InstalledDepots"
+	{
+		"2220"
+		{
+			"manifest"		"0"
+			"size"		"0"
+		}
+	}
+	"SharedDepots"
+	{
+		"228983"		"228980"
+		"228985"		"228980"
+		"228988"		"228980"
+		"228990"		"228980"
+		"229004"		"228980"
+	}
+	"UserConfig"
+	{
+		"language"		"english"
+		"platform_override_dest"		"linux"
+		"platform_override_source"		"windows"
+	}
+	"MountedConfig"
+	{
+		"language"		"english"
+		"platform_override_dest"		"linux"
+		"platform_override_source"		"windows"
+	}
+}

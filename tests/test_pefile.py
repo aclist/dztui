@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 
 import dzgui.api.pefile as PeFile
-from dzgui.api.pefile import VDFLoadError, AppNotInstalledError, AppMovedError
+from dzgui.api.steam import VDFLoadError, AppNotInstalledError, AppMovedError, get_app_path
 
 from dzgui.config.query import get_config
 from dzgui.config.xdg import get_xdg_paths, parse_filepaths
@@ -56,11 +56,11 @@ def test_not_in_library(fixture, exception):
     fixture = fixture_path(fixture)
     with pytest.raises(exception):
         try:
-            PeFile.get_app_path(fixture, APPID_DAYZ)
+            get_app_path(fixture, APPID_DAYZ)
         except Exception as e:
             raise e
 
 
 def test_on_second_drive(second_drive):
-    path = PeFile.get_app_path(second_drive, APPID_DAYZ)
+    path = get_app_path(second_drive, APPID_DAYZ)
     assert path == Path("/tmp")

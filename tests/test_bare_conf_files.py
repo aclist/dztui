@@ -1,6 +1,5 @@
 import pytest
 import tempfile
-import os
 
 from dzgui.app_init import copy_bare_configs
 from dzgui.config.xdg import get_xdg_paths, parse_filepaths

@@ -12,8 +12,11 @@ import dzgui.api.servers as Servers
 
 from dzgui.api.steam import (
     connect,
-    get_remote_signatures,
+    get_app_allows_downloads,
+    get_app_name,
     get_needs_update,
+    get_remote_signatures,
+    get_running_app,
     load_to_menu,
     subscribe,
 )
@@ -32,8 +35,9 @@ from dzgui.const.constants import (
     APPNAME_DAYZ,
     APPNAME_DAYZ_EXP_HUMAN,
 )
+from dzgui.api.steam import is_dayz_running
 from dzgui.const.enum import NotebookPage, Preferences
-from dzgui.init.proc import is_dayz_running, is_steam_running
+from dzgui.init.proc import is_steam_running
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings.dialogs import (
     waiting_for_launch,
@@ -81,6 +85,7 @@ class Prerequisites:
     mods: list[list[str]]
     game_mode: bool
     is_last_server: bool
+    allows_downloads: tuple[bool, str]
 
 
 class ConnectionManager:
@@ -166,6 +171,15 @@ class ConnectionManager:
 
         dayz_running = is_dayz_running()
 
+        running_app = get_running_app()
+        if running_app is not None:
+            allows_dl = get_app_allows_downloads(steam_path, running_app)
+            running_app_name = get_app_name(running_app)
+            allows_downloads = (allows_dl, running_app_name)
+        else:
+            allows_downloads = (True, "")
+
+
         client_name = self.controller.get_steam_client_name()
         client = self.controller.query_config(Preferences.CLIENT)
         running = is_steam_running(client)
@@ -191,6 +205,7 @@ class ConnectionManager:
             mods=remote_mods,
             game_mode=game_mode,
             is_last_server=is_last,
+            allows_downloads=allows_downloads,
         )
 
         func = StoredFunc(self.controller.open_connection_assistant, prereqs)
@@ -224,7 +239,7 @@ class ConnectionManager:
     ) -> tuple[list[list[str]], list[tuple[str, str, int, int]]]:
         mods = Servers.get_rules(record)
         steam_path = self.controller.query_config(Preferences.DEFAULT)
-        local = get_local_mod_ids(steam_path)
+        local = get_local_mod_ids(Path(steam_path))
 
         alpha_mods: list[list[str]] = [
             [

@@ -7,13 +7,12 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
-import dzgui.api.pefile as PeFile
+from dzgui.api.steam import get_app_path
 from dzgui.api.servers import get_rules, fqip_to_record
 from dzgui.const.constants import (
     APP_NAME,
     APPID_DAYZ,
     DAYZ_COMMUNITY_ROOT,
-    LIBRARYFOLDERS_PATH,
     WORKSHOP_PATH,
 )
 
@@ -40,7 +39,7 @@ def get_local_mod_ids(steam_path: Path) -> list[int]:
 
 
 def get_local_mod_path(steam_path: Path) -> Path:
-    p = PeFile.get_app_path(steam_path / Path(LIBRARYFOLDERS_PATH), APPID_DAYZ)
+    p = get_app_path(steam_path, APPID_DAYZ)
     workshop_path = p / WORKSHOP_PATH
     return workshop_path
 

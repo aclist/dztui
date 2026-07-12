@@ -60,7 +60,7 @@ class ModManager:
 
     @call_on_thread(dialogs.fetching_mods)
     def load_mods(self) -> None:
-        mods = get_delimited_mods(self.path)
+        mods = get_delimited_mods(Path(self.path))
         if len(mods) < 1:
             msg = self.format_mod_statusbar()
             func = StoredFunc(lambda: self.emitter.emit("mods_updated", msg, 0))
@@ -141,7 +141,7 @@ class ModManager:
             app_path_exp = PeFile.get_nested_app_path(steam_path, APPID_DAYZ_EXP)
             symlink = app_path_exp / md5
             symlink.unlink()
-        except PeFile.AppNotInstalledError:
+        except Exception:
             pass
         time.sleep(API_RATE_LIMIT)
 

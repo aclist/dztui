@@ -1,31 +1,55 @@
-import json
 import logging
 import os
+import psutil
 import requests
 import subprocess
-from typing import Union
+import vdf  # type: ignore
+
+from pathlib import Path
+from typing import Any, Union
 from warnings import deprecated
 
-from shlex import shlex
-from pathlib import Path
-
+from dzgui.api.acf import ACF
 from dzgui.init.prereqs import has_steam_client
 from dzgui.const.constants import (
     APPID_DAYZ,
+    APPID_DAYZ_EXP,
     APP_NAME,
+    DAYZ_BINARY,
     DEBIAN_STEAM_PATH,
     DEFAULT_STEAM_PATH,
     FLATPAK_STEAM_PATH,
+    LIBRARYFOLDERS_PATH,
     UBUNTU_STEAM_PATH,
     REQUEST_TIMEOUT,
     VDF_PATH,
 )
-from dzgui.const.endpoints import SUB_ENDPOINT, STEAM_PUBLISHED_FILES, UNSUB_ENDPOINT
+from dzgui.const.endpoints import (
+    APP_DETAILS,
+    SUB_ENDPOINT,
+    STEAM_PUBLISHED_FILES,
+    UNSUB_ENDPOINT,
+)
 from dzgui.strings import wizard
 from dzgui.util.bash import concat_bash_args
-
+from dzgui.util.strings import unknown
 
 logger = logging.getLogger(APP_NAME)
+
+
+class AppNotInstalledError(Exception):
+    """App not present in user's libraryfolders"""
+    pass
+
+
+class AppMovedError(Exception):
+    """VDF points to a nonexistent location on disk"""
+    pass
+
+
+class VDFLoadError(Exception):
+    """Malformed VDF or JSON conversion"""
+    pass
 
 
 def get_steam_paths() -> list[tuple[Path, str]]:
@@ -183,55 +207,15 @@ def launch_offline(
 def find_user_id(path: Path) -> str | None:
     resolved_path = path / "config" / "loginusers.vdf"
     try:
-        vdf = vdf2json(resolved_path)
-        j = json.loads(vdf)
-        for user in j["users"]:
-            if j["users"][user]["MostRecent"] == "1":
-                return str(user)
-        return None
+        with open(resolved_path, "r") as f:
+            v = vdf.load(f)
+            for user in v["users"]:
+                if v["users"][user]["MostRecent"] == "1":
+                    return str(user)
+            return None
     except Exception as e:
         logger.warn(e)
         return None
-
-
-def vdf2json(path: Path) -> str:
-    def _istr(indent: int, string: str) -> str:
-        return (indent * "  ") + string
-
-    jbuf = "{\n"
-    indent = 1
-
-    with open(path, "r") as f:
-        st = f.read()
-    lex = shlex(st)
-
-    while True:
-        tok = lex.get_token()
-        if not tok:
-            return jbuf + "}\n"
-        if tok == "}":
-            indent -= 1
-            jbuf += _istr(indent, "}")
-            ntok = lex.get_token()
-            if ntok is not None:
-                lex.push_token(ntok)
-            if ntok and ntok != "}":
-                jbuf += ","
-            jbuf += "\n"
-        else:
-            ntok = lex.get_token()
-            if ntok == "{":
-                jbuf += _istr(indent, tok + ": {\n")
-                indent += 1
-            else:
-                if ntok is not None:
-                    jbuf += _istr(indent, tok + ": " + ntok)
-                    ntok = lex.get_token()
-                    if ntok is not None:
-                        lex.push_token(ntok)
-                    if ntok != "}":
-                        jbuf += ","
-                    jbuf += "\n"
 
 
 def update_workshop(key: str, mod: int, endpoint: str) -> None:
@@ -275,3 +259,162 @@ def gen_shortcut() -> None:
 def enqueue_mod(client: str, mod: str, appid: int) -> None:
     client_args = concat_bash_args(client)
     subprocess.Popen([*client_args, "+workshop_download_item", str(appid), mod])
+
+
+@deprecated("Cf. https://github.com/ValveSoftware/steam-for-linux/issues/9672")
+def get_registry() -> Any | None:
+    home = os.getenv("HOME")
+    try:
+        with open(f"{home}/.steam/registry.vdf") as f:
+            registry = vdf.load(f)
+        return registry
+    except Exception as e:
+        logger.critical(e)
+        return None
+
+
+def _is_dayz_running() -> bool:
+    registry = get_registry()
+    if registry is None:
+        return False
+    apps = registry["Registry"]["HKCU"]["Software"]["Valve"]["Steam"]["apps"].items()
+    for app in apps:
+        k, v = app
+        if k in (APPID_DAYZ, APPID_DAYZ_EXP):
+            try:
+                state = v["Running"]
+                # NOTE: 0 denotes False
+                return bool(int(state))
+            except Exception as e:
+                logger.critical(e)
+                return False
+    return False
+
+
+def _get_running_app() -> int | None:
+    registry = get_registry()
+    if registry is None:
+        return None
+    try:
+        return int(
+            registry["Registry"]["HKCU"]["Software"]["Valve"]["Steam"]["RunningAppID"]
+        )
+    except Exception:
+        return None
+
+
+def get_running_app() -> int | None:
+    PROC_NAME = "steam"
+    SUBPROC_NAME = "reaper"
+    FLAG = "AppId"
+    # NOTE: may cause conflicts if multiple apps are running
+    try:
+        for proc in psutil.process_iter():
+            if proc.name() == PROC_NAME:
+                subprocs = proc.children()
+                filtered = (proc for proc in subprocs if proc.name() == SUBPROC_NAME)
+                try:
+                    proc = next(filtered)
+                except StopIteration:
+                    return None
+                args = proc.cmdline()
+                appid = (row for row in args if FLAG in row)
+                try:
+                    return int(next(appid).split("=")[1])
+                except StopIteration:
+                    return None
+    except Exception as e:
+        logger.debug(e)
+    return None
+
+
+def get_app_allows_downloads(path: Path, appid: int) -> bool:
+    root_path = get_app_path(path, appid)
+    acf = root_path.joinpath(f"steamapps/appmanifest_{appid}.acf")
+    flag = ACF(acf).get_allows_downloads()
+    match flag:
+        # NOTE: adheres to global client setting
+        case 0:
+            return get_client_allows_downloads(path)
+        # NOTE: always allow
+        case 1:
+            return True
+        # NOTE: never allow
+        case 2:
+            return False
+        # NOTE: no other known values at this time, fallback (assume permits)
+        case _:
+            return True
+
+def get_config(path: Path) -> Path:
+    return path.joinpath("config/config.vdf")
+
+def get_client_allows_downloads(path: Path) -> bool:
+    config = get_config(path)
+    try:
+        with open(config) as f:
+            settings = vdf.load(f)
+            # NOTE: "1" denotes "allow"
+            allow = bool(
+                int(
+                    settings["InstallConfigStore"]["Software"]["Valve"]["Steam"][
+                        "AllowDownloadsDuringGameplay"
+                    ]
+                )
+            )
+            return allow
+    except Exception as e:
+        logger.critical(e)
+        return True
+
+
+def is_dayz_running() -> bool:
+    """Subprocesses spawned from Steam will not show up in regular process tree"""
+    procs = []
+    substring = DAYZ_BINARY
+    for proc in psutil.process_iter():
+        try:
+            procs.append(proc.cmdline())
+        except Exception as e:
+            logger.warning(e)
+            continue
+    return any(substring in item for sublist in procs for item in sublist)
+
+
+def get_app_path(folders_path: Path, appid: int) -> Path:
+    app_path = None
+
+    try:
+        with open(folders_path / LIBRARYFOLDERS_PATH) as f:
+            folders = vdf.load(f)
+    except Exception:
+        raise VDFLoadError("Failed to parse libraryfolders")
+
+    for obj in folders["libraryfolders"]:
+        if str(appid) in folders["libraryfolders"][obj]["apps"]:
+            app_path = folders["libraryfolders"][obj]["path"]
+            if Path(app_path).exists():
+                break
+
+    if app_path is None:
+        raise AppNotInstalledError(
+            f"Failed to find a libraryfolder for the appid {appid}"
+        )
+    if Path(app_path).exists() is False:
+        raise AppMovedError(
+            f"The location '{app_path}' pointed to by '{appid}' no longer exists and may have been changed on the disk."
+        )
+
+    return Path(app_path)
+
+
+def get_app_name(appid: int) -> str:
+    payload = {"appids": [appid]}
+    res = requests.get(APP_DETAILS, params=payload)
+    if res.status_code != 200:
+        return unknown
+    try:
+        return str(res.json()[str(appid)]["data"]["name"])
+    except Exception as e:
+        logger.debug(e)
+        return unknown
