@@ -1,11 +1,13 @@
+import os
 import textwrap
 
 from enum import Enum
 from importlib import resources
 from pathlib import Path
-from typing import Any, Callable, Self
+from typing import Any, Callable, Self, TYPE_CHECKING
 
 from dzgui.api.probe import test_steam_api, test_bm_api
+from dzgui.api.shortcuts import add_steam_shortcut
 from dzgui.api.steam import get_steam_paths
 from dzgui.const.constants import (
     APP_NAME,
@@ -15,6 +17,9 @@ from dzgui.const.constants import (
 )
 from dzgui.const.boilerplate import config_boilerplate
 from dzgui.const.endpoints import BM_API_SETUP, STEAM_API_SETUP
+from dzgui.const.enum import Preferences
+from dzgui.config import freedesktop
+from dzgui.config.query import lookup
 from dzgui.init.migrate import migrate_legacy_conf
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings import wizard
@@ -30,6 +35,9 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gdk, Gtk, GLib, GObject, GdkPixbuf  # noqa E402
 
+if TYPE_CHECKING:
+    from dzgui.config.xdg import Xdg
+
 
 class PageNum(Enum):
     INTRO = 1
@@ -38,7 +46,8 @@ class PageNum(Enum):
     STEAM_API = 4
     BM_API = 5
     USER_PREFS = 6
-    FINAL = 7
+    SHORTCUTS = 7
+    FINAL = 8
 
 
 class DescriptionArea(Gtk.Box):
@@ -58,7 +67,7 @@ class Progress(Gtk.ProgressBar):
 
 class ScrolledWizardPage(Gtk.ScrolledWindow):
     def __init__(self, enum: PageNum, heading: str, description: str):
-        super().__init__()
+        super().__init__(overlay_scrolling=False)
 
         self.enum = enum
         self.page_type: Gtk.AssistantPageType
@@ -140,6 +149,10 @@ class NotificationFrame(Gtk.Frame):
 
         if error:
             add_class(self, "error-frame")
+
+    def set_text(self, text: str) -> None:
+        wrapped = textwrap.fill(text, width=80)
+        self.label.set_markup(wrapped)
 
 
 class APIValidationPage(ScrolledWizardPage):
@@ -339,6 +352,7 @@ class ConfigMigrationPage(ScrolledWizardPage):
     def _on_import_clicked(self, button: Gtk.Button) -> None:
         self.grid.set_sensitive(False)
         try:
+            # TODO: this could be deferred to the final page (prevents accidental destruction of dialog via ESC)
             migrate_legacy_conf(self.config)
             self.migrated = True
             self.success_box.set_visible(True)
@@ -423,24 +437,27 @@ class CompletionPage(ScrolledWizardPage):
 
 
 class Assistant(Gtk.Assistant):
-    def __init__(self, is_deck: bool, config: Path):
+    def __init__(self, is_deck: bool, XDG: "Xdg"):
         super().__init__()
         if is_deck:
             self.fullscreen()
         else:
             self.set_default_size(1500, 900)
 
-        self.config_path = config
+        self.config_path = XDG.config
 
         self.config_values: dict[str, Any] = config_boilerplate
 
+        self.setup_complete = False
+
         self.page1 = IntroductionPage()
-        self.page2 = ConfigMigrationPage(config)
+        self.page2 = ConfigMigrationPage(XDG.config)
         self.page3 = SteamPathPage()
         self.page4 = SteamValidationPage()
         self.page5 = BMValidationPage()
         self.page6 = PreferencesPage()
-        self.page7 = CompletionPage()
+        self.page7 = ShortcutCreationPage(XDG.shortcut)
+        self.page8 = CompletionPage()
 
         self.set_forward_page_func(self._advance_page)
 
@@ -458,9 +475,16 @@ class Assistant(Gtk.Assistant):
             self.page5,
             self.page6,
             self.page7,
+            self.page8,
         ):
             # NOTE: skip config migration page if no legacy config file
-            if page == self.page2 and self.has_legacy_config is False:
+            if (
+                isinstance(page, ConfigMigrationPage)
+                and self.has_legacy_config is False
+            ):
+                continue
+            # NOTE: disabled for now on system-provided packages
+            if isinstance(page, ShortcutCreationPage) and os.getenv("PYAPP") is None:
                 continue
             self._add_page(page, page.get_page_type())
 
@@ -475,13 +499,15 @@ class Assistant(Gtk.Assistant):
 
     def _advance_page(self, index: int) -> int:
         page = self.get_nth_page(index)
-        # TODO: use enums
+        # TODO: use enums/isinstance
         match page:
             case self.page1:
                 pass
             case self.page2:
                 if self.page2.is_migrated():
-                    return self.get_n_pages() - 1
+                    steam_path = lookup(self.config_path, Preferences.DEFAULT)
+                    self.page7.set_steam_path(steam_path)
+                    return self.get_n_pages() - 2
             case self.page3:
                 self.config_values["default_steam_path"] = page.get_path_from_radio()
             case self.page4:
@@ -495,9 +521,16 @@ class Assistant(Gtk.Assistant):
                 self.config_values["use_miles"] = use_miles
                 self.config_values["client"] = client
                 self.write_config()
+                self.page7.set_steam_path(self.config_values["default_steam_path"])
+            case self.page7:
+                self.page7.create_shortcuts()
+                self.setup_complete = True
             case _:
                 raise AttributeError("Trying to advance a non-canonical page")
         return index + 1
+
+    def is_setup_complete(self) -> bool:
+        return self.setup_complete
 
     def destroy_and_quit(self, widget: Self) -> None:
         self.destroy()
@@ -541,6 +574,90 @@ class Assistant(Gtk.Assistant):
             return
         if page != self.page1:
             EMITTER.emit("step_pending")
+
+
+class CheckboxWithLabel(Gtk.Box):
+    def __init__(self, text: str, blurb_text: str) -> None:
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+
+        self.button = Gtk.CheckButton(label=text)
+        self.button.set_active(True)
+        label = Gtk.Label(label="", halign=Gtk.Align.START, margin_start=20)
+        wrapped = textwrap.fill(blurb_text, width=100)
+        label.set_markup(f"- {wrapped}")
+
+        for el in self.button, label:
+            self.add(el)
+
+    def get_checkbox(self) -> Gtk.CheckButton:
+        return self.button
+
+    def get_active(self) -> bool:
+        return self.button.get_active()
+
+    def set_active(self, state: bool) -> None:
+        self.button.set_active(state)
+
+
+class ShortcutCreationPage(ScrolledWizardPage):
+    def __init__(self, shortcut: Path) -> None:
+        super().__init__(
+            enum=PageNum.SHORTCUTS,
+            heading=wizard.heading_shortcuts,
+            description=wizard.blurb_shortcuts,
+        )
+
+        self.steam_path: Path
+        self.shortcut_path = shortcut
+        self.checks_area = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL, spacing=10, margin_top=20
+        )
+        self.page_type = Gtk.AssistantPageType.INTRO
+
+        label, blurb = wizard.checkbox_steam_shortcut
+        self.steam_checkbox = CheckboxWithLabel(label, blurb)
+
+        label, blurb = wizard.checkbox_start_menu
+        self.start_menu_checkbox = CheckboxWithLabel(label, blurb)
+        cb = self.start_menu_checkbox.get_checkbox()
+        cb.connect("toggled", self._on_start_menu_toggled)
+
+        label, blurb = wizard.checkbox_desktop_shortcut
+        self.desktop_checkbox = CheckboxWithLabel(label, blurb)
+
+        for el in (
+            self.steam_checkbox,
+            self.start_menu_checkbox,
+            self.desktop_checkbox,
+        ):
+            self.checks_area.add(el)
+
+        self.add_start(self.checks_area)
+        self.show_all()
+        self.connect("map", self._on_map)
+
+    def _on_start_menu_toggled(self, button: Gtk.CheckButton) -> None:
+        state = button.get_active()
+        if not state:
+            self.desktop_checkbox.set_active(state)
+        self.desktop_checkbox.set_sensitive(state)
+
+    def _on_map(self, page: "ScrolledWizardPage") -> None:
+        EMITTER.emit("step_complete")
+
+    def set_steam_path(self, path: Path) -> None:
+        self.steam_path = path
+
+    def create_shortcuts(self) -> None:
+        # NOTE: best-effort, permissive even on failure (page is already marked as complete)
+        if self.steam_checkbox.get_active():
+            add_steam_shortcut(self.steam_path, self.shortcut_path)
+
+        if self.start_menu_checkbox.get_active():
+            desktop_file = freedesktop.write_desktop_file(self.shortcut_path)
+
+        if self.desktop_checkbox.get_active():
+            freedesktop.write_desktop_shortcut(desktop_file)
 
 
 class SteamPathPage(ScrolledWizardPage):
@@ -599,17 +716,20 @@ class SteamPathPage(ScrolledWizardPage):
 
 
 class SetupWizard(Gtk.Application):
-    def __init__(self, is_deck: bool, config: Path) -> None:
+    def __init__(self, is_deck: bool, XDG: "Xdg") -> None:
         super().__init__()
         GLib.set_prgname(APP_NAME)
-        Window(is_deck, config)
+        self.win = Window(is_deck, XDG)
         Gtk.main()
+
+    def is_setup_complete(self) -> int:
+        return self.win.assistant.is_setup_complete()
 
 
 class Window(Gtk.Window):
-    def __init__(self, is_deck: bool, config: Path) -> None:
+    def __init__(self, is_deck: bool, XDG: "Xdg") -> None:
         super().__init__(title=APP_NAME, icon_name=APP_NAME)
-        Assistant(is_deck, config)
+        self.assistant = Assistant(is_deck, XDG)
 
 
 class Emitter(GObject.GObject):

@@ -18,6 +18,7 @@ class Xdg:
     debug: Path
     ips: Path
     filters: Path
+    shortcut: Path
 
 
 def is_writeable(path_str: str) -> bool:
@@ -67,6 +68,7 @@ def get_xdg_paths() -> dict:
 def parse_filepaths(xdg: dict) -> Xdg:
     config = xdg["XDG_CONFIG_HOME"]
     state = xdg["XDG_STATE_HOME"]
+    share = xdg["XDG_DATA_HOME"]
 
     config = config / "config.json"
 
@@ -81,6 +83,8 @@ def parse_filepaths(xdg: dict) -> Xdg:
     ips = state / "ips.csv"
     filters = state / "dzg.filters.json"
 
+    shortcut = share / APP_NAME_LOWER
+
     return Xdg(
         config,
         columns,
@@ -91,5 +95,6 @@ def parse_filepaths(xdg: dict) -> Xdg:
         system,
         debug,
         ips,
-        filters
+        filters,
+        shortcut,
     )

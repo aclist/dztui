@@ -20,6 +20,7 @@ from dzgui.strings import boot
 
 # from dzgui.util.map_count import get_map_count
 from dzgui.util.deck import is_steam_deck, is_game_mode
+from dzgui.util.dirs import make_parents
 from dzgui.util.localize import set_locale
 from dzgui.util.redact import RedactionFilter, REDACTION_PATTERNS
 from dzgui.util.strings import init
@@ -34,10 +35,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(APP_NAME)
 
-
 # TODO: profile load time
-def make_parents(path: "Path") -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
 
 
 def setup_logger(log_path: "Path") -> None:
@@ -124,11 +122,10 @@ def load_gui(version: str, is_debug: bool) -> None:
         migrate_cols_file(XDG.columns)
         copy_state_files(xdg_paths["XDG_STATE_HOME"])
         # TODO: add logging inside wizard
-        SetupWizard(_is_steam_deck, XDG.config)
+        wizard = SetupWizard(_is_steam_deck, XDG)
 
-    # NOTE: implies that setup wizard failed or was closed
-    if has_new_config(XDG.config) is False:
-        return
+        if not wizard.is_setup_complete():
+            return
 
     setup_logger(XDG.debug)
     with open(XDG.debug, "w") as f:

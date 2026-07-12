@@ -218,6 +218,13 @@ def find_user_id(path: Path) -> str | None:
         return None
 
 
+def find_user_id_32(path: Path) -> int:
+    uid = find_user_id(path)
+    if uid is None:
+        raise ValueError("Failed to parse a valid Steam32 ID")
+    return int(uid) & 0xFFFFFFFF
+
+
 def update_workshop(key: str, mod: int, endpoint: str) -> None:
     payload: dict[str, Union[int, str]] = {
         "publishedfileid": mod,
@@ -239,20 +246,6 @@ def subscribe(key: str, mod: int) -> None:
 
 def unsubscribe(key: str, mod: int) -> None:
     update_workshop(key, mod, UNSUB_ENDPOINT)
-
-
-def gen_shortcut() -> None:
-    # TODO:
-    """
-    during setup, prompt user to select matching user id from loginusers
-    show user account name, select outer steam id
-    steam/userdata/<steamid_32>/config/shortcuts.vdf
-    """
-    # STEAMID_MAGIC = 76561197960265728
-    # STEAMID_64 - STEAMID_MAGIC = STEAMID32
-    # or get right-most 32 bits
-    # STEAMID_64 & 0xFFFFFFFF
-    pass
 
 
 @deprecated("Use subscribe()")
@@ -346,8 +339,10 @@ def get_app_allows_downloads(path: Path, appid: int) -> bool:
         case _:
             return True
 
+
 def get_config(path: Path) -> Path:
     return path.joinpath("config/config.vdf")
+
 
 def get_client_allows_downloads(path: Path) -> bool:
     config = get_config(path)
