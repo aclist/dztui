@@ -86,7 +86,6 @@ class WorkshopACF(ACF):
     def __init__(self, file: Path) -> None:
         super().__init__(file)
 
-    # TODO: break into workshop parser and generic acf parser
     def unpack(self, d: dict, lines: list[Any] = []) -> str:
         t1 = "AppWorkshop"
         t2 = ("WorkshopItemsInstalled", "WorkshopItemDetails")
