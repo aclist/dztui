@@ -47,7 +47,7 @@ from dzgui.strings.dialogs import (
 )
 from dzgui.strings.server_mods import checkmark, resync
 from dzgui.util.format import format_mib
-from dzgui.util.strings import dialog, server_timeout, unknown
+from dzgui.util.strings import dialog, server_timeout
 from dzgui.util.symlink import rebuild_symlinks
 from dzgui.views.dialogs.generic import ExceptionDialog
 from dzgui.views.dialogs.servers import ServerDetailsDialog, ServerModDialog
