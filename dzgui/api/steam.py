@@ -32,23 +32,25 @@ from dzgui.const.endpoints import (
 )
 from dzgui.strings import wizard
 from dzgui.util.bash import concat_bash_args
-from dzgui.util.strings import unknown
 
 logger = logging.getLogger(APP_NAME)
 
 
 class AppNotInstalledError(Exception):
     """App not present in user's libraryfolders"""
+
     pass
 
 
 class AppMovedError(Exception):
     """VDF points to a nonexistent location on disk"""
+
     pass
 
 
 class VDFLoadError(Exception):
     """Malformed VDF or JSON conversion"""
+
     pass
 
 
@@ -322,9 +324,12 @@ def get_running_app() -> int | None:
 
 
 def get_app_allows_downloads(path: Path, appid: int) -> bool:
-    root_path = get_app_path(path, appid)
-    acf = root_path.joinpath(f"steamapps/appmanifest_{appid}.acf")
-    flag = ACF(acf).get_allows_downloads()
+    try:
+        root_path = get_app_path(path, appid)
+        acf = root_path.joinpath(f"steamapps/appmanifest_{appid}.acf")
+        flag = ACF(acf).get_allows_downloads()
+    except AppNotInstalledError:
+        flag = 0
     match flag:
         # NOTE: adheres to global client setting
         case 0:
@@ -403,13 +408,13 @@ def get_app_path(folders_path: Path, appid: int) -> Path:
     return Path(app_path)
 
 
-def get_app_name(appid: int) -> str:
+def get_app_name(appid: int) -> str | None:
     payload = {"appids": [appid]}
     res = requests.get(APP_DETAILS, params=payload)
     if res.status_code != 200:
-        return unknown
+        return None
     try:
         return str(res.json()[str(appid)]["data"]["name"])
     except Exception as e:
         logger.debug(e)
-        return unknown
+        return None

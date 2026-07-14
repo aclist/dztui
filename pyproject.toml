@@ -4,7 +4,7 @@ description = "DayZ server browser and mod manager for Linux"
 authors = [
     {name = "aclist"}
 ]
-version = "7.0.0b16"
+version = "7.0.0b17"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 readme = "README.md"

@@ -12,7 +12,7 @@ from dzgui.api.steam import (
 
 from dzgui.config.query import get_config
 from dzgui.config.xdg import get_xdg_paths, parse_filepaths
-from dzgui.const.constants import APPID_DAYZ, LIBRARYFOLDERS_PATH
+from dzgui.const.constants import APPID_DAYZ
 
 from tests.fixtures import fixture_path
 

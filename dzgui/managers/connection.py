@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 import dzgui.api.pefile as PeFile
 import dzgui.api.servers as Servers
+from dzgui.api.shortcuts import Shortcuts
 
 from dzgui.api.steam import (
     connect,
@@ -175,6 +176,12 @@ class ConnectionManager:
         if running_app is not None:
             allows_dl = get_app_allows_downloads(steam_path, running_app)
             running_app_name = get_app_name(running_app)
+            # NOTE: for out-of-range appid, assume NSG.
+            # dzgui.api.steam.get_app_name() will return None
+            if running_app_name is None:
+                s = Shortcuts(steam_path)
+                # NOTE: returns "Unknown" if unparseable
+                running_app_name = s.find_appname_by_unsigned_id(running_app)
             allows_downloads = (allows_dl, running_app_name)
         else:
             allows_downloads = (True, "")
