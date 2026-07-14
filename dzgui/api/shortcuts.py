@@ -46,6 +46,13 @@ class Shortcuts:
         wrapped_exe = f'"{exe}"'
         return appname + wrapped_exe
 
+    def find_appname_by_unsigned_id(self, appid: int) -> str:
+        # NOTE: bitmask signed int back to 32-bit CRC
+        for key in self.shortcuts["shortcuts"].keys():
+            if self.shortcuts["shortcuts"][key]["appid"] & 0xFFFFFFFF == appid:
+                return self.shortcuts["shortcuts"][key]["appname"]
+        return None
+
     def get_shortcuts(self) -> Any:
         return self.shortcuts
 
