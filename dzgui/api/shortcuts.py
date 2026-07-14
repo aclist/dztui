@@ -12,6 +12,7 @@ from typing import Any
 from dzgui.api.steam import find_user_id_32
 from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, IMAGES_PATH
 from dzgui.util.dirs import copy_dzgui_to_xdg_data
+from dzgui.util.strings import unknown
 
 logger = logging.getLogger(APP_NAME)
 
@@ -50,8 +51,8 @@ class Shortcuts:
         # NOTE: bitmask signed int back to 32-bit CRC
         for key in self.shortcuts["shortcuts"].keys():
             if self.shortcuts["shortcuts"][key]["appid"] & 0xFFFFFFFF == appid:
-                return self.shortcuts["shortcuts"][key]["appname"]
-        return None
+                return str(self.shortcuts["shortcuts"][key]["appname"])
+        return unknown
 
     def get_shortcuts(self) -> Any:
         return self.shortcuts
