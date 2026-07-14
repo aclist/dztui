@@ -273,7 +273,7 @@ class PreConnectionAssistant(Gtk.Box):
             )
 
         allows_dl, running_app = prereqs.allows_downloads
-        if allows_dl is False:
+        if len(prereqs.mods) > 0 and allows_dl is False:
             msg = (
                 f"The game '{running_app}' is currently running in Steam, but background downloads are not enabled.\n"
                 "Either stop the game first, or update your global Steam settings or the game's local settings.\n"
