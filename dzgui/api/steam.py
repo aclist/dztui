@@ -205,19 +205,26 @@ def launch_offline(
     proc = subprocess.run([*client_args, *params])
     return proc.returncode
 
+def find_loginusers(path: Path) -> Path:
+    return path / "config" / "loginusers.vdf"
 
 def find_user_id(path: Path) -> str | None:
-    resolved_path = path / "config" / "loginusers.vdf"
+    resolved_path = find_loginusers(path)
     try:
         with open(resolved_path, "r") as f:
             v = vdf.load(f)
+            # NOTE: beta client
+            # /package/beta
+            if len(v["users"]) == 1:
+                return str(list(v["users"].keys())[0])
             for user in v["users"]:
                 if v["users"][user]["MostRecent"] == "1":
                     return str(user)
             return None
     except Exception as e:
-        logger.warn(e)
+        logger.debug(e)
         return None
+
 
 
 def find_user_id_32(path: Path) -> int:
