@@ -30,9 +30,9 @@ def test_no_shortcuts(monkeypatch) -> None:
 @pytest.fixture
 def dummy_app() -> None:
     d = {
-        "appname": "TEST APP",
+        "AppName": "TEST APP",
         "StartDir": "TEST_DIR",
-        "exe": "TEST_DIR/TEST_EXE.EXE",
+        "Exe": "TEST_DIR/TEST_EXE.EXE",
         "icon": "IMAGES_DIR/TEST_IMAGE.PNG",
     }
     return d
@@ -41,8 +41,8 @@ def dummy_app() -> None:
 def test_wrap_exe(dummy_app) -> None:
     s = Shortcuts(Path(""))
     s.add_shortcut(*dummy_app.values())
-    assert s.shortcuts["shortcuts"]["0"]["exe"][0] == '"'
-    assert s.shortcuts["shortcuts"]["0"]["exe"][-1] == '"'
+    assert s.shortcuts["shortcuts"]["0"]["Exe"][0] == '"'
+    assert s.shortcuts["shortcuts"]["0"]["Exe"][-1] == '"'
 
 
 def test_add_shortcut(dummy_app) -> None:
@@ -51,7 +51,7 @@ def test_add_shortcut(dummy_app) -> None:
     new = s.shortcuts["shortcuts"]
     ind = str(len(new) - 1)
     for k, v in dummy_app.items():
-        if k == "exe":
+        if k == "Exe":
             v = f'"{v}"'
         assert new[ind][k] == v
 

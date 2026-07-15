@@ -1,0 +1,25 @@
+"users"
+{
+	"0"
+	{
+		"AccountName"		"STEAMUSER"
+		"PersonaName"		"STEAMUSER"
+		"RememberPassword"		"0"
+		"WantsOfflineMode"		"0"
+		"SkipOfflineModeWarning"		"0"
+		"AllowAutoLogin"		"1"
+		"MostRecent"		"0"
+		"Timestamp"		"0"
+	}
+	"1"
+	{
+		"AccountName"		"STEAMUSER2"
+		"PersonaName"		"STEAMUSER2"
+		"RememberPassword"		"0"
+		"WantsOfflineMode"		"0"
+		"SkipOfflineModeWarning"		"0"
+		"AllowAutoLogin"		"1"
+		"MostRecent"		"1"
+		"Timestamp"		"0"
+	}
+}
