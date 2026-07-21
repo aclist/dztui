@@ -49,6 +49,11 @@ class PageNum(Enum):
     SHORTCUTS = 7
     FINAL = 8
 
+class OptionalPageMixin:
+    """Marks optional pages as advanceable"""
+    def _on_map(self, page: "ScrolledWizardPage") -> None:
+        EMITTER.emit("step_complete")
+
 
 class DescriptionArea(Gtk.Box):
     def __init__(self, text: str):
@@ -91,6 +96,7 @@ class ScrolledWizardPage(Gtk.ScrolledWindow):
             margin_top=50,
             spacing=20,
         )
+
         self.add(self.box)
         self.prog = Progress()
         self.box.pack_end(self.prog, expand=False, fill=False, padding=0)
@@ -215,7 +221,7 @@ class APIValidationPage(ScrolledWizardPage):
         self.spinner.stop()
 
 
-class BMValidationPage(APIValidationPage):
+class BMValidationPage(OptionalPageMixin, APIValidationPage):
     def __init__(self) -> None:
         super().__init__(
             enum=PageNum.BM_API,
@@ -224,6 +230,7 @@ class BMValidationPage(APIValidationPage):
             link=BM_API_SETUP,
             func=self._validate,
         )
+        self.connect("map", self._on_map)
 
     @call_on_thread("", show_dialog=False)
     def _validate(self, key: str) -> None:
@@ -570,8 +577,6 @@ class Assistant(Gtk.Assistant):
 
         # NOTE: disable forward action
         # TODO: use page enums
-        if page == self.page5:
-            return
         if page != self.page1:
             EMITTER.emit("step_pending")
 
@@ -599,7 +604,7 @@ class CheckboxWithLabel(Gtk.Box):
         self.button.set_active(state)
 
 
-class ShortcutCreationPage(ScrolledWizardPage):
+class ShortcutCreationPage(OptionalPageMixin, ScrolledWizardPage):
     def __init__(self, shortcut: Path) -> None:
         super().__init__(
             enum=PageNum.SHORTCUTS,
@@ -641,9 +646,6 @@ class ShortcutCreationPage(ScrolledWizardPage):
         if not state:
             self.desktop_checkbox.set_active(state)
         self.desktop_checkbox.set_sensitive(state)
-
-    def _on_map(self, page: "ScrolledWizardPage") -> None:
-        EMITTER.emit("step_complete")
 
     def set_steam_path(self, path: Path) -> None:
         self.steam_path = path

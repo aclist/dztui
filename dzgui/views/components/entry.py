@@ -162,7 +162,8 @@ class APIEntry(Gtk.Box):
         self.entry.connect("icon-release", self._on_icon_release)
         self.entry.connect("activate", self._on_field_activated)
 
-        self.submit = Gtk.Button(label="Submit")
+        # TODO: strings
+        self.submit = Gtk.Button(label="Validate")
         self.submit.set_sensitive(False)
         self.submit.connect("clicked", self._on_submit)
 
