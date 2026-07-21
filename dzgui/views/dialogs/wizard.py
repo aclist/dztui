@@ -720,6 +720,8 @@ class SetupWizard(Gtk.Application):
         super().__init__()
         GLib.set_prgname(APP_NAME)
         self.win = Window(is_deck, XDG)
+        if is_deck:
+            self.win.unfullscreen()
         Gtk.main()
 
     def is_setup_complete(self) -> int:
