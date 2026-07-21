@@ -439,9 +439,7 @@ class CompletionPage(ScrolledWizardPage):
 class Assistant(Gtk.Assistant):
     def __init__(self, is_deck: bool, XDG: "Xdg"):
         super().__init__()
-        if is_deck:
-            self.fullscreen()
-        else:
+        if not is_deck:
             self.set_default_size(1500, 900)
 
         self.config_path = XDG.config
@@ -720,8 +718,6 @@ class SetupWizard(Gtk.Application):
         super().__init__()
         GLib.set_prgname(APP_NAME)
         self.win = Window(is_deck, XDG)
-        if is_deck:
-            self.win.unfullscreen()
         Gtk.main()
 
     def is_setup_complete(self) -> int:
