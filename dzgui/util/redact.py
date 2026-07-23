@@ -4,8 +4,9 @@ from typing import Literal
 
 api_filter = r"(.*&key=)([^&]*)(.*)"
 home_filter = r"(/home/)([^\s'\/]*)(.*)"
+user_filter = r"(.*Steam/userdata/)([^/]*)(.*)"
 REDACTED = r"\1REDACTED\3"
-REDACTION_PATTERNS = [api_filter, home_filter]
+REDACTION_PATTERNS = [api_filter, home_filter, user_filter]
 
 
 def redact_home(text: str) -> str:

@@ -37,6 +37,14 @@ class RecordsListHandler(logging.Handler):
             "Error in directory: '/home/SENSITIVE_USERNAME'",
             "Error in directory: '/home/REDACTED'",
         ),
+        (
+            "User directory: /home/user/.local/share/Steam/userdata/999999/grid",
+            "User directory: /home/REDACTED/.local/share/Steam/userdata/REDACTED/grid",
+        ),
+        (
+            "User directory: /drive/.local/share/Steam/userdata/999999",
+            "User directory: /drive/.local/share/Steam/userdata/REDACTED",
+        ),
     ],
 )
 def test_log_redaction(log_error: str, expect: str) -> None:
