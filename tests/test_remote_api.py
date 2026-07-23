@@ -4,7 +4,7 @@ from dzgui.config.query import get_config
 from dzgui.config.xdg import get_xdg_paths, parse_filepaths
 from dzgui.api import probe
 
-pytestmark = pytest.mark.apitest
+pytestmark = pytest.mark.webtest
 
 
 @pytest.fixture

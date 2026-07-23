@@ -114,4 +114,5 @@ markers = [
     "post_install: requires a completed installation",
     "redact: log redaction mechanisms",
     "slow: long-running tests",
+    "webtest: depends on remote endpoint",
 ]
