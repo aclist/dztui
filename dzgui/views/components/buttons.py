@@ -1,4 +1,4 @@
-from typing import Callable, Self, TYPE_CHECKING, Union
+from typing import Callable, Literal, Self, TYPE_CHECKING, Union
 
 from dzgui.util.clip import copy_clipboard
 from dzgui.util.format import pluralize
@@ -66,6 +66,15 @@ class IconButton(Gtk.Button):
         # self.set_image_position(Gtk.PositionType.RIGHT)
         self.set_focus_on_click(False)
 
+    def swap_icon(self, icon: str) -> None:
+        start = self.icon.get_margin_start()
+        end = self.icon.get_margin_end()
+        alt_icon = Icon(icon, margin_start=start, margin_end=end)
+        self.set_image(alt_icon)
+
+    def revert_icon(self) -> None:
+        self.set_image(self.icon)
+
 
 class IconTextButton(IconButton):
     def __init__(
@@ -99,8 +108,14 @@ class ClipboardButton(IconTextButton):
         self.set_tooltip_text("Copy to clipboard")
 
     def _on_button_clicked(self, button: Self, func: Callable) -> None:
+        def revert() -> Literal[False]:
+            self.revert_icon()
+            return False
+
+        self.swap_icon("object-select-symbolic")
         data = func()
         copy_clipboard(data)
+        GLib.timeout_add(600, revert)
 
 
 # TODO: determine when controller would be passed to this button or drop
