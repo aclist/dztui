@@ -49,8 +49,10 @@ class PageNum(Enum):
     SHORTCUTS = 7
     FINAL = 8
 
+
 class OptionalPageMixin:
     """Marks optional pages as advanceable"""
+
     def _on_map(self, page: "ScrolledWizardPage") -> None:
         EMITTER.emit("step_complete")
 
@@ -221,7 +223,7 @@ class APIValidationPage(ScrolledWizardPage):
         self.spinner.stop()
 
 
-class BMValidationPage(OptionalPageMixin, APIValidationPage):
+class BMValidationPage(OptionalPageMixin, APIValidationPage):  # type: ignore
     def __init__(self) -> None:
         super().__init__(
             enum=PageNum.BM_API,
@@ -604,7 +606,7 @@ class CheckboxWithLabel(Gtk.Box):
         self.button.set_active(state)
 
 
-class ShortcutCreationPage(OptionalPageMixin, ScrolledWizardPage):
+class ShortcutCreationPage(OptionalPageMixin, ScrolledWizardPage):  # type: ignore
     def __init__(self, shortcut: Path) -> None:
         super().__init__(
             enum=PageNum.SHORTCUTS,
