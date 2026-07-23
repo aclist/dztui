@@ -38,14 +38,14 @@ def dummy_app() -> None:
     return d
 
 
-def test_wrap_exe(dummy_app) -> None:
+def test_wrap_exe(dummy_app: dict[str, str]) -> None:
     s = Shortcuts(Path(""))
     s.add_shortcut(*dummy_app.values())
     assert s.shortcuts["shortcuts"]["0"]["Exe"][0] == '"'
     assert s.shortcuts["shortcuts"]["0"]["Exe"][-1] == '"'
 
 
-def test_add_shortcut(dummy_app) -> None:
+def test_add_shortcut(dummy_app: dict[str, str]) -> None:
     s = Shortcuts(Path(""))
     s.add_shortcut(*dummy_app.values())
     new = s.shortcuts["shortcuts"]
@@ -56,7 +56,7 @@ def test_add_shortcut(dummy_app) -> None:
         assert new[ind][k] == v
 
 
-def test_save_shortcut(dummy_app) -> None:
+def test_save_shortcut(dummy_app: dict[str, str]) -> None:
     s = Shortcuts(Path(""))
     s.add_shortcut(*dummy_app.values())
     with tempfile.NamedTemporaryFile() as f:
@@ -67,7 +67,7 @@ def test_save_shortcut(dummy_app) -> None:
         assert len(s.shortcuts["shortcuts"]) == 1
 
 
-def test_shortcut_crc(dummy_app) -> None:
+def test_shortcut_crc(dummy_app: dict[str, str]) -> None:
     s = Shortcuts(Path(""))
     s.add_shortcut(*dummy_app.values())
     for key in s.shortcuts["shortcuts"].keys():
@@ -79,7 +79,7 @@ def test_shortcut_crc(dummy_app) -> None:
         assert entry["appid"] & 0xFFFFFFFF == bpid
 
 
-def test_reverse_crc(dummy_app) -> None:
+def test_reverse_crc(dummy_app: dict[str, str]) -> None:
     s = Shortcuts(Path(""))
     s.add_shortcut(*dummy_app.values())
     for key in s.shortcuts["shortcuts"].keys():
