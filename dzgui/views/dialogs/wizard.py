@@ -451,6 +451,7 @@ class Assistant(Gtk.Assistant):
         else:
             self.set_default_size(1500, 900)
 
+        self.is_binary = False if os.getenv("PYAPP") is None else True
         self.config_path = XDG.config
 
         self.config_values: dict[str, Any] = config_boilerplate
@@ -491,7 +492,7 @@ class Assistant(Gtk.Assistant):
             ):
                 continue
             # NOTE: disabled for now on system-provided packages
-            if isinstance(page, ShortcutCreationPage) and os.getenv("PYAPP") is None:
+            if isinstance(page, ShortcutCreationPage) and not self.is_binary:
                 continue
             self._add_page(page, page.get_page_type())
 
@@ -506,32 +507,33 @@ class Assistant(Gtk.Assistant):
 
     def _advance_page(self, index: int) -> int:
         page = self.get_nth_page(index)
-        # TODO: use enums/isinstance
         match page:
-            case self.page1:
+            case IntroductionPage():
                 pass
-            case self.page2:
-                if self.page2.is_migrated():
+            case ConfigMigrationPage():
+                if page.is_migrated():
                     steam_path = lookup(self.config_path, Preferences.DEFAULT)
                     self.page7.set_steam_path(steam_path)
-                    return self.get_n_pages() - 2
-            case self.page3:
+                    offset = 1 if not self.is_binary else 2
+                    self.setup_complete = True
+                    return self.get_n_pages() - offset
+            case SteamPathPage():
                 self.config_values["default_steam_path"] = page.get_path_from_radio()
-            case self.page4:
+            case SteamValidationPage():
                 self.config_values["steam_api"] = page.get_api_key()
-            case self.page5:
+            case BMValidationPage():
                 self.config_values["bm_api"] = page.get_api_key()
-            # NOTE: collects config values before advancing to last page
-            case self.page6:
+            case PreferencesPage():
+                # NOTE: collects config values before advancing to last page
                 name, use_miles, client = self.page6.get_prefs()
                 self.config_values["name"] = name
                 self.config_values["use_miles"] = use_miles
                 self.config_values["client"] = client
                 self.write_config()
                 self.page7.set_steam_path(self.config_values["default_steam_path"])
-            case self.page7:
-                self.page7.create_shortcuts()
                 self.setup_complete = True
+            case ShortcutCreationPage():
+                page.create_shortcuts()
             case _:
                 raise AttributeError("Trying to advance a non-canonical page")
         return index + 1
@@ -575,9 +577,7 @@ class Assistant(Gtk.Assistant):
         bar.set_fraction(fraction)
         bar.set_text(f"{page_num}/{total}")
 
-        # NOTE: disable forward action
-        # TODO: use page enums
-        if page != self.page1:
+        if not isinstance(page, IntroductionPage):
             EMITTER.emit("step_pending")
 
 
