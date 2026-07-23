@@ -107,7 +107,7 @@ config-settings-package = { pygobject-stubs = { config = "Gtk3,Gdk3,Soup2" } }
 
 [tool.pytest.ini_options]
 markers = [
-    "apitest: checks remote endpoints"
+    "apitest: checks remote endpoints",
     "config: config file keys/values",
     "mods: tests mod metadata/link creation",
     "pefile: validate PE files",
