@@ -105,6 +105,7 @@ class ClipboardButton(IconTextButton):
         self.controller = controller
         self.connect("clicked", self._on_button_clicked, func)
 
+        # TODO: strings
         self.set_tooltip_text("Copy to clipboard")
 
     def _on_button_clicked(self, button: Self, func: Callable) -> None:
@@ -123,6 +124,7 @@ class CopyIpButton(ClipboardButton):
     def __init__(self, controller: Union["Controller", None], func: Callable) -> None:
         super().__init__(controller, func)
 
+        # TODO: strings
         self.set_tooltip_text("Copy IP to clipboard")
 
 
