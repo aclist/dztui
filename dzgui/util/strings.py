@@ -308,7 +308,7 @@ class Options:
     force_eventbox: str
     self_update: str
     no_self_update: str
-    api_keys: str
+    api_key: str
     prefs: str
     mods: str
     version: str
@@ -405,7 +405,7 @@ options = Options(
         "In-app updates are disabled when DZGUI is "
         "installed globally (e.g., via package manager)."
     ),
-    api_keys="API Keys",
+    api_key="API Key",
     prefs="Preferences",
     mods="Mods",
     version="Version",
