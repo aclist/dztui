@@ -37,7 +37,7 @@ def write_desktop_file(exe_path: Path) -> Path:
 
 def write_desktop_shortcut(desktop_file: Path) -> None:
     # NOTE: necessarily depends on the above (UI blocks creation without XDG entry first)
-    link = Path.home().joinpath(f"Desktop/dzgui.desktop")
+    link = Path.home().joinpath("Desktop/dzgui.desktop")
     make_parents(link)
     if link.exists():
         link.unlink()
