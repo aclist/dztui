@@ -13,7 +13,7 @@ class FilePicker(Gtk.FileChooserDialog):
         super().__init__(
             title=picker.title,
             action=Gtk.FileChooserAction.SAVE,
-            parent=parent,
+            transient_for=parent,
             resizable=True,
         )
         self.add_buttons("_Cancel", Gtk.ResponseType.CANCEL)
