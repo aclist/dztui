@@ -449,7 +449,8 @@ class Assistant(Gtk.Assistant):
     def __init__(self, is_deck: bool, XDG: "Xdg"):
         super().__init__()
         if is_deck:
-            self.fullscreen()
+            # NOTE: deemed to be "safe" dimensions that exclude taskbar size
+            self.set_default_size(1085, 670)
         else:
             self.set_default_size(1500, 900)
 
