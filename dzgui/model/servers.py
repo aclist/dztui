@@ -175,18 +175,22 @@ class ServerModelManager:
                 # TODO: wrap except
                 if self.controller.get_exit_event().is_set():
                     return
-                res = future.result(timeout=API_TIMEOUT)
                 self.thread_man.increment_dialog()
-                # NOTE: failing entries are culled
-                if res is None:
-                    # TODO: log which servers failed
-                    continue
-                servers.append(res)
-                if len(servers) == 0:
-                    self.thread_man.set_cleanup_func(
-                        StoredFunc(self._cleanup_on_failure), destroy_first=True
-                    )
-                    return
+
+        # NOTE: collects futures in linear order after completion
+        # for lock-step representation of the state file
+        for future in futures:
+            res = future.result(timeout=API_TIMEOUT)
+            # NOTE: failing entries are culled
+            if res is None:
+                # TODO: log which servers failed
+                continue
+            servers.append(res)
+            if len(servers) == 0:
+                self.thread_man.set_cleanup_func(
+                    StoredFunc(self._cleanup_on_failure), destroy_first=True
+                )
+                return
 
         parsed = Servers.parse_json(servers)
         self._push_data(parsed)

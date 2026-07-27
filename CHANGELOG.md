@@ -44,6 +44,7 @@
 - Play offline (load mods directly)
 - Generate Steam shortcuts and cover art
 - Warn user if background downloads are disabled
+- Dynamic copy button
 
 ### Changed
 - Conform to PEP 440 versioning for beta versions
@@ -63,6 +64,7 @@
 - Propagate subscribed mods to Steam client
 
 ### Dropped
+- Battlemetrics API support
 - Debug mode
 - Branch switching
 - Manual mod install mode (describe rationale)
@@ -73,6 +75,7 @@
 - Center server title text on server dialogs
 - Rare segfaults when changing maps (threading)
 - Moved dialogs out of threads
+- History table not being in lock-step with state file
 
 ### Unreleased
 - Load offline mods

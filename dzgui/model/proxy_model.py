@@ -85,8 +85,8 @@ class ProxyModelManager:
         if found is False:
             self.control_model.append(history)
 
-        # if len(self.control_model) == 11:
-        #    del self.control_model[0]
+        if len(self.control_model) == 11:
+            del self.control_model[0]
 
         self.filter(FilterMode.INITIAL, skip_cache=True)
 
