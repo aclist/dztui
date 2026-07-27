@@ -41,7 +41,7 @@ class BootDialog(Gtk.Dialog):
     def __init__(self, parent: "BootWindow", xdg: "Xdg", version: str) -> None:
         super().__init__(
             title=dialog_header,
-            parent=parent,
+            transient_for=parent,
             modal=True,
         )
 

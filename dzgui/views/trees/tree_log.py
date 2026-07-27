@@ -53,7 +53,7 @@ class LogTreeView(ContextMixin, TreeView):  # type: ignore
         model = ModelFactory().new_model_from_logfile(filepath)
         _filter = model.filter_new()
         _filter.set_visible_func(self._filter_rows)
-        sortable = Gtk.TreeModelSort(_filter)
+        sortable = Gtk.TreeModelSort.new_with_model(_filter)
         self.set_model(sortable)
         _filter.refilter()
         path = Gtk.TreePath.new_from_indices([0])
