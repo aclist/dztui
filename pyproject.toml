@@ -109,6 +109,7 @@ config-settings-package = { pygobject-stubs = { config = "Gtk3,Gdk3,Soup2" } }
 markers = [
     "apitest: checks remote endpoints",
     "config: config file keys/values",
+    "realconfig: depends on actual generated local config file",
     "mods: tests mod metadata/link creation",
     "pefile: validate PE files",
     "post_install: requires a completed installation",
