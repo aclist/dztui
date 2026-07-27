@@ -26,15 +26,12 @@ def validate_port(text: str) -> bool:
         return False
 
 
-def validate_ip_or_id(text: str) -> bool:
+def validate_ip_truthy(text: str) -> bool:
     try:
         validate_ip(text)
         return True
     except Exception:
-        if text.isdigit():
-            return True
-        else:
-            return False
+        return False
 
 
 class ValidatedEntry(Gtk.Entry):
@@ -124,7 +121,7 @@ class IpEntry(ValidatedEntry):
     def __init__(self, controller: "Controller") -> None:
         super().__init__(
             controller,
-            func=validate_ip_or_id,
+            func=validate_ip_truthy,
             placeholder_text=connect_panel.placeholder,
             tooltip_text=connect_panel.entry_tooltip,
         )
