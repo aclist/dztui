@@ -7,12 +7,11 @@ from dzgui.config.xdg import get_xdg_paths, parse_filepaths
 from dzgui.config import convert
 from tests.fixtures import fixture_path
 
-pytestmark = pytest.mark.config
-
 
 @pytest.fixture
 def legacy_config():
     return fixture_path("dztuirc_1")
+
 
 @pytest.fixture
 def unset_values():
@@ -38,6 +37,7 @@ def keys():
 
 # TODO: use a static fixture instead of system config
 @pytest.fixture
+@pytest.mark.realconfig
 def config():
     paths = get_xdg_paths()
     xdg = parse_filepaths(paths)
@@ -45,18 +45,21 @@ def config():
 
 
 @pytest.mark.post_install
+@pytest.mark.realconfig
 def test_invalid_config_value(config):
     with pytest.raises(Exception):
         assert config["foo"] is None
 
 
 @pytest.mark.post_install
+@pytest.mark.realconfig
 def test_default_config_values(keys, config):
     for key in keys:
         assert config[key] is not None
 
 
 @pytest.mark.post_install
+@pytest.mark.realconfig
 def test_contains_invalid_values(keys, config):
     for key in config:
         assert key in keys
@@ -90,6 +93,7 @@ def test_key_conversion(legacy_config):
     ]
     for key in keys:
         assert key not in j
+
 
 def test_missing_values(unset_values):
     j = convert.rc2json(unset_values)
