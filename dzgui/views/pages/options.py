@@ -133,7 +133,7 @@ class Options(Gtk.Box):
             [LeftLabel(APPNAME_DAYZ_EXP_HUMAN), self.dayz_exp_version_label],
         ]
 
-        api_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        api_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         api_grid = self._make_grid(api_rows)
         api_box.add(api_grid)
 
