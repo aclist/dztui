@@ -131,6 +131,7 @@ class RightPanel(Gtk.Box):
             return
         self.copying = True
         version = self.version_label.get_text()
+        # TODO: strings
         self.version_label.set_text("Copied!")
         copy_clipboard(version)
         GLib.timeout_add_seconds(1, revert)
