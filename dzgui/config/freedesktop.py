@@ -21,7 +21,7 @@ def write_desktop_file(exe_path: Path) -> Path:
     Terminal=false
     Exec={exe_path}
     Name=DZGUI
-    Comment=dzgui
+    Comment=DayZ server browser and mod manager
     Icon={icon}
     Categories=Game"""
 
