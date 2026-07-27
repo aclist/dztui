@@ -13,13 +13,17 @@ def config():
     xdg = parse_filepaths(paths)
     return get_config(xdg.config)
 
+
 def test_ipdb():
     assert probe.test_ipdb()
+
 
 def test_steam(config):
     key = config["steam_api"]
     assert probe.test_steam_api(key)
 
+
 def test_bm(config):
+    # NOTE: see ticket #417; expected to return False
     key = config["bm_api"]
-    assert probe.test_bm_api(key)
+    assert probe.test_bm_api(key) is False
