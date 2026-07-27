@@ -41,9 +41,18 @@ class FolderError(Enum):
     FOLDER_CHANGED = 3
 
 
-class PageHeading(Gtk.Label):
-    def __init__(self, label: str) -> None:
-        super().__init__(label=label, halign=Gtk.Align.CENTER)
+class PageHeading(Gtk.Box):
+    def __init__(self, label: str, controller: "Controller") -> None:
+        super().__init__(
+            halign=Gtk.Align.CENTER, orientation=Gtk.Orientation.HORIZONTAL
+        )
+
+        self.label = Gtk.Label(label=label)
+        self.eb = InfoEventBox(offline.heading_disclaimer, controller)
+        self.eb.set_icon_yalign(0.7)
+
+        for el in self.label, self.eb:
+            self.add(el)
 
         css.add_class(self, "page-heading")
 
@@ -434,7 +443,8 @@ class OfflineLoader(Gtk.Box):
         self.emitter = controller.get_emitter()
         self.offline_man = OfflineManager(controller)
 
-        self.add(PageHeading(offline.heading))
+        heading = PageHeading(offline.heading, controller)
+        self.add(heading)
 
         self.local_frame = ModFrame(self, controller, offline.local_frame)
         self.custom_frame = CustomModFrame(self, controller, offline.custom_frame)

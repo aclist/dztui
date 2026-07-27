@@ -30,6 +30,9 @@ class InfoEventBox(Gtk.EventBox):
         self.connect("leave-notify-event", self._on_leave_tooltip)
         self.add(box)
 
+    def set_icon_yalign(self, offset: float) -> None:
+        self.icon.set_property("yalign", offset)
+
     def _on_enter_tooltip(
         self, eventbox: Gtk.EventBox, eventcrossing: Gdk.EventCrossing
     ) -> None:

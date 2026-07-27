@@ -1,4 +1,7 @@
 heading = "Play offline"
+heading_disclaimer = (
+    "Not all mod combinations will function offline. Use at your own discretion."
+)
 
 mission_button = "Select mission folder"
 mission_frame = "Mission"
