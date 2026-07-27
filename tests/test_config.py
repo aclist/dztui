@@ -21,7 +21,6 @@ def unset_values():
 @pytest.fixture
 def keys():
     return [
-        "bm_api",
         "fav_server",
         "fav_label",
         "name",
@@ -84,7 +83,6 @@ def test_key_conversion(legacy_config):
     j = convert.rc2json(legacy_config)
     j = json.loads(j)
     keys = [
-        "api_key",
         "staging_dir",
         "src_path",
         "steam_path",

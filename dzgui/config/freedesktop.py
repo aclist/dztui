@@ -3,7 +3,6 @@ import textwrap
 
 from pathlib import Path
 
-from dzgui.const.constants import APP_NAME
 from dzgui.util.dirs import copy_dzgui_to_xdg_data, find_icon_resource, make_parents
 
 

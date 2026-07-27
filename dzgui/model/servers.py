@@ -192,13 +192,6 @@ class ServerModelManager:
         self._push_data(parsed)
 
     @call_on_thread(dialog.querying)
-    def add_by_id(self, _id: str) -> None:
-        config_man = self.controller.get_config_man()
-        key = config_man.lookup(Preferences.BM)
-        res = Servers.query_by_id(int(_id), key)
-        self._parse_single_record(res)
-
-    @call_on_thread(dialog.querying)
     def add_by_ip(self, addr: str) -> None:
         res = Servers.query_by_ip(addr)
         self._parse_single_record(res)
@@ -262,12 +255,6 @@ class ServerModelManager:
         proxy_man = self._get_proxy_man()
         proxy_man.remove_row_from_control(record)
         self.update_history()
-
-    def add_by_str(self, addr: str) -> None:
-        if addr.isdigit():
-            self.add_by_id(addr)
-        else:
-            self.add_by_ip(addr)
 
     @call_on_thread(dialog.querying)
     def update_playercount(

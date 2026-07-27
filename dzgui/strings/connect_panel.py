@@ -5,10 +5,9 @@ add_tooltip="Add to Saved Servers"
 connect_button="Connect"
 connect_tooltip="Connect to this server"
 connect_entry_tooltip=(
-    "- IP: format as IP:Query port\ne.g. 192.168.1.1:27016\n"
-    "- Battlemetrics: numeric server ID\ne.g. 123456"
+    "- IP: format as IP:Query port\ne.g. 192.168.1.1:27016"
 )
-connect_entry_placeholder="Enter IP (IP:Query port) or Battlemetrics ID (numerical id)"
+connect_entry_placeholder="Enter IP (IP:Query port)"
 
 fav_heading="Favorite server"
 favs_empty="None set. Right click a server and select 'Set favorite' to set."

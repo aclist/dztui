@@ -11,7 +11,6 @@ import threading
 from dataclasses import dataclass
 from typing import Any, Optional, TYPE_CHECKING, Union
 
-from dzgui.api.bm import map_id_to_record
 from dzgui.const.constants import APP_NAME, REQUEST_TIMEOUT
 from dzgui.const.endpoints import STEAM_SERVERS
 from dzgui.util.format import format_exception
@@ -476,16 +475,6 @@ def query_by_ip(addr: str) -> A2SInfo:
     if record is None:
         return A2SInfo(Record("0", 0, 0), None)
     return query_by_record(record, update_gameport=True)
-
-
-def query_by_id(server_id: int, key: str) -> A2SInfo:
-    """
-    Used with numeric Battlemetrics IDs
-    """
-    record = map_id_to_record(key, server_id)
-    if record is None:
-        return A2SInfo(Record("0", 0, 0), None)
-    return query_by_record(record)
 
 
 def query_by_record(record: Record, update_gameport: bool = False) -> A2SInfo:

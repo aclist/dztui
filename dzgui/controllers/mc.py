@@ -413,7 +413,7 @@ class Controller(GObject.GObject):
 
     def add_by_str(self, addr: str) -> None:
         saved_tree = self.get_servers().get_saved()
-        ServerModelManager(self, saved_tree).add_by_str(addr)
+        ServerModelManager(self, saved_tree).add_by_ip(addr)
 
     def add_by_record(self, record: "Record") -> None:
         saved_tree = self.get_servers().get_saved()
@@ -437,14 +437,8 @@ class Controller(GObject.GObject):
         ServerModelManager(self, tv).remove_from_history(record)
 
     def connect_by_str(self, addr: str) -> None:
-        if addr.isdigit():
-            config_man = self.get_config_man()
-            key = config_man.lookup(Preferences.BM)
-            self.connection_man = ConnectionManager(self)
-            self.connection_man.connect_by_id(int(addr), key)
-        else:
-            self.connection_man = ConnectionManager(self)
-            self.connection_man.connect_by_ip(addr)
+        self.connection_man = ConnectionManager(self)
+        self.connection_man.connect_by_ip(addr)
 
     def connect_by_record(self, record: "Record") -> None:
         self.connection_man = ConnectionManager(self)

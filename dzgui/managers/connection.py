@@ -104,11 +104,6 @@ class ConnectionManager:
         self.missing_mods: list[tuple[str, str, int, int]] = []
 
     @call_on_thread(dialog.querying)
-    def connect_by_id(self, _id: int, key: str) -> None:
-        res = Servers.query_by_id(_id, key)
-        self._prepare_connection(res)
-
-    @call_on_thread(dialog.querying)
     def connect_by_ip(self, addr: str) -> None:
         res = Servers.query_by_ip(addr)
         self._prepare_connection(res)
@@ -185,7 +180,6 @@ class ConnectionManager:
             allows_downloads = (allows_dl, running_app_name)
         else:
             allows_downloads = (True, "")
-
 
         client_name = self.controller.get_steam_client_name()
         client = self.controller.query_config(Preferences.CLIENT)

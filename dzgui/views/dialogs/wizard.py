@@ -6,7 +6,7 @@ from importlib import resources
 from pathlib import Path
 from typing import Any, Callable, Self, TYPE_CHECKING
 
-from dzgui.api.probe import test_steam_api, test_bm_api
+from dzgui.api.probe import test_steam_api
 from dzgui.api.shortcuts import add_steam_shortcut
 from dzgui.api.steam import get_steam_paths
 from dzgui.const.constants import (
@@ -16,7 +16,7 @@ from dzgui.const.constants import (
     LEGACY_CONFIG_PATH,
 )
 from dzgui.const.boilerplate import config_boilerplate
-from dzgui.const.endpoints import BM_API_SETUP, STEAM_API_SETUP
+from dzgui.const.endpoints import STEAM_API_SETUP
 from dzgui.const.enum import Preferences
 from dzgui.config import freedesktop
 from dzgui.config.query import lookup
@@ -44,10 +44,9 @@ class PageNum(Enum):
     HAS_CONFIG = 2
     STEAM_PATH = 3
     STEAM_API = 4
-    BM_API = 5
-    USER_PREFS = 6
-    SHORTCUTS = 7
-    FINAL = 8
+    USER_PREFS = 5
+    SHORTCUTS = 6
+    FINAL = 7
 
 
 class OptionalPageMixin:
@@ -221,24 +220,6 @@ class APIValidationPage(ScrolledWizardPage):
             self.validation_box.popup()
             self.validation_box.enable_button()
         self.spinner.stop()
-
-
-class BMValidationPage(OptionalPageMixin, APIValidationPage):  # type: ignore
-    def __init__(self) -> None:
-        super().__init__(
-            enum=PageNum.BM_API,
-            heading=wizard.heading_bm_api,
-            description=wizard.blurb_bm_api,
-            link=BM_API_SETUP,
-            func=self._validate,
-        )
-        self.connect("map", self._on_map)
-
-    @call_on_thread("", show_dialog=False)
-    def _validate(self, key: str) -> None:
-        is_valid = test_bm_api(key.strip())
-        cleanup = StoredFunc(self._cleanup, is_valid, key)
-        self.thread_man.set_cleanup_func(cleanup)
 
 
 class SteamValidationPage(APIValidationPage):
@@ -465,10 +446,9 @@ class Assistant(Gtk.Assistant):
         self.page2 = ConfigMigrationPage(XDG.config)
         self.page3 = SteamPathPage()
         self.page4 = SteamValidationPage()
-        self.page5 = BMValidationPage()
-        self.page6 = PreferencesPage()
-        self.page7 = ShortcutCreationPage(XDG.shortcut)
-        self.page8 = CompletionPage()
+        self.page5 = PreferencesPage()
+        self.page6 = ShortcutCreationPage(XDG.shortcut)
+        self.page7 = CompletionPage()
 
         self.set_forward_page_func(self._advance_page)
 
@@ -486,7 +466,6 @@ class Assistant(Gtk.Assistant):
             self.page5,
             self.page6,
             self.page7,
-            self.page8,
         ):
             # NOTE: skip config migration page if no legacy config file
             if (
@@ -516,7 +495,7 @@ class Assistant(Gtk.Assistant):
             case ConfigMigrationPage():
                 if page.is_migrated():
                     steam_path = lookup(self.config_path, Preferences.DEFAULT)
-                    self.page7.set_steam_path(steam_path)
+                    self.page6.set_steam_path(steam_path)
                     offset = 1 if not self.is_binary else 2
                     self.setup_complete = True
                     return self.get_n_pages() - offset
@@ -524,16 +503,14 @@ class Assistant(Gtk.Assistant):
                 self.config_values["default_steam_path"] = page.get_path_from_radio()
             case SteamValidationPage():
                 self.config_values["steam_api"] = page.get_api_key()
-            case BMValidationPage():
-                self.config_values["bm_api"] = page.get_api_key()
             case PreferencesPage():
                 # NOTE: collects config values before advancing to last page
-                name, use_miles, client = self.page6.get_prefs()
+                name, use_miles, client = self.page5.get_prefs()
                 self.config_values["name"] = name
                 self.config_values["use_miles"] = use_miles
                 self.config_values["client"] = client
                 self.write_config()
-                self.page7.set_steam_path(self.config_values["default_steam_path"])
+                self.page6.set_steam_path(self.config_values["default_steam_path"])
                 self.setup_complete = True
             case ShortcutCreationPage():
                 page.create_shortcuts()

@@ -42,6 +42,7 @@ def rc2json(file: Path) -> str:
 
     toggles = ["fullscreen"]
     deprecated = [
+        "api_key",
         "staging_dir",
         "src_path",
         "steam_path",
@@ -66,8 +67,6 @@ def rc2json(file: Path) -> str:
                 value = str2bool(ntok)
         elif tok == "preferred_client":
             tok = "client"
-        elif tok == "api_key":
-            tok = "bm_api"
         elif tok == "ip_list":
             while True:
                 ntok = lex.get_token()
