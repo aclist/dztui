@@ -1,7 +1,6 @@
 import logging
 
 from typing import Any, Optional, TYPE_CHECKING
-from warnings import deprecated
 
 from dzgui.const.constants import APP_NAME, SEPARATOR
 from dzgui.util.keys import is_ctrl_mask, is_navkey
