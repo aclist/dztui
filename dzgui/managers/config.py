@@ -12,7 +12,7 @@ from dzgui.const.constants import (
     WINDOW_DEFAULT_X,
     WINDOW_DEFAULT_Y,
 )
-from dzgui.api.probe import test_steam_api, test_bm_api
+from dzgui.api.probe import test_steam_api
 from dzgui.const.enum import Preferences
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.views.dialogs.generic import ExceptionDialog
@@ -102,8 +102,6 @@ class ConfigManager:
     def update_api_key(self, key: Preferences, text: str) -> None:
         if key is Preferences.STEAM:
             res = test_steam_api(text)
-        else:
-            res = test_bm_api(text)
         if res is True:
             self.update_config(key, text)
         else:

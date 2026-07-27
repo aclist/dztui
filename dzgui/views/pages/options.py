@@ -15,7 +15,7 @@ from dzgui.const.constants import (
     VIEW_CONCEAL,
     VIEW_REVEAL,
 )
-from dzgui.const.endpoints import STEAM_API_SETUP, BM_API_SETUP
+from dzgui.const.endpoints import STEAM_API_SETUP
 from dzgui.const.enum import Preferences, ServerTab
 from dzgui.strings import errors, options
 from dzgui.util import strings, css, open_links
@@ -66,23 +66,15 @@ class Options(Gtk.Box):
         self.add(label)
 
         self.steam_entry: Gtk.Entry
-        self.bm_entry: Gtk.Entry
 
         self.steam = WebButton(label=strings.options.steam_web)
         self.steam.connect("clicked", self._on_link_button_clicked, STEAM_API_SETUP)
 
-        self.bm = WebButton(label=strings.options.bm_web)
-        self.bm.connect("clicked", self._on_link_button_clicked, BM_API_SETUP)
-
         self.steam_box = self._make_submit_field(
             strings.options.enter_steam, Preferences.STEAM, True
         )
-        self.bm_box = self._make_submit_field(
-            strings.options.enter_bm, Preferences.BM, True
-        )
         api_rows = [
             [LeftLabel(strings.options.steam_placeholder), self.steam_box],
-            [LeftLabel(strings.options.bm_placeholder), self.bm_box],
         ]
 
         self.player_box = self._make_submit_field(
@@ -154,7 +146,6 @@ class Options(Gtk.Box):
             spacing=10,
         )
         api_links_box.add(self.steam)
-        api_links_box.add(self.bm)
         api_box.add(api_links_box)
 
         prefs_grid = self._make_grid(pref_rows)
@@ -195,13 +186,11 @@ class Options(Gtk.Box):
         return str(model[ind][0])
 
     def block_text_entry(self) -> None:
-        for entry in self.steam_entry, self.bm_entry:
-            entry.set_position(-1)
-            entry.set_can_focus(False)
+        self.steam_entry.set_position(-1)
+        self.steam_entry.set_can_focus(False)
 
     def unblock_text_entry(self) -> None:
-        for entry in self.steam_entry, self.bm_entry:
-            entry.set_can_focus(True)
+        self.steam_entry.set_can_focus(True)
 
     def _on_developers_clicked(self, button: Gtk.Button) -> None:
         self.controller.show_developers_page()
@@ -234,8 +223,6 @@ class Options(Gtk.Box):
 
             if context == Preferences.STEAM:
                 self.steam_entry = entry
-            else:
-                self.bm_entry = entry
 
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         box.add(entry)
@@ -282,7 +269,7 @@ class Options(Gtk.Box):
             case Preferences.NAME:
                 value = entry.get_text().strip()
                 self.controller.update_config(enum, value)
-            case Preferences.BM | Preferences.STEAM:
+            case Preferences.STEAM:
                 text = "".join(entry.get_text().split())
                 self.controller.update_api_key(enum, text)
 
@@ -298,9 +285,6 @@ class Options(Gtk.Box):
     def revert(self, mode: Preferences) -> None:
         if mode == Preferences.STEAM:
             self.steam_entry.set_text(self.old_steam)
-        else:
-            self.bm_entry.set_text(self.old_bm)
-        pass
 
     def _on_start_tab_changed(self, combo: Gtk.ComboBoxText) -> None:
         _iter = combo.get_active_iter()
@@ -336,8 +320,6 @@ class Options(Gtk.Box):
                 old = self.old_name
             case Preferences.STEAM:
                 old = self.old_steam
-            case Preferences.BM:
-                old = self.old_bm
         if text == old:
             return False
         return True
@@ -401,16 +383,13 @@ class Options(Gtk.Box):
         name = self.controller.query_config(Preferences.NAME)
         default_steam_path = self.controller.query_config(Preferences.DEFAULT)
         steam = self.controller.query_config(Preferences.STEAM)
-        bm = self.controller.query_config(Preferences.BM)
 
         steam_path = Path(default_steam_path)
 
         self.old_steam = steam
-        self.old_bm = bm
         self.old_name = name
 
         self.steam_entry.set_text(steam)
-        self.bm_entry.set_text(bm)
         p = self.player_box.get_children()[0]
         if hasattr(p, "set_text"):
             p.set_text(name)
@@ -428,7 +407,6 @@ class Options(Gtk.Box):
         for field in (
             [name, self.player_box],
             [steam, self.steam_box],
-            [bm, self.bm_box],
         ):
             if field[0] == "":
                 field[1].get_children()[1].set_sensitive(False)

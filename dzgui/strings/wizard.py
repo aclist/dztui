@@ -46,11 +46,6 @@ You must set up a Steam Web API key in order to browse the global server list.
 \nIf you don't have one already, it can be set up via the page below.
 \nPlease refer to the DZGUI documentation for more instructions.
 """
-heading_bm_api = "Battlemetrics Web API key"
-blurb_bm_api = """A Battlemetrics key is <b>optional</b>, but allows you to add/search for servers\n
-by numeric ID on the web. For example, in the URL https://www.battlemetrics.net/servers/dayz/24819107,\n
-the ID would be <b>24819107</b>.
-"""
 
 ### PreferencesPage
 heading_prefs = "User preferences"

@@ -286,11 +286,8 @@ class Thanks:
 class Options:
     header: str
     steam_web: str
-    bm_web: str
     enter_steam: str
-    enter_bm: str
     steam_placeholder: str
-    bm_placeholder: str
     name_placeholder: str
     last_used: str
     always_fs: str
@@ -378,11 +375,8 @@ thanks = Thanks(
 options = Options(
     header="Options",
     steam_web="Steam API page",
-    bm_web="Battlemetrics API page",
     enter_steam="Enter your Steam API key",
-    enter_bm="Enter your Battlemetrics API key",
     steam_placeholder="Steam API key",
-    bm_placeholder="Battlemetrics API key",
     name_placeholder="Identifies you to other players in-game",
     last_used="Last used dimensions",
     always_fs="Always fullscreen",
@@ -549,10 +543,9 @@ connect_panel = ConnectPanel(
     connect="Connect",
     add="Add",
     add_con="Add/connect",
-    placeholder="Enter IP (IP:Query port) or Battlemetrics ID (numerical id)",
+    placeholder="Enter IP (IP:Query port)",
     entry_tooltip=(
-        "- IP: format as IP:Query port\ne.g. 192.168.1.1:27016\n"
-        "- Battlemetrics: numeric server ID\ne.g. 123456"
+        "- IP: format as IP:Query port\ne.g. 192.168.1.1:27016"
     ),
     add_tooltip="Add to Saved Servers",
     connect_tooltip="Connect to this server",

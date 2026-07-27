@@ -41,21 +41,6 @@ def test_ipdb() -> bool:
         return False
 
 
-def test_bm_api(key: str) -> bool:
-    payload: dict[str, str] = {
-        "filter[game]": "dayz",
-    }
-    hdr = {"Authorization": "Bearer " + key}
-    try:
-        res = requests.get(
-            endpoints.BM_SERVERS, params=payload, headers=hdr, timeout=REQUEST_TIMEOUT
-        )
-        return is_remote_up(res)
-    except Exception as e:
-        logger.critical(e)
-        return False
-
-
 def is_remote_up(res: "Response") -> bool:
     if res.status_code == 200:
         return True

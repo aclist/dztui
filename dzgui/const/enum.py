@@ -61,9 +61,6 @@ class Preferences(EnumWithAttrs):
     STEAM = {
         "key": "steam_api",
     }
-    BM = {
-        "key": "bm_api",
-    }
     CLIENT = {
         "key": "client",
     }
