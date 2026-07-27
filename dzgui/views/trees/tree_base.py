@@ -173,7 +173,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
         (model, pathlist) = sels
         return (model, pathlist)
 
-    #@deprecated("Currently unused")
+    # @deprecated("Currently unused")
     # def get_mpath(self) -> Optional[Gtk.TreePath]:
     #    (model, pathlist) = self.get_model_and_pathlist()
     #    if len(pathlist) < 1:
@@ -195,7 +195,7 @@ class TreeView(CursorMixin, Gtk.TreeView):  # type: ignore
             return True
         return False
 
-    @deprecated("unused")
+    # @deprecated("unused")
     # def get_selected_row(self) -> Optional[Gtk.TreeModelRow]:
     #    ind = self.get_selected_row_index()
     #    model = self.get_model()
