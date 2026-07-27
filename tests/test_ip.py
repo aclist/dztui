@@ -4,7 +4,6 @@ from dzgui.api.servers import validate_ip
 from dzgui.views.components.entry import validate_ip_truthy
 
 
-@pytest.mark.FOO
 @pytest.mark.parametrize(
     "ip",
     [
