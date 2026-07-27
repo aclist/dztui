@@ -1,7 +1,6 @@
 import re
 
 from typing import Any, TYPE_CHECKING, Union
-from warnings import deprecated
 
 from dzgui.const.enum import FilterMode
 from dzgui.model.model_factory import ModelFactory
