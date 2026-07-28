@@ -177,13 +177,16 @@ class ServerModelManager:
                     return
                 self.thread_man.increment_dialog()
 
-        # NOTE: collects futures in linear order after completion
-        # for lock-step representation of the state file
+        """
+        Collects futures in linear order after completion
+        for lock-step representation of the state file
+        """
         for future in futures:
             res = future.result(timeout=API_TIMEOUT)
             # NOTE: failing entries are culled
             if res is None:
                 # TODO: log which servers failed
+                # query_direct() currently does not return enough information
                 continue
             servers.append(res)
             if len(servers) == 0:
@@ -238,7 +241,6 @@ class ServerModelManager:
 
         self.first_iteration = False
         self.emitter.emit("load_maps", store)
-        # self.emitter.emit("servers_loaded_init")
 
     # TODO: dataclass for record rows; check for other dict annotations
     def add_to_history(self, data: tuple[dict[str, Any], "Record"]) -> None:
