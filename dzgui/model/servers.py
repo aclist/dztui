@@ -15,7 +15,7 @@ from dzgui.const.constants import (
 from dzgui.const.enum import FilterMode, Preferences, ServerTab
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings import dialogs
-from dzgui.util.strings import api_warn_msg, dialog
+from dzgui.util.strings import server_timeout, dialog
 from dzgui.views.dialogs.generic import ExceptionDialog
 
 import gi
@@ -419,7 +419,7 @@ class ServerModelManager:
         # TODO: distinguish signals, e.g. "servers_failed_to_load", "servers_loaded_empty"
         # customize statusbar and dialog accordingly
         if show_dialog:
-            dialog = ExceptionDialog(self.controller, api_warn_msg)
+            dialog = ExceptionDialog(self.controller, server_timeout)
             dialog.run()
 
     def _push_data(self, data: list[Any]) -> None:
