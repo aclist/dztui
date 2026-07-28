@@ -15,7 +15,7 @@ from dzgui.const.constants import (
 from dzgui.const.enum import FilterMode, Preferences, ServerTab
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings import dialogs
-from dzgui.util.strings import api_warn_msg, dialog
+from dzgui.util.strings import server_timeout, dialog
 from dzgui.views.dialogs.generic import ExceptionDialog
 
 import gi
@@ -175,18 +175,25 @@ class ServerModelManager:
                 # TODO: wrap except
                 if self.controller.get_exit_event().is_set():
                     return
-                res = future.result(timeout=API_TIMEOUT)
                 self.thread_man.increment_dialog()
-                # NOTE: failing entries are culled
-                if res is None:
-                    # TODO: log which servers failed
-                    continue
-                servers.append(res)
-                if len(servers) == 0:
-                    self.thread_man.set_cleanup_func(
-                        StoredFunc(self._cleanup_on_failure), destroy_first=True
-                    )
-                    return
+
+        """
+        Collects futures in linear order after completion
+        for lock-step representation of the state file
+        """
+        for future in futures:
+            res = future.result(timeout=API_TIMEOUT)
+            # NOTE: failing entries are culled
+            if res is None:
+                # TODO: log which servers failed
+                # query_direct() currently does not return enough information
+                continue
+            servers.append(res)
+            if len(servers) == 0:
+                self.thread_man.set_cleanup_func(
+                    StoredFunc(self._cleanup_on_failure), destroy_first=True
+                )
+                return
 
         parsed = Servers.parse_json(servers)
         self._push_data(parsed)
@@ -234,7 +241,6 @@ class ServerModelManager:
 
         self.first_iteration = False
         self.emitter.emit("load_maps", store)
-        # self.emitter.emit("servers_loaded_init")
 
     # TODO: dataclass for record rows; check for other dict annotations
     def add_to_history(self, data: tuple[dict[str, Any], "Record"]) -> None:
@@ -413,7 +419,7 @@ class ServerModelManager:
         # TODO: distinguish signals, e.g. "servers_failed_to_load", "servers_loaded_empty"
         # customize statusbar and dialog accordingly
         if show_dialog:
-            dialog = ExceptionDialog(self.controller, api_warn_msg)
+            dialog = ExceptionDialog(self.controller, server_timeout)
             dialog.run()
 
     def _push_data(self, data: list[Any]) -> None:

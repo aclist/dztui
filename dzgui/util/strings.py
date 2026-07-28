@@ -100,10 +100,7 @@ steam_missing = "Local Steam installation is not set, possibly malformed config 
 build_corrupted = (
     "Steam settings or DayZ installation may be corrupted. Try restarting Steam."
 )
-api_warn_msg = """No servers returned. Please wait and try again.
-This usually indicates a transitory network timeout. If this issue persists, your API key or network may be malfunctioning.
-"""
-server_timeout = "Timed out when querying server, check IP or try again later."
+server_timeout = "Timed out when querying server(s). Check IP or try again later."
 server_error = (
     "Error while contacting server, possibly timed out. Please wait and try again."
 )
