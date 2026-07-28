@@ -74,7 +74,7 @@ class Options(Gtk.Box):
             strings.options.enter_steam, Preferences.STEAM, True
         )
         api_rows = [
-            [LeftLabel(strings.options.steam_placeholder), self.steam_box],
+            [LeftLabel(strings.options.steam_placeholder), self.steam_box, self.steam],
         ]
 
         self.player_box = self._make_submit_field(
@@ -136,17 +136,6 @@ class Options(Gtk.Box):
         api_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         api_grid = self._make_grid(api_rows)
         api_box.add(api_grid)
-        api_links_box = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL,
-            margin_start=5,
-            margin_end=5,
-            margin_top=5,
-            margin_bottom=10,
-            homogeneous=True,
-            spacing=10,
-        )
-        api_links_box.add(self.steam)
-        api_box.add(api_links_box)
 
         prefs_grid = self._make_grid(pref_rows)
         version_grid = self._make_grid(version_rows)
@@ -167,7 +156,7 @@ class Options(Gtk.Box):
             grid.attach(developers, 1, 0, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
 
         for pair in [
-            (api_box, strings.options.api_keys),
+            (api_box, strings.options.api_key),
             (prefs_grid, strings.options.prefs),
             (version_grid, strings.options.version),
         ]:
