@@ -111,19 +111,22 @@ class WaitDialog(GenericDialog):
 
         self.connect("delete-event", lambda widget, event: True)
         content = self.get_content_area()
-        spinner = Gtk.Spinner()
         self.prog = Gtk.ProgressBar()
 
-        content.pack_end(self.cancel, NO_EXPAND, NO_FILL, 0)
-        content.pack_end(spinner, NO_EXPAND, NO_FILL, 0)
+        spinner_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, halign=Gtk.Align.CENTER
+        )
+        spinner = Gtk.Spinner()
+        spinner_box.add(spinner)
 
         if self.jobs > 1:
-            content.pack_end(self.prog, NO_EXPAND, NO_FILL, 0)
+            content.pack_start(self.prog, NO_EXPAND, NO_FILL, 0)
         else:
+            content.pack_start(spinner_box, NO_EXPAND, NO_FILL, 0)
             spinner.start()
 
-        if show_cancel is False:
-            self.connect("realize", lambda _: self.cancel.set_visible(False))
+        if show_cancel is True:
+            content.pack_start(self.cancel, NO_EXPAND, NO_FILL, 0)
 
     def update_text(self, msg: str) -> None:
         self.format_secondary_text(msg)
