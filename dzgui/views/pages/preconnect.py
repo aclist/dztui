@@ -239,6 +239,15 @@ class PreConnectionAssistant(Gtk.Box):
         )
 
         """Errors"""
+        if len(prereqs.invalid_mods) > 0:
+            pairs = [": ".join(sub) for sub in prereqs.invalid_mods]
+            lines = "\n".join(pairs)
+            msg = (
+                "Server has invalid mods that are not recognized by Steam.\n"
+                "Contact the server owner and include these mod IDs in your report:\n"
+                f"{lines}"
+            )
+            errors.append(msg)
         if prereqs.binary_missing:
             errors.append(
                 f"Remote server is running the build '{prereqs.build}', but it is not installed.\n{resync_msg}"
@@ -278,7 +287,7 @@ class PreConnectionAssistant(Gtk.Box):
                 f"The game '{running_app}' is currently running in Steam, but background downloads are not enabled.\n"
                 "Either stop the game first, or update your global Steam settings or the game's local settings.\n"
                 "Otherwise, mods may be queued for download but never update."
-                )
+            )
             warnings.append(msg)
 
         self.add_warnings(warnings)

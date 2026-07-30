@@ -86,6 +86,7 @@ class Prerequisites:
     mods: list[list[str]]
     game_mode: bool
     is_last_server: bool
+    invalid_mods: list[tuple[str, str]]
     allows_downloads: tuple[bool, str]
 
 
@@ -191,6 +192,9 @@ class ConnectionManager:
 
         is_last = self.is_last_server()
 
+        # TODO: strings
+        invalid_mods = [(mod[0], mod[1]) for mod in remote_mods if mod[2] == "Invalid mod"]
+
         prereqs = Prerequisites(
             name=info.server_name,
             appid=info.game_id,
@@ -206,6 +210,7 @@ class ConnectionManager:
             mods=remote_mods,
             game_mode=game_mode,
             is_last_server=is_last,
+            invalid_mods=invalid_mods,
             allows_downloads=allows_downloads,
         )
 
@@ -261,6 +266,11 @@ class ConnectionManager:
         for mod in alpha_mods:
             if any(mod[1] in tuple for tuple in missing_mods):
                 mod[2] = resync
+        for mod in alpha_mods:
+            # NOTE: if the mod is neither synched or out of date, it is a malformed mod
+            if mod[2] == "":
+                # TODO: strings
+                mod[2] = "Invalid mod"
 
         return alpha_mods, missing_mods
 
