@@ -59,7 +59,7 @@ class OuterWindow(Gtk.Window):
             self.set_titlebar(self.hb)
 
         self.connect("delete-event", self._on_delete_event)
-        self.connect("realize", self._on_steam_deck_realize)
+        self.connect("realize", self._on_realize)
 
         self.grid = Grid()
         self.add(self.grid)
@@ -75,7 +75,7 @@ class OuterWindow(Gtk.Window):
         MainController.loaded = True
         MainController.populate_model(MainController.get_active_treeview())
 
-    def _on_steam_deck_realize(self, window: Self) -> None:
+    def _on_realize(self, window: Self) -> None:
         if self.is_deck:
             self.maximize()
 
