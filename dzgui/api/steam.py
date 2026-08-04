@@ -139,6 +139,9 @@ def get_remote_signatures(mods: list[str]) -> list[tuple[str, str, int, int]]:
     j = r.json()
     rows = j["response"]["publishedfiledetails"]
     for row in rows:
+        # NOTE: not a valid published file
+        if row["result"] == 9:
+            continue
         title = str(row["title"])
         _id = str(row["publishedfileid"])
         time = int(row["time_updated"])
@@ -205,8 +208,10 @@ def launch_offline(
     proc = subprocess.run([*client_args, *params])
     return proc.returncode
 
+
 def find_loginusers(path: Path) -> Path:
     return path / "config" / "loginusers.vdf"
+
 
 def find_user_id(path: Path) -> str | None:
     resolved_path = find_loginusers(path)
@@ -224,7 +229,6 @@ def find_user_id(path: Path) -> str | None:
     except Exception as e:
         logger.debug(e)
         return None
-
 
 
 def find_user_id_32(path: Path) -> int:
