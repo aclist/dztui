@@ -37,7 +37,11 @@ class CursorMixin:
             end = len(model) - 1
         else:
             return False
-        cur_row = self.get_focused_row_index()  # type: ignore
+
+        try:
+            cur_row = self.get_focused_row_index()  # type: ignore
+        except Exception:
+            return
 
         if position == CursorPosition.DOWN:
             if cur_row == end:
