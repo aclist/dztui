@@ -521,3 +521,6 @@ class OfflineLoader(Gtk.Box):
             self.mission_frame.present_folder_changed(mission)
             return
         self.offline_man.launch(appid, mission, local_mods, custom_folder, custom_mods)
+
+    def grab_content_area(self) -> None:
+        self.local_frame.tree.grab_focus()

@@ -20,11 +20,13 @@ from dzgui.const.enum import Preferences, ServerTab
 from dzgui.strings import errors, options
 from dzgui.util import strings, css, open_links
 
+from dzgui.views.components.box import VBox
 from dzgui.views.components.labels import LeftLabel
 from dzgui.views.components.buttons import WebButton
 from dzgui.views.components.frame import HeadingFrame
 from dzgui.views.components.misc import ClientCombo
 from dzgui.views.dialogs.generic import ExceptionDialog
+from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
 
 
 import gi
@@ -44,10 +46,9 @@ class ShortHBox(Gtk.Box):
         self.pack_start(widget, NO_EXPAND, NO_FILL, NO_PADDING)
 
 
-class Options(Gtk.Box):
+class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
     def __init__(self, controller: "Controller"):
         super().__init__(
-            orientation=Gtk.Orientation.VERTICAL,
             margin_start=10,
             margin_end=10,
         )
@@ -59,11 +60,6 @@ class Options(Gtk.Box):
 
         self.DEFAULT_WIDTH = 1
         self.DEFAULT_HEIGHT = 1
-
-        label = Gtk.Label(label=strings.options.header)
-        label.set_halign(Gtk.Align.CENTER)
-        css.add_class(label, "page-heading")
-        self.add(label)
 
         self.steam_entry: Gtk.Entry
 
@@ -165,9 +161,16 @@ class Options(Gtk.Box):
             grid.attach(frame, col, row, self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
             row += 1
 
-        self.scrollable = Gtk.ScrolledWindow(vexpand=True)
-        self.scrollable.add(grid)
-        self.add(self.scrollable)
+        label = Gtk.Label(label=strings.options.header)
+        label.set_halign(Gtk.Align.CENTER)
+        css.add_class(label, "page-heading")
+
+        box = VBox()
+        box.add(label)
+        box.add(grid)
+        self.add(box)
+
+        self.connect("key-press-event", self._on_keypress)
 
     def get_client_name(self) -> str:
         model = self.client_combo.get_model()
@@ -442,4 +445,4 @@ class Options(Gtk.Box):
         widget.set_visibility(state)
 
     def grab_content_area(self) -> None:
-        return
+        self.grab_focus()

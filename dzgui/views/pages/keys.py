@@ -103,4 +103,4 @@ class Keybindings(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         return grid
 
     def grab_content_area(self) -> None:
-        self.box.grab_focus()
+        self.grab_focus()
