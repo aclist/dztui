@@ -67,7 +67,7 @@ class OuterWindow(Gtk.Window):
         self.show_all()
         css.load_css()
         if is_deck:
-            self.maximize()
+            self.set_default_size(1085, 670)
 
         MainController.open_page(NotebookPage.SERVERS)
         MainController.set_start_tab()
