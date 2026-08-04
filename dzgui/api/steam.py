@@ -139,6 +139,7 @@ def get_remote_signatures(mods: list[str]) -> list[tuple[str, str, int, int]]:
     j = r.json()
     rows = j["response"]["publishedfiledetails"]
     for row in rows:
+        # NOTE: not a valid published file
         if row["result"] == 9:
             continue
         title = str(row["title"])
