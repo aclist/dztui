@@ -46,7 +46,7 @@ class ShortHBox(Gtk.Box):
         self.pack_start(widget, NO_EXPAND, NO_FILL, NO_PADDING)
 
 
-class Options(ScrollableMixin, Gtk.ScrolledWindow):
+class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
     def __init__(self, controller: "Controller"):
         super().__init__(
             margin_start=10,

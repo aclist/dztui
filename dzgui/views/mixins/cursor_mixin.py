@@ -41,7 +41,7 @@ class CursorMixin:
         try:
             cur_row = self.get_focused_row_index()  # type: ignore
         except Exception:
-            return
+            return False
 
         if position == CursorPosition.DOWN:
             if cur_row == end:
