@@ -2,7 +2,7 @@ import logging
 import signal
 import warnings
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Self
 
 from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, STEAM_ICON
 from dzgui.const.enum import NotebookPage
@@ -54,14 +54,12 @@ class OuterWindow(Gtk.Window):
         MainController.register_widget("window", self)
 
         # NOTE: steam deck taskbar may occlude elements
-        is_deck = MainController.get_prefs().is_steam_deck
-        if is_deck:
-            self.set_default_size(1085, 670)
-            self.maximize()
-        else:
+        self.is_deck = MainController.get_prefs().is_steam_deck
+        if not self.is_deck:
             self.set_titlebar(self.hb)
 
         self.connect("delete-event", self._on_delete_event)
+        self.connect("realize", self._on_realize)
 
         self.grid = Grid()
         self.add(self.grid)
@@ -76,6 +74,10 @@ class OuterWindow(Gtk.Window):
 
         MainController.loaded = True
         MainController.populate_model(MainController.get_active_treeview())
+
+    def _on_realize(self, window: Self) -> None:
+        if self.is_deck:
+            self.maximize()
 
     def _on_delete_event(self, window: "OuterWindow", event: Gdk.EventKey) -> None:
         self.halt_proc_and_quit()
