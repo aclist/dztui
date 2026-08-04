@@ -54,9 +54,8 @@ class OuterWindow(Gtk.Window):
         MainController.register_widget("window", self)
 
         # NOTE: steam deck taskbar may occlude elements
-        if MainController.get_prefs().is_steam_deck:
-            self.maximize()
-        else:
+        is_deck = MainController.get_prefs().is_steam_deck
+        if not is_deck:
             self.set_titlebar(self.hb)
 
         self.connect("delete-event", self._on_delete_event)
@@ -67,6 +66,8 @@ class OuterWindow(Gtk.Window):
         MainController.set_resolution(self)
         self.show_all()
         css.load_css()
+        if is_deck:
+            self.maximize()
 
         MainController.open_page(NotebookPage.SERVERS)
         MainController.set_start_tab()
