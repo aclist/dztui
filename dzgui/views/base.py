@@ -56,6 +56,8 @@ class OuterWindow(Gtk.Window):
         # NOTE: steam deck taskbar may occlude elements
         if MainController.get_prefs().is_steam_deck is False:
             self.set_titlebar(self.hb)
+        else:
+            self.maximize()
 
         self.connect("delete-event", self._on_delete_event)
 
