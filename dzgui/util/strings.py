@@ -327,8 +327,8 @@ mod_panel = ModPanelStrings(
     unhighlight_stale_tooltip="Clears highlight from stale mods",
     highlight_stale="Highlight stale",
     highlight_stale_tooltip=(
-        "Shows locally-installed mods which are not used by any server "
-        "in your Saved Servers"
+        "Shows locally-installed mods which are not \n"
+        "used by any server in your Saved Servers"
     ),
     unsub_selected="Unsubscribe selected",
     unsub_selected_tooltip="Unsubscribes from selected mods",
