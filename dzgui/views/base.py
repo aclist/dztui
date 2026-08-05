@@ -54,12 +54,13 @@ class OuterWindow(Gtk.Window):
         MainController.register_widget("window", self)
 
         # NOTE: steam deck taskbar may occlude elements
-        self.is_deck = MainController.get_prefs().is_steam_deck
-        if not self.is_deck:
+        is_deck = MainController.get_prefs().is_steam_deck
+        if is_deck:
+            self.maximize()
+        else:
             self.set_titlebar(self.hb)
 
         self.connect("delete-event", self._on_delete_event)
-        self.connect("realize", self._on_realize)
 
         self.grid = Grid()
         self.add(self.grid)
@@ -74,10 +75,6 @@ class OuterWindow(Gtk.Window):
 
         MainController.loaded = True
         MainController.populate_model(MainController.get_active_treeview())
-
-    def _on_realize(self, window: Self) -> None:
-        if self.is_deck:
-            self.maximize()
 
     def _on_delete_event(self, window: "OuterWindow", event: Gdk.EventKey) -> None:
         self.halt_proc_and_quit()
