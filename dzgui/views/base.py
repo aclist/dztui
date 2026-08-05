@@ -2,7 +2,7 @@ import logging
 import signal
 import warnings
 
-from typing import TYPE_CHECKING, Literal, Self
+from typing import TYPE_CHECKING, Literal
 
 from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, STEAM_ICON
 from dzgui.const.enum import NotebookPage
