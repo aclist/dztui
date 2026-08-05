@@ -33,7 +33,9 @@ class Changelog(HelpMenuMixin, ScrollableMixin, Gtk.ScrolledWindow):  # type: ig
 
         # TODO: should long text be wrapped?
         self.controller = controller
-        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5, margin_top=10)
+        self.box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL, spacing=5, margin_top=10
+        )
         self.add(self.box)
 
         self.connect("key-press-event", self._on_keypress)
@@ -55,7 +57,6 @@ class Changelog(HelpMenuMixin, ScrollableMixin, Gtk.ScrolledWindow):  # type: ig
             return version, date
         raise ValueError("Changelog parse error")
 
-
     def _generate_nodes(self, releases: list[tuple[str, list[str]]]) -> None:
         for header, changes in releases:
             for ind in (0, -1):
@@ -64,8 +65,12 @@ class Changelog(HelpMenuMixin, ScrollableMixin, Gtk.ScrolledWindow):  # type: ig
             text = "\n".join(changes)
             formatted = format_pango(text)
 
-            label = Gtk.Label(valign=Gtk.Align.START, margin=15, halign=Gtk.Align.START)
+            container = Gtk.Box(
+                valign=Gtk.Align.START, halign=Gtk.Align.START
+            )
+            label = Gtk.Label()
             label.set_markup(formatted)
+            container.add(label)
 
             version, date = self._parse_version(header)
             button_text = f"{version} ({date})"
@@ -73,9 +78,20 @@ class Changelog(HelpMenuMixin, ScrollableMixin, Gtk.ScrolledWindow):  # type: ig
 
             expander = Gtk.Expander()
             expander.set_label_widget(button)
-            expander.add(label)
+            expander.add(container)
+            expander.connect("activate", self._on_expand, container)
             self.box.add(expander)
 
+    def _on_expand(self, expander: Gtk.Box, container: Gtk.Box) -> None:
+        """
+        Wayland/some themes do not expect widgets to have a size allocation until expanded.
+        Trying to set margins a priori may cause negative allocation,
+        as the margins are subtracted from zero. In effect, the widget is not realized
+        until it is expanded for the first time.
+        """
+        container.set_margin_start(15)
+        container.set_margin_top(15)
+        container.set_margin_bottom(15)
 
     def _parse(self, changelog: str) -> list[tuple[str, list[str]]]:
         release = ""
