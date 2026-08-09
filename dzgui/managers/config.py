@@ -160,6 +160,13 @@ class ConfigManager:
         except Exception:
             return
 
+    def unset_fav(self) -> None:
+        try:
+            self.write_config(Preferences.FAV_LBL, "")
+            self.write_config(Preferences.FAV_SRV, "")
+        except Exception:
+            return
+
     def write_config(self, key: Preferences, value: str) -> None:
         try:
             real_key = self.enum_to_key(key)

@@ -402,6 +402,9 @@ class Controller(GObject.GObject):
     def get_menu(self) -> "MenuTreeView":
         return self.mediator.menu
 
+    def unset_fav(self) -> None:
+        self.config_man.unset_fav()
+
     def has_favorites(self) -> bool:
         favs = self.config_man.get_favorites()
         if len(favs) < 1:
@@ -459,6 +462,9 @@ class Controller(GObject.GObject):
         open_workshop_page(mod, cmd)
 
     def has_note(self) -> bool:
+        # TODO: get record string, store in memory
+        # get note by record, get is in favs, etc. store as a block
+        # this is only used by context mixin
         note = self.get_note()
         if len(note) > 0:
             return True
@@ -473,11 +479,13 @@ class Controller(GObject.GObject):
         return self.notes_man.get_note(record)
 
     def add_note(self, note: str) -> None:
+        # TODO: record should be cached upon creation of dialog
         tv = self.get_active_treeview()
         record = tv.get_record_string()
         self.notes_man.add_note(record, note)
 
     def delete_note(self) -> None:
+        # TODO: record should be cached upon creation of dialog
         tv = self.get_active_treeview()
         record = tv.get_record_string()
         self.notes_man.delete_note(record)

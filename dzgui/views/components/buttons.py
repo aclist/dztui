@@ -10,6 +10,7 @@ from dzgui.util.strings import (
 )
 from dzgui.const.constants import (
     CLIPBOARD,
+    CLOSE,
     INPUT_KEYBOARD,
     LIST_ADD,
     REFRESH_ICON,
@@ -126,6 +127,14 @@ class CopyIpButton(ClipboardButton):
 
         # TODO: strings
         self.set_tooltip_text("Copy IP to clipboard")
+
+
+class CloseButton(IconTextButton):
+    def __init__(self, label: str) -> None:
+        super().__init__(icon=CLOSE, label=label)
+
+        # TODO: strings
+        self.set_tooltip_text("Unset this server as favorite")
 
 
 class WebButton(IconTextButton):
