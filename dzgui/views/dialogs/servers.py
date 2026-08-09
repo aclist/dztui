@@ -1,3 +1,4 @@
+import html
 from typing import Self, TYPE_CHECKING
 
 from dzgui.const.constants import EXPAND, FILL
@@ -109,7 +110,7 @@ class ServerDetailsDialog(ServerDialog):
         self.view.set_model(self.store)
         text = details.description
         text = format_hyperlinks(text)
-        self.description.set_markup(text)
+        self.description.set_markup(html.escape(text))
 
         self.show_all()
 
