@@ -467,13 +467,15 @@ class Flags:
     version: str
     uninstall: str
     debug: str
+    map_count: str
 
 
 flags = Flags(
     description="DayZ server browser and mod manager",
     version="Print version information",
-    uninstall="Uninstall data files (use prior to 'pip uninstall')",
-    debug="Enables developer debugging features",
+    uninstall="Clean up state/config files",
+    debug="Enable developer debugging features",
+    map_count="Check and update system map count value"
 )
 
 
