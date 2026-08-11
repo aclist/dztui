@@ -107,7 +107,7 @@ class WaitDialog(GenericDialog):
         self.cur_job = 1
 
         self.cancel = Gtk.Button(label="Cancel", halign=Gtk.Align.CENTER)
-        self.cancel.connect("clicked", lambda _: self.controller.set_cancel_event())
+        self.cancel.connect("clicked", self._on_cancel_clicked)
 
         self.connect("delete-event", lambda widget, event: True)
         content = self.get_content_area()
@@ -137,6 +137,11 @@ class WaitDialog(GenericDialog):
         fraction = self.cur_job / self.jobs
         self.prog.set_fraction(fraction)
         self.cur_job += 1
+
+    def _on_cancel_clicked(self, button: Gtk.Button) -> None:
+        # TODO: strings
+        GLib.idle_add(self.update_text, "Caught cancel signal, cleaning up")
+        self.controller.set_cancel_event()
 
     def show_cancel(self, state: bool) -> None:
         self.cancel.set_visible(state)
