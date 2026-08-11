@@ -18,7 +18,6 @@ from dzgui.init.flock import lock_acquire
 from dzgui.init.prereqs import has_steam_client
 from dzgui.strings import boot
 
-# from dzgui.util.map_count import get_map_count
 from dzgui.util.deck import is_steam_deck, is_game_mode
 from dzgui.util.dirs import make_parents
 from dzgui.util.localize import set_locale
