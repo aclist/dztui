@@ -403,7 +403,7 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         fs = config["fullscreen"]
         miles = config["use_miles"]
 
-        if prefs.is_steam_deck is False:
+        if prefs.is_steam_deck:
             self.fullscreen_toggle.set_sensitive(False)
             fs = True
 
