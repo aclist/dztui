@@ -10,10 +10,6 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
-if TYPE_CHECKING:
-    from gi.repository import Gdk
-
-
 class AbortDialog(Gtk.MessageDialog):
     def __init__(self, string: str, buttons: Gtk.ButtonsType) -> None:
         super().__init__(
