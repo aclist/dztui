@@ -66,6 +66,7 @@ class ServerDialog(GenericDialog):
 
 class ServerDetailsDialog(ServerDialog):
     def __init__(self, controller: "Controller", details: "Details"):
+        # TODO: server name should also be packed in details struct
         name = controller.get_server_name()
         super().__init__(controller, strings.server_details, name, menu=None)
 
