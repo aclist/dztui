@@ -161,6 +161,7 @@ class QuitDialog(GenericDialog):
         self.add_button(strings.exit_app, Gtk.ResponseType.OK)
 
         self.connect("response", self._on_response)
+        # TODO: superfluous with the above
         self.connect("delete-event", self._on_response)
 
     def _on_response(self, dialog: Self, response: Gtk.ResponseType) -> None:
