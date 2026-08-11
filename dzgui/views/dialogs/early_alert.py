@@ -1,6 +1,5 @@
 import textwrap
 import sys
-from typing import TYPE_CHECKING
 
 from typing import Self
 from dzgui.util.strings import dialog_error, dialog_header
