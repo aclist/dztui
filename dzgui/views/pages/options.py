@@ -20,7 +20,7 @@ from dzgui.const.enum import Preferences, ServerTab
 from dzgui.strings import errors, options
 from dzgui.util import strings, css, open_links
 
-from dzgui.views.components.box import VBox
+from dzgui.views.components.box import ShortHBox, VBox
 from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.labels import LeftLabel
 from dzgui.views.components.buttons import WebButton
@@ -69,13 +69,6 @@ class ToggleField(Gtk.Box):
     def set_sensitive(self, state: bool) -> None:
         for el in self.radio1, self.radio2:
             el.set_sensitive(state)
-
-
-class ShortHBox(Gtk.Box):
-    def __init__(self, widget: Gtk.Widget) -> None:
-        super().__init__(spacing=5, halign=Gtk.Align.START)
-
-        self.pack_start(widget, NO_EXPAND, NO_FILL, NO_PADDING)
 
 
 class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore

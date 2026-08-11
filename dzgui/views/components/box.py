@@ -23,3 +23,10 @@ class HBox(GenericBox):
 class VBox(GenericBox):
     def __init__(self, spacing: int = 0) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=spacing)
+
+class ShortHBox(HBox):
+    def __init__(self, widget: Gtk.Widget) -> None:
+        super().__init__(spacing=5)
+
+        self.set_halign(Gtk.Align.START)
+        self.pack_start(widget, expand=False, fill=False, padding=0)
