@@ -9,6 +9,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
+
 class AbortDialog(Gtk.MessageDialog):
     def __init__(self, string: str, buttons: Gtk.ButtonsType) -> None:
         super().__init__(
@@ -23,7 +24,7 @@ class AbortDialog(Gtk.MessageDialog):
 
         aa = self.get_action_area()
         aa.set_margin_bottom(20)
-        aa.set_layout(Gtk.ButtonBoxStyle.CENTER)
+        aa.set_layout(Gtk.ButtonBoxStyle.CENTER)  # type: ignore
 
         self.outer = self.get_content_area()
         self.outer.set_margin_start(30)
@@ -51,11 +52,12 @@ class AbortDialog(Gtk.MessageDialog):
                 print("response was cancel")
                 return
 
+
 class EarlyAlertDialog(AbortDialog):
-    def __init__(self, string: str, buttons: Gtk.ButtonsType) -> None:
+    def __init__(self, string: str) -> None:
         super().__init__(string=string, buttons=Gtk.ButtonsType.OK)
+
 
 class EarlyIgnoreDialog(AbortDialog):
     def __init__(self, string: str) -> None:
         super().__init__(string=string, buttons=Gtk.ButtonsType.OK_CANCEL)
-
