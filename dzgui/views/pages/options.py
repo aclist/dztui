@@ -21,6 +21,7 @@ from dzgui.strings import errors, options
 from dzgui.util import strings, css, open_links
 
 from dzgui.views.components.box import VBox
+from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.labels import LeftLabel
 from dzgui.views.components.buttons import WebButton
 from dzgui.views.components.frame import HeadingFrame
@@ -37,6 +38,37 @@ from gi.repository import Gtk, Gdk  # noqa
 if TYPE_CHECKING:
     from dzgui.controllers.mc import Controller
     from dzgui.controllers.emitter import Emitter
+
+
+class ToggleField(Gtk.Box):
+    def __init__(
+        self,
+        controller: "Controller",
+        first_option: str,
+        second_option: str,
+        context: Preferences,
+    ) -> None:
+        super().__init__(spacing=5, halign=Gtk.Align.START)
+
+        self.controller = controller
+        self.context = context
+        self.radio1 = Gtk.RadioButton.new_with_label(None, first_option)
+        self.radio2 = Gtk.RadioButton.new_from_widget(self.radio1)
+        self.radio2.set_label(second_option)
+        self.pack_start(self.radio1, NO_EXPAND, NO_FILL, NO_PADDING)
+        self.pack_start(self.radio2, NO_EXPAND, NO_FILL, NO_PADDING)
+
+    def set_suboption_active(self, state: bool) -> None:
+        # NOTE: defer connection of signal until after state is set
+        self.radio2.set_active(state)
+        self.radio1.connect("toggled", self._on_radio_toggled, self.context)
+
+    def _on_radio_toggled(self, button: Gtk.RadioButton, context: Preferences) -> None:
+        self.controller.toggle_config(context)
+
+    def set_sensitive(self, state: bool) -> None:
+        for el in self.radio1, self.radio2:
+            el.set_sensitive(state)
 
 
 class ShortHBox(Gtk.Box):
@@ -80,19 +112,26 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         # TODO: make submit field a standalone class
         self.player_box.get_children()[0].set_width_chars(30)  # type: ignore
 
-        self.fullscreen_toggle = self.make_binary_radio(
+        self.fullscreen_toggle = ToggleField(
+            self.controller,
             strings.options.last_used,
             strings.options.always_fs,
             Preferences.WINDOW,
         )
+
+        # TODO: strings
+        eb = InfoEventBox(
+            "This option is not available on Steam Deck.", self.controller
+        )
+        self.fullscreen_toggle.add(eb)
 
         self.client_combo = ClientCombo()
         self.client_combo.connect("changed", self._on_client_changed)
 
         client_hbox = ShortHBox(self.client_combo)
 
-        self.distance_toggle = self.make_binary_radio(
-            strings.options.km, strings.options.mi, Preferences.DIST
+        self.distance_toggle = ToggleField(
+            self.controller, strings.options.km, strings.options.mi, Preferences.DIST
         )
 
         combo_store = Gtk.ListStore(str, object)
@@ -293,14 +332,6 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         real_cmd = combo.get_model()[_iter][1]
         self.controller.update_config(Preferences.CLIENT, real_cmd)
 
-    def _on_radio_toggled(self, button: Gtk.RadioButton, context: Preferences) -> None:
-        try:
-            self.controller.toggle_config(context)
-        except Exception:
-            button.handler_block_by_func(self._on_radio_toggled)
-            self.populate_settings()
-            button.handler_unblock_by_func(self._on_radio_toggled)
-
     def _is_valid_text(self, text: str, context: Preferences) -> bool:
         if text.isspace():
             return False
@@ -344,23 +375,6 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         state = self._is_valid_text(text, context)
         button.set_sensitive(state)
 
-    def make_binary_radio(
-        self,
-        first_option: str,
-        second_option: str,
-        context: Preferences,
-    ) -> Gtk.Box:
-
-        hbox = Gtk.Box(spacing=5, halign=Gtk.Align.START)
-        radio1 = Gtk.RadioButton.new_with_label(None, first_option)
-        radio2 = Gtk.RadioButton.new_from_widget(radio1)
-        radio2.set_label(second_option)
-        radio1.connect("toggled", self._on_radio_toggled, context)
-        hbox.pack_start(radio1, NO_EXPAND, NO_FILL, NO_PADDING)
-        hbox.pack_start(radio2, NO_EXPAND, NO_FILL, NO_PADDING)
-
-        return hbox
-
     def populate_settings(self) -> None:
         prefs = self.controller.get_prefs()
         # NOTE: re-check in case file was removed by user between runs
@@ -386,14 +400,15 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         if hasattr(p, "set_text"):
             p.set_text(name)
 
-        # NOTE: suppress toggle signal until radios are built
-        self._suppress_toggles(True)
-        for el, conf_state in [
-            (self.fullscreen_toggle, config["fullscreen"]),
-            (self.distance_toggle, config["use_miles"]),
-        ]:
-            el.get_children()[conf_state].set_active(True)
-        self._suppress_toggles(False)
+        fs = config["fullscreen"]
+        miles = config["use_miles"]
+
+        if prefs.is_steam_deck is False:
+            self.fullscreen_toggle.set_sensitive(False)
+            fs = True
+
+        self.fullscreen_toggle.set_suboption_active(fs)
+        self.distance_toggle.set_suboption_active(miles)
 
         # NOTE: disable buttons if no text is set
         for field in (
