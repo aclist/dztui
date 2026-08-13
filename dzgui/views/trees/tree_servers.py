@@ -295,6 +295,11 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
     ) -> None:
         if self.loaded is False:
             return
+        # NOTE: signal triggers twice on right-click events
+        # due to deselect-then-select behavior in GTK
+        model, sel = self.get_selection().get_selected_rows()
+        if len(sel) == 0:
+            return
         self.start_distcalc()
 
     def get_name(self) -> str:
