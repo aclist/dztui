@@ -472,10 +472,10 @@ class Flags:
 
 flags = Flags(
     description="DayZ server browser and mod manager",
-    version="Print version information",
-    uninstall="Clean up state/config files",
-    debug="Enable developer debugging features",
-    map_count="Check and update system map count value"
+    version="print version information",
+    uninstall="clean up state/config files",
+    debug="enable developer debugging features",
+    map_count="check and update system map count value",
 )
 
 
@@ -543,9 +543,7 @@ connect_panel = ConnectPanel(
     add="Add",
     add_con="Add/connect",
     placeholder="Enter IP (IP:Query port)",
-    entry_tooltip=(
-        "- IP: format as IP:Query port\ne.g. 192.168.1.1:27016"
-    ),
+    entry_tooltip=("- IP: format as IP:Query port\ne.g. 192.168.1.1:27016"),
     add_tooltip="Add to Saved Servers",
     connect_tooltip="Connect to this server",
 )
