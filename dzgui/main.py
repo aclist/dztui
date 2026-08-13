@@ -9,10 +9,10 @@ from dzgui.util.map_count import set_map_count, test_map_count
 from dzgui.util.strings import flags
 
 parser = argparse.ArgumentParser(description=flags.description)
-parser.add_argument("-v", "--version", action="store_true", help=flags.version)
-parser.add_argument("-u", "--uninstall", action="store_true", help=flags.uninstall)
 parser.add_argument("-d", "--debug", action="store_true", help=flags.debug)
 parser.add_argument("-m", "--map", action="store_true", help=flags.map_count)
+parser.add_argument("-u", "--uninstall", action="store_true", help=flags.uninstall)
+parser.add_argument("-v", "--version", action="store_true", help=flags.version)
 args = parser.parse_args()
 
 
