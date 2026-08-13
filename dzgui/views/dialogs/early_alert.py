@@ -53,7 +53,6 @@ class AbortDialog(Gtk.MessageDialog):
             case Gtk.ResponseType.OK | Gtk.ResponseType.DELETE_EVENT:
                 sys.exit(1)
             case Gtk.ResponseType.CANCEL:
-                print("response was cancel")
                 return
 
 
