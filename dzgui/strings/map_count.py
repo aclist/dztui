@@ -12,8 +12,5 @@ failed_to_update = (
     "{0}"
 )
 meets_minimum = "System map count of {0} already meets the minimum."
-prompt = (
-    "Updated map count will be written to the file {0}.\n"
-    "Enter sudo password to proceed."
-)
+prompt = "Updated map count will be written to the file {0}."
 user_exit = "User exit"
