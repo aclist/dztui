@@ -22,6 +22,10 @@ class AbortDialog(Gtk.MessageDialog):
         msg = textwrap.fill(string, 50)
         self.format_secondary_text(msg)
 
+        ma = self.get_message_area()
+        label = ma.get_children()[1]
+        label.set_justify(Gtk.Justification.CENTER)
+
         aa = self.get_action_area()
         aa.set_margin_bottom(20)
         aa.set_layout(Gtk.ButtonBoxStyle.CENTER)  # type: ignore
