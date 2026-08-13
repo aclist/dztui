@@ -50,7 +50,6 @@ def set_map_count() -> None:
     conf = "/etc/sysctl.d/dayz.conf"
     value = f"vm.max_map_count={MIN_COUNT}"
     try:
-        1 / 0
         msg = map_count.prompt.format(conf)
         print(msg)
         with tempfile.NamedTemporaryFile(delete=False) as f:
