@@ -22,9 +22,11 @@ def is_map_count_valid(count: int | None) -> bool:
 
 def get_map_count() -> int | None:
     path = Path(VM_FILE)
-    if path.is_file() is False:
+    try:
+        count = int(path.read_text())
+    except Exception as e:
+        logger.debug(e)
         return None
-    count = int(path.read_text())
     return count
 
 
@@ -38,11 +40,10 @@ def test_map_count() -> None:
 
 def set_map_count() -> None:
     count = get_map_count()
-    valid = is_map_count_valid(count)
     if count is None:
         print(map_count.failed_to_parse)
         return
-    elif valid:
+    if is_map_count_valid(count):
         msg = map_count.meets_minimum.format(count)
         print(msg)
         return
