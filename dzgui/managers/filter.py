@@ -21,11 +21,11 @@ class FilterManager:
             strings.filter_3pp: True,
             strings.filter_night: True,
             strings.filter_full: show_full,
-            strings.filter_lowpop: True,
-            strings.filter_nonascii: False,
-            strings.filter_duplicate: False,
             strings.filter_official: True,
+            strings.filter_nonascii: False,
+            strings.filter_lowpop: True,
             strings.filter_unofficial: True,
+            strings.filter_duplicate: False,
             strings.filter_modded: True,
         }
 

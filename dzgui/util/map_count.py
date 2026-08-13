@@ -48,14 +48,14 @@ def set_map_count() -> None:
         return
 
     conf = "/etc/sysctl.d/dayz.conf"
-    count = f"vm.max_map_count={MIN_COUNT}"
+    value = f"vm.max_map_count={MIN_COUNT}"
     try:
-        1/0
+        1 / 0
         msg = map_count.prompt.format(conf)
         print(msg)
         with tempfile.NamedTemporaryFile(delete=False) as f:
             tmp = f.name
-        Path(tmp).write_text(count)
+        Path(tmp).write_text(value)
 
         mv_cmd = f"sudo mv {tmp} {conf}"
         reload_cmd = f"sudo sysctl -p {conf}"

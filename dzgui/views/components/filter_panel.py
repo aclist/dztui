@@ -33,15 +33,15 @@ class ButtonGrid(Gtk.Grid):
         super().__init__(
             halign=Gtk.Align.CENTER, column_spacing=5, column_homogeneous=True
         )
-        row = 1
-        col = 0
-
         self.controller = controller
         self.emitter = controller.get_emitter()
 
         self.checks: list[Gtk.CheckButton] = []
 
-        # TODO: use enumerated checks
+        flowbox = Gtk.FlowBox(
+            halign=Gtk.Align.CENTER, min_children_per_line=3, max_children_per_line=3
+        )
+
         for check in defaults.keys():
             checkbox = Gtk.CheckButton(label=check)
             label = checkbox.get_child()
@@ -51,13 +51,11 @@ class ButtonGrid(Gtk.Grid):
             if defaults[check]:
                 checkbox.set_active(True)
 
-            col = col + 1
-            if col > 3:
-                row += 1
-                col = 1
-            self.attach(checkbox, col, row, 1, 1)
             checkbox.connect("toggled", self._on_check_toggled)
+            flowbox.add(checkbox)
             self.checks.append(checkbox)
+
+        self.add(flowbox)
 
     def block_toggles(self, state: bool) -> None:
         for check in self.checks:

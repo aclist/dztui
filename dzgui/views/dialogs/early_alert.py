@@ -23,7 +23,7 @@ class AbortDialog(Gtk.MessageDialog):
         self.format_secondary_text(msg)
 
         ma = self.get_message_area()
-        label = ma.get_children()[1]
+        label = ma.get_children()[1]  # type: ignore
         label.set_justify(Gtk.Justification.CENTER)
 
         aa = self.get_action_area()
