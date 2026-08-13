@@ -231,10 +231,10 @@ class ProxyModelManager:
                         final.append(row)
                 rows = final
             case strings.filter_day:
-                reg = r"([0][0-9]|[1][0-6])"
+                reg = r"([0][7-9]|[1][0-6])"
                 rows = [row for row in rows if not re.match(reg, row[3])]
             case strings.filter_night:
-                reg = r"([0][0-4]|[1][8]|[2][0-3])"
+                reg = r"([0][0-6]|[1][7-9]|[2][0-3])"
                 rows = [row for row in rows if not re.match(reg, row[3])]
             case strings.filter_nonascii:
                 rows = [row for row in rows if row[0].isascii()]
