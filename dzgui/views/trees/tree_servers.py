@@ -297,8 +297,9 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
             return
         # NOTE: signal triggers twice on right-click events
         # due to deselect-then-select behavior in GTK
-        model, sel = self.get_selection().get_selected_rows()
-        if len(sel) == 0:
+        sel = self.get_selection()
+        model, row = sel.get_selected()
+        if row is None:
             return
         self.start_distcalc()
 
