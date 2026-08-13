@@ -1,15 +1,19 @@
+import logging
 import subprocess
 import sys
 import tempfile
+import traceback
 
 from pathlib import Path
-from dzgui.const.constants import VM_FILE, MIN_COUNT
+from dzgui.const.constants import APP_NAME, VM_FILE, MIN_COUNT
 from dzgui.util.bash import concat_bash_args
+from dzgui.strings import map_count
 from dzgui.views.dialogs.early_alert import EarlyIgnoreDialog
 
+logger = logging.getLogger(APP_NAME)
 
-def is_map_count_valid() -> bool:
-    count = get_map_count()
+
+def is_map_count_valid(count: int | None) -> bool:
     if count is None:
         # NOTE: permit if count was unreadable
         return True
@@ -25,40 +29,43 @@ def get_map_count() -> int | None:
 
 
 def test_map_count() -> None:
-    if is_map_count_valid():
+    count = get_map_count()
+    if is_map_count_valid(count):
         return
-    msg = (
-        "System map count is not high enough to run DayZ.\n"
-        "Please exit and run 'dzgui -m' to update map count."
-    )
+    msg = map_count.exit_msg
     EarlyIgnoreDialog(msg)
 
 
 def set_map_count() -> None:
-    valid = is_map_count_valid()
-    if valid is None:
+    count = get_map_count()
+    valid = is_map_count_valid(count)
+    if count is None:
+        print(map_count.failed_to_parse)
         return
     elif valid:
-        print("System map count already meets the minimum.")
+        msg = map_count.meets_minimum.format(count)
+        print(msg)
         return
 
     conf = "/etc/sysctl.d/dayz.conf"
     count = f"vm.max_map_count={MIN_COUNT}"
     try:
-        msg = (
-            f"Updated map count will be written to the file '{conf}'.\n"
-            "Enter sudo password to proceed."
-        )
+        1/0
+        msg = map_count.prompt.format(conf)
         print(msg)
         with tempfile.NamedTemporaryFile(delete=False) as f:
             tmp = f.name
         Path(tmp).write_text(count)
-        args = concat_bash_args(f"sudo mv {tmp} {conf}")
-        subprocess.run([*args])
-        args = concat_bash_args(f"sudo sysctl -p {conf}")
-        subprocess.run([*args])
+
+        mv_cmd = f"sudo mv {tmp} {conf}"
+        reload_cmd = f"sudo sysctl -p {conf}"
+        for cmd in mv_cmd, reload_cmd:
+            args = concat_bash_args(cmd)
+            subprocess.run([*args])
     except Exception as e:
-        print(e)
+        logger.debug(e)
+        trace = traceback.format_exc()
+        print(map_count.failed_to_update.format(trace))
     except KeyboardInterrupt:
-        print("User exit")
+        print(map_count.user_exit)
         sys.exit(0)
