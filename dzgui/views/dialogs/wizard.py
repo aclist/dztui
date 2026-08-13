@@ -52,7 +52,7 @@ class PageNum(Enum):
 class OptionalPageMixin:
     """Marks optional pages as advanceable"""
 
-    def _on_map(self, page: "ScrolledWizardPage") -> None:
+    def _on_map(self, page: "EnumeratedWizardPage") -> None:
         EMITTER.emit("step_complete")
 
 
@@ -72,10 +72,9 @@ class Progress(Gtk.ProgressBar):
 
 
 class ScrolledWizardPage(Gtk.ScrolledWindow):
-    def __init__(self, enum: PageNum, heading: str, description: str):
+    def __init__(self, heading: str, description: str):
         super().__init__(overlay_scrolling=False)
 
-        self.enum = enum
         self.page_type: Gtk.AssistantPageType
         self.title = heading
         self.heading = Heading(heading)
@@ -88,7 +87,6 @@ class ScrolledWizardPage(Gtk.ScrolledWindow):
             height=600,
             preserve_aspect_ratio=True,
         )
-        image = Gtk.Image.new_from_pixbuf(pixbuf)
 
         self.box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
@@ -97,21 +95,10 @@ class ScrolledWizardPage(Gtk.ScrolledWindow):
             margin_top=50,
             spacing=20,
         )
+        image = Gtk.Image.new_from_pixbuf(pixbuf)
+        self.box.pack_start(image, expand=False, fill=True, padding=0)
 
         self.add(self.box)
-        self.prog = Progress()
-        self.box.pack_end(self.prog, expand=False, fill=False, padding=0)
-        self.box.pack_start(image, expand=False, fill=True, padding=0)
-        self.box.pack_start(self.heading, expand=False, fill=True, padding=0)
-        self.box.pack_start(self.description, expand=False, fill=True, padding=0)
-
-        self.connect("map", self._on_map)
-
-    def get_enum(self) -> PageNum:
-        return self.enum
-
-    def get_progress_bar(self) -> Progress:
-        return self.prog
 
     def get_page_type(self) -> Gtk.AssistantPageType:
         return self.page_type
@@ -131,8 +118,23 @@ class ScrolledWizardPage(Gtk.ScrolledWindow):
     def get_box(self) -> Gtk.Box:
         return self.box
 
-    def _on_map(self, page: "ScrolledWizardPage") -> None:
-        pass
+
+class EnumeratedWizardPage(ScrolledWizardPage):
+    def __init__(self, enum: PageNum, heading: str, description: str) -> None:
+        super().__init__(heading=heading, description=description)
+
+
+        self.enum = enum
+        self.prog = Progress()
+        self.box.pack_end(self.prog, expand=False, fill=False, padding=0)
+        self.box.pack_start(self.heading, expand=False, fill=True, padding=0)
+        self.box.pack_start(self.description, expand=False, fill=True, padding=0)
+
+    def get_enum(self) -> PageNum:
+        return self.enum
+
+    def get_progress_bar(self) -> Progress:
+        return self.prog
 
 
 class NotificationFrame(Gtk.Frame):
@@ -162,7 +164,7 @@ class NotificationFrame(Gtk.Frame):
         self.label.set_markup(wrapped)
 
 
-class APIValidationPage(ScrolledWizardPage):
+class APIValidationPage(EnumeratedWizardPage):
     def __init__(
         self, enum: PageNum, heading: str, description: str, link: str, func: Callable
     ) -> None:
@@ -239,7 +241,7 @@ class SteamValidationPage(APIValidationPage):
         self.thread_man.set_cleanup_func(cleanup)
 
 
-class IntroductionPage(ScrolledWizardPage):
+class IntroductionPage(EnumeratedWizardPage):
     def __init__(self) -> None:
         super().__init__(
             enum=PageNum.INTRO,
@@ -294,7 +296,7 @@ class RadioFrame(Gtk.Frame):
         return self.button
 
 
-class ConfigMigrationPage(ScrolledWizardPage):
+class ConfigMigrationPage(EnumeratedWizardPage):
     def __init__(self, config: Path) -> None:
         super().__init__(
             enum=PageNum.HAS_CONFIG,
@@ -354,7 +356,7 @@ class ConfigMigrationPage(ScrolledWizardPage):
         EMITTER.emit("config", True)
 
 
-class PreferencesPage(ScrolledWizardPage):
+class PreferencesPage(EnumeratedWizardPage):
     def __init__(self) -> None:
         super().__init__(
             enum=PageNum.USER_PREFS,
@@ -414,7 +416,7 @@ class PreferencesPage(ScrolledWizardPage):
         EMITTER.emit("step_complete")
 
 
-class CompletionPage(ScrolledWizardPage):
+class CompletionPage(EnumeratedWizardPage):
     def __init__(self) -> None:
         super().__init__(
             enum=PageNum.FINAL,
@@ -539,7 +541,7 @@ class Assistant(Gtk.Assistant):
             return
         self.set_page_complete(page, True)
 
-    def _add_page(self, page: ScrolledWizardPage, ptype: Gtk.AssistantPageType) -> None:
+    def _add_page(self, page: EnumeratedWizardPage, ptype: Gtk.AssistantPageType) -> None:
         self.append_page(page)
         self.set_page_type(page, ptype)
         self.set_page_title(page, page.get_title())
@@ -548,7 +550,7 @@ class Assistant(Gtk.Assistant):
     def _set_config_state(self, emitter: "Emitter", state: bool) -> None:
         self.config = state
 
-    def _on_page_prepare(self: Self, wizard: Self, page: ScrolledWizardPage) -> None:
+    def _on_page_prepare(self: Self, wizard: Self, page: EnumeratedWizardPage) -> None:
         page_num = self.get_current_page() + 1
         total = self.get_n_pages()
         fraction = page_num / total
@@ -584,7 +586,7 @@ class CheckboxWithLabel(Gtk.Box):
         self.button.set_active(state)
 
 
-class ShortcutCreationPage(OptionalPageMixin, ScrolledWizardPage):  # type: ignore
+class ShortcutCreationPage(OptionalPageMixin, EnumeratedWizardPage):  # type: ignore
     def __init__(self, shortcut: Path) -> None:
         super().__init__(
             enum=PageNum.SHORTCUTS,
@@ -642,7 +644,7 @@ class ShortcutCreationPage(OptionalPageMixin, ScrolledWizardPage):  # type: igno
             freedesktop.write_desktop_shortcut(desktop_file)
 
 
-class SteamPathPage(ScrolledWizardPage):
+class SteamPathPage(EnumeratedWizardPage):
     def __init__(self) -> None:
         super().__init__(
             enum=PageNum.USER_PREFS,
