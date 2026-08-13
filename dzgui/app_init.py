@@ -21,6 +21,7 @@ from dzgui.strings import boot
 from dzgui.util.deck import is_steam_deck, is_game_mode
 from dzgui.util.dirs import make_parents
 from dzgui.util.localize import set_locale
+from dzgui.util.map_count import test_map_count
 from dzgui.util.redact import RedactionFilter, REDACTION_PATTERNS
 from dzgui.util.strings import init
 
@@ -118,6 +119,7 @@ def load_gui(version: str, is_debug: bool) -> None:
         del os.environ["GTK_IM_MODULE"]
 
     if has_new_config(XDG.config) is False:
+        test_map_count()
         migrate_cols_file(XDG.columns)
         copy_state_files(xdg_paths["XDG_STATE_HOME"])
         # TODO: add logging inside wizard

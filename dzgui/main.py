@@ -5,7 +5,7 @@ import warnings
 from dzgui.const.constants import APP_NAME
 from dzgui.init.libgi import test_libgi_missing
 from dzgui.init.prefix import get_version
-from dzgui.util.map_count import set_map_count, test_map_count
+from dzgui.util.map_count import set_map_count
 from dzgui.util.strings import flags
 
 parser = argparse.ArgumentParser(description=flags.description)
@@ -39,7 +39,6 @@ def main() -> None:
         set_map_count()
         sys.exit(0)
 
-    test_map_count()
     version = get_version()
 
     print(f"{APP_NAME} {version}")
