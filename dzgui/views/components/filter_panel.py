@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 
 class ButtonGrid(Gtk.Grid):
-    def __init__(self, controller: "Controller", defaults: dict) -> None:
+    def __init__(self, controller: "Controller", defaults: dict[str, str], tooltips: dict[str, str]) -> None:
         super().__init__(
             halign=Gtk.Align.CENTER, column_spacing=5, column_homogeneous=True
         )
@@ -44,6 +44,13 @@ class ButtonGrid(Gtk.Grid):
 
         for check in defaults.keys():
             checkbox = Gtk.CheckButton(label=check)
+            try:
+                tt = tooltips[check]
+            except Exception as e:
+                logger.debug(e)
+                tt = ""
+
+            checkbox.set_tooltip_text(tt)
             label = checkbox.get_child()
             if label is not None:
                 label.set_ellipsize(Pango.EllipsizeMode.END)  # type: ignore
@@ -161,11 +168,12 @@ class FilterPanel(Gtk.Box):
 
         filter_man = self.controller.get_filter_man()
         defaults = filter_man.get_default_filters()
+        tooltips = filter_man.get_tooltips()
         self.map_store = filter_man.get_map_store()
         self.enabled_filters = defaults
 
         self.keyword_entry = KeywordEntry(self.controller)
-        self.button_grid = ButtonGrid(self.controller, defaults)
+        self.button_grid = ButtonGrid(self.controller, defaults, tooltips)
 
         # TODO: strings
         self.filters_label = BoldLabel("Filters")

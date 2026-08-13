@@ -29,12 +29,31 @@ class FilterManager:
             strings.filter_modded: True,
         }
 
+        # TODO: strings
+        self.tooltips = {
+            strings.filter_1pp: "First-person perspective",
+            strings.filter_day: "In-game time between 0700 and 1659",
+            strings.filter_empty: "Servers contain no players",
+            strings.filter_3pp: "Third-person perspective",
+            strings.filter_night: "In-game time between 1700 and 0659",
+            strings.filter_full: "Servers have no open slots",
+            strings.filter_official: "Bohemia official servers",
+            strings.filter_nonascii: "Server names using non-standard, complex glyphs",
+            strings.filter_lowpop: "Current population is under 30%",
+            strings.filter_unofficial: "Third-party servers",
+            strings.filter_duplicate: "Duplicate of existing servers (usually spoofed)",
+            strings.filter_modded: "Server has one or more mods",
+        }
+
         self.active_keyword = ""
         self.active_map = (0, all_maps)
         self.prior_map = all_maps
 
         self.filters: list
         self.enabled_filters = dict(self.default_filters)
+
+    def get_tooltips(self) -> dict[str, str]:
+        return self.tooltips
 
     def set_prior_map(self, name: str) -> None:
         self.prior_map = name
@@ -86,6 +105,7 @@ class FilterManager:
         self.reinit_map_store()
         maps.sort()
         for m in maps:
+            # TODO: strings
             if m == "All maps":
                 continue
             self.append_map([m])
