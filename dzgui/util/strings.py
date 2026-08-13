@@ -1,27 +1,6 @@
 from dataclasses import dataclass
 from dzgui.const.constants import SYSTEM_LOG
 
-# TODO: move to util.format.py
-
-
-def build_missing(build: str) -> str:
-    msg = (
-        f"This server is running {build}. You can install "
-        f"{build} by searching for it in your Steam library. "
-        f"If you recently installed {build} or moved it to a different drive, "
-        "restart Steam to allow these changes to synchronize, then try again."
-    )
-    return msg
-
-
-def build_path_invalid(build: str) -> str:
-    msg = (
-        f"Steam is reporting that {build} is installed at a non-existent location. "
-        f"If you recently installed {build} or moved it to a different drive, "
-        "restart Steam to allow these changes to synchronize, then try again."
-    )
-    return msg
-
 
 # General
 dialog_header = "DZGUI - Dialog"
@@ -526,61 +505,6 @@ server_labels = ServerLabels(
     lan="LAN",
 )
 
-
-@dataclass(slots=True, frozen=True)
-class ConnectPanel:
-    connect: str
-    add: str
-    add_con: str
-    placeholder: str
-    entry_tooltip: str
-    add_tooltip: str
-    connect_tooltip: str
-
-
-connect_panel = ConnectPanel(
-    connect="Connect",
-    add="Add",
-    add_con="Add/connect",
-    placeholder="Enter IP (IP:Query port)",
-    entry_tooltip=("- IP: format as IP:Query port\ne.g. 192.168.1.1:27016"),
-    add_tooltip="Add to Saved Servers",
-    connect_tooltip="Connect to this server",
-)
-
-
-@dataclass(slots=True, frozen=True)
-class FavPanel:
-    heading: str
-    no_fav: str
-
-
-fav_panel = FavPanel(
-    heading="Favorite server",
-    no_fav="None set. Right click a server and select 'Set favorite' to set.",
-)
-
-
-@dataclass(slots=True, frozen=True)
-class LanPanel:
-    heading: str
-    default_button: str
-    custom_button: str
-    scan_button: str
-    placeholder: str
-    entry_tooltip: str
-    scan_tooltip: str
-
-
-lan_panel = LanPanel(
-    heading="LAN query port",
-    default_button="Default port (27016)",
-    custom_button="Custom port",
-    scan_button="Scan",
-    placeholder="Enter the query port (1-65535)",
-    entry_tooltip="Specify the port to search for DayZ servers on the local network",
-    scan_tooltip="Scan for servers",
-)
 
 distance_suffix = "Distance: calculating..."
 dialog_error = "ERROR"

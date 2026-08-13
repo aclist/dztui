@@ -6,7 +6,6 @@ from dzgui.strings import buttons
 from dzgui.util.strings import (
     alert_button_tooltip,
     atomic_buttons,
-    connect_panel,
 )
 from dzgui.const.constants import (
     CLIPBOARD,
@@ -18,6 +17,7 @@ from dzgui.const.constants import (
     WARNING,
     WEB_BROWSER,
 )
+from dzgui.strings import connect_panel
 
 import gi
 
@@ -222,7 +222,7 @@ class KeysButton(IconTextButton):
 
 class SteamConnectButton(LargeIconTextButton):
     def __init__(self) -> None:
-        super().__init__(icon=STEAM_ICON, label=connect_panel.connect)
+        super().__init__(icon=STEAM_ICON, label=connect_panel.connect_button)
         self.set_tooltip_text(connect_panel.connect_tooltip)
 
 
@@ -242,7 +242,7 @@ class SteamWorkshopButton(SteamTextButton):
 
 class AddButton(IconTextButton):
     def __init__(self) -> None:
-        super().__init__(icon=LIST_ADD, label=connect_panel.add)
+        super().__init__(icon=LIST_ADD, label=connect_panel.add_button)
         self.set_tooltip_text(connect_panel.add_tooltip)
 
 

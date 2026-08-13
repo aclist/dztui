@@ -3,7 +3,7 @@ from typing import Any, Callable, TYPE_CHECKING
 from dzgui.api.servers import validate_ip
 from dzgui.const.constants import VIEW_CONCEAL, VIEW_REVEAL
 from dzgui.util.css import add_class, remove_class
-from dzgui.util.strings import connect_panel, lan_panel
+from dzgui.strings import connect_panel
 from dzgui.strings.errors import api_popover
 
 import gi
@@ -122,11 +122,8 @@ class IpEntry(ValidatedEntry):
         super().__init__(
             controller,
             func=validate_ip_truthy,
-            placeholder_text=connect_panel.placeholder,
-            tooltip_text=connect_panel.entry_tooltip,
+            placeholder_text=connect_panel.connect_entry_placeholder,
         )
-        self.set_placeholder_text(connect_panel.placeholder)
-        self.set_tooltip_text(connect_panel.entry_tooltip)
 
 
 class PortEntry(ValidatedEntry):
@@ -134,11 +131,9 @@ class PortEntry(ValidatedEntry):
         super().__init__(
             controller,
             func=validate_port,
-            placeholder_text=connect_panel.placeholder,
-            tooltip_text=connect_panel.entry_tooltip,
+            placeholder_text=connect_panel.lan_entry_placeholder,
+            tooltip_text=connect_panel.lan_entry_tooltip,
         )
-        self.set_placeholder_text(lan_panel.placeholder)
-        self.set_tooltip_text(lan_panel.entry_tooltip)
 
 
 # TODO: backport to Options page
