@@ -4,7 +4,7 @@ Setup
 DayZ license
 -----------------
 
-Prepare a Steam account with a DayZ license (i.e., own the game). From Steam's right-click menu for the game options, under ``Compatibility``, enable a Proton version ≥ ``6.8`` (or use Proton 
+Prepare a Steam account with a DayZ license (i.e., own the game). From Steam's right-click menu for the game options, under ``Compatibility``, enable a Proton version ≥ ``6.8`` (or use Proton
 Experimental for the latest version).
 
 As of this writing, any recent version of Proton should work, and it is encouraged to use the most recent one.
@@ -33,20 +33,10 @@ Once configured, you can insert this key in the app when launching it for the fi
 
 Battlemetrics API key
 ^^^^^^^^^^^^^^^^^^^^^^
-**This step is optional, but recommended**. Using this key lets you also connect to and query servers by their shorthand ID instead of by IP.
+.. warning::
 
-Register for an API key at `BattleMetrics <https://www.battlemetrics.com/account/register?after=%2Fdevelopers>`_ (free).
-
-From the ``Personal Access Tokens area``, select ``New Token``.
-
-Give the token any name in the field at the top.
-
-Leave **all options unchecked** and scroll to the bottom. Select ``Create Token``.
-
-Once configured, you can insert this key in the app when launching it for the first time (optional), or later on when using the connect/query by ID methods in the app.
-
-.. tip::
-    Each server has a unique ID. This is the string of numbers at the end of the URL. For example, in the URL ``https://www.battlemetrics.com/servers/dayz/8039514``, the ID is ``8039514``.
+    This feature is no longer supported in DZGUI. Battlemetrics has switched to a paid service.
+    Battlemetrics queries are expected to fail in DZGUI 6. In DZGUI 7, this feature has been removed entirely.
 
 Next steps
 --------------
