@@ -9,7 +9,6 @@ from dzgui.const.constants import (
     APPNAME_DAYZ,
     APPNAME_DAYZ_EXP_HUMAN,
     EDIT_DELETE,
-    ERROR,
     FOLDER,
     WARNING,
 )
@@ -21,6 +20,7 @@ from dzgui.views.components.buttons import Icon, IconTextButton
 from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.frame import HeadingFrame
 from dzgui.views.components.scrollable import NoOverlayScrolledWindow
+from dzgui.views.components.misc import ErrorPopover
 from dzgui.views.trees.tree_mods import OfflineModTreeView
 
 
@@ -57,17 +57,9 @@ class PageHeading(Gtk.Box):
         css.add_class(self, "page-heading")
 
 
-class ErrorPopover(Gtk.Popover):
-    def __init__(self) -> None:
-        super().__init__(position=Gtk.PositionType.RIGHT)
-
-        self.hbox = HBox()
-        self.label = Gtk.Label(label="", margin_start=10, margin_end=10)
-        error_icon = Icon(ERROR, margin_start=10)
-        self.hbox.extend([error_icon, self.label])
-        self.add(self.hbox)
-        self.show_all()
-        self.popdown()
+class OfflineErrorPopover(ErrorPopover):
+    def __init__(self, relative_to: Gtk.Widget, position: Gtk.PositionType) -> None:
+        super().__init__(relative_to=relative_to, position=position)
 
     def set_label(self, error: FolderError, msg: str) -> None:
         match error:
@@ -115,13 +107,10 @@ class FolderHBox(HBox):
             [self.eb, self.button, self.spinner, self.scrolled_label, self.unset_button]
         )
 
-        self.pop = ErrorPopover()
-        self.pop.set_relative_to(self.button)
+        self.pop = OfflineErrorPopover(self.button, Gtk.PositionType.RIGHT)
         self.pop.connect("unmap", lambda _: self.grab_focus())
 
-        self.sidepop = ErrorPopover()
-        self.sidepop.set_position(Gtk.PositionType.BOTTOM)
-        self.sidepop.set_relative_to(self.scrolled_label)
+        self.sidepop = OfflineErrorPopover(self.scrolled_label, Gtk.PositionType.BOTTOM)
         self.sidepop.connect("unmap", lambda _: self.grab_focus())
 
         self.connect("map", self._on_map)
@@ -467,7 +456,6 @@ class OfflineLoader(Gtk.Box):
             ]
         )
 
-        # TODO: share ConnectBox class with preconnect dialog?
         self.button_box = HBox(spacing=5)
         self.button_box.set_halign(Gtk.Align.END)
         self.button_box.set_margin_top(15)
