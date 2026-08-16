@@ -3,17 +3,22 @@ Knowledge Base
 
 .. _DZG-001:
 
-DZG-001: Periodically getting dropped from servers, or servers time out in DZGUI
+DZG-001: Timeouts occur while trying to query a specific server
 ------------------------------------------------------------------------------------
-DayZ opens a large number of connections while querying/connected to servers.
+The leading cause of specific servers periodically timing out is local network configuration.
+
+Many third-party DayZ servers use a server rental/hosting provider with DDoS protection.
+This can cause responses from servers to originate from a server other than the one originally queried.
+
+Consumer-grade routers are likely to drop this traffic as invalid due to how they handle NAT (network address translation).
+By contrast, wireless routers and enterprise-grade routers may be less likely to have this issue.
+
+If you find that a specific server is unresponsive for you when it shouldn't be, add a port forwarding rule to your router's settings for
+the server's query port.
 
 In addition, packets sent from server responses are expected to be a standard size (see warning below).
+Deviation from this may cause your router to discard incoming responses from the server.
 
-If your network does not have enough headroom or has settings departing from defaults, this may lead to getting dropped from servers,
-unresponsiveness, or a timeout.
-
-If you are on Wi-Fi, try switching to a wired connection and see if the problem resolves itself. Consumer Wi-Fi routers
-tend to have less headroom than their wired counterparts.
 
 .. important::
    Ensure that MTU (maximum tranmission unit) on your network is set to the standard size of 1,500 bytes.
@@ -80,3 +85,28 @@ There is some misconception that a Steam Web API key could be used to gain infor
 A Steam Web API key is the most strict way of getting authentic, reliable, and consistent server information in a zero-trust model.
 
 You are responsible for the creation, storage, management, and revocation of your Web API key.
+
+DZG-008: Periodically getting dropped from servers while connected
+-------------------------------------------------------------------
+In some cases, DayZ opens a large number of connections while connected to servers.
+
+If your network does not have enough headroom or has settings departing from defaults, this may lead to getting dropped from servers,
+unresponsiveness, or a timeout.
+
+If you are on Wi-Fi, try switching to a wired connection and see if the problem resolves itself. Consumer Wi-Fi routers
+tend to have less headroom for simultaneous connections than their wired counterparts.
+
+DZG-009: Floating dialogs appear maximized on tiling window managers
+-------------------------------------------------------------------
+
+The main DZGUI window and its child dialogs are expected to be rendered as floating by your window manager.
+DZGUI sends window manager hints to this effect, but tiling window managers designed to bisect the screen into quadrants (e.g., i3 window manager)
+may try to always launch applications in fullscreen.
+
+To resolve this, set specific exclusions or window hints in your WM's configuration file.
+For example, for i3, add the following to your `XDG_CONFIG_HOME/i3/config` file (defaults to `$HOME/.config/i3/config`):
+
+.. code:: console
+
+    for_window [instance="DZGUI"] floating enable, move position center
+    for_window [instance="DZGUI - Dialog"] floating enable, move position center
