@@ -485,19 +485,5 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
                 self, toggle.get_children()[0], "_on_radio_toggled", state
             )
 
-    def _on_icon_release(
-        self,
-        widget: Gtk.Entry,
-        icon_pos: Gtk.EntryIconPosition,
-        event: Gdk.Event,
-    ) -> None:
-        visible = widget.get_visibility()
-        if visible:
-            icon, state = VIEW_REVEAL, False
-        else:
-            icon, state = VIEW_CONCEAL, True
-        widget.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, icon)
-        widget.set_visibility(state)
-
     def grab_content_area(self) -> None:
         self.grab_focus()
