@@ -64,7 +64,6 @@ class IconButton(Gtk.Button):
         self.icon = Icon(icon, margin_start=margin_start, margin_end=margin_end)
         self.set_image(self.icon)
         self.set_image_position(position)
-        # self.set_image_position(Gtk.PositionType.RIGHT)
         self.set_focus_on_click(False)
 
     def swap_icon(self, icon: str) -> None:
@@ -267,3 +266,38 @@ class LoggerAlertsButton(IconTextButton):
         self.set_halign(Gtk.Align.END)
         self.set_hexpand(True)
         self.set_tooltip_text(alert_button_tooltip)
+
+
+class SpinnerButton(Gtk.Button):
+    def __init__(self, label: str) -> None:
+        super().__init__()
+
+        self.text = label
+        self.label = Gtk.Label(label=label, halign=Gtk.Align.CENTER)
+
+        self.spinner = Gtk.Spinner()
+        self.spinner.set_halign(Gtk.Align.END)
+        self.spinner.set_sensitive(False)
+
+        grid = Gtk.Grid(column_spacing=10)
+        for el in self.label, self.spinner:
+            grid.add(el)
+
+        self.add(grid)
+
+        self.connect("clicked", self._on_button_clicked)
+        self.connect("map", self._on_map)
+
+    def _on_map(self, a) -> None:
+        self.spinner.set_visible(False)
+
+    def _on_button_clicked(self, button: Self) -> None:
+        self.start_spinner()
+
+    def stop_spinner(self) -> None:
+        self.spinner.set_visible(False)
+        self.spinner.stop()
+
+    def start_spinner(self) -> None:
+        self.spinner.set_visible(True)
+        self.spinner.start()
