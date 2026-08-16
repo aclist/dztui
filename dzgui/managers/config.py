@@ -98,12 +98,13 @@ class ConfigManager:
             logger.critical(e)
             raise e
 
-    @call_on_thread(dialogs.checking_api)
-    def update_api_key(self, key: Preferences, text: str) -> None:
-        if key is Preferences.STEAM:
-            res = test_steam_api(text)
+    @call_on_thread(dialogs.checking_api, show_dialog=False)
+    def update_steam_api_key(self, text: str) -> None:
+        res = test_steam_api(text)
         if res is True:
-            self.update_config(key, text)
+            self.update_config(Preferences.STEAM, text)
+            func = StoredFunc(lambda: self.emitter.emit("api_change_successful"))
+            self.thread_man.set_cleanup_func(func)
         else:
             self.thread_man.set_cleanup_func(
                 StoredFunc(lambda: self.emitter.emit("api_change_failed"))

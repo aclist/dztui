@@ -301,8 +301,8 @@ class Controller(GObject.GObject):
                 dialog = ExceptionDialog(self, str(e))
                 dialog.run()
 
-    def update_api_key(self, key: Preferences, text: str) -> None:
-        self.config_man.update_api_key(key, text)
+    def update_steam_api_key(self, text: str) -> None:
+        self.config_man.update_steam_api_key(text)
 
     def set_resolution(self, window: "OuterWindow") -> None:
         self.config_man.set_resolution(window)
