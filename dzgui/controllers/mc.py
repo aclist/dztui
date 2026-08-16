@@ -88,7 +88,6 @@ class Controller(GObject.GObject):
 
         # NOTE: suppress requests until entire UI is loaded
         self.loaded = False
-        self.pending_jobs = 1
 
         self.exit_event = threading.Event()
         self.cancel_event = threading.Event()
