@@ -61,7 +61,7 @@ class OfflineErrorPopover(ErrorPopover):
     def __init__(self, relative_to: Gtk.Widget, position: Gtk.PositionType) -> None:
         super().__init__(relative_to=relative_to, position=position)
 
-    def set_label(self, error: FolderError, msg: str) -> None:
+    def set_error_label(self, error: FolderError, msg: str) -> None:
         match error:
             case FolderError.NO_VALID_MODS:
                 prefix = offline.no_mods
@@ -159,13 +159,13 @@ class FolderHBox(HBox):
 
     def present_error(self, error: FolderError, msg: str) -> None:
         if error == FolderError.FOLDER_CHANGED:
-            self.sidepop.set_label(error, msg)
+            self.sidepop.set_error_label(error, msg)
             self.sidepop.popup()
             return
         self.folder = ""
         self.label.set_text("")
         self.unset_button.hide()
-        self.pop.set_label(error, msg)
+        self.pop.set_error_label(error, msg)
         self.pop.popup()
 
 

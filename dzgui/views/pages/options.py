@@ -69,6 +69,7 @@ class SubmitField(Gtk.Box):
             self.entry.connect("icon-release", self._on_icon_release)
             self.entry.set_visibility(False)
 
+        self.button: SpinnerButton | Gtk.Button
         if slow:
             self.button = SpinnerButton(label=options.save_button)
         else:
@@ -183,12 +184,14 @@ class SteamSubmitField(SubmitField):
 
     def _on_api_success(self, emitter: "Emitter") -> None:
         self.old_text = self.entry.get_text()
-        self.button.stop_spinner()
+        if isinstance(self.button, SpinnerButton):
+            self.button.stop_spinner()
         self.entry.set_sensitive(True)
 
     def _on_api_failure(self, emitter: "Emitter") -> None:
         self.pop.popup()
-        self.button.stop_spinner()
+        if isinstance(self.button, SpinnerButton):
+            self.button.stop_spinner()
         self.entry.set_sensitive(True)
 
     def block_text_entry(self) -> None:

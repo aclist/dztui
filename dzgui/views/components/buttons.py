@@ -288,7 +288,7 @@ class SpinnerButton(Gtk.Button):
         self.connect("clicked", self._on_button_clicked)
         self.connect("map", self._on_map)
 
-    def _on_map(self, a) -> None:
+    def _on_map(self, button: Self) -> None:
         self.spinner.set_visible(False)
 
     def _on_button_clicked(self, button: Self) -> None:
