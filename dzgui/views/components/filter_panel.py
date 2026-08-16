@@ -29,7 +29,12 @@ if TYPE_CHECKING:
 
 
 class ButtonGrid(Gtk.Grid):
-    def __init__(self, controller: "Controller", defaults: dict[str, str], tooltips: dict[str, str]) -> None:
+    def __init__(
+        self,
+        controller: "Controller",
+        defaults: dict[str, str],
+        tooltips: dict[str, str],
+    ) -> None:
         super().__init__(
             halign=Gtk.Align.CENTER, column_spacing=5, column_homogeneous=True
         )
@@ -39,7 +44,7 @@ class ButtonGrid(Gtk.Grid):
         self.checks: list[Gtk.CheckButton] = []
 
         flowbox = Gtk.FlowBox(
-            halign=Gtk.Align.CENTER, min_children_per_line=3, max_children_per_line=3
+            halign=Gtk.Align.CENTER, min_children_per_line=3, max_children_per_line=3, selection_mode=Gtk.SelectionMode.NONE
         )
 
         for check in defaults.keys():
