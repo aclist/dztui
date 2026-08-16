@@ -67,3 +67,7 @@ It is recommended to follow
 integrates well with tooling and helps the project review your code.
 
 Please see DEVELOPERS.md for further details.
+
+## License applicability to contributions
+
+Code contributed to this repository becomes subject to the terms of the GPL license defined in the LICENSE file at the project root.
