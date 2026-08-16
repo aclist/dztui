@@ -8,7 +8,7 @@ runtime environment are built-in.
 Turnkey installer
 ------------------------
 
-- Visit the project's `Releases page <https://github.com/aclist/dztui/releases>`_.
+- Visit the project's `Releases page <https://github.com/aclist/dztui/releases/latest>`_.
 - Extract the DZGUI tarball from the top of the **Assets** list.
 - From a terminal, run the command ``./dzgui`` or double click on the extracted file in
   a file explorer.
