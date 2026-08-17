@@ -1,5 +1,6 @@
 import logging
 import re
+import textwrap
 
 from typing import TYPE_CHECKING
 from importlib import resources
@@ -7,6 +8,7 @@ from importlib import resources
 from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, CHANGELOG_PATH
 from dzgui.util.strings import missing_changelog
 from dzgui.util.format import format_pango
+from dzgui.views.components.box import HBox, VBox
 from dzgui.views.mixins.help_menu_mixin import HelpMenuMixin
 from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
 
@@ -31,19 +33,39 @@ class Changelog(HelpMenuMixin, ScrollableMixin, Gtk.ScrolledWindow):  # type: ig
             logger.critical(e)
             changelog = missing_changelog
 
-        # TODO: should long text be wrapped?
+        # FIXME: wrap long text
         self.controller = controller
         self.box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL, spacing=5, margin_top=10
         )
         self.add(self.box)
 
+        expand_all = Gtk.Button(
+            label="Expand all", halign=Gtk.Align.START, margin_start=20
+        )
+        expand_all.connect("clicked", self._on_expand_all_clicked)
+        self.box.add(expand_all)
+
+        self.expanded = False
+        self.expanders: list[Gtk.Expander] = []
         self.connect("key-press-event", self._on_keypress)
         self.connect("key-press-event", self._on_esc_keypress)
 
         changes = self._parse(changelog)
         self._generate_nodes(changes)
+
         self.show_all()
+
+    def _on_expand_all_clicked(self, button: Gtk.Button) -> None:
+        self.expanded = not self.expanded
+        for expander in self.expanders:
+            # NOTE: simply setting set_expanded() does not trigger activate() signal,
+            # so margins are not applied
+            if expander.get_expanded() == self.expanded:
+                continue
+            expander.activate()
+        label = "Collapse all" if self.expanded else "Expand all"
+        button.set_label(label)
 
     def grab_content_area(self) -> None:
         self.grab_focus()
@@ -65,9 +87,7 @@ class Changelog(HelpMenuMixin, ScrollableMixin, Gtk.ScrolledWindow):  # type: ig
             text = "\n".join(changes)
             formatted = format_pango(text)
 
-            container = Gtk.Box(
-                valign=Gtk.Align.START, halign=Gtk.Align.START
-            )
+            container = Gtk.Box(valign=Gtk.Align.START, halign=Gtk.Align.START)
             label = Gtk.Label()
             label.set_markup(formatted)
             container.add(label)
@@ -81,6 +101,7 @@ class Changelog(HelpMenuMixin, ScrollableMixin, Gtk.ScrolledWindow):  # type: ig
             expander.add(container)
             expander.connect("activate", self._on_expand, container)
             self.box.add(expander)
+            self.expanders.append(expander)
 
     def _on_expand(self, expander: Gtk.Box, container: Gtk.Box) -> None:
         """
@@ -94,6 +115,7 @@ class Changelog(HelpMenuMixin, ScrollableMixin, Gtk.ScrolledWindow):  # type: ig
         container.set_margin_bottom(15)
 
     def _parse(self, changelog: str) -> list[tuple[str, list[str]]]:
+
         release = ""
         releases: list[tuple[str, list[str]]] = []
         release_notes: list[str] = []
@@ -107,5 +129,5 @@ class Changelog(HelpMenuMixin, ScrollableMixin, Gtk.ScrolledWindow):  # type: ig
                     release = ""
                 release = line
                 continue
-            release_notes.append(line.rstrip())
+            release_notes.append(textwrap.fill(line.rstrip(), width=120))
         return releases
