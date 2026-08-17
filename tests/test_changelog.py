@@ -19,7 +19,6 @@ def count_hash(line: str) -> int:
     return cnt
 
 
-@pytest.mark.FOO
 def test_changelog_prefix(changelog) -> None:
     r = r".*(\[.*\]).*"
     lines = changelog.splitlines()
