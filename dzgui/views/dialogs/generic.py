@@ -202,6 +202,7 @@ class ExceptionDialog(GenericDialog):
             left_margin=10,
             right_margin=10,
             top_margin=15,
+            bottom_margin=10,
         )
         textview.set_buffer(Gtk.TextBuffer(text=self.trace))
         box.pack_start(textview, EXPAND, FILL, 0)
