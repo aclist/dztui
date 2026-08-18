@@ -215,7 +215,7 @@ class ModManager:
 
     def _server_timeout(self) -> None:
         dialog = ExceptionDialog(self.controller, server_timeout)
-        dialog.set_seconary_text(kb.DZG_006)
+        dialog.set_secondary_text(kb.DZG_006)
         dialog.run()
 
     def select_colorized(self) -> None:
