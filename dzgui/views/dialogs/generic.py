@@ -196,17 +196,49 @@ class ExceptionDialog(GenericDialog):
             propagate_natural_height=True, max_content_height=500
         )
         box = Gtk.Box(hexpand=True, vexpand=True, orientation=Gtk.Orientation.VERTICAL)
-        # TODO: wrap/truncate long messages
         textview = Gtk.TextView(
-            wrap_mode=Gtk.WrapMode.WORD, editable=False, left_margin=10, right_margin=10
+            wrap_mode=Gtk.WrapMode.WORD,
+            editable=False,
+            left_margin=10,
+            right_margin=10,
+            top_margin=15,
         )
         textview.set_buffer(Gtk.TextBuffer(text=self.trace))
-        box.pack_start(textview, EXPAND, FILL, 10)
-        scrollable.add(box)
+        box.pack_start(textview, EXPAND, FILL, 0)
+
+        self.error_details = Gtk.ScrolledWindow(
+            overlay_scrolling=False,
+            max_content_height=150,
+            propagate_natural_height=False,
+        )
+        details_box = Gtk.Box(
+            hexpand=True,
+            vexpand=True,
+            margin_right=5,
+            orientation=Gtk.Orientation.VERTICAL,
+        )
+
+        self.details_buffer = Gtk.TextBuffer()
+        details_textview = Gtk.TextView(
+            wrap_mode=Gtk.WrapMode.WORD_CHAR,
+            editable=False,
+            left_margin=10,
+            right_margin=10,
+            top_margin=15,
+        )
+
+        details_textview.set_buffer(self.details_buffer)
+        details_box.pack_start(details_textview, EXPAND, FILL, 10)
+        self.error_details.add(details_box)
+
+        self.error_notebook = Gtk.Notebook(show_tabs=False, margin_bottom=15)
+        self.error_notebook.append_page(box, Gtk.Label(label="Error"))
+        self.error_notebook.append_page(self.error_details, Gtk.Label(label="Details"))
+        self.error_notebook.connect("switch-page", self._on_page_changed)
+        scrollable.add(self.error_notebook)
 
         content = self.get_content_area()
         content.set_spacing(0)
-        # TODO: padding around top of content area when traceback is long
         content.add(scrollable)
 
         copy_button = ClipboardButton(controller, self.get_trace)
@@ -218,6 +250,18 @@ class ExceptionDialog(GenericDialog):
         if self.ok is not None:
             self.ok.grab_focus()
         self.connect("response", self._on_response)
+
+    def _on_page_changed(
+        self, notebook: Gtk.Notebook, child: Gtk.Widget, index: int
+    ) -> None:
+        if child == self.error_details:
+            child.set_propagate_natural_height(True)
+        else:
+            self.error_details.set_propagate_natural_height(False)
+
+    def set_secondary_text(self, text: str) -> None:
+        self.details_buffer.set_text(text)
+        self.error_notebook.set_show_tabs(True)
 
     def get_trace(self) -> str:
         return self.trace
