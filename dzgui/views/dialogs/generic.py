@@ -316,9 +316,9 @@ class ExceptionDialog(GenericDialog):
         self, notebook: Gtk.Notebook, child: Gtk.Box | Gtk.ScrolledWindow, index: int
     ) -> None:
         if child == self.error_details:
-            self.error_details.set_propagate_natural_height(True)
+            GLib.idle_add(self.error_details.set_propagate_natural_height, True)
         else:
-            self.error_details.set_propagate_natural_height(False)
+            GLib.idle_add(self.error_details.set_propagate_natural_height, False)
 
     def set_secondary_text(self, text: str) -> None:
         self.details_buffer.set_text(text)
