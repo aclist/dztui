@@ -252,10 +252,10 @@ class ExceptionDialog(GenericDialog):
         self.connect("response", self._on_response)
 
     def _on_page_changed(
-        self, notebook: Gtk.Notebook, child: Gtk.Widget, index: int
+        self, notebook: Gtk.Notebook, child: Gtk.Box | Gtk.ScrolledWindow, index: int
     ) -> None:
         if child == self.error_details:
-            child.set_propagate_natural_height(True)
+            self.error_details.set_propagate_natural_height(True)
         else:
             self.error_details.set_propagate_natural_height(False)
 
