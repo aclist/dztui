@@ -20,7 +20,7 @@ from dzgui.const.constants import (
 from dzgui.const.enum import Preferences
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.model.model_factory import FastInsertListStore, ModelFactory
-from dzgui.strings import dialogs
+from dzgui.strings import dialogs, kb
 from dzgui.util.format import format_mods
 from dzgui.util.strings import server_timeout
 from dzgui.util.symlink import rebuild_symlinks
@@ -215,6 +215,7 @@ class ModManager:
 
     def _server_timeout(self) -> None:
         dialog = ExceptionDialog(self.controller, server_timeout)
+        dialog.set_seconary_text(kb.DZG_006)
         dialog.run()
 
     def select_colorized(self) -> None:
