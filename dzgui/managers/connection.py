@@ -45,6 +45,7 @@ from dzgui.strings.dialogs import (
     waiting_for_mods,
     waiting_for_directories,
 )
+from dzgui.strings import kb
 from dzgui.strings.server_mods import checkmark, resync
 from dzgui.util.format import format_mib
 from dzgui.util.strings import dialog, server_timeout
@@ -193,7 +194,9 @@ class ConnectionManager:
         is_last = self.is_last_server()
 
         # TODO: strings
-        invalid_mods = [(mod[0], mod[1]) for mod in remote_mods if mod[2] == "Invalid mod"]
+        invalid_mods = [
+            (mod[0], mod[1]) for mod in remote_mods if mod[2] == "Invalid mod"
+        ]
 
         prereqs = Prerequisites(
             name=info.server_name,
@@ -298,6 +301,7 @@ class ConnectionManager:
 
     def _server_timeout(self) -> None:
         dialog = ExceptionDialog(self.controller, server_timeout)
+        dialog.set_secondary_text(kb.DZG_006)
         dialog.run()
 
     def _connect_steam(self, menu_only: bool) -> None:
