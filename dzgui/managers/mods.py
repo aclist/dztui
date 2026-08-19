@@ -213,11 +213,6 @@ class ModManager:
         func = StoredFunc(self._on_stale_mods_found, stale)
         self.thread_man.set_cleanup_func(func)
 
-    def _server_timeout(self) -> None:
-        dialog = ExceptionDialog(self.controller, server_timeout)
-        dialog.set_secondary_text(kb.DZG_006)
-        dialog.run()
-
     def select_colorized(self) -> None:
         model = self.treeview.get_model()
         if model is None:
