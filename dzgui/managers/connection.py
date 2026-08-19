@@ -13,6 +13,7 @@ from dzgui.api.shortcuts import Shortcuts
 
 from dzgui.api.steam import (
     connect,
+    connect_debug,
     get_app_allows_downloads,
     get_app_name,
     get_needs_update,
@@ -303,6 +304,13 @@ class ConnectionManager:
         dialog = ExceptionDialog(self.controller, server_timeout)
         dialog.set_secondary_text(kb.DZG_006)
         dialog.run()
+
+    def get_debug_args(self) -> str:
+        addr = f"{self.record.ip}:{self.record.gameport}"
+        playername = self.controller.query_config(Preferences.NAME)
+        return connect_debug(
+            self.client, addr, self.appid, playername, self.remote_mod_ids
+        )
 
     def _connect_steam(self, menu_only: bool) -> None:
         addr = f"{self.record.ip}:{self.record.gameport}"

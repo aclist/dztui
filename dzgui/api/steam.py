@@ -150,6 +150,22 @@ def get_remote_signatures(mods: list[str]) -> list[tuple[str, str, int, int]]:
     return hashes
 
 
+def connect_debug(client: str, addr: str, appid: int, name: str, mods: list[str]) -> str:
+    concat = concat_mods(mods)
+    client_args = concat_bash_args(client)
+    params = [
+        "-applaunch",
+        str(appid),
+        f"-connect={addr}",
+        "-nolauncher",
+        "-nosplash",
+        "-skipintro",
+        f"-name={name}",
+        f"-mod={concat}",
+    ]
+    client_args.extend(params)
+    return " ".join(client_args)
+
 # TODO: set config to name=user, use official server and no mods,
 # ensure that formatted string is identical to fixture with same hash
 def connect(client: str, addr: str, appid: int, name: str, mods: list[str]) -> int:
