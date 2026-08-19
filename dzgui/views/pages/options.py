@@ -430,6 +430,7 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         # NOTE: re-check in case file was removed by user between runs
         if prefs.paths.config.is_file() is False:
             dialog = ExceptionDialog(self.controller, strings.config_not_found)
+            dialog.show_all()
             dialog.run()
             raise OSError(f"Config file '{prefs.paths.config}' not found")
 

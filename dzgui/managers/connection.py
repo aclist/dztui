@@ -303,6 +303,7 @@ class ConnectionManager:
     def _server_timeout(self) -> None:
         dialog = ExceptionDialog(self.controller, server_timeout)
         dialog.set_secondary_text(kb.DZG_006)
+        dialog.show_all()
         dialog.run()
 
     def get_debug_args(self) -> str:

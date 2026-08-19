@@ -405,6 +405,7 @@ class ServerModelManager:
 
         if show_dialog:
             dialog = ExceptionDialog(self.controller, dialogs.load_error_lan)
+            dialog.show_all()
             dialog.run()
 
     def _cleanup_on_failure(self, show_dialog: bool = True) -> None:
@@ -421,6 +422,7 @@ class ServerModelManager:
         if show_dialog:
             dialog = ExceptionDialog(self.controller, server_timeout)
             dialog.set_secondary_text(kb.DZG_006)
+            dialog.show_all()
             dialog.run()
 
     def _push_data(self, data: list[Any]) -> None:
