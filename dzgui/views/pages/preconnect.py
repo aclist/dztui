@@ -121,10 +121,10 @@ class PreConnectionAssistant(Gtk.Box):
             spacing=5,
         )
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
-        # TODO:
+
+        # NOTE: -d flag
         if self.controller.get_prefs().is_debug:
-            # TODO: strings
-            debug = Gtk.Button(label="Debug", halign=Gtk.Align.START)
+            debug = Gtk.Button(label=preconnect.debug, halign=Gtk.Align.START)
             debug.connect("clicked", self._on_debug_clicked)
             box.add(debug)
         for button in self.back, self.ok, self.connect_last:
