@@ -245,6 +245,7 @@ class ExceptionDialog(TextBufferDialog):
         except Exception:
             trace = traceback.format_exc()
             dialog = ExceptionDialog(Controller, trace)
+            dialog.show_all()
             dialog.run()
     """
 
