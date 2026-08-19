@@ -1,6 +1,7 @@
 from typing import Literal, Self, TYPE_CHECKING
 
 from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING, EXPAND, FILL
+from dzgui.strings import dialogs
 from dzgui.util import strings
 from dzgui.views.components.buttons import ClipboardButton
 
@@ -171,12 +172,17 @@ class QuitDialog(GenericDialog):
 
 class TextBufferDialog(GenericDialog):
     def __init__(
-        self, controller: "Controller", heading: str, secondary: str, text: str
+        self,
+        controller: "Controller",
+        mtype: Gtk.MessageType,
+        heading: str,
+        secondary: str,
+        text: str,
     ):
         super().__init__(
             controller=controller,
             text=heading,
-            mtype=Gtk.MessageType.INFO,
+            mtype=mtype,
             buttons=Gtk.ButtonsType.NONE,
             secondary=secondary,
         )
@@ -209,8 +215,9 @@ class DebugDialog(TextBufferDialog):
     def __init__(self, controller: "Controller", debug: str):
         super().__init__(
             controller=controller,
-            heading="Debug",
-            secondary="Debug args",
+            mtype=Gtk.MessageType.INFO,
+            heading=dialogs.debug_heading,
+            secondary=dialogs.debug_secondary,
             text=debug,
         )
         scrollable = Gtk.ScrolledWindow(
@@ -229,7 +236,7 @@ class DebugDialog(TextBufferDialog):
         self.show_all()
 
 
-class ExceptionDialog(GenericDialog):
+class ExceptionDialog(TextBufferDialog):
     """
     Error dialog with rich traceback.
     Usage:
@@ -244,13 +251,12 @@ class ExceptionDialog(GenericDialog):
     def __init__(self, controller: "Controller", trace: str):
         super().__init__(
             controller=controller,
-            text=strings.error_heading,
-            mtype=Gtk.MessageType.ERROR,
-            buttons=Gtk.ButtonsType.NONE,
+            heading=strings.error_heading,
             secondary=strings.something_wrong,
+            text=trace,
+            mtype=Gtk.MessageType.ERROR,
         )
 
-        self.trace = trace
         # NOTE: box expands to end of content area
         scrollable = Gtk.ScrolledWindow(
             propagate_natural_height=True, max_content_height=500
@@ -264,7 +270,7 @@ class ExceptionDialog(GenericDialog):
             top_margin=15,
             bottom_margin=10,
         )
-        textview.set_buffer(Gtk.TextBuffer(text=self.trace))
+        textview.set_buffer(Gtk.TextBuffer(text=trace))
         box.pack_start(textview, EXPAND, FILL, 0)
 
         self.error_details = Gtk.ScrolledWindow(
@@ -302,15 +308,7 @@ class ExceptionDialog(GenericDialog):
         content.set_spacing(0)
         content.add(scrollable)
 
-        copy_button = ClipboardButton(controller, self.get_trace)
-        self.add_action_widget(copy_button, Gtk.ResponseType.NONE)
-        self.add_button("OK", Gtk.ResponseType.OK)
-
         self.show_all()
-        self.ok = self.get_widget_for_response(Gtk.ResponseType.OK)
-        if self.ok is not None:
-            self.ok.grab_focus()
-        self.connect("response", self._on_response)
 
     def _on_page_changed(
         self, notebook: Gtk.Notebook, child: Gtk.Box | Gtk.ScrolledWindow, index: int
@@ -323,21 +321,3 @@ class ExceptionDialog(GenericDialog):
     def set_secondary_text(self, text: str) -> None:
         self.details_buffer.set_text(text)
         self.error_notebook.set_show_tabs(True)
-
-    def get_trace(self) -> str:
-        return self.trace
-
-    def _on_response(
-        self, dialog: Self, response: Gtk.ResponseType
-    ) -> None | Literal[True]:
-        match response:
-            case Gtk.ResponseType.OK:
-                self.destroy()
-                return None
-            case Gtk.ResponseType.NONE:
-                return True
-            case Gtk.ResponseType.DELETE_EVENT:
-                self.destroy()
-                return None
-            case _:
-                return None
