@@ -1,20 +1,33 @@
+import re
 import pytest
 
-from importlib import resources
-from dzgui.const.constants import APP_NAME_LOWER, CHANGELOG_PATH
+from pathlib import Path
 
 
 @pytest.fixture
-def changelog():
-    path = resources.files(APP_NAME_LOWER).joinpath(CHANGELOG_PATH)
-    return path
+def changelog(request) -> None:
+    root = request.config.rootpath
+    changelog = Path(root).joinpath("CHANGELOG.md").read_text()
+    return changelog
 
 
-def test_headings(changelog):
-    with open(changelog, "r") as f:
-        lines = f.readlines()
-    for line in lines:
-        if line.startswith("#"):
-            pass
-        # TODO: use regex
-    pass
+def count_hash(line: str) -> int:
+    cnt = 0
+    for c in line:
+        if c == "#":
+            cnt += 1
+    return cnt
+
+
+def test_changelog_prefix(changelog) -> None:
+    r = r".*(\[.*\]).*"
+    lines = changelog.splitlines()
+    sort = sorted(lines)
+    match = [line for line in sort if line.startswith("#")]
+    for m in match:
+        if "Changelog" in m:
+            assert count_hash(m) == 1
+        elif re.match(r, m) is not None:
+            assert count_hash(m) == 2
+        else:
+            assert count_hash(m) == 3
