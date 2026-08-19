@@ -316,6 +316,6 @@ class ExceptionDialog(TextBufferDialog):
         else:
             GLib.idle_add(self.error_details.set_propagate_natural_height, False)
 
-    def set_secondary_text(self, text: str) -> None:
+    def set_details_buffer(self, text: str) -> None:
         self.details_buffer.set_text(text)
         self.error_notebook.set_show_tabs(True)
