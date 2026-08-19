@@ -114,9 +114,6 @@ class Controller(GObject.GObject):
     def query_config(self, key: Preferences) -> Any:
         return self.config_man.lookup(key)
 
-    def is_auto_install(self) -> bool:
-        return bool(self.query_config(Preferences.INSTALL))
-
     def suppress_signal(
         self, owner: Any, child: Any, func_name: str, state: bool
     ) -> None:
