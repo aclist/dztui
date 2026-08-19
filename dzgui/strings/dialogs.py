@@ -20,3 +20,6 @@ ok = "OK"
 
 mission_dialog = "Set a mission folder location"
 custom_mod_dialog = "Set location to a custom mods folder"
+
+debug_heading = "Debug"
+debug_secondary = "Launch arguments"
