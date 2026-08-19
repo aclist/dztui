@@ -16,8 +16,8 @@ By contrast, wireless routers and enterprise-grade routers may be less likely to
 If you find that a specific server is unresponsive for you when it shouldn't be, add a port forwarding rule to your router's settings for
 the server's query port.
 
-In addition, packets sent from server responses are expected to be a standard size (see warning below).
-Deviation from this may cause your router to discard incoming responses from the server.
+In addition, a uniform packet size is expected. If your router's MTU setting differs from the default of 1,500,
+it could lead to incoming responses being discarded (see warning below).
 
 
 .. important::
