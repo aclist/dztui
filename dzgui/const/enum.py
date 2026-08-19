@@ -76,9 +76,6 @@ class Preferences(EnumWithAttrs):
     INSTALL = {
         "key": "auto_install",
     }
-    DEBUG = {
-        "key": "debug",
-    }
     DEFAULT = {
         "key": "default_steam_path",
     }
