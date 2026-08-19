@@ -178,6 +178,7 @@ class ConfigManager:
             logger.critical(e)
             trace = traceback.format_exc()
             dialog = ExceptionDialog(self.controller, trace)
+            dialog.show_all()
             dialog.run()
             raise e
 

@@ -263,6 +263,7 @@ class Controller(GObject.GObject):
             self.open_page(NotebookPage.LOG)
         except Exception as e:
             dialog = ExceptionDialog(self, str(e))
+            dialog.show_all()
             dialog.run()
 
     def select_colorized(self) -> None:
@@ -296,6 +297,7 @@ class Controller(GObject.GObject):
                 write_diagnostic(self.prefs.paths.config, file)
             except Exception as e:
                 dialog = ExceptionDialog(self, str(e))
+                dialog.show_all()
                 dialog.run()
 
     def update_steam_api_key(self, text: str) -> None:
