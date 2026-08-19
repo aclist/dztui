@@ -11,6 +11,7 @@ from dzgui.util.keys import is_ctrl_mask
 from dzgui.util.localize import number
 from dzgui.strings.server_mods import checkmark
 from dzgui.strings import preconnect
+from dzgui.views.dialogs.generic import DebugDialog
 from dzgui.views.components.frame import HeadingFrame
 from dzgui.views.trees.tree_server_mods import ServerModTreeView
 
@@ -120,6 +121,12 @@ class PreConnectionAssistant(Gtk.Box):
             spacing=5,
         )
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+        # TODO:
+        if self.controller.get_prefs().is_debug:
+            # TODO: strings
+            debug = Gtk.Button(label="Debug", halign=Gtk.Align.START)
+            debug.connect("clicked", self._on_debug_clicked)
+            box.add(debug)
         for button in self.back, self.ok, self.connect_last:
             box.add(button)
         self.button_box.add(box)
@@ -220,6 +227,11 @@ class PreConnectionAssistant(Gtk.Box):
 
     def _on_connect_last_clicked(self, button: Gtk.Button) -> None:
         self.controller.update_and_load_to_menu()
+
+    def _on_debug_clicked(self, button: Gtk.Button) -> None:
+        args = self.controller.get_debug_args()
+        d = DebugDialog(self.controller, args)
+        d.run()
 
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
         self.controller.update_and_connect()

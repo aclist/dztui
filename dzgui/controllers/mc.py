@@ -526,6 +526,9 @@ class Controller(GObject.GObject):
         ind = self.config_man.get_start_tab()
         self.get_servers().notebook.set_current_page(ind)
 
+    def get_debug_args(self) -> str:
+        return self.connection_man.get_debug_args()
+
     def update_and_load_to_menu(self) -> None:
         self.connection_man.update_and_connect(menu_only=True)
 
