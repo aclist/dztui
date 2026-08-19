@@ -221,19 +221,19 @@ class DebugDialog(TextBufferDialog):
             text=debug,
         )
         scrollable = Gtk.ScrolledWindow(
-            propagate_natural_height=True, max_content_height=500
+            propagate_natural_height=False,
+            min_content_height=200,
+            max_content_height=200,
+            margin_bottom=10,
         )
-        box = Gtk.Box(hexpand=True, vexpand=True, orientation=Gtk.Orientation.VERTICAL)
         textview = Gtk.TextView(
-            wrap_mode=Gtk.WrapMode.WORD, editable=False, left_margin=10, right_margin=10
+            wrap_mode=Gtk.WrapMode.CHAR, editable=False, left_margin=10, right_margin=10
         )
         textview.set_buffer(Gtk.TextBuffer(text=debug))
-        box.pack_start(textview, EXPAND, FILL, 10)
-        scrollable.add(box)
+        scrollable.add(textview)
         content = self.get_content_area()
         content.set_spacing(0)
         content.add(scrollable)
-        self.show_all()
 
 
 class ExceptionDialog(TextBufferDialog):
@@ -308,15 +308,13 @@ class ExceptionDialog(TextBufferDialog):
         content.set_spacing(0)
         content.add(scrollable)
 
-        self.show_all()
-
     def _on_page_changed(
         self, notebook: Gtk.Notebook, child: Gtk.Box | Gtk.ScrolledWindow, index: int
     ) -> None:
         if child == self.error_details:
-            self.error_details.set_propagate_natural_height(True)
+            GLib.idle_add(self.error_details.set_propagate_natural_height, True)
         else:
-            self.error_details.set_propagate_natural_height(False)
+            GLib.idle_add(self.error_details.set_propagate_natural_height, False)
 
     def set_secondary_text(self, text: str) -> None:
         self.details_buffer.set_text(text)
