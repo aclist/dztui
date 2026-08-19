@@ -169,6 +169,66 @@ class QuitDialog(GenericDialog):
         self.controller.save_res_and_quit()
 
 
+class TextBufferDialog(GenericDialog):
+    def __init__(
+        self, controller: "Controller", heading: str, secondary: str, text: str
+    ):
+        super().__init__(
+            controller=controller,
+            text=heading,
+            mtype=Gtk.MessageType.INFO,
+            buttons=Gtk.ButtonsType.NONE,
+            secondary=secondary,
+        )
+        self.text = text
+        copy_button = ClipboardButton(controller, self.get_text)
+        self.add_action_widget(copy_button, Gtk.ResponseType.NONE)
+        self.add_button("OK", Gtk.ResponseType.OK)
+        self.connect("response", self._on_response)
+
+    def get_text(self) -> str:
+        return self.text
+
+    def _on_response(
+        self, dialog: Self, response: Gtk.ResponseType
+    ) -> None | Literal[True]:
+        match response:
+            case Gtk.ResponseType.OK:
+                self.destroy()
+                return None
+            case Gtk.ResponseType.NONE:
+                return True
+            case Gtk.ResponseType.DELETE_EVENT:
+                self.destroy()
+                return None
+            case _:
+                return None
+
+
+class DebugDialog(TextBufferDialog):
+    def __init__(self, controller: "Controller", debug: str):
+        super().__init__(
+            controller=controller,
+            heading="Debug",
+            secondary="Debug args",
+            text=debug,
+        )
+        scrollable = Gtk.ScrolledWindow(
+            propagate_natural_height=True, max_content_height=500
+        )
+        box = Gtk.Box(hexpand=True, vexpand=True, orientation=Gtk.Orientation.VERTICAL)
+        textview = Gtk.TextView(
+            wrap_mode=Gtk.WrapMode.WORD, editable=False, left_margin=10, right_margin=10
+        )
+        textview.set_buffer(Gtk.TextBuffer(text=debug))
+        box.pack_start(textview, EXPAND, FILL, 10)
+        scrollable.add(box)
+        content = self.get_content_area()
+        content.set_spacing(0)
+        content.add(scrollable)
+        self.show_all()
+
+
 class ExceptionDialog(GenericDialog):
     """
     Error dialog with rich traceback.
