@@ -3,8 +3,10 @@ import sys
 import warnings
 
 from dzgui.const.constants import APP_NAME
+
 from dzgui.init.libgi import test_libgi_missing
 from dzgui.init.prefix import get_version
+from dzgui.util.deck import is_steam_deck
 from dzgui.util.map_count import set_map_count
 from dzgui.util.strings import flags
 
@@ -26,7 +28,8 @@ def main() -> None:
         sys.exit(0)
     if args.uninstall is True:
         paths = get_xdg_paths()
-        UninstallWizard(False, paths)
+        _is_steam_deck = is_steam_deck()
+        UninstallWizard(_is_steam_deck, paths)
         sys.exit(0)
     if args.debug is True:
         warnings.filterwarnings("default", category=DeprecationWarning)
