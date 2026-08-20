@@ -16,6 +16,7 @@ from dzgui.const.constants import (
     APPID_DAYZ_EXP,
     APP_NAME,
     DAYZ_BINARY,
+    DAYZ_LAUNCHER,
     DEBIAN_STEAM_PATH,
     DEFAULT_STEAM_PATH,
     FLATPAK_STEAM_PATH,
@@ -382,14 +383,14 @@ def get_client_allows_downloads(path: Path) -> bool:
 def is_dayz_running() -> bool:
     """Subprocesses spawned from Steam will not show up in regular process tree"""
     procs = []
-    substring = DAYZ_BINARY
+    substring = [DAYZ_BINARY, DAYZ_LAUNCHER]
     for proc in psutil.process_iter():
         try:
             procs.append(proc.cmdline())
         except Exception as e:
             logger.warning(e)
             continue
-    return any(substring in item for sublist in procs for item in sublist)
+    return any(s in item for sublist in procs for item in sublist for s in substring)
 
 
 def get_app_path(folders_path: Path, appid: int) -> Path:
