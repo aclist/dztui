@@ -149,9 +149,6 @@ class UninstallPage(ScrolledWizardPage):
         self.start_menu_box = CheckboxWithPath(
             uninstall.start_menu_label, uninstall.start_menu_details, shortcut
         )
-        self.share_box = CheckboxWithPath(
-            uninstall.desktop_label, uninstall.desktop_details, desktop
-        )
         self.state_box = CheckboxWithPath(
             uninstall.state_label, uninstall.state_details, state
         )
@@ -202,6 +199,7 @@ class UninstallPage(ScrolledWizardPage):
         try:
             shortcuts = Shortcuts(self.steam_path)
             shortcuts.delete_shortcut(self.share)
+            shutil.rmtree(self.share)
         except Exception as e:
             print(format_exception(e))
 
