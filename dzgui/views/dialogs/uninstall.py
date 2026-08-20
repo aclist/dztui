@@ -2,7 +2,7 @@ import os
 import subprocess
 
 from pathlib import Path
-from typing import Self, TYPE_CHECKING
+from typing import Self
 
 from dzgui.api.shortcuts import Shortcuts
 from dzgui.const.constants import APP_NAME
