@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from importlib import resources
 
 from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, CHANGELOG_PATH
+from dzgui.strings import changelog as clog
 from dzgui.util.strings import missing_changelog
 from dzgui.util.format import format_pango
 from dzgui.views.mixins.help_menu_mixin import HelpMenuMixin
@@ -32,7 +33,6 @@ class Changelog(HelpMenuMixin, ScrollableMixin, Gtk.ScrolledWindow):  # type: ig
             logger.critical(e)
             changelog = missing_changelog
 
-        # FIXME: wrap long text
         self.controller = controller
         self.box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL, spacing=5, margin_top=10
@@ -40,7 +40,7 @@ class Changelog(HelpMenuMixin, ScrollableMixin, Gtk.ScrolledWindow):  # type: ig
         self.add(self.box)
 
         expand_all = Gtk.Button(
-            label="Expand all", halign=Gtk.Align.START, margin_start=20
+            label=clog.expand_all, halign=Gtk.Align.START, margin_start=20
         )
         expand_all.connect("clicked", self._on_expand_all_clicked)
         self.box.add(expand_all)
@@ -63,7 +63,7 @@ class Changelog(HelpMenuMixin, ScrollableMixin, Gtk.ScrolledWindow):  # type: ig
             if expander.get_expanded() == self.expanded:
                 continue
             expander.activate()
-        label = "Collapse all" if self.expanded else "Expand all"
+        label = clog.collapse_all if self.expanded else clog.expand_all
         button.set_label(label)
 
     def grab_content_area(self) -> None:
