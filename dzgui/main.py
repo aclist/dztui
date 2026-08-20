@@ -8,21 +8,16 @@ from dzgui.init.prefix import get_version
 from dzgui.util.map_count import set_map_count
 from dzgui.util.strings import flags
 
+from dzgui.views.dialogs.uninstall import UninstallWizard
+from dzgui.config.xdg import get_xdg_paths
+
 parser = argparse.ArgumentParser(description=flags.description)
-parser.add_argument("-d", "--debug", action="store_true", help=flags.debug)
-parser.add_argument("-m", "--map", action="store_true", help=flags.map_count)
-parser.add_argument("-u", "--uninstall", action="store_true", help=flags.uninstall)
-parser.add_argument("-v", "--version", action="store_true", help=flags.version)
+group = parser.add_mutually_exclusive_group()
+group.add_argument("-d", "--debug", action="store_true", help=flags.debug)
+group.add_argument("-m", "--map", action="store_true", help=flags.map_count)
+group.add_argument("-u", "--uninstall", action="store_true", help=flags.uninstall)
+group.add_argument("-v", "--version", action="store_true", help=flags.version)
 args = parser.parse_args()
-
-
-def uninstall() -> None:
-    # TODO: uninstall data files (-u)
-    # -u removes state, log, freedesktop
-    # XDG_SHARE_HOME/dzgui
-    # XDG_STATE_HOME/dzgui
-    # XDG_DATA_HOME/dzgui
-    pass
 
 
 def main() -> None:
@@ -31,7 +26,8 @@ def main() -> None:
         print(get_version())
         sys.exit(0)
     if args.uninstall is True:
-        uninstall()
+        paths = get_xdg_paths()
+        UninstallWizard(False, paths)
         sys.exit(0)
     if args.debug is True:
         warnings.filterwarnings("default", category=DeprecationWarning)

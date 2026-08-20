@@ -99,6 +99,8 @@ class ScrolledWizardPage(Gtk.ScrolledWindow):
         self.box.pack_start(image, expand=False, fill=True, padding=0)
 
         self.add(self.box)
+        self.box.pack_start(self.heading, expand=False, fill=True, padding=0)
+        self.box.pack_start(self.description, expand=False, fill=True, padding=0)
 
     def get_page_type(self) -> Gtk.AssistantPageType:
         return self.page_type
@@ -123,12 +125,9 @@ class EnumeratedWizardPage(ScrolledWizardPage):
     def __init__(self, enum: PageNum, heading: str, description: str) -> None:
         super().__init__(heading=heading, description=description)
 
-
         self.enum = enum
         self.prog = Progress()
         self.box.pack_end(self.prog, expand=False, fill=False, padding=0)
-        self.box.pack_start(self.heading, expand=False, fill=True, padding=0)
-        self.box.pack_start(self.description, expand=False, fill=True, padding=0)
 
     def get_enum(self) -> PageNum:
         return self.enum
@@ -541,7 +540,9 @@ class Assistant(Gtk.Assistant):
             return
         self.set_page_complete(page, True)
 
-    def _add_page(self, page: EnumeratedWizardPage, ptype: Gtk.AssistantPageType) -> None:
+    def _add_page(
+        self, page: EnumeratedWizardPage, ptype: Gtk.AssistantPageType
+    ) -> None:
         self.append_page(page)
         self.set_page_type(page, ptype)
         self.set_page_title(page, page.get_title())
@@ -567,14 +568,20 @@ class CheckboxWithLabel(Gtk.Box):
     def __init__(self, text: str, blurb_text: str) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=5)
 
+        self.indent = 20
         self.button = Gtk.CheckButton(label=text)
         self.button.set_active(True)
-        label = Gtk.Label(label="", halign=Gtk.Align.START, margin_start=20)
+        label = Gtk.Label(label="", halign=Gtk.Align.START, margin_start=self.indent)
+
         wrapped = textwrap.fill(blurb_text, width=100)
         label.set_markup(f"- {wrapped}")
 
         for el in self.button, label:
             self.add(el)
+
+    def indent_below(self, widget: Gtk.Widget) -> None:
+        widget.set_margin_start(self.indent)
+        self.add(widget)
 
     def get_checkbox(self) -> Gtk.CheckButton:
         return self.button
