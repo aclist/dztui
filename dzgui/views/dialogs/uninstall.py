@@ -149,9 +149,6 @@ class UninstallPage(ScrolledWizardPage):
         self.start_menu_box = CheckboxWithPath(
             uninstall.start_menu_label, uninstall.start_menu_details, shortcut
         )
-        self.share_box = CheckboxWithPath(
-            uninstall.desktop_label, uninstall.desktop_details, desktop
-        )
         self.state_box = CheckboxWithPath(
             uninstall.state_label, uninstall.state_details, state
         )
@@ -202,14 +199,14 @@ class UninstallPage(ScrolledWizardPage):
         try:
             shortcuts = Shortcuts(self.steam_path)
             shortcuts.delete_shortcut(self.share)
+            shutil.rmtree(self.share)
         except Exception as e:
             print(format_exception(e))
 
     def wipe_pyapp(self) -> None:
         if self.pyapp is None:
             return
-        res = subprocess.run([self.pyapp, "self", "remove"])
-        print(res)
+        subprocess.run([self.pyapp, "self", "remove"])
 
     def uninstall(self) -> None:
         for box in self.boxes:
@@ -224,7 +221,6 @@ class UninstallWizard(Gtk.Application):
     def __init__(self, is_deck: bool, paths: dict[str, str]) -> None:
         super().__init__()
         config = Path(paths["XDG_CONFIG_HOME"])
-        # TODO: tests
         if not config.is_dir() or not config.joinpath("config.json").is_file():
             print(uninstall.not_installed)
             return
