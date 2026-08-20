@@ -208,8 +208,7 @@ class UninstallPage(ScrolledWizardPage):
     def wipe_pyapp(self) -> None:
         if self.pyapp is None:
             return
-        res = subprocess.run([self.pyapp, "self", "remove"])
-        print(res)
+        subprocess.run([self.pyapp, "self", "remove"])
 
     def uninstall(self) -> None:
         for box in self.boxes:
@@ -224,7 +223,6 @@ class UninstallWizard(Gtk.Application):
     def __init__(self, is_deck: bool, paths: dict[str, str]) -> None:
         super().__init__()
         config = Path(paths["XDG_CONFIG_HOME"])
-        # TODO: tests
         if not config.is_dir() or not config.joinpath("config.json").is_file():
             print(uninstall.not_installed)
             return
