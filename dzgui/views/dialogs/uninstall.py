@@ -132,7 +132,11 @@ class UninstallPage(ScrolledWizardPage):
 
         self.boxes: list[CheckboxWithPath] = []
         self.checks_area = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL, spacing=20, margin_top=20
+            orientation=Gtk.Orientation.VERTICAL,
+            halign=Gtk.Align.CENTER,
+            spacing=20,
+            margin_top=20,
+            margin_bottom=20,
         )
         self.config_box = CheckboxWithPath(
             uninstall.config_label, uninstall.config_details, config, active=False
