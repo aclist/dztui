@@ -12,6 +12,7 @@ APPNAME_DAYZ = "DayZ"
 APPNAME_DAYZ_EXP = "DayZ Exp"
 APPNAME_DAYZ_EXP_HUMAN = "DayZ Experimental"
 DAYZ_BINARY = "DayZ_x64.exe"
+DAYZ_LAUNCHER = "DayZLauncher.exe"
 
 LIBRARYFOLDERS_PATH = "steamapps/libraryfolders.vdf"
 WORKSHOP_PATH = "steamapps/workshop/content/" + str(APPID_DAYZ)
