@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 
 from pathlib import Path
@@ -9,6 +10,7 @@ from dzgui.const.constants import APP_NAME
 from dzgui.strings import uninstall
 from dzgui.util._json import read_json
 from dzgui.util.css import load_css
+from dzgui.util.format import format_exception
 from dzgui.views.components.box import HBox
 from dzgui.views.dialogs.wizard import ScrolledWizardPage, CheckboxWithLabel
 
@@ -179,27 +181,29 @@ class UninstallPage(ScrolledWizardPage):
             self.steam_path = Path(steam)
             return Path(steam)
         except Exception as e:
-            print(e)
+            print(format_exception(e))
             return None
 
     def wipe_conf_file(self, box: CheckboxWithPath) -> None:
         if box.get_active():
             path = box.get_conf_path()
             try:
-                # TODO:
-                # path.unlink()
+                if path.is_dir():
+                    shutil.rmtree(path)
+                else:
+                    path.unlink()
                 print(f"Deleted '{path}'")
             except Exception as e:
-                print(e)
+                print(format_exception(e))
 
     def wipe_steam_shortcut(self) -> None:
-        # TODO:
-        pass
-        # try:
-        #     shortcuts = Shortcuts(self.steam_path)
-        #     shortcuts.delete_shortcut(self.share)
-        # except Exception as e:
-        #     print(e)
+        if self.steam_path is None:
+            return
+        try:
+            shortcuts = Shortcuts(self.steam_path)
+            shortcuts.delete_shortcut(self.share)
+        except Exception as e:
+            print(format_exception(e))
 
     def wipe_pyapp(self) -> None:
         if self.pyapp is None:
@@ -212,8 +216,7 @@ class UninstallPage(ScrolledWizardPage):
             self.wipe_conf_file(box)
         if self.steam_box.get_active():
             self.wipe_steam_shortcut()
-        # TODO:
-        # self.wipe_pyapp()
+        self.wipe_pyapp()
         pass
 
 

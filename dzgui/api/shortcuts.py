@@ -161,9 +161,10 @@ class Shortcuts:
         return NEW_ENTRY
 
     def delete_shortcut(self, start_path: Path) -> None:
-        for s in self.shortcuts["shortcuts"]:
-            if self.shortcuts[s]["StartDir"] == str(start_path):
-                del self.shortcuts[s]
+        shortcuts = self.shortcuts["shortcuts"]
+        for s in shortcuts:
+            if shortcuts[s]["StartDir"] == str(start_path):
+                del shortcuts[s]
                 break
         self.save_shortcuts()
 
