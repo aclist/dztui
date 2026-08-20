@@ -1,6 +1,7 @@
 from typing import Literal, Self, TYPE_CHECKING
 
 from dzgui.const.constants import NO_EXPAND, NO_FILL, NO_PADDING, EXPAND, FILL
+from dzgui.strings import dialogs
 from dzgui.util import strings
 from dzgui.views.components.buttons import ClipboardButton
 
@@ -169,58 +170,30 @@ class QuitDialog(GenericDialog):
         self.controller.save_res_and_quit()
 
 
-class ExceptionDialog(GenericDialog):
-    """
-    Error dialog with rich traceback.
-    Usage:
-        try:
-            foo()
-        except Exception:
-            trace = traceback.format_exc()
-            dialog = ExceptionDialog(Controller, trace)
-            dialog.run()
-    """
-
-    def __init__(self, controller: "Controller", trace: str):
+class TextBufferDialog(GenericDialog):
+    def __init__(
+        self,
+        controller: "Controller",
+        mtype: Gtk.MessageType,
+        heading: str,
+        secondary: str,
+        text: str,
+    ):
         super().__init__(
             controller=controller,
-            text=strings.error_heading,
-            mtype=Gtk.MessageType.ERROR,
+            text=heading,
+            mtype=mtype,
             buttons=Gtk.ButtonsType.NONE,
-            secondary=strings.something_wrong,
+            secondary=secondary,
         )
-
-        self.trace = trace
-        # NOTE: box expands to end of content area
-        scrollable = Gtk.ScrolledWindow(
-            propagate_natural_height=True, max_content_height=500
-        )
-        box = Gtk.Box(hexpand=True, vexpand=True, orientation=Gtk.Orientation.VERTICAL)
-        # TODO: wrap/truncate long messages
-        textview = Gtk.TextView(
-            wrap_mode=Gtk.WrapMode.WORD, editable=False, left_margin=10, right_margin=10
-        )
-        textview.set_buffer(Gtk.TextBuffer(text=self.trace))
-        box.pack_start(textview, EXPAND, FILL, 10)
-        scrollable.add(box)
-
-        content = self.get_content_area()
-        content.set_spacing(0)
-        # TODO: padding around top of content area when traceback is long
-        content.add(scrollable)
-
-        copy_button = ClipboardButton(controller, self.get_trace)
+        self.text = text
+        copy_button = ClipboardButton(controller, self.get_text)
         self.add_action_widget(copy_button, Gtk.ResponseType.NONE)
         self.add_button("OK", Gtk.ResponseType.OK)
-
-        self.show_all()
-        self.ok = self.get_widget_for_response(Gtk.ResponseType.OK)
-        if self.ok is not None:
-            self.ok.grab_focus()
         self.connect("response", self._on_response)
 
-    def get_trace(self) -> str:
-        return self.trace
+    def get_text(self) -> str:
+        return self.text
 
     def _on_response(
         self, dialog: Self, response: Gtk.ResponseType
@@ -236,3 +209,114 @@ class ExceptionDialog(GenericDialog):
                 return None
             case _:
                 return None
+
+
+class DebugDialog(TextBufferDialog):
+    def __init__(self, controller: "Controller", debug: str):
+        super().__init__(
+            controller=controller,
+            mtype=Gtk.MessageType.INFO,
+            heading=dialogs.debug_heading,
+            secondary=dialogs.debug_secondary,
+            text=debug,
+        )
+        scrollable = Gtk.ScrolledWindow(
+            propagate_natural_height=False,
+            min_content_height=200,
+            max_content_height=200,
+            margin_bottom=10,
+        )
+        textview = Gtk.TextView(
+            wrap_mode=Gtk.WrapMode.CHAR, editable=False, left_margin=10, right_margin=10
+        )
+        textview.set_buffer(Gtk.TextBuffer(text=debug))
+        scrollable.add(textview)
+        content = self.get_content_area()
+        content.set_spacing(0)
+        content.add(scrollable)
+
+
+class ExceptionDialog(TextBufferDialog):
+    """
+    Error dialog with rich traceback.
+    Usage:
+        try:
+            foo()
+        except Exception:
+            trace = traceback.format_exc()
+            dialog = ExceptionDialog(Controller, trace)
+            dialog.show_all()
+            dialog.run()
+    """
+
+    def __init__(self, controller: "Controller", trace: str):
+        super().__init__(
+            controller=controller,
+            heading=strings.error_heading,
+            secondary=strings.something_wrong,
+            text=trace,
+            mtype=Gtk.MessageType.ERROR,
+        )
+
+        # NOTE: box expands to end of content area
+        scrollable = Gtk.ScrolledWindow(
+            propagate_natural_height=True, max_content_height=500
+        )
+        box = Gtk.Box(hexpand=True, vexpand=True, orientation=Gtk.Orientation.VERTICAL)
+        textview = Gtk.TextView(
+            wrap_mode=Gtk.WrapMode.WORD,
+            editable=False,
+            left_margin=10,
+            right_margin=10,
+            top_margin=15,
+            bottom_margin=10,
+        )
+        textview.set_buffer(Gtk.TextBuffer(text=trace))
+        box.pack_start(textview, EXPAND, FILL, 0)
+
+        self.error_details = Gtk.ScrolledWindow(
+            overlay_scrolling=False,
+            max_content_height=150,
+            propagate_natural_height=False,
+        )
+        details_box = Gtk.Box(
+            hexpand=True,
+            vexpand=True,
+            margin_right=5,
+            orientation=Gtk.Orientation.VERTICAL,
+        )
+
+        self.details_buffer = Gtk.TextBuffer()
+        details_textview = Gtk.TextView(
+            wrap_mode=Gtk.WrapMode.WORD_CHAR,
+            editable=False,
+            left_margin=10,
+            right_margin=10,
+            top_margin=15,
+        )
+
+        details_textview.set_buffer(self.details_buffer)
+        details_box.pack_start(details_textview, EXPAND, FILL, 10)
+        self.error_details.add(details_box)
+
+        self.error_notebook = Gtk.Notebook(show_tabs=False, margin_bottom=15)
+        self.error_notebook.append_page(box, Gtk.Label(label="Error"))
+        self.error_notebook.append_page(self.error_details, Gtk.Label(label="Details"))
+        self.error_notebook.connect("switch-page", self._on_page_changed)
+        scrollable.add(self.error_notebook)
+
+        content = self.get_content_area()
+        content.set_spacing(0)
+        content.add(scrollable)
+
+    def _on_page_changed(
+        self, notebook: Gtk.Notebook, child: Gtk.Box | Gtk.ScrolledWindow, index: int
+    ) -> None:
+        if child == self.error_details:
+            GLib.idle_add(self.error_details.set_propagate_natural_height, True)
+        else:
+            GLib.idle_add(self.error_details.set_propagate_natural_height, False)
+
+    def set_details_buffer(self, text: str) -> None:
+        self.details_buffer.set_text(text)
+        self.error_notebook.set_show_tabs(True)

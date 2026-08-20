@@ -178,8 +178,8 @@ class ConfigManager:
             logger.critical(e)
             trace = traceback.format_exc()
             dialog = ExceptionDialog(self.controller, trace)
+            dialog.show_all()
             dialog.run()
-            raise e
 
     def save_res_and_quit(self, tv: "ServerTreeView", window: "OuterWindow") -> None:
         columns = tv.get_columns()

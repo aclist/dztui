@@ -114,9 +114,6 @@ class Controller(GObject.GObject):
     def query_config(self, key: Preferences) -> Any:
         return self.config_man.lookup(key)
 
-    def is_auto_install(self) -> bool:
-        return bool(self.query_config(Preferences.INSTALL))
-
     def suppress_signal(
         self, owner: Any, child: Any, func_name: str, state: bool
     ) -> None:
@@ -266,6 +263,7 @@ class Controller(GObject.GObject):
             self.open_page(NotebookPage.LOG)
         except Exception as e:
             dialog = ExceptionDialog(self, str(e))
+            dialog.show_all()
             dialog.run()
 
     def select_colorized(self) -> None:
@@ -299,6 +297,7 @@ class Controller(GObject.GObject):
                 write_diagnostic(self.prefs.paths.config, file)
             except Exception as e:
                 dialog = ExceptionDialog(self, str(e))
+                dialog.show_all()
                 dialog.run()
 
     def update_steam_api_key(self, text: str) -> None:
@@ -525,6 +524,9 @@ class Controller(GObject.GObject):
     def set_start_tab(self) -> None:
         ind = self.config_man.get_start_tab()
         self.get_servers().notebook.set_current_page(ind)
+
+    def get_debug_args(self) -> str:
+        return self.connection_man.get_debug_args()
 
     def update_and_load_to_menu(self) -> None:
         self.connection_man.update_and_connect(menu_only=True)

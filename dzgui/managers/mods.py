@@ -22,9 +22,7 @@ from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManage
 from dzgui.model.model_factory import FastInsertListStore, ModelFactory
 from dzgui.strings import dialogs
 from dzgui.util.format import format_mods
-from dzgui.util.strings import server_timeout
 from dzgui.util.symlink import rebuild_symlinks
-from dzgui.views.dialogs.generic import ExceptionDialog
 
 
 import dzgui.api.pefile as PeFile
@@ -212,10 +210,6 @@ class ModManager:
         stale = find_stale_mods(self.prefs.paths.config)
         func = StoredFunc(self._on_stale_mods_found, stale)
         self.thread_man.set_cleanup_func(func)
-
-    def _server_timeout(self) -> None:
-        dialog = ExceptionDialog(self.controller, server_timeout)
-        dialog.run()
 
     def select_colorized(self) -> None:
         model = self.treeview.get_model()

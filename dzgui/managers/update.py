@@ -64,4 +64,5 @@ class UpdateManager:
 
     def _on_update_failure(self, msg: str) -> None:
         dialog = ExceptionDialog(self.controller, msg)
+        dialog.show_all()
         dialog.run()

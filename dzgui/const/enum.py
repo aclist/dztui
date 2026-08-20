@@ -73,12 +73,6 @@ class Preferences(EnumWithAttrs):
     NAME = {
         "key": "name",
     }
-    INSTALL = {
-        "key": "auto_install",
-    }
-    DEBUG = {
-        "key": "debug",
-    }
     DEFAULT = {
         "key": "default_steam_path",
     }
@@ -90,9 +84,6 @@ class Preferences(EnumWithAttrs):
     }
     IP_LIST = {
         "key": "ip_list",
-    }
-    BRANCH = {
-        "key": "branch",
     }
     START_TAB = {
         "key": "start_tab",
