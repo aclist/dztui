@@ -21,7 +21,6 @@ args = parser.parse_args()
 
 
 def main() -> None:
-    # TODO: isolate single flags
     if args.version is True:
         print(get_version())
         sys.exit(0)
