@@ -2,9 +2,9 @@ pg1_title = "Choose uninstall targets"
 pg1_heading = "Choose uninstall targets"
 pg1_blurb = "Here you can choose which DZGUI configuration/state files to remove. "
 
-pg2_title = "Complete"
+pg2_title = "Uninstall complete"
 pg2_heading = "Uninstall complete"
-pg2_blurb = "Finished removing the selected files. See the system log for errors."
+pg2_blurb = "Finished removing the selected files. See the console for any errors."
 
 config_label = "Configuration files"
 config_details = (
