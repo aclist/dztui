@@ -104,20 +104,11 @@ class ContextMixin(TreeView):
             return False
         menu = self.context_menu
         children = menu.get_children()
-        sel = menu.get_selected_item()
-        for i, child in enumerate(children):
-            if sel is child:
-                ind = i
-                break
 
         match event.keyval:
             case Gdk.KEY_j:
-                if ind + 1 > len(children) - 1:
-                    return False
                 menu.emit("move-current", Gtk.MenuDirectionType.NEXT)
             case Gdk.KEY_k:
-                if ind - 1 < 0:
-                    return False
                 menu.emit("move-current", Gtk.MenuDirectionType.PREV)
             case Gdk.KEY_g:
                 menu.select_item(children[0])
