@@ -3,6 +3,8 @@
 ## [7.0.0] Unreleased
 ### Added
 - Setup wizard
+- Uninstall wizard
+- Descriptive details panel to certain error dialogs
 - Changelog text wrapping and formatting
 - Changelog ships with source
 - Documentation ships with source
@@ -24,6 +26,7 @@
 - Set favorite server from tables
 - Detailed/copyable trace in critical error dialogs
 - Visual icons
+- Unset favorite server button
 - Integrated server notebook
 - Propagate width changes to all tables
 - Remember tree position in menus
@@ -45,11 +48,17 @@
 - Generate Steam shortcuts and cover art
 - Warn user if background downloads are disabled
 - Dynamic copy button
+- Update map count (-u flag)
+- Filter button tooltips
+- Expand/collapse changelog versions
 
 ### Changed
 - Conform to PEP 440 versioning for beta versions
+- Enforce fullscreen mode on Steam Deck
 - Reduce padding on keys button
 - Boldface breadcrumbs
+- Changed some dialog error messages from popups to popovers
+- Changed how filter buttons are packed in sidebar
 - Bold labels inside frames
 - Sidebar buttons do not steal focus
 - Copy IP copies IP:queryport only instead of IP:gameport:queryport, mimics syntax needed by add by ip method
@@ -62,16 +71,20 @@
 - Reduce size of geolocation DB on disk (~100MB)
 - Enable LAN page Empty/Full filters on first run of app
 - Propagate subscribed mods to Steam client
+- Make j/k keys in context menus follow same wraparound logic as down arrow/up arrow
 
 ### Dropped
 - Battlemetrics API support
-- Debug mode
+- Unused metadata from system log files
 - Branch switching
 - Manual mod install mode (describe rationale)
 - Force update mods
 
 ### Fixed
 - Longstanding issue with left clicks not registering as tree selection changes after spamming keyboard input
+- In-game time field missing certain ranges of time at night
+- Wrap long entries in changelog
+- Certain server descriptions with special characters not rendering correctly
 - Center server title text on server dialogs
 - Rare segfaults when changing maps (threading)
 - Moved dialogs out of threads

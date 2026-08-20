@@ -160,6 +160,14 @@ class Shortcuts:
         NEW_ENTRY["tags"] = {}
         return NEW_ENTRY
 
+    def delete_shortcut(self, start_path: Path) -> None:
+        shortcuts = self.shortcuts["shortcuts"]
+        for s in shortcuts:
+            if shortcuts[s]["StartDir"] == str(start_path):
+                del shortcuts[s]
+                break
+        self.save_shortcuts()
+
     def save_shortcuts(self) -> None:
         try:
             backup = self.shortcuts_path.with_suffix(".vdf.bak")

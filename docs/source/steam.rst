@@ -1,6 +1,10 @@
 Steam integration
 ====================
 
+.. note::
+
+   In :doc:`DZGUI 7 <dzgui7>`, Steam shortcut creation and cover art setup are handled automatically during setup. You can skip this step unless you are using DZGUI 6.
+
 DZGUI can be added to Steam as a "non-Steam game" in order to facilitate integration with Steam Deck or desktop environments.
 
 First, launch Steam in the **Large** (default) view.
@@ -74,7 +78,7 @@ The final result will create box art looking like the above.
    :scale: 100%
    :alt: Adding a non-Steam game
 
-Next, right-click the DZGUI entry in your Library and select **Properties** to open the properties dialog. Next to the **Shortcut** field, you will see a small square box which represents the game’s 
+Next, right-click the DZGUI entry in your Library and select **Properties** to open the properties dialog. Next to the **Shortcut** field, you will see a small square box which represents the game’s
 icon. Click this to open a file explorer, navigate to ``$HOME/.local/share/dzgui``, and select ``icon.png``. This will add a small icon to the list view.
 
 Finally, after you launch DZGUI for the first time, you should quit the application and return to the Library view. Select the **Recent Games** dropdown on the right-hand side.

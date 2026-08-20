@@ -146,6 +146,10 @@ class Emitter(GObject.GObject):
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def api_change_successful(self) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
     def already_saved_server(self) -> None:
         pass
 

@@ -16,6 +16,7 @@ from dzgui.const.constants import (
     APPID_DAYZ_EXP,
     APP_NAME,
     DAYZ_BINARY,
+    DAYZ_LAUNCHER,
     DEBIAN_STEAM_PATH,
     DEFAULT_STEAM_PATH,
     FLATPAK_STEAM_PATH,
@@ -149,6 +150,22 @@ def get_remote_signatures(mods: list[str]) -> list[tuple[str, str, int, int]]:
         hashes.append((title, _id, time, size))
     return hashes
 
+
+def connect_debug(client: str, addr: str, appid: int, name: str, mods: list[str]) -> str:
+    concat = concat_mods(mods)
+    client_args = concat_bash_args(client)
+    params = [
+        "-applaunch",
+        str(appid),
+        f"-connect={addr}",
+        "-nolauncher",
+        "-nosplash",
+        "-skipintro",
+        f"-name={name}",
+        f"-mod={concat}",
+    ]
+    client_args.extend(params)
+    return " ".join(client_args)
 
 # TODO: set config to name=user, use official server and no mods,
 # ensure that formatted string is identical to fixture with same hash
@@ -382,14 +399,14 @@ def get_client_allows_downloads(path: Path) -> bool:
 def is_dayz_running() -> bool:
     """Subprocesses spawned from Steam will not show up in regular process tree"""
     procs = []
-    substring = DAYZ_BINARY
+    substring = [DAYZ_BINARY, DAYZ_LAUNCHER]
     for proc in psutil.process_iter():
         try:
             procs.append(proc.cmdline())
         except Exception as e:
             logger.warning(e)
             continue
-    return any(substring in item for sublist in procs for item in sublist)
+    return any(s in item for sublist in procs for item in sublist for s in substring)
 
 
 def get_app_path(folders_path: Path, appid: int) -> Path:

@@ -14,7 +14,7 @@ from dzgui.const.constants import (
 )
 from dzgui.const.enum import FilterMode, Preferences, ServerTab
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
-from dzgui.strings import dialogs
+from dzgui.strings import dialogs, kb
 from dzgui.util.strings import server_timeout, dialog
 from dzgui.views.dialogs.generic import ExceptionDialog
 
@@ -405,6 +405,7 @@ class ServerModelManager:
 
         if show_dialog:
             dialog = ExceptionDialog(self.controller, dialogs.load_error_lan)
+            dialog.show_all()
             dialog.run()
 
     def _cleanup_on_failure(self, show_dialog: bool = True) -> None:
@@ -420,6 +421,8 @@ class ServerModelManager:
         # customize statusbar and dialog accordingly
         if show_dialog:
             dialog = ExceptionDialog(self.controller, server_timeout)
+            dialog.set_details_buffer(kb.DZG_006)
+            dialog.show_all()
             dialog.run()
 
     def _push_data(self, data: list[Any]) -> None:

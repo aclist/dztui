@@ -98,12 +98,13 @@ class ConfigManager:
             logger.critical(e)
             raise e
 
-    @call_on_thread(dialogs.checking_api)
-    def update_api_key(self, key: Preferences, text: str) -> None:
-        if key is Preferences.STEAM:
-            res = test_steam_api(text)
+    @call_on_thread(dialogs.checking_api, show_dialog=False)
+    def update_steam_api_key(self, text: str) -> None:
+        res = test_steam_api(text)
         if res is True:
-            self.update_config(key, text)
+            self.update_config(Preferences.STEAM, text)
+            func = StoredFunc(lambda: self.emitter.emit("api_change_successful"))
+            self.thread_man.set_cleanup_func(func)
         else:
             self.thread_man.set_cleanup_func(
                 StoredFunc(lambda: self.emitter.emit("api_change_failed"))
@@ -160,6 +161,13 @@ class ConfigManager:
         except Exception:
             return
 
+    def unset_fav(self) -> None:
+        try:
+            self.write_config(Preferences.FAV_LBL, "")
+            self.write_config(Preferences.FAV_SRV, "")
+        except Exception:
+            return
+
     def write_config(self, key: Preferences, value: str) -> None:
         try:
             real_key = self.enum_to_key(key)
@@ -170,8 +178,8 @@ class ConfigManager:
             logger.critical(e)
             trace = traceback.format_exc()
             dialog = ExceptionDialog(self.controller, trace)
+            dialog.show_all()
             dialog.run()
-            raise e
 
     def save_res_and_quit(self, tv: "ServerTreeView", window: "OuterWindow") -> None:
         columns = tv.get_columns()

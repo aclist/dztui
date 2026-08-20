@@ -6,6 +6,7 @@ from dzgui.strings import connect_panel
 from dzgui.util.keys import is_ctrl_mask
 from dzgui.views.components.buttons import (
     AddButton,
+    CloseButton,
     CopyIpButton,
     Icon,
     IconButton,
@@ -187,17 +188,27 @@ class FavPanel(Gtk.Frame):
         self.fav_button = SteamConnectButton()
         self.fav_button.connect("clicked", self._on_connect_clicked)
         self.copy_button = CopyIpButton(self.controller, self.get_fav_ip)
+
+        # TODO: strings
+        self.unset_button = CloseButton("Unset")
+        self.unset_button.connect("clicked", self._on_unset_clicked)
+
         if favorite is None:
             self.toggle_buttons(False)
 
         # NOTE: disable vscrollbar to prevent layout jumping behavior
-        scrollable_label = Gtk.ScrolledWindow(vscrollbar_policy=Gtk.PolicyType.NEVER)
-        scrollable_label.add(self.fav_label)
+        self.scrollable_label = Gtk.ScrolledWindow(
+            vscrollbar_policy=Gtk.PolicyType.NEVER, overlay_scrolling=False
+        )
+        self.scrollable_label.add(self.fav_label)
 
         grid = Gtk.Grid(margin=10, vexpand=False, column_spacing=15, row_spacing=5)
-        grid.attach(scrollable_label, 0, 0, 3, ROWS)
+        grid.attach(self.scrollable_label, 0, 0, 3, ROWS)
         grid.attach_next_to(
-            self.copy_button, scrollable_label, Gtk.PositionType.RIGHT, COLS, ROWS
+            self.unset_button, self.scrollable_label, Gtk.PositionType.RIGHT, COLS, ROWS
+        )
+        grid.attach_next_to(
+            self.copy_button, self.unset_button, Gtk.PositionType.RIGHT, COLS, ROWS
         )
         grid.attach_next_to(
             self.fav_button, self.copy_button, Gtk.PositionType.RIGHT, COLS, ROWS
@@ -205,8 +216,16 @@ class FavPanel(Gtk.Frame):
 
         self.add(grid)
 
+    def _on_unset_clicked(self, button: Gtk.Button) -> None:
+        try:
+            self.controller.unset_fav()
+        except Exception:
+            return
+        self.fav_label.set_text(connect_panel.favs_empty)
+        self.toggle_buttons(False)
+
     def toggle_buttons(self, state: bool) -> None:
-        for button in self.fav_button, self.copy_button:
+        for button in self.fav_button, self.copy_button, self.unset_button:
             button.set_sensitive(state)
 
     def _on_connect_clicked(self, button: Gtk.Button) -> None:

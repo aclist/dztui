@@ -69,8 +69,8 @@ class OuterWindow(Gtk.Window):
         self.show_all()
         css.load_css()
 
-        MainController.open_page(NotebookPage.SERVERS)
         MainController.set_start_tab()
+        MainController.open_page(NotebookPage.SERVERS)
         self.grid.hide_widgets_on_init()
 
         MainController.loaded = True

@@ -1,3 +1,4 @@
+import html
 from typing import Self, TYPE_CHECKING
 
 from dzgui.const.constants import EXPAND, FILL
@@ -65,6 +66,7 @@ class ServerDialog(GenericDialog):
 
 class ServerDetailsDialog(ServerDialog):
     def __init__(self, controller: "Controller", details: "Details"):
+        # TODO: server name should also be packed in details struct
         name = controller.get_server_name()
         super().__init__(controller, strings.server_details, name, menu=None)
 
@@ -109,7 +111,7 @@ class ServerDetailsDialog(ServerDialog):
         self.view.set_model(self.store)
         text = details.description
         text = format_hyperlinks(text)
-        self.description.set_markup(text)
+        self.description.set_markup(html.escape(text))
 
         self.show_all()
 

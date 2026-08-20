@@ -11,6 +11,7 @@ from dzgui.util.keys import is_ctrl_mask
 from dzgui.util.localize import number
 from dzgui.strings.server_mods import checkmark
 from dzgui.strings import preconnect
+from dzgui.views.dialogs.generic import DebugDialog
 from dzgui.views.components.frame import HeadingFrame
 from dzgui.views.trees.tree_server_mods import ServerModTreeView
 
@@ -120,6 +121,12 @@ class PreConnectionAssistant(Gtk.Box):
             spacing=5,
         )
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+
+        # NOTE: -d flag
+        if self.controller.get_prefs().is_debug:
+            debug = Gtk.Button(label=preconnect.debug, halign=Gtk.Align.START)
+            debug.connect("clicked", self._on_debug_clicked)
+            box.add(debug)
         for button in self.back, self.ok, self.connect_last:
             box.add(button)
         self.button_box.add(box)
@@ -150,8 +157,7 @@ class PreConnectionAssistant(Gtk.Box):
         self.tree_box.add(self.scrolled)
         self.tree_box.add(self.progress_box)
 
-        # TODO: strings
-        self.mods_placeholder = Placeholder("This server has no mods.")
+        self.mods_placeholder = Placeholder(preconnect.placeholder_no_mods)
         self.tree_box.add(self.mods_placeholder)
 
         self.tree_frame = HeadingFrame.new_with_widget_and_label(
@@ -161,8 +167,7 @@ class PreConnectionAssistant(Gtk.Box):
         # TODO: abstract into components
         self.warning_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.warning_tree = MaskedTree(WARNING)
-        # TODO: strings
-        self.warning_placeholder = Placeholder("No warnings.")
+        self.warning_placeholder = Placeholder(preconnect.placeholder_no_warnings)
         self.warning_box.add(self.warning_tree)
         self.warning_box.add(self.warning_placeholder)
         self.warning_frame = HeadingFrame.new_with_widget_and_label(
@@ -223,6 +228,12 @@ class PreConnectionAssistant(Gtk.Box):
     def _on_connect_last_clicked(self, button: Gtk.Button) -> None:
         self.controller.update_and_load_to_menu()
 
+    def _on_debug_clicked(self, button: Gtk.Button) -> None:
+        args = self.controller.get_debug_args()
+        d = DebugDialog(self.controller, args)
+        d.show_all()
+        d.run()
+
     def _on_ok_clicked(self, button: Gtk.Button) -> None:
         self.controller.update_and_connect()
 
@@ -233,61 +244,46 @@ class PreConnectionAssistant(Gtk.Box):
         warnings: list[str] = []
         errors: list[str] = []
 
-        resync_msg = (
-            f"If you recently installed {prereqs.build} or moved it to a different drive,\n"
-            "restart Steam to allow these changes to synchronize, then try again."
-        )
+        resync_msg = preconnect.resync.format(prereqs.build)
 
         """Errors"""
         if len(prereqs.invalid_mods) > 0:
             pairs = [": ".join(sub) for sub in prereqs.invalid_mods]
             lines = "\n".join(pairs)
-            msg = (
-                "Server has invalid mods that are not recognized by Steam.\n"
-                "Contact the server owner and include these mod IDs in your report:\n"
-                f"{lines}"
-            )
+            msg = preconnect.invalid_mods.format(lines)
             errors.append(msg)
         if prereqs.binary_missing:
-            errors.append(
-                f"Remote server is running the build '{prereqs.build}', but it is not installed.\n{resync_msg}"
-            )
+            msg = preconnect.version_missing.format(prereqs.build)
+            msg += f"\n{resync_msg}"
+            errors.append(msg)
         elif prereqs.local_version != prereqs.remote_version:
-            errors.append(
-                f"Local client version '{prereqs.local_version}' does not match remote version '{prereqs.remote_version}'.\n{resync_msg}"
+            msg = preconnect.version_mismatch.format(
+                prereqs.local_version, prereqs.remote_version
             )
+            msg += f"\n{resync_msg}"
+            errors.append(msg)
         if prereqs.required_space > prereqs.available_space:
             required_pretty = number(prereqs.required_space)
             available_pretty = number(prereqs.available_space)
-            errors.append(
-                f"Need to update {required_pretty} MiB of mods, but installation path only has {available_pretty} MiB."
-            )
+            msg = preconnect.not_enough_space.format(required_pretty, available_pretty)
+            errors.append(msg)
         if len(prereqs.mods) > 0 and prereqs.game_mode:
-            errors.append("Use Desktop Mode to download mods on Steam Deck")
+            errors.append(preconnect.use_desktop_mode)
 
         if prereqs.steam_proc.is_running is False:
             client = prereqs.steam_proc.name
-            errors.append(
-                f"'{client}' is set as the default Steam client, but it is either not installed or not running."
-            )
+            msg = preconnect.steam_not_running.format(client)
+            errors.append(msg)
 
         """Warnings"""
         if prereqs.passworded:
-            warnings.append(
-                "Protected: you will be prompted for a password when connecting to this server."
-            )
+            warnings.append(preconnect.protected_server)
         if prereqs.dayz_running is True:
-            warnings.append(
-                "It looks like DayZ is already running in the background. Exit DayZ before connecting."
-            )
+            warnings.append(preconnect.dayz_running)
 
         allows_dl, running_app = prereqs.allows_downloads
         if len(prereqs.mods) > 0 and allows_dl is False:
-            msg = (
-                f"The app '{running_app}' is currently running in Steam, but background downloads are not enabled.\n"
-                "Either stop the game first, or update your global Steam settings or the game's local settings.\n"
-                "Otherwise, mods may be queued for download but never update."
-            )
+            msg = preconnect.running_app.format(running_app)
             warnings.append(msg)
 
         self.add_warnings(warnings)
@@ -326,7 +322,7 @@ class PreConnectionAssistant(Gtk.Box):
 
         if prereqs.required_space != 0:
             pretty = number(prereqs.required_space)
-            suffix = f" Need to download {pretty} MiB of mod updates."
+            suffix = preconnect.required_space.format(pretty)
             prefix = preconnect.total_mods
             self.mod_count.set_text(f"{prefix}{str(total_mods)}.{suffix}")
         else:

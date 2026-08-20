@@ -13,6 +13,7 @@ from dzgui.api.shortcuts import Shortcuts
 
 from dzgui.api.steam import (
     connect,
+    connect_debug,
     get_app_allows_downloads,
     get_app_name,
     get_needs_update,
@@ -45,6 +46,7 @@ from dzgui.strings.dialogs import (
     waiting_for_mods,
     waiting_for_directories,
 )
+from dzgui.strings import kb
 from dzgui.strings.server_mods import checkmark, resync
 from dzgui.util.format import format_mib
 from dzgui.util.strings import dialog, server_timeout
@@ -193,7 +195,9 @@ class ConnectionManager:
         is_last = self.is_last_server()
 
         # TODO: strings
-        invalid_mods = [(mod[0], mod[1]) for mod in remote_mods if mod[2] == "Invalid mod"]
+        invalid_mods = [
+            (mod[0], mod[1]) for mod in remote_mods if mod[2] == "Invalid mod"
+        ]
 
         prereqs = Prerequisites(
             name=info.server_name,
@@ -298,7 +302,16 @@ class ConnectionManager:
 
     def _server_timeout(self) -> None:
         dialog = ExceptionDialog(self.controller, server_timeout)
+        dialog.set_details_buffer(kb.DZG_006)
+        dialog.show_all()
         dialog.run()
+
+    def get_debug_args(self) -> str:
+        addr = f"{self.record.ip}:{self.record.gameport}"
+        playername = self.controller.query_config(Preferences.NAME)
+        return connect_debug(
+            self.client, addr, self.appid, playername, self.remote_mod_ids
+        )
 
     def _connect_steam(self, menu_only: bool) -> None:
         addr = f"{self.record.ip}:{self.record.gameport}"

@@ -21,12 +21,28 @@ class FilterManager:
             strings.filter_3pp: True,
             strings.filter_night: True,
             strings.filter_full: show_full,
-            strings.filter_lowpop: True,
-            strings.filter_nonascii: False,
-            strings.filter_duplicate: False,
             strings.filter_official: True,
+            strings.filter_nonascii: False,
+            strings.filter_lowpop: True,
             strings.filter_unofficial: True,
+            strings.filter_duplicate: False,
             strings.filter_modded: True,
+        }
+
+        # TODO: strings
+        self.tooltips = {
+            strings.filter_1pp: "First-person perspective",
+            strings.filter_day: "In-game time between 0700 and 1659",
+            strings.filter_empty: "Servers with no players",
+            strings.filter_3pp: "Third-person perspective",
+            strings.filter_night: "In-game time between 1700 and 0659",
+            strings.filter_full: "Servers with no open slots",
+            strings.filter_official: "Bohemia official servers",
+            strings.filter_nonascii: "Server names using non-standard, complex glyphs",
+            strings.filter_lowpop: "Current population is under 30% of total",
+            strings.filter_unofficial: "Third-party servers",
+            strings.filter_duplicate: "Duplicates of existing servers (usually spoofed)",
+            strings.filter_modded: "Servers with one or more mods",
         }
 
         self.active_keyword = ""
@@ -35,6 +51,9 @@ class FilterManager:
 
         self.filters: list
         self.enabled_filters = dict(self.default_filters)
+
+    def get_tooltips(self) -> dict[str, str]:
+        return self.tooltips
 
     def set_prior_map(self, name: str) -> None:
         self.prior_map = name
@@ -86,6 +105,7 @@ class FilterManager:
         self.reinit_map_store()
         maps.sort()
         for m in maps:
+            # TODO: strings
             if m == "All maps":
                 continue
             self.append_map([m])

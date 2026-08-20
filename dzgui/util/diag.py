@@ -54,8 +54,6 @@ def write_diagnostic(config: Path, outfile: Path) -> None:
     cpu = get_cpu_model()
     version = get_version()
 
-    debug = lookup(config, Preferences.DEBUG)
-    install = lookup(config, Preferences.INSTALL)
     default = lookup(config, Preferences.DEFAULT)
 
     steam_path = Path(default)
@@ -79,8 +77,6 @@ def write_diagnostic(config: Path, outfile: Path) -> None:
     Kernel: {kernel}
     CPU: {cpu}
 
-    Debug: {debug}
-    Auto-install: {install}
     Steam path: {steam_redacted}
     Workshop path: {workshop_redacted}
 

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING
 
 from dzgui.api import pefile as PeFile
 
@@ -17,14 +17,15 @@ from dzgui.const.constants import (
 )
 from dzgui.const.endpoints import STEAM_API_SETUP
 from dzgui.const.enum import Preferences, ServerTab
-from dzgui.strings import errors, options
+from dzgui.strings import options
 from dzgui.util import strings, css, open_links
 
-from dzgui.views.components.box import VBox
+from dzgui.views.components.box import ShortHBox, VBox
+from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.labels import LeftLabel
-from dzgui.views.components.buttons import WebButton
+from dzgui.views.components.buttons import SpinnerButton, WebButton
 from dzgui.views.components.frame import HeadingFrame
-from dzgui.views.components.misc import ClientCombo
+from dzgui.views.components.misc import ClientCombo, ErrorPopover
 from dzgui.views.dialogs.generic import ExceptionDialog
 from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
 
@@ -39,11 +40,214 @@ if TYPE_CHECKING:
     from dzgui.controllers.emitter import Emitter
 
 
-class ShortHBox(Gtk.Box):
-    def __init__(self, widget: Gtk.Widget) -> None:
+class SubmitField(Gtk.Box):
+    def __init__(
+        self,
+        controller: "Controller",
+        placeholder: str,
+        context: Preferences,
+        slow: bool = False,
+        private: bool = True,
+    ) -> None:
+        super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+
+        self.callback: Callable
+        self.controller = controller
+        self.context = context
+
+        self.old_text: str
+        self.placeholder = placeholder
+
+        self.entry = Gtk.Entry(placeholder_text=placeholder, hexpand=True)
+
+        # TODO: audit for all applicable callbacks
+        if private:
+            self.entry.set_icon_from_icon_name(
+                Gtk.EntryIconPosition.SECONDARY, VIEW_REVEAL
+            )
+            self.entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
+            self.entry.connect("icon-release", self._on_icon_release)
+            self.entry.set_visibility(False)
+
+        self.button: SpinnerButton | Gtk.Button
+        if slow:
+            self.button = SpinnerButton(label=options.save_button)
+        else:
+            self.button = Gtk.Button(label=options.save_button)
+
+        self.button.connect("clicked", self._on_save_clicked)
+        self.entry.connect("insert-text", self._on_text_typed)
+        self.entry.connect("activate", self._on_field_activated)
+        self.entry.get_property("buffer").connect("deleted-text", self._on_text_deleted)
+
+        self.add(self.entry)
+        self.add(self.button)
+
+    def set_text(self, text: str) -> None:
+        self.old_text = text
+        self.entry.set_text(text)
+        if len(text) == 0:
+            self.button.set_sensitive(False)
+
+    def _is_valid_text(self, text: str) -> bool:
+        if text.isspace():
+            return False
+        if len(text) == 0:
+            return False
+
+        if text == self.old_text:
+            return False
+        return True
+
+    def _on_text_deleted(
+        self,
+        buffer: Gtk.EntryBuffer,
+        position: int,
+        chars: int,
+    ) -> None:
+
+        text = buffer.get_text()
+        state = self._is_valid_text(text)
+        self.button.set_sensitive(state)
+
+    def _on_text_typed(
+        self,
+        entry: Gtk.Entry,
+        text: str,
+        length: int,
+        pos: int,
+    ) -> None:
+
+        buffer = entry.get_property("buffer")
+        text = buffer.get_text() + text
+        state = self._is_valid_text(text)
+        self.button.set_sensitive(state)
+
+    def _on_icon_release(
+        self,
+        widget: Gtk.Entry,
+        icon_pos: Gtk.EntryIconPosition,
+        event: Gdk.Event,
+    ) -> None:
+        visible = widget.get_visibility()
+        if visible:
+            icon, state = VIEW_REVEAL, False
+        else:
+            icon, state = VIEW_CONCEAL, True
+        widget.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, icon)
+        widget.set_visibility(state)
+
+    def _on_field_activated(self, entry: Gtk.Entry) -> None:
+        text = entry.get_text()
+        if not self._is_valid_text(text):
+            return
+        self.save_option()
+
+    def set_callback(self, callback: Callable) -> None:
+        self.callback = callback
+
+    def save_option(self) -> None:
+        self.callback()
+        self.button.set_sensitive(False)
+
+    def _on_save_clicked(self, button: Gtk.Button) -> None:
+        self.save_option()
+
+
+class SteamSubmitField(SubmitField):
+    def __init__(self, controller: "Controller") -> None:
+        super().__init__(
+            controller,
+            options.steam_placeholder,
+            Preferences.STEAM,
+            slow=True,
+            private=True,
+        )
+
+        self.pop = ErrorPopover(
+            position=Gtk.PositionType.BOTTOM, relative_to=self.entry
+        )
+        self.pop.set_label(options.api_failed)
+        self.pop.show_all()
+        self.pop.popdown()
+
+        emitter = controller.get_emitter()
+        emitter.connect("api_change_failed", self._on_api_failure)
+        emitter.connect("api_change_successful", self._on_api_success)
+
+        self.set_callback(self.save_setting)
+
+    def save_setting(self) -> None:
+        self.entry.set_sensitive(False)
+        text = "".join(self.entry.get_text().split())
+        self.controller.update_steam_api_key(text)
+
+    def _on_api_success(self, emitter: "Emitter") -> None:
+        self.old_text = self.entry.get_text()
+        if isinstance(self.button, SpinnerButton):
+            self.button.stop_spinner()
+        self.entry.set_sensitive(True)
+
+    def _on_api_failure(self, emitter: "Emitter") -> None:
+        self.pop.popup()
+        if isinstance(self.button, SpinnerButton):
+            self.button.stop_spinner()
+        self.entry.set_sensitive(True)
+
+    def block_text_entry(self) -> None:
+        self.entry.set_position(-1)
+        self.entry.set_can_focus(False)
+
+    def unblock_text_entry(self) -> None:
+        self.entry.set_can_focus(True)
+
+
+class NameSubmitField(SubmitField):
+    def __init__(self, controller: "Controller") -> None:
+        super().__init__(
+            controller,
+            options.name_placeholder,
+            Preferences.NAME,
+            private=False,
+        )
+        self.entry.set_width_chars(30)  # type: ignore
+        self.set_callback(self.save_player_name)
+
+    def save_player_name(self) -> None:
+        value = self.entry.get_text().strip()
+        self.old_text = value
+        self.controller.update_config(self.context, value)
+
+
+class ToggleField(Gtk.Box):
+    def __init__(
+        self,
+        controller: "Controller",
+        first_option: str,
+        second_option: str,
+        context: Preferences,
+    ) -> None:
         super().__init__(spacing=5, halign=Gtk.Align.START)
 
-        self.pack_start(widget, NO_EXPAND, NO_FILL, NO_PADDING)
+        self.controller = controller
+        self.context = context
+        self.radio1 = Gtk.RadioButton.new_with_label(None, first_option)
+        self.radio2 = Gtk.RadioButton.new_from_widget(self.radio1)
+        self.radio2.set_label(second_option)
+        self.pack_start(self.radio1, NO_EXPAND, NO_FILL, NO_PADDING)
+        self.pack_start(self.radio2, NO_EXPAND, NO_FILL, NO_PADDING)
+
+    def set_suboption_active(self, state: bool) -> None:
+        # NOTE: defer connection of signal until after state is set
+        self.radio2.set_active(state)
+        self.radio1.connect("toggled", self._on_radio_toggled, self.context)
+
+    def _on_radio_toggled(self, button: Gtk.RadioButton, context: Preferences) -> None:
+        self.controller.toggle_config(context)
+
+    def set_sensitive(self, state: bool) -> None:
+        for el in self.radio1, self.radio2:
+            el.set_sensitive(state)
 
 
 class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
@@ -55,32 +259,27 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
 
         self.controller = controller
         self.controller.register_widget("options", self)
-        emitter = controller.get_emitter()
-        emitter.connect("api_change_failed", self._on_api_change_failed)
 
         self.DEFAULT_WIDTH = 1
         self.DEFAULT_HEIGHT = 1
 
         self.steam_entry: Gtk.Entry
+        self.pop: Gtk.Popover
 
         self.steam = WebButton(label=strings.options.steam_web)
         self.steam.connect("clicked", self._on_link_button_clicked, STEAM_API_SETUP)
 
-        self.steam_box = self._make_submit_field(
-            strings.options.enter_steam, Preferences.STEAM, True
-        )
+        self.steam_box = SteamSubmitField(controller)
         api_rows = [
             [LeftLabel(strings.options.steam_placeholder), self.steam_box, self.steam],
         ]
 
-        self.player_box = self._make_submit_field(
-            strings.options.name_placeholder, Preferences.NAME
-        )
+        self.player_box = NameSubmitField(controller)
         self.player_box.set_halign(Gtk.Align.START)
-        # TODO: make submit field a standalone class
         self.player_box.get_children()[0].set_width_chars(30)  # type: ignore
 
-        self.fullscreen_toggle = self.make_binary_radio(
+        self.fullscreen_toggle = ToggleField(
+            self.controller,
             strings.options.last_used,
             strings.options.always_fs,
             Preferences.WINDOW,
@@ -91,8 +290,8 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
 
         client_hbox = ShortHBox(self.client_combo)
 
-        self.distance_toggle = self.make_binary_radio(
-            strings.options.km, strings.options.mi, Preferences.DIST
+        self.distance_toggle = ToggleField(
+            self.controller, strings.options.km, strings.options.mi, Preferences.DIST
         )
 
         combo_store = Gtk.ListStore(str, object)
@@ -178,57 +377,19 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         return str(model[ind][0])
 
     def block_text_entry(self) -> None:
-        self.steam_entry.set_position(-1)
-        self.steam_entry.set_can_focus(False)
+        self.steam_box.block_text_entry()
+        # self.steam_entry.set_position(-1)
+        # self.steam_entry.set_can_focus(False)
 
     def unblock_text_entry(self) -> None:
-        self.steam_entry.set_can_focus(True)
+        self.steam_box.unblock_text_entry()
+        # self.steam_entry.set_can_focus(True)
 
     def _on_developers_clicked(self, button: Gtk.Button) -> None:
         self.controller.show_developers_page()
 
     def _on_link_button_clicked(self, button: Gtk.Button, url: str) -> None:
         open_links.open_link_by_url(url)
-
-    def _make_submit_field(
-        self,
-        placeholder: str,
-        context: Preferences,
-        private: bool = False,
-    ) -> Gtk.Box:
-
-        entry = Gtk.Entry(placeholder_text=placeholder, hexpand=True)
-        button = Gtk.Button(label="Save")
-
-        button.connect("clicked", self._on_save_clicked, entry, context)
-        entry.connect("insert-text", self._on_text_typed, context, button)
-        entry.connect("activate", self._on_field_activated, context, button)
-        entry.get_property("buffer").connect(
-            "deleted-text", self._on_text_deleted, context, button
-        )
-
-        if private:
-            entry.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, VIEW_REVEAL)
-            entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
-            entry.connect("icon-release", self._on_icon_release)
-            entry.set_visibility(False)
-
-            if context == Preferences.STEAM:
-                self.steam_entry = entry
-
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        box.add(entry)
-        box.add(button)
-
-        return box
-
-    def _on_field_activated(
-        self, entry: Gtk.Entry, context: Preferences, button: Gtk.Button
-    ) -> None:
-        text = entry.get_text()
-        if not self._is_valid_text(text, context):
-            return
-        self._on_save_clicked(button, entry, context)
 
     def _make_grid(self, rows: list) -> Gtk.Grid:
         grid = Gtk.Grid(
@@ -249,35 +410,6 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
             row += 1
         return grid
 
-    def _on_save_clicked(
-        self, button: Gtk.Button, entry: Gtk.Entry, enum: Preferences
-    ) -> None:
-        old_text = self.controller.query_config(enum)
-        self.old_text = old_text
-        self.old_entry = entry
-
-        button.set_sensitive(False)
-        match enum:
-            case Preferences.NAME:
-                value = entry.get_text().strip()
-                self.controller.update_config(enum, value)
-            case Preferences.STEAM:
-                text = "".join(entry.get_text().split())
-                self.controller.update_api_key(enum, text)
-
-    def _on_api_change_failed(self, emitter: "Emitter") -> None:
-        self.old_entry.set_text(self.old_text)
-        # TODO: use popover
-        dialog = ExceptionDialog(self.controller, errors.api_validation_error)
-        dialog.run()
-
-    def restore_api_text(self, text: str, entry: Gtk.Entry) -> None:
-        entry.set_text(text)
-
-    def revert(self, mode: Preferences) -> None:
-        if mode == Preferences.STEAM:
-            self.steam_entry.set_text(self.old_steam)
-
     def _on_start_tab_changed(self, combo: Gtk.ComboBoxText) -> None:
         _iter = combo.get_active_iter()
         if _iter is None:
@@ -293,79 +425,12 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         real_cmd = combo.get_model()[_iter][1]
         self.controller.update_config(Preferences.CLIENT, real_cmd)
 
-    def _on_radio_toggled(self, button: Gtk.RadioButton, context: Preferences) -> None:
-        try:
-            self.controller.toggle_config(context)
-        except Exception:
-            button.handler_block_by_func(self._on_radio_toggled)
-            self.populate_settings()
-            button.handler_unblock_by_func(self._on_radio_toggled)
-
-    def _is_valid_text(self, text: str, context: Preferences) -> bool:
-        if text.isspace():
-            return False
-        if len(text) == 0:
-            return False
-
-        match context:
-            case Preferences.NAME:
-                old = self.old_name
-            case Preferences.STEAM:
-                old = self.old_steam
-        if text == old:
-            return False
-        return True
-
-    def _on_text_deleted(
-        self,
-        buffer: Gtk.EntryBuffer,
-        position: int,
-        chars: int,
-        context: Preferences,
-        button: Gtk.Button,
-    ) -> None:
-
-        text = buffer.get_text()
-        state = self._is_valid_text(text, context)
-        button.set_sensitive(state)
-
-    def _on_text_typed(
-        self,
-        entry: Gtk.Entry,
-        text: str,
-        length: int,
-        pos: int,
-        context: Preferences,
-        button: Gtk.Button,
-    ) -> None:
-
-        buffer = entry.get_property("buffer")
-        text = buffer.get_text() + text
-        state = self._is_valid_text(text, context)
-        button.set_sensitive(state)
-
-    def make_binary_radio(
-        self,
-        first_option: str,
-        second_option: str,
-        context: Preferences,
-    ) -> Gtk.Box:
-
-        hbox = Gtk.Box(spacing=5, halign=Gtk.Align.START)
-        radio1 = Gtk.RadioButton.new_with_label(None, first_option)
-        radio2 = Gtk.RadioButton.new_from_widget(radio1)
-        radio2.set_label(second_option)
-        radio1.connect("toggled", self._on_radio_toggled, context)
-        hbox.pack_start(radio1, NO_EXPAND, NO_FILL, NO_PADDING)
-        hbox.pack_start(radio2, NO_EXPAND, NO_FILL, NO_PADDING)
-
-        return hbox
-
     def populate_settings(self) -> None:
         prefs = self.controller.get_prefs()
         # NOTE: re-check in case file was removed by user between runs
         if prefs.paths.config.is_file() is False:
             dialog = ExceptionDialog(self.controller, strings.config_not_found)
+            dialog.show_all()
             dialog.run()
             raise OSError(f"Config file '{prefs.paths.config}' not found")
 
@@ -378,30 +443,21 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
 
         steam_path = Path(default_steam_path)
 
-        self.old_steam = steam
-        self.old_name = name
+        self.steam_box.set_text(steam)
+        self.player_box.set_text(name)
 
-        self.steam_entry.set_text(steam)
-        p = self.player_box.get_children()[0]
-        if hasattr(p, "set_text"):
-            p.set_text(name)
+        fs = config["fullscreen"]
+        miles = config["use_miles"]
 
-        # NOTE: suppress toggle signal until radios are built
-        self._suppress_toggles(True)
-        for el, conf_state in [
-            (self.fullscreen_toggle, config["fullscreen"]),
-            (self.distance_toggle, config["use_miles"]),
-        ]:
-            el.get_children()[conf_state].set_active(True)
-        self._suppress_toggles(False)
+        if prefs.is_steam_deck:
+            self.fullscreen_toggle.set_sensitive(False)
+            eb = InfoEventBox(options.fullscreen_eventbox, self.controller)
+            self.fullscreen_toggle.add(eb)
 
-        # NOTE: disable buttons if no text is set
-        for field in (
-            [name, self.player_box],
-            [steam, self.steam_box],
-        ):
-            if field[0] == "":
-                field[1].get_children()[1].set_sensitive(False)
+            fs = True
+
+        self.fullscreen_toggle.set_suboption_active(fs)
+        self.distance_toggle.set_suboption_active(miles)
 
         dayz_version = PeFile.get_pretty_version(steam_path, APPID_DAYZ)
         if dayz_version is None:
@@ -429,20 +485,6 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
             self.controller.suppress_signal(
                 self, toggle.get_children()[0], "_on_radio_toggled", state
             )
-
-    def _on_icon_release(
-        self,
-        widget: Gtk.Entry,
-        icon_pos: Gtk.EntryIconPosition,
-        event: Gdk.Event,
-    ) -> None:
-        visible = widget.get_visibility()
-        if visible:
-            icon, state = VIEW_REVEAL, False
-        else:
-            icon, state = VIEW_CONCEAL, True
-        widget.set_icon_from_icon_name(Gtk.EntryIconPosition.SECONDARY, icon)
-        widget.set_visibility(state)
 
     def grab_content_area(self) -> None:
         self.grab_focus()

@@ -6,10 +6,10 @@ from dzgui.strings import buttons
 from dzgui.util.strings import (
     alert_button_tooltip,
     atomic_buttons,
-    connect_panel,
 )
 from dzgui.const.constants import (
     CLIPBOARD,
+    CLOSE,
     INPUT_KEYBOARD,
     LIST_ADD,
     REFRESH_ICON,
@@ -17,6 +17,7 @@ from dzgui.const.constants import (
     WARNING,
     WEB_BROWSER,
 )
+from dzgui.strings import connect_panel
 
 import gi
 
@@ -63,7 +64,6 @@ class IconButton(Gtk.Button):
         self.icon = Icon(icon, margin_start=margin_start, margin_end=margin_end)
         self.set_image(self.icon)
         self.set_image_position(position)
-        # self.set_image_position(Gtk.PositionType.RIGHT)
         self.set_focus_on_click(False)
 
     def swap_icon(self, icon: str) -> None:
@@ -126,6 +126,14 @@ class CopyIpButton(ClipboardButton):
 
         # TODO: strings
         self.set_tooltip_text("Copy IP to clipboard")
+
+
+class CloseButton(IconTextButton):
+    def __init__(self, label: str) -> None:
+        super().__init__(icon=CLOSE, label=label)
+
+        # TODO: strings
+        self.set_tooltip_text("Unset this server as favorite")
 
 
 class WebButton(IconTextButton):
@@ -213,7 +221,7 @@ class KeysButton(IconTextButton):
 
 class SteamConnectButton(LargeIconTextButton):
     def __init__(self) -> None:
-        super().__init__(icon=STEAM_ICON, label=connect_panel.connect)
+        super().__init__(icon=STEAM_ICON, label=connect_panel.connect_button)
         self.set_tooltip_text(connect_panel.connect_tooltip)
 
 
@@ -233,7 +241,7 @@ class SteamWorkshopButton(SteamTextButton):
 
 class AddButton(IconTextButton):
     def __init__(self) -> None:
-        super().__init__(icon=LIST_ADD, label=connect_panel.add)
+        super().__init__(icon=LIST_ADD, label=connect_panel.add_button)
         self.set_tooltip_text(connect_panel.add_tooltip)
 
 
@@ -258,3 +266,38 @@ class LoggerAlertsButton(IconTextButton):
         self.set_halign(Gtk.Align.END)
         self.set_hexpand(True)
         self.set_tooltip_text(alert_button_tooltip)
+
+
+class SpinnerButton(Gtk.Button):
+    def __init__(self, label: str) -> None:
+        super().__init__()
+
+        self.text = label
+        self.label = Gtk.Label(label=label, halign=Gtk.Align.CENTER)
+
+        self.spinner = Gtk.Spinner()
+        self.spinner.set_halign(Gtk.Align.END)
+        self.spinner.set_sensitive(False)
+
+        grid = Gtk.Grid(column_spacing=10)
+        for el in self.label, self.spinner:
+            grid.add(el)
+
+        self.add(grid)
+
+        self.connect("clicked", self._on_button_clicked)
+        self.connect("map", self._on_map)
+
+    def _on_map(self, button: Self) -> None:
+        self.spinner.set_visible(False)
+
+    def _on_button_clicked(self, button: Self) -> None:
+        self.start_spinner()
+
+    def stop_spinner(self) -> None:
+        self.spinner.set_visible(False)
+        self.spinner.stop()
+
+    def start_spinner(self) -> None:
+        self.spinner.set_visible(True)
+        self.spinner.start()

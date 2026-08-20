@@ -88,7 +88,6 @@ class Controller(GObject.GObject):
 
         # NOTE: suppress requests until entire UI is loaded
         self.loaded = False
-        self.pending_jobs = 1
 
         self.exit_event = threading.Event()
         self.cancel_event = threading.Event()
@@ -114,9 +113,6 @@ class Controller(GObject.GObject):
 
     def query_config(self, key: Preferences) -> Any:
         return self.config_man.lookup(key)
-
-    def is_auto_install(self) -> bool:
-        return bool(self.query_config(Preferences.INSTALL))
 
     def suppress_signal(
         self, owner: Any, child: Any, func_name: str, state: bool
@@ -267,6 +263,7 @@ class Controller(GObject.GObject):
             self.open_page(NotebookPage.LOG)
         except Exception as e:
             dialog = ExceptionDialog(self, str(e))
+            dialog.show_all()
             dialog.run()
 
     def select_colorized(self) -> None:
@@ -300,10 +297,11 @@ class Controller(GObject.GObject):
                 write_diagnostic(self.prefs.paths.config, file)
             except Exception as e:
                 dialog = ExceptionDialog(self, str(e))
+                dialog.show_all()
                 dialog.run()
 
-    def update_api_key(self, key: Preferences, text: str) -> None:
-        self.config_man.update_api_key(key, text)
+    def update_steam_api_key(self, text: str) -> None:
+        self.config_man.update_steam_api_key(text)
 
     def set_resolution(self, window: "OuterWindow") -> None:
         self.config_man.set_resolution(window)
@@ -402,6 +400,9 @@ class Controller(GObject.GObject):
     def get_menu(self) -> "MenuTreeView":
         return self.mediator.menu
 
+    def unset_fav(self) -> None:
+        self.config_man.unset_fav()
+
     def has_favorites(self) -> bool:
         favs = self.config_man.get_favorites()
         if len(favs) < 1:
@@ -459,6 +460,9 @@ class Controller(GObject.GObject):
         open_workshop_page(mod, cmd)
 
     def has_note(self) -> bool:
+        # TODO: get record string, store in memory
+        # get note by record, get is in favs, etc. store as a block
+        # this is only used by context mixin
         note = self.get_note()
         if len(note) > 0:
             return True
@@ -473,11 +477,13 @@ class Controller(GObject.GObject):
         return self.notes_man.get_note(record)
 
     def add_note(self, note: str) -> None:
+        # TODO: record should be cached upon creation of dialog
         tv = self.get_active_treeview()
         record = tv.get_record_string()
         self.notes_man.add_note(record, note)
 
     def delete_note(self) -> None:
+        # TODO: record should be cached upon creation of dialog
         tv = self.get_active_treeview()
         record = tv.get_record_string()
         self.notes_man.delete_note(record)
@@ -518,6 +524,9 @@ class Controller(GObject.GObject):
     def set_start_tab(self) -> None:
         ind = self.config_man.get_start_tab()
         self.get_servers().notebook.set_current_page(ind)
+
+    def get_debug_args(self) -> str:
+        return self.connection_man.get_debug_args()
 
     def update_and_load_to_menu(self) -> None:
         self.connection_man.update_and_connect(menu_only=True)
