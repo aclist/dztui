@@ -3,7 +3,6 @@ import sys
 import warnings
 
 from dzgui.const.constants import APP_NAME
-
 from dzgui.init.libgi import test_libgi_missing
 from dzgui.init.prefix import get_version
 from dzgui.util.deck import is_steam_deck
