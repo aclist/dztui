@@ -40,7 +40,7 @@ import gi
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("GLibUnix", "2.0")
-from gi.repository import Gtk, GLib, GLibUnix, Gdk  # noqa E402
+from gi.repository import Gtk, GLib, GLibUnix, Gdk  # type: ignore # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.config.userprefs import UserPrefs
