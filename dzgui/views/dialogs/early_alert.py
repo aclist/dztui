@@ -3,6 +3,7 @@ import sys
 
 from typing import Self
 from dzgui.util.strings import dialog_error, dialog_header
+from dzgui.views.mixins.colorscheme import ColorAwareApp
 
 import gi
 
@@ -10,7 +11,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa E402
 
 
-class AbortDialog(Gtk.MessageDialog):
+class AbortDialog(ColorAwareApp, Gtk.MessageDialog):  # type: ignore
     def __init__(self, string: str, buttons: Gtk.ButtonsType) -> None:
         super().__init__(
             title=dialog_header,

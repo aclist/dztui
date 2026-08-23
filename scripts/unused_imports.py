@@ -1,12 +1,23 @@
 from pathlib import Path
 
+
 def iterate(search_str: str) -> None:
     # TODO: exclude files from .gitignore
     print()
     print(f"Searching for '{search_str}'")
     print()
     files = Path(".").rglob("*")
-    ignore = [".git", ".mypy", "build/", "test.py"]
+    ignore = [
+        "scripts/",
+        ".git",
+        "egg",
+        "CHANGELOG",
+        ".mypy",
+        "build/",
+        "test.py",
+        "bugs",
+        "pyproject.toml",
+    ]
     for file in files:
         if file.is_dir():
             continue

@@ -30,6 +30,7 @@ BETA_REPO = "testing"
 APP_NAME = "DZGUI"
 APP_NAME_LOWER = "dzgui"
 APP_NAME_ABBR = "dzg"
+GTK_APP_ID = "io.github.aclist.dzgui"
 
 HEX_GREEN = "#32CD32"
 HEX_RED = "#FF0000"
@@ -91,3 +92,8 @@ TMP_TARBALL = "/tmp/dzgui.tar.gz"
 TMP_EXE = "/tmp/dzgui/dzgui"
 
 DAYZ_COMMUNITY_ROOT = "Missions"
+
+GIO_SETTINGS_INTERFACE = "org.gnome.desktop.interface"
+GIO_SETTINGS_PROP = "color-scheme"
+GIO_SETTINGS_KEY = "gtk-application-prefer-dark-theme"
+GIO_SETTINGS_VAL = "prefer-dark"

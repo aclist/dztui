@@ -29,6 +29,7 @@ from dzgui.util.css import add_class, load_css
 from dzgui.views.components.buttons import WebButton
 from dzgui.views.components.entry import APIEntry
 from dzgui.views.components.misc import ClientCombo
+from dzgui.views.mixins.colorscheme import ColorAwareApp
 
 import gi
 
@@ -706,7 +707,7 @@ class SteamPathPage(EnumeratedWizardPage):
         self.err_box.set_visible(False)
 
 
-class SetupWizard(Gtk.Application):
+class SetupWizard(ColorAwareApp, Gtk.Application):  # type: ignore
     def __init__(self, is_deck: bool, XDG: "Xdg") -> None:
         super().__init__()
         GLib.set_prgname(APP_NAME)

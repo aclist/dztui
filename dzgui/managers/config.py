@@ -19,11 +19,6 @@ from dzgui.views.dialogs.generic import ExceptionDialog
 from dzgui.strings import dialogs
 from dzgui.util._json import read_json, write_json
 
-import gi
-
-gi.require_version("Gtk", "3.0")
-from gi.repository.Gtk import main_quit  # noqa E402
-
 if TYPE_CHECKING:
     from dzgui.config.userprefs import UserPrefs
     from dzgui.controllers.mc import Controller
@@ -206,7 +201,10 @@ class ConfigManager:
 
         logger.info("Normal user exit")
         if window.props.is_maximized:
-            main_quit()
+            app = window.get_application()
+            if app is None:
+                return
+            app.quit()
             return
 
         w, h = window.get_size()
@@ -218,7 +216,10 @@ class ConfigManager:
         except Exception as e:
             logger.critical(e)
 
-        main_quit()
+        app = window.get_application()
+        if app is None:
+            return
+        app.quit()
 
     def set_resolution(self, window: "OuterWindow") -> None:
         if self.prefs.is_game_mode:

@@ -154,4 +154,5 @@ def load_gui(version: str, is_debug: bool) -> None:
         use_miles=use_miles,
     )
     print(boot.all_ok)
-    App(prefs)
+    app = App(prefs)
+    app.run(None)
