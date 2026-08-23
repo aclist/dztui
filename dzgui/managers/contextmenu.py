@@ -1,4 +1,3 @@
-import gi
 import logging
 from typing import TYPE_CHECKING
 
@@ -12,10 +11,6 @@ from dzgui.views.trees.tree_mods import ModTreeView, OfflineModTreeView
 from dzgui.views.trees.tree_log import LogTreeView
 from dzgui.views.trees.tree_servers import ServerTreeView
 from dzgui.views.trees.tree_server_mods import ServerModTreeView
-
-
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GLib, GObject  # noqa E402
 
 
 logger = logging.getLogger(APP_NAME)
