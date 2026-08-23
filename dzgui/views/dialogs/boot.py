@@ -4,6 +4,9 @@ from typing import Any, Literal, Self, TYPE_CHECKING
 # import time
 from enum import Enum
 
+
+from dzgui.views.mixins.colorscheme import ColorAwareApp
+
 # TODO: import dialog titles
 from dzgui.api.mods import remove_stale_signatures as remove_stale
 from dzgui.config.ipdb import get_ipdb
@@ -37,7 +40,7 @@ class Success(Enum):
 
 # TODO: strings for "Running", "Failed", etc.
 # TODO: add margins to tree
-class BootDialog(Gtk.Dialog):
+class BootDialog(ColorAwareApp, Gtk.Dialog):  # type: ignore
     def __init__(self, parent: "BootWindow", xdg: "Xdg", version: str) -> None:
         super().__init__(
             title=dialog_header,

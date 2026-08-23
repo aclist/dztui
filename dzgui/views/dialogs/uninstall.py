@@ -13,6 +13,7 @@ from dzgui.util.css import load_css
 from dzgui.util.format import format_exception
 from dzgui.views.components.box import HBox
 from dzgui.views.dialogs.wizard import ScrolledWizardPage, CheckboxWithLabel
+from dzgui.views.mixins.colorscheme import ColorAwareApp
 
 import gi
 
@@ -217,7 +218,7 @@ class UninstallPage(ScrolledWizardPage):
         pass
 
 
-class UninstallWizard(Gtk.Application):
+class UninstallWizard(ColorAwareApp, Gtk.Application):  # type: ignore
     def __init__(self, is_deck: bool, paths: dict[str, str]) -> None:
         super().__init__()
         config = Path(paths["XDG_CONFIG_HOME"])
