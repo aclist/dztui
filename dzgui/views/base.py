@@ -340,7 +340,6 @@ class App(ColorAwareApp, Gtk.Application):  # type: ignore
 
 MainController = Controller()
 
-
 try:
     theme = Gtk.IconTheme.get_default()
     icons = theme.list_icons(None)
