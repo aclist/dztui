@@ -51,6 +51,7 @@
 - Update map count (-u flag)
 - Filter button tooltips
 - Expand/collapse changelog versions
+- Support local light/dark mode changes on system theme
 
 ### Changed
 - Conform to PEP 440 versioning for beta versions
