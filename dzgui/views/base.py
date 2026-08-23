@@ -2,9 +2,14 @@ import logging
 import signal
 import warnings
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Self
 
-from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, STEAM_ICON
+from dzgui.const.constants import (
+    APP_NAME,
+    APP_NAME_LOWER,
+    GTK_APP_ID,
+    STEAM_ICON,
+)
 from dzgui.const.enum import NotebookPage
 from dzgui.controllers.emitter import Emitter
 from dzgui.controllers.mc import Controller
@@ -14,6 +19,7 @@ from dzgui.views.components.connect_panel import ConnectPanel
 from dzgui.views.components.crumbs import Breadcrumbs
 from dzgui.views.components.right_panel import RightPanel
 from dzgui.views.components.statusbar import Statusbar
+from dzgui.views.mixins.colorscheme import ColorAwareApp
 from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
 
 # TODO: import notebook only and add components there?
@@ -34,7 +40,7 @@ import gi
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("GLibUnix", "2.0")
-from gi.repository import Gtk, GLib, GLibUnix, Gdk  # type: ignore # noqa E402
+from gi.repository import Gtk, GLib, GLibUnix, Gdk  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.config.userprefs import UserPrefs
@@ -46,9 +52,11 @@ logger = logging.getLogger(APP_NAME)
 warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 
 
-class OuterWindow(Gtk.Window):
-    def __init__(self) -> None:
-        super().__init__(title=APP_NAME, border_width=10, icon_name=APP_NAME_LOWER)
+class OuterWindow(Gtk.ApplicationWindow):
+    def __init__(self, app: Gtk.Application) -> None:
+        super().__init__(
+            application=app, title=APP_NAME, border_width=10, icon_name=APP_NAME_LOWER
+        )
 
         self.hb = AppHeaderBar()
         MainController.register_widget("window", self)
@@ -279,13 +287,18 @@ class Grid(Gtk.Grid):
         self.right_panel.refresh_button.set_visible(state)
 
 
-class App(Gtk.Application):
+class App(ColorAwareApp, Gtk.Application):  # type: ignore
     def __init__(self, prefs: "UserPrefs") -> None:
+        super().__init__(application_id=GTK_APP_ID)
 
         GLib.set_prgname(APP_NAME)
         MainController.set_prefs(prefs)
 
-        self.win = OuterWindow()
+        self._setup_signals()
+        self.connect("activate", self._on_activate)
+
+    def _on_activate(self, app: Self) -> None:
+        self.win = OuterWindow(app)
 
         accel = Gtk.AccelGroup()
         accel.connect(
@@ -295,9 +308,6 @@ class App(Gtk.Application):
             self._halt_window_subprocess,
         )
         self.win.add_accel_group(accel)
-
-        self._setup_signals()
-        Gtk.main()
 
     def _setup_signals(self) -> None:
         SIGNAL_ADD = "signal_add"
@@ -329,6 +339,7 @@ class App(Gtk.Application):
 
 
 MainController = Controller()
+
 
 try:
     theme = Gtk.IconTheme.get_default()
