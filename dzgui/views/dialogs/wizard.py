@@ -489,7 +489,10 @@ class Assistant(Gtk.Assistant):
 
     def get_final_page(self) -> int:
         pages = self.get_n_pages()
-        return pages - 1
+        if self.is_binary:
+            return pages - 2
+        else:
+            return pages - 1
 
     def _advance_page(self, index: int) -> int:
         page = self.get_nth_page(index)
