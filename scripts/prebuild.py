@@ -27,7 +27,7 @@ def fetch(url: str, destination: str) -> None:
 
 def get_cpython() -> None:
     source = f"https://github.com/astral-sh/python-build-standalone/releases/download/{DATE}/"
-    build = f"{CPYTHON_BUILD}%2B{DATE}-x86_64_v3-unknown-linux-gnu-install_only_stripped.tar.gz"
+    build = f"{CPYTHON_BUILD}%2B{DATE}-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
     url = f"{source}{build}"
     outfile = unquote(build)
     fetch(url, outfile)
