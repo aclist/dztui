@@ -489,6 +489,8 @@ class Assistant(Gtk.Assistant):
 
     def get_final_page(self) -> int:
         pages = self.get_n_pages()
+        # TODO: might be better to check if path is writeable
+        # and selectively block certain shortcut options
         if self.is_binary:
             return pages - 2
         else:
