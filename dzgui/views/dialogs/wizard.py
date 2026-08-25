@@ -488,10 +488,8 @@ class Assistant(Gtk.Assistant):
         write_json(config, self.config_path)
 
     def get_final_page(self) -> int:
-        for page in range(0, self.get_n_pages()):
-            child = self.get_nth_page(page)
-            if child == self.page_completion:
-                return page
+        pages = self.get_n_pages()
+        return pages - 1
 
     def _advance_page(self, index: int) -> int:
         page = self.get_nth_page(index)
