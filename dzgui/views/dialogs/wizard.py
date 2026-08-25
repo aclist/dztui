@@ -305,6 +305,7 @@ class ConfigMigrationPage(EnumeratedWizardPage):
         )
 
         self.migrated = False
+        self.migrated_conf: dict[str, Any] = {}
         self.config = config
         self.page_type = Gtk.AssistantPageType.INTRO
 
@@ -344,8 +345,7 @@ class ConfigMigrationPage(EnumeratedWizardPage):
     def _on_import_clicked(self, button: Gtk.Button) -> None:
         self.grid.set_sensitive(False)
         try:
-            # TODO: this could be deferred to the final page (prevents accidental destruction of dialog via ESC)
-            migrate_legacy_conf(self.config)
+            self.migrated_conf = migrate_legacy_conf(self.config)
             self.migrated = True
             self.success_box.set_visible(True)
         except Exception:
@@ -496,9 +496,9 @@ class Assistant(Gtk.Assistant):
                 pass
             case ConfigMigrationPage():
                 if page.is_migrated():
-                    steam_path = lookup(self.config_path, Preferences.DEFAULT)
-                    self.page6.set_steam_path(steam_path)
-                    offset = 1 if not self.is_binary else 2
+                    sp = page.migrated_conf["default_steam_path"]
+                    self.page_shortcuts.set_steam_path(sp)
+                    self.write_config(self.page_migration.migrated_conf)
                     self.setup_complete = True
                     return self.get_n_pages() - offset
             case SteamPathPage():
