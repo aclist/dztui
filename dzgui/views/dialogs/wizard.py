@@ -17,9 +17,7 @@ from dzgui.const.constants import (
 )
 from dzgui.const.boilerplate import config_boilerplate
 from dzgui.const.endpoints import STEAM_API_SETUP
-from dzgui.const.enum import Preferences
 from dzgui.config import freedesktop
-from dzgui.config.query import lookup
 from dzgui.init.migrate import migrate_legacy_conf
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings import wizard
