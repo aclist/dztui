@@ -444,13 +444,13 @@ class Assistant(Gtk.Assistant):
 
         self.setup_complete = False
 
-        self.page1 = IntroductionPage()
-        self.page2 = ConfigMigrationPage(XDG.config)
-        self.page3 = SteamPathPage()
-        self.page4 = SteamValidationPage()
-        self.page5 = PreferencesPage()
-        self.page6 = ShortcutCreationPage(XDG.shortcut)
-        self.page7 = CompletionPage()
+        self.page_intro = IntroductionPage()
+        self.page_migration = ConfigMigrationPage(XDG.config)
+        self.page_paths = SteamPathPage()
+        self.page_api = SteamValidationPage()
+        self.page_prefs = PreferencesPage()
+        self.page_shortcuts = ShortcutCreationPage(XDG.shortcut)
+        self.page_completion = CompletionPage()
 
         self.set_forward_page_func(self._advance_page)
 
@@ -461,13 +461,13 @@ class Assistant(Gtk.Assistant):
         legacy_path = Path.home().joinpath(LEGACY_CONFIG_PATH)
         self.has_legacy_config = legacy_path.is_file()
         for page in (
-            self.page1,
-            self.page2,
-            self.page3,
-            self.page4,
-            self.page5,
-            self.page6,
-            self.page7,
+            self.page_intro,
+            self.page_migration,
+            self.page_paths,
+            self.page_api,
+            self.page_prefs,
+            self.page_shortcuts,
+            self.page_completion,
         ):
             # NOTE: skip config migration page if no legacy config file
             if (
@@ -486,8 +486,14 @@ class Assistant(Gtk.Assistant):
         self.show_all()
         load_css()
 
-    def write_config(self) -> None:
-        write_json(self.config_values, self.config_path)
+    def write_config(self, config: dict[str, Any]) -> None:
+        write_json(config, self.config_path)
+
+    def get_final_page(self) -> int:
+        for page in range(0, self.get_n_pages()):
+            child = self.get_nth_page(page)
+            if child == self.page_completion:
+                return page
 
     def _advance_page(self, index: int) -> int:
         page = self.get_nth_page(index)
@@ -500,19 +506,21 @@ class Assistant(Gtk.Assistant):
                     self.page_shortcuts.set_steam_path(sp)
                     self.write_config(self.page_migration.migrated_conf)
                     self.setup_complete = True
-                    return self.get_n_pages() - offset
+                    return self.get_final_page()
             case SteamPathPage():
                 self.config_values["default_steam_path"] = page.get_path_from_radio()
             case SteamValidationPage():
                 self.config_values["steam_api"] = page.get_api_key()
             case PreferencesPage():
                 # NOTE: collects config values before advancing to last page
-                name, use_miles, client = self.page5.get_prefs()
+                name, use_miles, client = self.page_prefs.get_prefs()
                 self.config_values["name"] = name
                 self.config_values["use_miles"] = use_miles
                 self.config_values["client"] = client
-                self.write_config()
-                self.page6.set_steam_path(self.config_values["default_steam_path"])
+                self.write_config(self.config_values)
+                self.page_shortcuts.set_steam_path(
+                    self.config_values["default_steam_path"]
+                )
                 self.setup_complete = True
             case ShortcutCreationPage():
                 page.create_shortcuts()
