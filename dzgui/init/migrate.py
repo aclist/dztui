@@ -8,7 +8,7 @@ from dzgui.config.convert import rc2json
 from dzgui.util._json import read_json, write_json
 
 
-def migrate_legacy_conf(config: Path) -> dict[str, Any]:
+def migrate_legacy_conf(config: Path) -> Any:
     old_conf = Path.home() / LEGACY_CONFIG_PATH
     j = rc2json(old_conf)
     return json.loads(j)
