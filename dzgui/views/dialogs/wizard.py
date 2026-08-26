@@ -1,4 +1,3 @@
-import os
 import textwrap
 
 from enum import Enum
@@ -435,9 +434,7 @@ class Assistant(Gtk.Assistant):
         else:
             self.set_default_size(1500, 900)
 
-        self.is_binary = False if os.getenv("PYAPP") is None else True
         self.config_path = XDG.config
-
         self.config_values: dict[str, Any] = config_boilerplate
 
         self.setup_complete = False
@@ -456,6 +453,8 @@ class Assistant(Gtk.Assistant):
         EMITTER.connect("step_pending", self._mark_page_incomplete)
         EMITTER.connect("config", self._set_config_state)
 
+        self.pages: dict[EnumeratedWizardPage, int] = {}
+
         legacy_path = Path.home().joinpath(LEGACY_CONFIG_PATH)
         self.has_legacy_config = legacy_path.is_file()
         for page in (
@@ -473,10 +472,8 @@ class Assistant(Gtk.Assistant):
                 and self.has_legacy_config is False
             ):
                 continue
-            # NOTE: disabled for now on system-provided packages
-            if isinstance(page, ShortcutCreationPage) and not self.is_binary:
-                continue
-            self._add_page(page, page.get_page_type())
+            ind = self._add_page(page, page.get_page_type())
+            self.pages[page] = ind
 
         self.connect("prepare", self._on_page_prepare)
         self.connect("cancel", self.destroy_and_quit)
@@ -488,13 +485,7 @@ class Assistant(Gtk.Assistant):
         write_json(config, self.config_path)
 
     def get_final_page(self) -> int:
-        pages = self.get_n_pages()
-        # TODO: might be better to check if path is writeable
-        # and selectively block certain shortcut options
-        if self.is_binary:
-            return pages - 2
-        else:
-            return pages - 1
+        return self.pages[self.page_shortcuts]
 
     def _advance_page(self, index: int) -> int:
         page = self.get_nth_page(index)
@@ -552,11 +543,12 @@ class Assistant(Gtk.Assistant):
 
     def _add_page(
         self, page: EnumeratedWizardPage, ptype: Gtk.AssistantPageType
-    ) -> None:
-        self.append_page(page)
+    ) -> int:
+        ind = self.append_page(page)
         self.set_page_type(page, ptype)
         self.set_page_title(page, page.get_title())
         self.set_page_complete(page, True)
+        return ind
 
     def _set_config_state(self, emitter: "Emitter", state: bool) -> None:
         self.config = state
