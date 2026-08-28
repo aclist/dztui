@@ -127,10 +127,3 @@ def is_valid_port(port: str) -> bool:
     if not port.isdigit() or int(port) == 0 or int(port[0]) == 0 or int(port) > 65535:
         return True
     return False
-
-
-@deprecated("use ips.csv")
-def get_local_coords(ip: str) -> str:
-    url = COORDS_API + "/" + ip
-    # local res=$(curl -Ls "$url" | jq -r '"\(.lat)\n\(.lon)"')
-    return url

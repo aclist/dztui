@@ -84,6 +84,5 @@ class CalcDist:
         except Exception:
             return None
 
-        # TODO: handle failed remote dist
         haversine = Haversine(local.lat, local.lon, remote.lat, remote.lon)
         return haversine
