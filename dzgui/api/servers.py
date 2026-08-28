@@ -348,7 +348,7 @@ def get_details(record: Record) -> Details:
         dlc = rules.dlc_flags
         match dlc:
             case 0:
-                dlc = strings.none
+                dlc = strings.dlc_none
             case 2:
                 dlc = strings.dlc_frostline
             case 3:

@@ -168,12 +168,12 @@ none_provided = "None provided"
 disabled = "Disabled"
 enabled = "Enabled"
 null = "-"
-none = "None"
 unspecified = "not specified"
 
 # DLC
 dlc_frostline = "Frostline"
 dlc_badlands = "Badlands"
+dlc_none = "None"
 
 # platform
 windows = "Windows"
