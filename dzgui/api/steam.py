@@ -151,7 +151,9 @@ def get_remote_signatures(mods: list[str]) -> list[tuple[str, str, int, int]]:
     return hashes
 
 
-def connect_debug(client: str, addr: str, appid: int, name: str, mods: list[str]) -> str:
+def connect_debug(
+    client: str, addr: str, appid: int, name: str, mods: list[str]
+) -> str:
     concat = concat_mods(mods)
     client_args = concat_bash_args(client)
     params = [
@@ -166,6 +168,7 @@ def connect_debug(client: str, addr: str, appid: int, name: str, mods: list[str]
     ]
     client_args.extend(params)
     return " ".join(client_args)
+
 
 # TODO: set config to name=user, use official server and no mods,
 # ensure that formatted string is identical to fixture with same hash
@@ -235,14 +238,19 @@ def find_user_id(path: Path) -> str | None:
     try:
         with open(resolved_path, "r") as f:
             v = vdf.load(f)
-            # NOTE: beta client
-            # /package/beta
-            if len(v["users"]) == 1:
-                return str(list(v["users"].keys())[0])
-            for user in v["users"]:
-                if v["users"][user]["MostRecent"] == "1":
-                    return str(user)
-            return None
+            users = v["users"]
+            # NOTE: beta client: /package/beta
+            last_user = next(iter(users))
+            if len(users) == 1:
+                return last_user
+            last_stamp = int(users[last_user]["Timestamp"])
+            for user in users:
+                stamp = int(users[user]["Timestamp"])
+                if stamp > last_stamp:
+                    last_stamp = stamp
+                    last_user = user
+            print(last_user)
+            return last_user
     except Exception as e:
         logger.debug(e)
         return None
