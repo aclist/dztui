@@ -173,6 +173,7 @@ unspecified = "not specified"
 
 # DLC
 dlc_frostline = "Frostline"
+dlc_badlands = "Badlands"
 
 # platform
 windows = "Windows"
