@@ -240,7 +240,7 @@ def find_user_id(path: Path) -> str | None:
             v = vdf.load(f)
             users = v["users"]
             # NOTE: beta client: /package/beta
-            last_user = next(iter(users))
+            last_user = str(next(iter(users)))
             if len(users) == 1:
                 return last_user
             last_stamp = int(users[last_user]["Timestamp"])
@@ -249,7 +249,6 @@ def find_user_id(path: Path) -> str | None:
                 if stamp > last_stamp:
                     last_stamp = stamp
                     last_user = user
-            print(last_user)
             return last_user
     except Exception as e:
         logger.debug(e)
