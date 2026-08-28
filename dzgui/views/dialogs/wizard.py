@@ -496,8 +496,7 @@ class Assistant(Gtk.Assistant):
                 if page.is_migrated():
                     sp = page.migrated_conf["default_steam_path"]
                     self.page_shortcuts.set_steam_path(sp)
-                    self.write_config(self.page_migration.migrated_conf)
-                    self.setup_complete = True
+                    self.config_values = self.page_migration.migrated_conf
                     return self.get_final_page()
             case SteamPathPage():
                 self.config_values["default_steam_path"] = page.get_path_from_radio()
@@ -509,11 +508,9 @@ class Assistant(Gtk.Assistant):
                 self.config_values["name"] = name
                 self.config_values["use_miles"] = use_miles
                 self.config_values["client"] = client
-                self.write_config(self.config_values)
                 self.page_shortcuts.set_steam_path(
                     self.config_values["default_steam_path"]
                 )
-                self.setup_complete = True
             case ShortcutCreationPage():
                 page.create_shortcuts()
             case _:
@@ -564,6 +561,10 @@ class Assistant(Gtk.Assistant):
 
         if not isinstance(page, IntroductionPage):
             EMITTER.emit("step_pending")
+
+        if page == self.page_completion:
+            self.write_config(self.config_values)
+            self.setup_complete = True
 
 
 class CheckboxWithLabel(Gtk.Box):
