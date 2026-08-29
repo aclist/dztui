@@ -90,6 +90,7 @@
 - Rare segfaults when changing maps (threading)
 - Moved dialogs out of threads
 - History table not being in lock-step with state file
+- Current keyword filter not being applied when refreshing table
 
 ### Unreleased
 - Load offline mods
