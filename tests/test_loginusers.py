@@ -14,6 +14,8 @@ pytestmark = pytest.mark.apitest
         ("api/loginusers_legacy_client.vdf", 0),
         ("api/loginusers_legacy_client_multiple.vdf", 1),
         ("api/loginusers_beta_client.vdf", 0),
+        ("api/loginusers_beta_client_multiple.vdf", 1),
+        ("api/loginusers_beta_client_multiple_2.vdf", 0),
     ],
 )
 def test_loginusers(monkeypatch, fixture: str, expect: int) -> None:

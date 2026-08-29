@@ -1,3 +1,4 @@
+import json
 import shutil
 
 from pathlib import Path
@@ -7,11 +8,10 @@ from dzgui.config.convert import rc2json
 from dzgui.util._json import read_json, write_json
 
 
-def migrate_legacy_conf(config: Path) -> None:
+def migrate_legacy_conf(config: Path) -> Any:
     old_conf = Path.home() / LEGACY_CONFIG_PATH
     j = rc2json(old_conf)
-    config.parent.mkdir(parents=True, exist_ok=True)
-    config.write_text(j)
+    return json.loads(j)
 
 
 def has_new_config(config: Path) -> bool:

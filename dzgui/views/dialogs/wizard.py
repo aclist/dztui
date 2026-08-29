@@ -1,4 +1,3 @@
-import os
 import textwrap
 
 from enum import Enum
@@ -17,9 +16,7 @@ from dzgui.const.constants import (
 )
 from dzgui.const.boilerplate import config_boilerplate
 from dzgui.const.endpoints import STEAM_API_SETUP
-from dzgui.const.enum import Preferences
 from dzgui.config import freedesktop
-from dzgui.config.query import lookup
 from dzgui.init.migrate import migrate_legacy_conf
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings import wizard
@@ -305,6 +302,7 @@ class ConfigMigrationPage(EnumeratedWizardPage):
         )
 
         self.migrated = False
+        self.migrated_conf: dict[str, Any] = {}
         self.config = config
         self.page_type = Gtk.AssistantPageType.INTRO
 
@@ -344,8 +342,7 @@ class ConfigMigrationPage(EnumeratedWizardPage):
     def _on_import_clicked(self, button: Gtk.Button) -> None:
         self.grid.set_sensitive(False)
         try:
-            # TODO: this could be deferred to the final page (prevents accidental destruction of dialog via ESC)
-            migrate_legacy_conf(self.config)
+            self.migrated_conf = migrate_legacy_conf(self.config)
             self.migrated = True
             self.success_box.set_visible(True)
         except Exception:
@@ -437,20 +434,18 @@ class Assistant(Gtk.Assistant):
         else:
             self.set_default_size(1500, 900)
 
-        self.is_binary = False if os.getenv("PYAPP") is None else True
         self.config_path = XDG.config
-
         self.config_values: dict[str, Any] = config_boilerplate
 
         self.setup_complete = False
 
-        self.page1 = IntroductionPage()
-        self.page2 = ConfigMigrationPage(XDG.config)
-        self.page3 = SteamPathPage()
-        self.page4 = SteamValidationPage()
-        self.page5 = PreferencesPage()
-        self.page6 = ShortcutCreationPage(XDG.shortcut)
-        self.page7 = CompletionPage()
+        self.page_intro = IntroductionPage()
+        self.page_migration = ConfigMigrationPage(XDG.config)
+        self.page_paths = SteamPathPage()
+        self.page_api = SteamValidationPage()
+        self.page_prefs = PreferencesPage()
+        self.page_shortcuts = ShortcutCreationPage(XDG.shortcut)
+        self.page_completion = CompletionPage()
 
         self.set_forward_page_func(self._advance_page)
 
@@ -458,16 +453,18 @@ class Assistant(Gtk.Assistant):
         EMITTER.connect("step_pending", self._mark_page_incomplete)
         EMITTER.connect("config", self._set_config_state)
 
+        self.pages: dict[EnumeratedWizardPage, int] = {}
+
         legacy_path = Path.home().joinpath(LEGACY_CONFIG_PATH)
         self.has_legacy_config = legacy_path.is_file()
         for page in (
-            self.page1,
-            self.page2,
-            self.page3,
-            self.page4,
-            self.page5,
-            self.page6,
-            self.page7,
+            self.page_intro,
+            self.page_migration,
+            self.page_paths,
+            self.page_api,
+            self.page_prefs,
+            self.page_shortcuts,
+            self.page_completion,
         ):
             # NOTE: skip config migration page if no legacy config file
             if (
@@ -475,10 +472,8 @@ class Assistant(Gtk.Assistant):
                 and self.has_legacy_config is False
             ):
                 continue
-            # NOTE: disabled for now on system-provided packages
-            if isinstance(page, ShortcutCreationPage) and not self.is_binary:
-                continue
-            self._add_page(page, page.get_page_type())
+            ind = self._add_page(page, page.get_page_type())
+            self.pages[page] = ind
 
         self.connect("prepare", self._on_page_prepare)
         self.connect("cancel", self.destroy_and_quit)
@@ -486,8 +481,11 @@ class Assistant(Gtk.Assistant):
         self.show_all()
         load_css()
 
-    def write_config(self) -> None:
-        write_json(self.config_values, self.config_path)
+    def write_config(self, config: dict[str, Any]) -> None:
+        write_json(config, self.config_path)
+
+    def get_final_page(self) -> int:
+        return self.pages[self.page_shortcuts]
 
     def _advance_page(self, index: int) -> int:
         page = self.get_nth_page(index)
@@ -496,24 +494,23 @@ class Assistant(Gtk.Assistant):
                 pass
             case ConfigMigrationPage():
                 if page.is_migrated():
-                    steam_path = lookup(self.config_path, Preferences.DEFAULT)
-                    self.page6.set_steam_path(steam_path)
-                    offset = 1 if not self.is_binary else 2
-                    self.setup_complete = True
-                    return self.get_n_pages() - offset
+                    sp = page.migrated_conf["default_steam_path"]
+                    self.page_shortcuts.set_steam_path(sp)
+                    self.config_values = self.page_migration.migrated_conf
+                    return self.get_final_page()
             case SteamPathPage():
                 self.config_values["default_steam_path"] = page.get_path_from_radio()
             case SteamValidationPage():
                 self.config_values["steam_api"] = page.get_api_key()
             case PreferencesPage():
                 # NOTE: collects config values before advancing to last page
-                name, use_miles, client = self.page5.get_prefs()
+                name, use_miles, client = self.page_prefs.get_prefs()
                 self.config_values["name"] = name
                 self.config_values["use_miles"] = use_miles
                 self.config_values["client"] = client
-                self.write_config()
-                self.page6.set_steam_path(self.config_values["default_steam_path"])
-                self.setup_complete = True
+                self.page_shortcuts.set_steam_path(
+                    self.config_values["default_steam_path"]
+                )
             case ShortcutCreationPage():
                 page.create_shortcuts()
             case _:
@@ -543,11 +540,12 @@ class Assistant(Gtk.Assistant):
 
     def _add_page(
         self, page: EnumeratedWizardPage, ptype: Gtk.AssistantPageType
-    ) -> None:
-        self.append_page(page)
+    ) -> int:
+        ind = self.append_page(page)
         self.set_page_type(page, ptype)
         self.set_page_title(page, page.get_title())
         self.set_page_complete(page, True)
+        return ind
 
     def _set_config_state(self, emitter: "Emitter", state: bool) -> None:
         self.config = state
@@ -563,6 +561,10 @@ class Assistant(Gtk.Assistant):
 
         if not isinstance(page, IntroductionPage):
             EMITTER.emit("step_pending")
+
+        if page == self.page_completion:
+            self.write_config(self.config_values)
+            self.setup_complete = True
 
 
 class CheckboxWithLabel(Gtk.Box):

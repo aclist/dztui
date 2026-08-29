@@ -259,10 +259,6 @@ class ProxyModelManager:
     def set_cache(self, filters: tuple[str], filtered_rows: list[tuple]) -> None:
         self.filter_cache[filters] = filtered_rows
 
-    # @deprecated("Currently unused")
-    # def convert_model_to_list(self, model: "FastInsertListStore") -> list:
-    #    return [[el for el in row] for row in model]
-
     def set_filtered(self, rows: list | None) -> None:
         if rows is None:
             self.filtered = []
@@ -298,4 +294,6 @@ class ProxyModelManager:
     def push(self, data: list[Any]) -> None:
         self.wipe_cache()
         self.set_control(data)
-        self.filter(FilterMode.INITIAL)
+        cur_keyword = self.filter_man.get_active_keyword()
+        mode = FilterMode.TOGGLE_ON if len(cur_keyword) > 0 else FilterMode.INITIAL
+        self.filter(mode)

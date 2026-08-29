@@ -7,9 +7,8 @@
 		"RememberPassword"		"0"
 		"WantsOfflineMode"		"0"
 		"SkipOfflineModeWarning"		"0"
-		"AllowAutoLogin"		"1"
-		"MostRecent"		"0"
-		"Timestamp"		"0"
+		"AutoLogin"		"1"
+		"Timestamp"		"1797904411"
 	}
 	"1"
 	{
@@ -18,8 +17,7 @@
 		"RememberPassword"		"0"
 		"WantsOfflineMode"		"0"
 		"SkipOfflineModeWarning"		"0"
-		"AllowAutoLogin"		"1"
-		"MostRecent"		"1"
-		"Timestamp"		"10"
+		"AutoLogin"		"1"
+		"Timestamp"		"1787904647"
 	}
 }

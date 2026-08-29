@@ -523,6 +523,7 @@ class Controller(GObject.GObject):
 
     def set_start_tab(self) -> None:
         ind = self.config_man.get_start_tab()
+        logger.info(f"Setting start tab to index {ind}")
         self.get_servers().notebook.set_current_page(ind)
 
     def get_debug_args(self) -> str:

@@ -346,10 +346,15 @@ def get_details(record: Record) -> Details:
 
     try:
         dlc = rules.dlc_flags
-        if dlc == 0:
-            dlc = strings.none
-        if dlc == 2:
-            dlc = strings.dlc_frostline
+        match dlc:
+            case 0:
+                dlc = strings.dlc_none
+            case 2:
+                dlc = strings.dlc_frostline
+            case 3:
+                dlc = strings.dlc_badlands
+            case _:
+                dlc = strings.unspecified
     except AttributeError:
         dlc = strings.unspecified
 

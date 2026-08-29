@@ -2,14 +2,13 @@ import a2s
 import requests
 import shutil
 import subprocess
-from warnings import deprecated
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from dzgui.api.servers import Record
 from dzgui.const.constants import REQUEST_TIMEOUT
-from dzgui.const.endpoints import COORDS_API, IP_ECHO
+from dzgui.const.endpoints import IP_ECHO
 
 
 if TYPE_CHECKING:
@@ -127,10 +126,3 @@ def is_valid_port(port: str) -> bool:
     if not port.isdigit() or int(port) == 0 or int(port[0]) == 0 or int(port) > 65535:
         return True
     return False
-
-
-@deprecated("use ips.csv")
-def get_local_coords(ip: str) -> str:
-    url = COORDS_API + "/" + ip
-    # local res=$(curl -Ls "$url" | jq -r '"\(.lat)\n\(.lon)"')
-    return url
