@@ -298,4 +298,6 @@ class ProxyModelManager:
     def push(self, data: list[Any]) -> None:
         self.wipe_cache()
         self.set_control(data)
-        self.filter(FilterMode.INITIAL)
+        cur_keyword = self.filter_man.get_active_keyword()
+        mode = FilterMode.TOGGLE_ON if len(cur_keyword) > 0 else FilterMode.INITIAL
+        self.filter(mode)
