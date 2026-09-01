@@ -351,7 +351,7 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
         GLib.idle_add(self._redraw, model, _iter, _ping)
 
     def _redraw(
-        self, model: FastInsertListStore, _iter: Gtk.TreeIter, _ping: int
+        self, model: "FastInsertListStore", _iter: Gtk.TreeIter, _ping: int
     ) -> None:
         ping_column = 9
         model.set(_iter, ping_column, _ping)
