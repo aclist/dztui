@@ -313,6 +313,8 @@ class ExceptionDialog(TextBufferDialog):
 
     def _on_map(self, dialog: Self) -> None:
         button = self.get_widget_for_response(Gtk.ResponseType.OK)
+        if button is None:
+            return
         button.grab_focus()
 
     def _on_page_changed(

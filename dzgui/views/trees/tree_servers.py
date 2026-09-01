@@ -66,7 +66,7 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
         self.handler_id: int
         self.queue: Queue = Queue()
 
-        self.seen_cache: list[str] = []
+        self.seen_cache: list[Record] = []
 
         prefs = self.controller.get_prefs()
         columns = prefs.paths.columns
@@ -350,7 +350,9 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
         _ping = ping(record.ip, record.qport)
         GLib.idle_add(self._redraw, model, _iter, _ping)
 
-    def _redraw(self, model: Gtk.TreeModel, _iter: Gtk.TreeIter, _ping: int) -> None:
+    def _redraw(
+        self, model: FastInsertListStore, _iter: Gtk.TreeIter, _ping: int
+    ) -> None:
         ping_column = 9
         model.set(_iter, ping_column, _ping)
         self.queue_draw()
