@@ -21,7 +21,7 @@ from dzgui.views.dialogs.generic import ExceptionDialog
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk  # noqa E402
+from gi.repository import Gtk, GLib  # noqa E402
 
 if TYPE_CHECKING:
     from dzgui.api.servers import A2SInfo, Record
@@ -390,6 +390,8 @@ class ServerModelManager:
     def _cleanup_on_success(self) -> None:
         proxy = self.proxy_man.get_proxy_model()
         self.tv.set_model(proxy)
+        if self.tv.enum == ServerTab.BROWSER:
+            GLib.idle_add(self.tv.wipe_cache)
         if self.preserve_on_fail is True:
             self.proxy_man.wipe_cache()
 
