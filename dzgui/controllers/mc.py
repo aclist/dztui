@@ -7,11 +7,12 @@ import dzgui.util._json as JSON  # noqa
 
 
 from dzgui.const.enum import (
-    FilterMode,
-    Preferences,
-    NotebookPage,
     ButtonType,
     ContextMenu,
+    FilterMode,
+    NotebookPage,
+    Preferences,
+    ServerTab,
 )
 
 from dzgui.config.userprefs import UserPrefs
@@ -37,7 +38,6 @@ logger = logging.getLogger(APP_NAME)
 
 if TYPE_CHECKING:
     from dzgui.api.servers import Record
-    from dzgui.const.enum import ServerTab
     from dzgui.managers.connection import Prerequisites
     from dzgui.managers.filter import FilterManager
     from dzgui.util.dist import Haversine
@@ -498,6 +498,9 @@ class Controller(GObject.GObject):
 
     def set_active_keyword(self, keyword: str) -> None:
         self.get_filter_man().set_active_keyword(keyword)
+        ServerModelManager(self, self.get_active_treeview()).refilter(
+            FilterMode.TOGGLE_ON
+        )
 
     def get_modtreeview(self) -> "ModTreeView":
         return self.mediator.modtreeview
