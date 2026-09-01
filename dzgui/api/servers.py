@@ -59,14 +59,8 @@ class Details:
     success: bool
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Record:
-    # TODO: investigate whether this enum is still being used;
-    # can this be frozen?
-    """
-    The gameport field is manipulated by the RowType.CONN_BY_IP method
-    """
-
     ip: str
     gameport: int
     qport: int
