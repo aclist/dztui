@@ -309,6 +309,12 @@ class ExceptionDialog(TextBufferDialog):
         content.set_spacing(0)
         content.add(scrollable)
 
+        self.connect("map", self._on_map)
+
+    def _on_map(self, dialog: Self) -> None:
+        button = self.get_widget_for_response(Gtk.ResponseType.OK)
+        button.grab_focus()
+
     def _on_page_changed(
         self, notebook: Gtk.Notebook, child: Gtk.Box | Gtk.ScrolledWindow, index: int
     ) -> None:
