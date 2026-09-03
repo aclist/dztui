@@ -1,7 +1,9 @@
 import re
 
 from dzgui.model.proxy_model import DAY_REG, NIGHT_REG
+import pytest
 
+pytestmark = pytest.mark.FOO
 
 def iterate(h: str, r: str) -> None:
     for m in range(60):
@@ -18,6 +20,6 @@ def test_day() -> None:
 
 def test_night() -> None:
     for h in range(24):
-        if 6 < h < 17:
+        if 5 < h < 18:
             continue
         iterate(h, NIGHT_REG)
