@@ -235,7 +235,7 @@ class ConnectionManager:
     @call_on_thread(dialog.querying)
     def query_details(self, record: Servers.Record) -> None:
         details = Servers.get_details(record)
-        if details.success is False:
+        if details is None:
             self.thread_man.set_cleanup_func(
                 StoredFunc(self._server_timeout), destroy_first=True
             )
