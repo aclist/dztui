@@ -59,7 +59,6 @@ class LocalClock:
         self.start_time = datetime.now()
         GLib.timeout_add(500, self.check_time)
 
-    # FIXME: sometimes skips 2s
     def get_time(self) -> str:
         return datetime.now().time().strftime(EXTENDED_TIME_FORMAT)
 
@@ -191,7 +190,6 @@ class ServerClock:
             delta = self.get_remaining_delta(picker_time, is_night)
             total = to_end + next_cycle + delta
         else:
-            # TODO: fix calculation
             picker_date = datetime.combine(self.cur_time, picker_time)
             # NOTE: strip sub-minute values
             new = self.cur_time.replace(second=0, microsecond=0)
@@ -477,8 +475,3 @@ class ServerTimeCalculator(Gtk.ScrolledWindow):
         for el in time_picker_frame, adjusted_time_frame, disclaimer:
             outerbox.add(el)
         self.add(outerbox)
-
-
-# TEST: write tests with/without live clock increment
-# FIXME: with accel of (1, 1), a 60min change converts to 55 mins instead of 59/60
-# FIXME: real time until target time is not zero padded
