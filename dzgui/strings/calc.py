@@ -1,0 +1,7 @@
+heading_local_time = "Local time"
+heading_server_time = "In-game time"
+heading_target_time = "Target time"
+heading_remainder_time = "Remainder until target"
+heading_adjusted_time = "Adjusted local time"
+calculate = "Calculate"
+disclaimer = "Times shown are approximations.\nServer time may differ based on time of year in game."
