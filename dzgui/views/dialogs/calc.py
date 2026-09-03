@@ -226,18 +226,50 @@ class GenericAdjustedClock:
         return self.start_time.strftime(EXTENDED_TIME_FORMAT)
 
 
-class RemainderClock(GenericAdjustedClock):
+class RemainderClock:
     def __init__(self, emitter: Emitter) -> None:
-        super().__init__(emitter, signal="remaining_time_changed")
-        self.start_time = datetime.combine(
-            datetime.now(), time(hour=0, minute=0, second=0)
+        self.emitter = emitter
+        self.emitter.connect("target_time_changed", self._on_target_time_changed)
+        self.emitter.connect("local_time_incremented", self._on_local_time_incremented)
+        self.time = datetime.combine(datetime.now(), time(hour=0, minute=0, second=0))
+
+        self.previous = timedelta(0)
+
+    def _on_local_time_incremented(
+        self, emitter: Emitter, time: datetime, elapsed: timedelta
+    ) -> None:
+        if self.time == datetime.min.time():
+            return
+
+        delta = elapsed - self.previous
+        # NOTE: clamp to midnight
+        self.time = max(
+            self.time - delta, self.time.replace(hour=0, minute=0, second=0)
         )
+        self.previous = elapsed
+        self.emitter.emit("remaining_time_changed", self.time)
+
+    def _on_target_time_changed(self, emitter: Emitter, time: timedelta) -> None:
+        self.time += time
+        self.emitter.emit("remaining_time_changed", self.time)
+
+    def get_time(self) -> str:
+        return self.time.strftime(EXTENDED_TIME_FORMAT)
 
 
-class AdjustedClock(GenericAdjustedClock):
+class AdjustedClock:
     def __init__(self, emitter: Emitter) -> None:
-        super().__init__(emitter, signal="adjusted_local_time_changed")
+        self.emitter = emitter
+        self.emitter.connect("target_time_changed", self._on_target_time_changed)
         self.start_time = datetime.now()
+
+    def _on_target_time_changed(self, emitter: Emitter, time: timedelta) -> None:
+        self.start_time = datetime.now()
+        adjusted = self.start_time + time
+        self.emitter.emit("adjusted_local_time_changed", adjusted)
+
+    def get_time(self) -> str:
+        return self.start_time.strftime(EXTENDED_TIME_FORMAT)
 
 
 class VerticalSpinBox(Gtk.SpinButton):
