@@ -215,12 +215,16 @@ class RemainderClock:
         self.emitter = emitter
         self.emitter.connect("target_time_changed", self._on_target_time_changed)
         self.emitter.connect("local_time_incremented", self._on_local_time_incremented)
-        self.reset_time()
+        self.reset_time(True)
 
         self.previous = timedelta(0)
 
-    def reset_time(self) -> None:
-        self.time = datetime.combine(datetime.now(), time(hour=0, minute=0, second=0))
+    def reset_time(self, zero_out: bool = False) -> None:
+        now = datetime.now()
+        second, ms = (0, 0) if zero_out else (now.second, now.microsecond)
+        self.time = datetime.combine(
+            now, time(hour=0, minute=0, second=second, microsecond=ms)
+        )
 
     def _on_local_time_incremented(
         self, emitter: Emitter, time: datetime, elapsed: timedelta
@@ -320,7 +324,13 @@ class TimePicker(Gtk.Box):
         return int(self.minute_spin.get_adjustment().get_value())
 
     def get_time(self) -> time:
-        return time(hour=self.get_hour(), minute=self.get_minute())
+        d = datetime.now()
+        return time(
+            hour=self.get_hour(),
+            minute=self.get_minute(),
+            second=d.second,
+            microsecond=d.microsecond,
+        )
 
     def set_time(self, hour: int, minute: int) -> None:
         self.hour_spin.get_adjustment().set_value(hour)
