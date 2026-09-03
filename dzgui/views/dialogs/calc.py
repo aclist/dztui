@@ -231,9 +231,12 @@ class RemainderClock:
         self.emitter = emitter
         self.emitter.connect("target_time_changed", self._on_target_time_changed)
         self.emitter.connect("local_time_incremented", self._on_local_time_incremented)
-        self.time = datetime.combine(datetime.now(), time(hour=0, minute=0, second=0))
+        self.reset_time()
 
         self.previous = timedelta(0)
+
+    def reset_time(self) -> None:
+        self.time = datetime.combine(datetime.now(), time(hour=0, minute=0, second=0))
 
     def _on_local_time_incremented(
         self, emitter: Emitter, time: datetime, elapsed: timedelta
@@ -250,6 +253,7 @@ class RemainderClock:
         self.emitter.emit("remaining_time_changed", self.time)
 
     def _on_target_time_changed(self, emitter: Emitter, time: timedelta) -> None:
+        self.reset_time()
         self.time += time
         self.emitter.emit("remaining_time_changed", self.time)
 

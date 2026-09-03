@@ -91,7 +91,6 @@ class ServerDetailsDialog(ServerDialog):
             column.set_sort_column_id(i)
             column.set_expand(True)
 
-
         scrollable_message = Gtk.ScrolledWindow(vexpand=True)
         desc = Gtk.Label(label=dialogs.server_message, valign=Gtk.Align.START)
         css.add_class(desc, "server-subheading")
@@ -119,14 +118,16 @@ class ServerDetailsDialog(ServerDialog):
         self.content.reorder_child(calc_button, 2)
 
         self.scrollable_tree.set_size_request(700, 250)
-        self.calc = ServerTimeCalculator(Time(details.gametime, details.day_accel, details.night_accel))
+        self.calc = ServerTimeCalculator(
+            Time(details.gametime, details.day_accel, details.night_accel)
+        )
         self.stack.add_named(self.calc, "CALCULATOR")
 
         self.connect("map", self._on_map)
         self.show_all()
 
     def _on_map(self, dialog: Self) -> None:
-        if (widget := self.get_widget_for_response(Gtk.ResponseType.OK)):
+        if widget := self.get_widget_for_response(Gtk.ResponseType.OK):
             widget.grab_focus()
 
     def _on_calc_pressed(self, button: Gtk.Button) -> None:
