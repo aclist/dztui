@@ -23,3 +23,8 @@ custom_mod_dialog = "Set location to a custom mods folder"
 
 debug_heading = "Debug"
 debug_secondary = "Launch arguments"
+
+toggle_calc = "Toggle calculator"
+
+server_details = "Server details"
+server_message = "Server message"
