@@ -210,22 +210,6 @@ class ServerClock:
         return td
 
 
-class GenericAdjustedClock:
-    def __init__(self, emitter: Emitter, signal: str) -> None:
-        self.signal = signal
-        self.emitter = emitter
-        self.emitter.connect("target_time_changed", self._on_target_time_changed)
-
-    def _on_target_time_changed(self, emitter: Emitter, time: timedelta) -> None:
-        if isinstance(self, AdjustedClock):
-            self.start_time = datetime.now()
-        adjusted = self.start_time + time
-        self.emitter.emit(self.signal, adjusted)
-
-    def get_time(self) -> str:
-        return self.start_time.strftime(EXTENDED_TIME_FORMAT)
-
-
 class RemainderClock:
     def __init__(self, emitter: Emitter) -> None:
         self.emitter = emitter
