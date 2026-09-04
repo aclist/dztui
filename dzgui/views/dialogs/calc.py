@@ -45,6 +45,10 @@ class Emitter(GObject.GObject):
         pass
 
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
+    def target_time_reset(self, time: timedelta) -> None:
+        pass
+
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
     def remaining_time_changed(self, time: datetime) -> None:
         pass
 
@@ -87,43 +91,36 @@ class ServerClock:
         self.start_time = datetime.combine(datetime.today(), time(hour, minute))
         self.cur_time = datetime.combine(datetime.today(), time(hour, minute))
 
-        # NOTE: at highest possible accel interval (64 * 64), real time is 0.876 seconds
-        if self.is_night():
-            GLib.timeout_add(500, self.increment_night)
-        else:
-            GLib.timeout_add(500, self.increment_day)
+        # NOTE: highest theoretical accel interval is 24 * 64 at night
+        GLib.timeout_add(400, self._increment_with_offset)
 
     @staticmethod
     def split_time(server_time: Time) -> tuple[int, int]:
         split = server_time.time.split(":")
         return int(split[0]), int(split[1])
 
-    def _increment_with_offset(self, offset: float) -> None:
+    def _increment_with_offset(self) -> None:
+        factor = self.get_accel_factor(self.cur_time)
         elapsed = self.local_clock.get_elapsed_time()
-        virtual_elapsed = elapsed * offset
+        virtual_elapsed = elapsed * factor
         self.cur_time = self.start_time + virtual_elapsed
         self.emitter.emit("server_time_incremented", self.cur_time)
-
-    def increment_day(self) -> bool:
-        if self.is_night():
-            GLib.timeout_add(500, self.increment_night)
-            return False
-        offset = self.day_accel
-        self._increment_with_offset(offset)
         return True
 
-    def increment_night(self) -> bool:
-        if not self.is_night():
-            GLib.timeout_add(500, self.increment_day)
-            return False
-        offset = self.night_accel * self.day_accel
-        self._increment_with_offset(offset)
-        return True
+    def increment(self) -> bool:
+        self._increment_with_offset
 
     def is_night(self) -> bool:
         return (
             self.cur_time.time() >= NIGHT_START_TIME
             or self.cur_time.time() <= NIGHT_END_TIME
+        )
+
+    def get_accel_factor(self, dt: datetime) -> bool:
+        return (
+            self.day_accel
+            if DAY_START_TIME <= dt.time() < DAY_END_TIME
+            else (self.night_accel * self.day_accel)
         )
 
     def get_values(self) -> tuple[int, int]:
@@ -132,86 +129,34 @@ class ServerClock:
     def get_time(self) -> time:
         return self.cur_time.time()
 
-    def get_cycle_remainder(self, accel: bool = True) -> float:
-        # NOTE: calc from cycle start time to current point
-        if self.is_night():
-            cutoff = DAY_START_TIME
-            offset = self.day_accel * self.night_accel
-        else:
-            cutoff = NIGHT_START_TIME
-            offset = self.day_accel
-        start = datetime.combine(self.cur_time, cutoff)
+    def calc_delta(self, end_time: datetime) -> timedelta:
+        total = 0.0
+        current_time = self.cur_time
 
-        if accel is False:
-            offset = 1
-        return (start - self.cur_time).total_seconds() / offset
+        if current_time > end_time:
+            end_time += timedelta(days=1)
+        while current_time < end_time:
+            factor = self.get_accel_factor(current_time)
 
-    def get_full_cycle(self, end_time: time, start_time: time) -> float:
-        end = datetime.combine(self.cur_time, end_time)
-        start = datetime.combine(self.cur_time, start_time)
-        if start > end:
-            end += timedelta(days=1)
-        return (end - start).total_seconds()
+            edge = (
+                DAY_END_TIME if current_time.time() < DAY_END_TIME else DAY_START_TIME
+            )
 
-    def get_day_cycle(self) -> float:
-        return self.get_full_cycle(DAY_END_TIME, DAY_START_TIME)
+            next_edge = datetime.combine(current_time.date(), edge)
 
-    def get_night_cycle(self) -> float:
-        return self.get_full_cycle(NIGHT_END_TIME, NIGHT_START_TIME)
-
-    def get_delta(self, picker_time: time, start_time: time) -> float:
-        start = datetime.combine(self.cur_time, start_time)
-        picker_date = datetime.combine(self.cur_time, picker_time)
-        if start > picker_date:
-            picker_date += timedelta(days=1)
-        delta = (picker_date - start).total_seconds()
-        return delta
-
-    def get_next_cycle(self) -> float:
-        if self.is_night():
-            return self.get_day_cycle() / self.day_accel
-        else:
-            return self.get_night_cycle() / (self.day_accel * self.night_accel)
-
-    def get_remaining_delta(self, picker_time: time, is_night: bool) -> float:
-        if is_night:
-            start_time = NIGHT_START_TIME
-            offset = self.day_accel * self.night_accel
-        else:
-            start_time = DAY_START_TIME
-            offset = self.day_accel
-        return self.get_delta(picker_time, start_time) / offset
-
-    def calc_delta(self, picker_time: time, is_night: bool) -> timedelta:
-        # NOTE: time spans two full cycles
-        if self.get_time() > picker_time:
-            to_end = self.get_cycle_remainder()
-            next_cycle = self.get_next_cycle()
-            delta = self.get_remaining_delta(picker_time, is_night)
-            total = to_end + next_cycle + delta
-        else:
-            picker_date = datetime.combine(self.cur_time, picker_time)
-            # NOTE: strip sub-minute values
-            new = self.cur_time.replace(second=0, microsecond=0)
-            delta = (picker_date - new).total_seconds()
-            remainder_till_cycle_end = self.get_cycle_remainder(accel=False)
-            if delta <= remainder_till_cycle_end:
-                if self.is_night():
-                    total = delta / (self.day_accel * self.night_accel)
-                else:
-                    total = delta / self.day_accel
-            else:
-                total = self.get_remaining_delta(picker_time, is_night)
-
-        total = round(total)
-        td = timedelta(seconds=total)
-        return td
+            if next_edge <= current_time:
+                next_edge += timedelta(days=1)
+            chunk_end = min(end_time, next_edge)
+            total += (chunk_end - current_time).total_seconds() / factor
+            current_time = chunk_end
+        return timedelta(seconds=total)
 
 
 class RemainderClock:
     def __init__(self, emitter: Emitter) -> None:
         self.emitter = emitter
         self.emitter.connect("target_time_changed", self._on_target_time_changed)
+        self.emitter.connect("target_time_reset", self._on_target_time_reset)
         self.emitter.connect("local_time_incremented", self._on_local_time_incremented)
         self.reset_time(True)
 
@@ -238,8 +183,12 @@ class RemainderClock:
         self.previous = elapsed
         self.emitter.emit("remaining_time_changed", self.time)
 
+    def _on_target_time_reset(self, emitter: Emitter, time: timedelta) -> None:
+        self.reset_time(True)
+        self.emitter.emit("remaining_time_changed", self.time)
+
     def _on_target_time_changed(self, emitter: Emitter, time: timedelta) -> None:
-        self.reset_time()
+        self.reset_time(True)
         self.time += time
         self.emitter.emit("remaining_time_changed", self.time)
 
@@ -323,11 +272,14 @@ class TimePicker(Gtk.Box):
 
     def get_time(self) -> time:
         d = datetime.now()
-        return time(
-            hour=self.get_hour(),
-            minute=self.get_minute(),
-            second=d.second,
-            microsecond=d.microsecond,
+        return datetime.combine(
+            d,
+            time(
+                hour=self.get_hour(),
+                minute=self.get_minute(),
+                second=d.second,
+                microsecond=d.microsecond,
+            ),
         )
 
     def set_time(self, hour: int, minute: int) -> None:
@@ -448,11 +400,12 @@ class TimePickerFrame(Gtk.Frame):
     def _on_calculate_button_clicked(self, button: Gtk.Button) -> None:
         if (self.picker.get_values()) == (self.server_time.get_values()):
             total_time = timedelta(seconds=0)
+            self.emitter.emit("target_time_reset", total_time)
         else:
             picker_time = self.picker.get_time()
-            is_night = self.picker.is_night()
-            total_time = self.server_time.calc_delta(picker_time, is_night)
-        self.emitter.emit("target_time_changed", total_time)
+            total_time = self.server_time.calc_delta(picker_time)
+            print(total_time)
+            self.emitter.emit("target_time_changed", total_time)
 
 
 class ServerTimeCalculator(Gtk.ScrolledWindow):
