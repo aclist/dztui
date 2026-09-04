@@ -99,7 +99,7 @@ class ServerClock:
         split = server_time.time.split(":")
         return int(split[0]), int(split[1])
 
-    def _increment_with_offset(self) -> None:
+    def _increment_with_offset(self) -> Literal[True]:
         factor = self.get_accel_factor(self.cur_time)
         elapsed = self.local_clock.get_elapsed_time()
         virtual_elapsed = elapsed * factor
@@ -107,16 +107,7 @@ class ServerClock:
         self.emitter.emit("server_time_incremented", self.cur_time)
         return True
 
-    def increment(self) -> bool:
-        self._increment_with_offset
-
-    def is_night(self) -> bool:
-        return (
-            self.cur_time.time() >= NIGHT_START_TIME
-            or self.cur_time.time() <= NIGHT_END_TIME
-        )
-
-    def get_accel_factor(self, dt: datetime) -> bool:
+    def get_accel_factor(self, dt: datetime) -> float:
         return (
             self.day_accel
             if DAY_START_TIME <= dt.time() < DAY_END_TIME
@@ -270,7 +261,7 @@ class TimePicker(Gtk.Box):
     def get_minute(self) -> int:
         return int(self.minute_spin.get_adjustment().get_value())
 
-    def get_time(self) -> time:
+    def get_time(self) -> datetime:
         d = datetime.now()
         return datetime.combine(
             d,
@@ -285,10 +276,6 @@ class TimePicker(Gtk.Box):
     def set_time(self, hour: int, minute: int) -> None:
         self.hour_spin.get_adjustment().set_value(hour)
         self.minute_spin.get_adjustment().set_value(minute)
-
-    def is_night(self) -> bool:
-        t = self.get_time()
-        return t >= NIGHT_START_TIME or t <= NIGHT_END_TIME
 
 
 class AdjustedTimeFrame(Gtk.Frame):
@@ -404,7 +391,6 @@ class TimePickerFrame(Gtk.Frame):
         else:
             picker_time = self.picker.get_time()
             total_time = self.server_time.calc_delta(picker_time)
-            print(total_time)
             self.emitter.emit("target_time_changed", total_time)
 
 
