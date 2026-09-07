@@ -399,7 +399,7 @@ class TimePickerFrame(Gtk.Frame):
 
     def update_server_icon(self) -> None:
         icon = DAY_ICON if self.server_time.is_day() else NIGHT_ICON
-        self.icon_indicator.set_from_icon_name(icon)
+        self.icon_indicator.set_icon_name(icon)
 
     def _on_server_clock_increment(self, emitter: Emitter, time_now: datetime) -> None:
         t = time_now.time().strftime("%H:%M")
