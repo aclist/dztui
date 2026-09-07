@@ -63,6 +63,7 @@ class LocalClock:
     def __init__(self, emitter: Emitter) -> None:
         self.emitter = emitter
         self.start_time = datetime.now()
+        # NOTE: highest theoretical accel interval is 24 * 64
         GLib.timeout_add(500, self.check_time)
 
     def get_time(self) -> str:
@@ -107,7 +108,6 @@ class ServerClock:
         return False
 
     def _on_local_time_incremented(
-        # NOTE: highest theoretical accel interval is 24 * 64 at night
         self,
         emitter: Emitter,
         time: datetime,
