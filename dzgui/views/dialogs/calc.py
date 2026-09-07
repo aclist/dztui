@@ -93,8 +93,8 @@ class ServerClock:
         self.start_time = datetime.combine(datetime.today(), time(hour, minute))
         self.cur_time = datetime.combine(datetime.today(), time(hour, minute))
 
-        # NOTE: highest theoretical accel interval is 24 * 64 at night
-        GLib.timeout_add(400, self._increment_with_offset)
+        self._last_elapsed = self.local_clock.get_elapsed_time()
+        self.emitter.connect("local_time_incremented", self._on_local_time_incremented)
 
     @staticmethod
     def split_time(server_time: Time) -> tuple[int, int]:
@@ -106,11 +106,17 @@ class ServerClock:
             return True
         return False
 
-    def _increment_with_offset(self) -> Literal[True]:
+    def _on_local_time_incremented(
+        # NOTE: highest theoretical accel interval is 24 * 64 at night
+        self,
+        emitter: Emitter,
+        time: datetime,
+        elapsed: timedelta,
+    ) -> Literal[True]:
+        delta = elapsed - self._last_elapsed
+        self._last_elapsed = elapsed
         factor = self.get_accel_factor(self.cur_time)
-        elapsed = self.local_clock.get_elapsed_time()
-        virtual_elapsed = elapsed * factor
-        self.cur_time = self.start_time + virtual_elapsed
+        self.cur_time += delta * factor
         self.emitter.emit("server_time_incremented", self.cur_time)
         return True
 
