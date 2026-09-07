@@ -12,8 +12,6 @@ from dzgui.views.dialogs.calc import (
     DAY_END_TIME,
 )
 
-pytestmark = pytest.mark.FOO
-
 
 class DummyEmitter:
     pass
