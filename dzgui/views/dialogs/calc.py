@@ -11,9 +11,9 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, GObject  # type: ignore  # noqa E402
 
 DAY_START_TIME = time(hour=6, minute=0, second=0)
-DAY_END_TIME = time(hour=17, minute=59, second=59)
+DAY_END_TIME = time(hour=18, minute=0, second=0)
 NIGHT_START_TIME = time(hour=18, minute=0, second=0)
-NIGHT_END_TIME = time(hour=5, minute=59, second=59)
+NIGHT_END_TIME = time(hour=6, minute=0, second=0)
 EXTENDED_TIME_FORMAT = "%H:%M:%S"
 
 
