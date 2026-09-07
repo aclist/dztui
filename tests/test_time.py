@@ -1,7 +1,6 @@
 import re
 
 from dzgui.model.proxy_model import DAY_REG, NIGHT_REG
-import pytest
 
 def iterate(h: str, r: str) -> None:
     for m in range(60):
