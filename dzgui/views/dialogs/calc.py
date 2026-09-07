@@ -284,6 +284,13 @@ class TimePicker(Gtk.Box):
         return int(self.minute_spin.get_adjustment().get_value())
 
     def get_time(self) -> datetime:
+        """
+        NOTE: interpolating seconds/microseconds from the current time
+        may prevent abrupt visual changes when setting a new TimePicker time
+        while a clock tick is updating the local remainder label.
+        However, this can introduce false negatives when running tests due to microsecond drift.
+        Ideally, tests should be decoupled from this logic.
+        """
         d = datetime.now()
         return datetime.combine(
             d,
