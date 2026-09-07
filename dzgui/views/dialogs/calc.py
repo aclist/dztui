@@ -184,6 +184,8 @@ class RemainderClock:
     def _on_target_time_reset(self, emitter: Emitter, time: timedelta) -> None:
         self.reset_time(True)
         self.emitter.emit("remaining_time_changed", self.time)
+        # NOTE: restore adjusted time to current time
+        self.emitter.emit("adjusted_local_time_changed", datetime.now())
 
     def _on_target_time_changed(self, emitter: Emitter, time: timedelta) -> None:
         self.reset_time(True)
