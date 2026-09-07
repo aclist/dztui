@@ -9,3 +9,6 @@ class Icon(Gtk.Image):
         super().__init__(
             icon_name=name, icon_size=Gtk.IconSize.BUTTON, margin_start=l_margin
         )
+
+    def set_from_icon_name(self, name: str) -> None:
+        super().set_from_icon_name(name, Gtk.IconSize.BUTTON)

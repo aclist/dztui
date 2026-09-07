@@ -3,9 +3,11 @@ from dataclasses import dataclass
 from datetime import datetime, time, timedelta
 from typing import Literal
 
-from dzgui.views.components.labels import BoldLabel
+from dzgui.const.constants import DAY_ICON, NIGHT_ICON
 from dzgui.strings import calc
-from dzgui.views.components.box import VBox
+from dzgui.views.components.icon import Icon
+from dzgui.views.components.labels import BoldLabel
+from dzgui.views.components.box import VBox, HBox
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, GObject  # type: ignore  # noqa E402
@@ -98,6 +100,11 @@ class ServerClock:
     def split_time(server_time: Time) -> tuple[int, int]:
         split = server_time.time.split(":")
         return int(split[0]), int(split[1])
+
+    def is_day(self) -> bool:
+        if DAY_START_TIME <= self.cur_time.time() <= DAY_END_TIME:
+            return True
+        return False
 
     def _increment_with_offset(self) -> Literal[True]:
         factor = self.get_accel_factor(self.cur_time)
@@ -365,6 +372,13 @@ class TimePickerFrame(Gtk.Frame):
         h1 = BoldLabel(calc.heading_server_time)
         h2 = BoldLabel(calc.heading_target_time)
 
+        self.icon_indicator = Icon(DAY_ICON)
+        self.update_server_icon()
+
+        server_time_box = HBox(10)
+        server_time_box.set_halign(Gtk.Align.CENTER)
+        server_time_box.extend([self.server_timelabel, self.icon_indicator])
+
         flowbox = Gtk.FlowBox(
             row_spacing=10,
             column_spacing=50,
@@ -378,14 +392,19 @@ class TimePickerFrame(Gtk.Frame):
         flowbox.add(h1)
         flowbox.add(h2)
         flowbox.add(self.local_timelabel)
-        flowbox.add(self.server_timelabel)
+        flowbox.add(server_time_box)
         flowbox.add(self.picker)
 
         self.add(flowbox)
 
+    def update_server_icon(self) -> None:
+        icon = DAY_ICON if self.server_time.is_day() else NIGHT_ICON
+        self.icon_indicator.set_from_icon_name(icon)
+
     def _on_server_clock_increment(self, emitter: Emitter, time_now: datetime) -> None:
         t = time_now.time().strftime("%H:%M")
         self.server_timelabel.set_text(t)
+        self.update_server_icon()
 
     def _on_local_clock_increment(
         self, emitter: Emitter, time_now: datetime, elapsed: timedelta
