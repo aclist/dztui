@@ -117,6 +117,9 @@ class ServerClock:
     def get_values(self) -> tuple[int, int]:
         return self.cur_time.hour, self.cur_time.minute
 
+    def get_datetime(self) -> datetime:
+        return self.cur_time
+
     def get_time(self) -> time:
         return self.cur_time.time()
 
@@ -126,18 +129,22 @@ class ServerClock:
 
         if current_time > end_time:
             end_time += timedelta(days=1)
+
         while current_time < end_time:
             factor = self.get_accel_factor(current_time)
+            day_start = datetime.combine(current_time.date(), DAY_START_TIME)
+            day_end = datetime.combine(current_time.date(), DAY_END_TIME)
 
-            edge = (
-                DAY_END_TIME if current_time.time() < DAY_END_TIME else DAY_START_TIME
-            )
+            if current_time.time() < DAY_START_TIME:
+                edge = day_start
+            elif current_time.time() < DAY_END_TIME:
+                edge = day_end
+            else:
+                edge = datetime.combine(
+                    current_time.date() + timedelta(days=1), DAY_START_TIME
+                )
 
-            next_edge = datetime.combine(current_time.date(), edge)
-
-            if next_edge <= current_time:
-                next_edge += timedelta(days=1)
-            chunk_end = min(end_time, next_edge)
+            chunk_end = min(end_time, edge)
             total += (chunk_end - current_time).total_seconds() / factor
             current_time = chunk_end
         return timedelta(seconds=total)
@@ -268,8 +275,8 @@ class TimePicker(Gtk.Box):
             time(
                 hour=self.get_hour(),
                 minute=self.get_minute(),
-                second=d.second,
-                microsecond=d.microsecond,
+                second=0,
+                microsecond=0,
             ),
         )
 
