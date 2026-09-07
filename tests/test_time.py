@@ -3,8 +3,6 @@ import re
 from dzgui.model.proxy_model import DAY_REG, NIGHT_REG
 import pytest
 
-pytestmark = pytest.mark.FOO
-
 def iterate(h: str, r: str) -> None:
     for m in range(60):
         time = f"{h:02}:{m:02}"
