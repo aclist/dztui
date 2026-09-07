@@ -47,6 +47,7 @@ docs = [
 ]
 test = [
     "black==25.1.0",
+    "hypothesis==6.167.1",
     "pre-commit==4.4.0",
     "pytest==8.4.2",
     "pytest-cov==7.0.0",
