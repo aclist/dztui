@@ -66,7 +66,7 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
         self.handler_id: int
         self.queue: Queue = Queue()
 
-        self.seen_cache: list[str] = []
+        self.seen_cache: list[Record] = []
 
         prefs = self.controller.get_prefs()
         columns = prefs.paths.columns
@@ -341,16 +341,24 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
         control = self.proxy_man.get_control()
         return model, control
 
-    @staticmethod
     def ping_server(
+        self,
         model: "FastInsertListStore",
         _iter: Gtk.TreeIter,
-        ip: str,
-        qport: int,
-        ping_column: int,
+        record: Record,
     ) -> None:
-        _ping = ping(ip, qport)
-        GLib.idle_add(lambda: model.set(_iter, ping_column, _ping))
+        _ping = ping(record.ip, record.qport)
+        GLib.idle_add(self._redraw, model, _iter, _ping)
+
+    def _redraw(
+        self, model: "FastInsertListStore", _iter: Gtk.TreeIter, _ping: int
+    ) -> None:
+        ping_column = 9
+        model.set(_iter, ping_column, _ping)
+        self.queue_draw()
+
+    def wipe_cache(self) -> None:
+        self.seen_cache = []
 
     def _get_ping(
         self,
@@ -363,13 +371,12 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
 
         addr_column = 7
         qport_column = 8
-        ping_column = 9
 
         addr = model.get_value(_iter, addr_column).split(":")
         ip = addr[0]
-        gameport = addr[1]
+        gameport = int(addr[1])
         qport = model.get_value(_iter, qport_column)
-        record = f"{addr}:{gameport}:{qport}"
+        record = Record(ip, gameport, qport)
 
         if record in self.seen_cache:
             return
@@ -378,7 +385,7 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
         thread = threading.Thread(
             daemon=True,
             target=self.ping_server,
-            args=(model, _iter, ip, qport, ping_column),
+            args=(model, _iter, record),
         )
         thread.start()
 

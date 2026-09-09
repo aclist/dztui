@@ -9,8 +9,6 @@ from dzgui.const.constants import (
     NO_PADDING,
     SEARCH_ICON,
 )
-from dzgui.const.enum import FilterMode
-from dzgui.model.servers import ServerModelManager
 from dzgui.util.format import format_exception
 from dzgui.util.strings import all_maps
 from dzgui.views.components.maps_combo import MapsCombo
@@ -147,10 +145,6 @@ class KeywordEntry(Gtk.Entry):
         self.keyword = keyword
         self.controller.set_active_keyword(keyword)
         logger.info(f"User filtered by keyword '{keyword}'")
-
-        ServerModelManager(
-            self.controller, self.controller.get_active_treeview()
-        ).refilter(FilterMode.TOGGLE_ON)
 
 
 class FilterPanel(Gtk.Box):
