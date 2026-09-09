@@ -11,7 +11,6 @@ delimiter = "␞"
 # GenericDialog
 main_menu = "Return to main menu"
 exit_app = "Exit"
-server_details = "Server details"
 modlist = "Modlist"
 input_required = "User input required"
 confirm = "Confirmation"
@@ -59,7 +58,6 @@ browser_cols = [
 ]
 
 # DetailsDialog
-server_message = "Server message"
 workshop = "Enter/double click a row to open in Steam Workshop."
 
 # LanDialog

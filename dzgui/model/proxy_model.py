@@ -12,8 +12,8 @@ if TYPE_CHECKING:
     from dzgui.api.servers import Record
     from dzgui.model.servers import NewPlayerCount
 
-DAY_REG = r"([0][7-9]|[1][0-6])"
-NIGHT_REG = r"([0][0-6]|[1][7-9]|[2][0-3])"
+DAY_REG = r"([0][6-9]|[1][0-7])"
+NIGHT_REG = r"([0][0-5]|[1][8-9]|[2][0-3])"
 
 
 class ProxyModelManager:

@@ -54,9 +54,12 @@ class Res:
 
 @dataclass(slots=True, frozen=True)
 class Details:
-    data: Union[list, None]
+    data: list[list[str]]
+    name: str
     description: str
-    success: bool
+    gametime: str
+    day_accel: float
+    night_accel: float
 
 
 @dataclass(slots=True, frozen=True)
@@ -277,43 +280,41 @@ def query_direct(ip: str, qport: int, timeout: float = 3.0) -> dict[str, Any] | 
         info = a2s.info((ip, qport), timeout)
         return source_info_to_dict(ip, qport, info)
     except Exception as e:
-        logger.warning(e)
+        logger.debug(e)
         return None
 
 
-def get_details(record: Record) -> Details:
-    # TODO: consolidate try/except statements
+def get_details(record: Record) -> Details | None:
     ip = record.ip
     qport = record.qport
     default_str = strings.none_provided
 
     try:
         info = a2s.info((ip, qport))
-    except (TimeoutError, a2s.exceptions.BrokenMessageError):
-        return Details(None, default_str, False)
-    try:
         rules = dayzquery.dayz_rules((ip, qport))
-    except Exception:
-        return Details(None, default_str, False)
-
-    try:
         keywords = info.keywords.split(",")
-    except AttributeError:
-        return Details(None, default_str, False)
+    except Exception as e:
+        logger.critical(e)
+        return None
 
     battleye = strings.disabled
     if "battleye" in keywords:
         battleye = strings.enabled
 
-    day_accel = 0.0
-    night_accel = 0.0
+    name = info.server_name
+    day_accel = 1.0
+    night_accel = 1.0
+    gametime = "00:00"
     for keyword in keywords:
         if "etm" in keyword:
             day_accel = float(keyword.lstrip("etm"))
             day_accel = float(f"{day_accel:g}")
-        if "entm" in keywords:
+        if "entm" in keyword:
             night_accel = float(keyword.lstrip("entm"))
             night_accel = float(f"{night_accel:g}")
+        time_reg = r"^(0[0-9]|1[0-9]|2[0-3]):([0-5][0-9]$)"
+        if re.match(time_reg, keyword):
+            gametime = keyword
 
     try:
         password = info.password_protected
@@ -379,7 +380,7 @@ def get_details(record: Record) -> Details:
         ["Version", version],
     ]
 
-    return Details(rows, description, True)
+    return Details(rows, name, description, gametime, day_accel, night_accel)
 
 
 def ping(ip: str, qport: int) -> int:

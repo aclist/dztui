@@ -37,6 +37,7 @@ HEX_RED = "#FF0000"
 HEX_ORANGE = "#FFAC1C"
 
 # FIXME: normalize icon names
+CALCULATOR = "accessories-calculator-symbolic"
 CARET_DOWN = "go-down-symbolic"
 CARET_UP = "go-up-symbolic"
 CLIPBOARD = "edit-copy-symbolic"
@@ -54,6 +55,8 @@ VIEW_CONCEAL = "view-conceal-symbolic"
 VIEW_REVEAL = "view-reveal-symbolic"
 WARNING = "dialog-warning-symbolic"
 WEB_BROWSER = "web-browser-symbolic"
+DAY_ICON = "weather-clear-symbolic"
+NIGHT_ICON = "weather-clear-night-symbolic"
 
 SEPARATOR = "SEPARATOR"
 

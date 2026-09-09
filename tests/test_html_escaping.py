@@ -22,9 +22,14 @@ class MockController:
 
 
 def test_html_escaping() -> None:
-    text = "<Server description> Game & mods"
-    details = Details([["0", "1"]], text, True)
+    name = "Test server"
+    desc = "<Server description> Game & mods"
+    gametime = "05:30"
+    day_accel = 5.0
+    night_accel = 1.0
+    details = Details([["0", "1"]], name, desc, gametime, day_accel, night_accel)
     controller = MockController()
     dialog = ServerDetailsDialog(controller, details)
+    dialog.destroy()
 
-    assert dialog.description.get_text() == text
+    assert dialog.description.get_text() == desc

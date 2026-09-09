@@ -32,10 +32,10 @@ class FilterManager:
         # TODO: strings
         self.tooltips = {
             strings.filter_1pp: "First-person perspective",
-            strings.filter_day: "In-game time between 0700 and 1659",
+            strings.filter_day: "In-game time between 0600 and 1759",
             strings.filter_empty: "Servers with no players",
             strings.filter_3pp: "Third-person perspective",
-            strings.filter_night: "In-game time between 1700 and 0659",
+            strings.filter_night: "In-game time between 1800 and 0559",
             strings.filter_full: "Servers with no open slots",
             strings.filter_official: "Bohemia official servers",
             strings.filter_nonascii: "Server names using non-standard, complex glyphs",

@@ -2,7 +2,6 @@ import re
 
 from dzgui.model.proxy_model import DAY_REG, NIGHT_REG
 
-
 def iterate(h: str, r: str) -> None:
     for m in range(60):
         time = f"{h:02}:{m:02}"
@@ -18,6 +17,6 @@ def test_day() -> None:
 
 def test_night() -> None:
     for h in range(24):
-        if 6 < h < 17:
+        if 5 < h < 18:
             continue
         iterate(h, NIGHT_REG)

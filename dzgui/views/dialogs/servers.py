@@ -1,20 +1,21 @@
+import gi
 import html
 from typing import Self, TYPE_CHECKING
 
-from dzgui.const.constants import EXPAND, FILL
+from dzgui.const.constants import CALCULATOR
 from dzgui.const.enum import ContextMenuGroup
 from dzgui.model.model_factory import ModelFactory
 from dzgui.util import css
-from dzgui.util import strings
 from dzgui.util.format import format_hyperlinks, format_server_mods
-from dzgui.strings import server_mods
+from dzgui.strings import server_mods, dialogs
+from dzgui.views.components.buttons import IconTextButton
+from dzgui.views.components.box import VBox
+from dzgui.views.dialogs.calc import Time, ServerTimeCalculator
 from dzgui.views.dialogs.generic import GenericDialog
 from dzgui.views.trees.tree_base import TreeView
 
-import gi
-
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, Gdk, GObject, Pango  # noqa
+from gi.repository import Gtk, Gdk, Pango  # noqa
 
 if TYPE_CHECKING:
     from dzgui.api.servers import Details
@@ -46,12 +47,19 @@ class ServerDialog(GenericDialog):
         self.connect("response", self._on_response)
         self.view.connect("key-press-event", self._on_keypress)
 
-        self.scrollable_tree = Gtk.ScrolledWindow()
+        self.scrollable_tree = Gtk.ScrolledWindow(vexpand=True)
         self.scrollable_tree.add(self.view)
-        self.scrollable_tree.set_size_request(700, 400)
+        self.scrollable_tree.set_size_request(700, 500)
+
+        self.stack = Gtk.Stack()
+        self.content_box = VBox(10)
+        self.content_box.set_valign(Gtk.Align.FILL)
+        self.content_box.add(self.scrollable_tree)
+
+        self.stack.add_named(self.content_box, "METADATA")
 
         self.content = self.get_content_area()
-        self.content.pack_start(self.scrollable_tree, EXPAND, FILL, 0)
+        self.content.pack_start(self.stack, expand=True, fill=True, padding=0)
 
     def _on_keypress(self, view: Gtk.TreeView, event: Gdk.EventKey) -> bool:
         # NOTE: ESC normally unfocuses treeview instead of destroying dialog
@@ -66,9 +74,7 @@ class ServerDialog(GenericDialog):
 
 class ServerDetailsDialog(ServerDialog):
     def __init__(self, controller: "Controller", details: "Details"):
-        # TODO: server name should also be packed in details struct
-        name = controller.get_server_name()
-        super().__init__(controller, strings.server_details, name, menu=None)
+        super().__init__(controller, dialogs.server_details, details.name, menu=None)
 
         self.store = Gtk.ListStore(str, str, Pango.Weight)
         self.view.connect("row-activated", self._on_row_activated)
@@ -85,14 +91,9 @@ class ServerDetailsDialog(ServerDialog):
             column.set_sort_column_id(i)
             column.set_expand(True)
 
-        # NOTE: constrain tree area to logical height of metadata
-        # leaving room for server message
-        self.scrollable_tree.set_size_request(700, 150)
-
-        # TODO: make "Server message" text boldface
-        scrollable_message = Gtk.ScrolledWindow()
-        desc = Gtk.Label(label=strings.server_message, valign=Gtk.Align.START)
-        css.add_class(desc, "details-heading")
+        scrollable_message = Gtk.ScrolledWindow(vexpand=True)
+        desc = Gtk.Label(label=dialogs.server_message, valign=Gtk.Align.START)
+        css.add_class(desc, "server-subheading")
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, halign=Gtk.Align.CENTER)
         self.description = Gtk.Label(justify=Gtk.Justification.CENTER, wrap=True)
         sep = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
@@ -100,11 +101,7 @@ class ServerDetailsDialog(ServerDialog):
         for el in desc, sep, self.description:
             box.add(el)
         scrollable_message.add(box)
-
-        self.pack(scrollable_message)
-
-        if details.data is None:
-            return
+        self.content_box.add(scrollable_message)
 
         for row in details.data:
             self.store.append(row + [Pango.Weight.BOLD])
@@ -113,7 +110,31 @@ class ServerDetailsDialog(ServerDialog):
         text = format_hyperlinks(text)
         self.description.set_markup(html.escape(text))
 
+        calc_button = IconTextButton(CALCULATOR, dialogs.toggle_calc)
+        calc_button.connect("clicked", self._on_calc_pressed)
+        calc_button.set_halign(Gtk.Align.END)
+        calc_button.set_valign(Gtk.Align.START)
+        self.content.pack_start(calc_button, False, False, 0)
+        self.content.reorder_child(calc_button, 2)
+
+        self.scrollable_tree.set_size_request(700, 250)
+        self.calc = ServerTimeCalculator(
+            Time(details.gametime, details.day_accel, details.night_accel)
+        )
+        self.stack.add_named(self.calc, "CALCULATOR")
+
+        self.connect("map", self._on_map)
         self.show_all()
+
+    def _on_map(self, dialog: Self) -> None:
+        if widget := self.get_widget_for_response(Gtk.ResponseType.OK):
+            widget.grab_focus()
+
+    def _on_calc_pressed(self, button: Gtk.Button) -> None:
+        if self.stack.get_visible_child_name() == "METADATA":
+            self.stack.set_visible_child_name("CALCULATOR")
+        else:
+            self.stack.set_visible_child_name("METADATA")
 
     def _on_row_activated(
         self,
