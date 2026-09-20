@@ -7,7 +7,7 @@ from typing import Any, Callable, Self, TYPE_CHECKING
 
 from dzgui.api.probe import test_steam_api
 from dzgui.api.shortcuts import add_steam_shortcut
-from dzgui.api.steam import get_steam_paths
+from dzgui.views.dialogs.steam_path import SteamPathSelector
 from dzgui.const.constants import (
     APP_NAME,
     APP_NAME_LOWER,
@@ -435,7 +435,7 @@ class Assistant(Gtk.Assistant):
             self.set_default_size(1500, 900)
 
         self.config_path = XDG.config
-        self.config_values: dict[str, Any] = config_boilerplate
+        self.config_values: dict[str, Any] = config_boilerplate.copy()
 
         self.setup_complete = False
 
@@ -657,56 +657,21 @@ class ShortcutCreationPage(OptionalPageMixin, EnumeratedWizardPage):  # type: ig
 class SteamPathPage(EnumeratedWizardPage):
     def __init__(self) -> None:
         super().__init__(
-            enum=PageNum.USER_PREFS,
+            enum=PageNum.STEAM_PATH,
             heading=wizard.heading_steam_path,
             description=wizard.blurb_steam_path,
         )
 
         self.page_type = Gtk.AssistantPageType.INTRO
-        self.err_box = NotificationFrame(wizard.no_valid_paths, error=True)
+        self.selector = SteamPathSelector(self._selection_changed)
+        self.add_start(self.selector)
+        self.connect("map", lambda _: self.selector._validate())
 
-        self.scan_button = Gtk.Button(label=wizard.button_scan, halign=Gtk.Align.CENTER)
-        self.scan_button.connect("clicked", self._on_scan_clicked)
-
-        self.add_start(self.scan_button)
-        self.add_start(self.err_box)
-        self.connect("map", self._start_incomplete)
-
-    def _on_scan_clicked(self, button: Gtk.Button) -> None:
-        self.scan_button.set_sensitive(False)
-        paths = get_steam_paths()
-
-        button_box = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-            halign=Gtk.Align.CENTER,
-            spacing=10,
-        )
-        total = len(paths)
-        if total == 0:
-            show_errors = True
-        else:
-            button_box.add(Gtk.Label(label=f"Steam paths found: {total} total."))
-            for i, button_path in enumerate(paths):
-                if i == 0:
-                    frame = RadioFrame(None, button_path)
-                    self.first_button = frame.get_button()
-                    button_box.add(frame)
-                else:
-                    frame = RadioFrame(self.first_button, button_path)
-                    button_box.add(frame)
-            self.add_start(button_box)
-            show_errors = False
-            EMITTER.emit("step_complete")
-        self.show_all()
-        # TODO: more robust approach
-        self.err_box.set_visible(show_errors)
+    def _selection_changed(self, valid: bool) -> None:
+        EMITTER.emit("step_complete" if valid else "step_pending")
 
     def get_path_from_radio(self) -> str:
-        active = next(r for r in self.first_button.get_group() if r.get_active())
-        return active.get_label()
-
-    def _start_incomplete(self, page: Self) -> None:
-        self.err_box.set_visible(False)
+        return self.selector.valid_path
 
 
 class SetupWizard(ColorAwareApp, Gtk.Application):  # type: ignore

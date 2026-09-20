@@ -27,6 +27,7 @@ from dzgui.views.components.buttons import SpinnerButton, WebButton
 from dzgui.views.components.frame import HeadingFrame
 from dzgui.views.components.misc import ClientCombo, ErrorPopover
 from dzgui.views.dialogs.generic import ExceptionDialog
+from dzgui.views.dialogs.steam_path import SteamPathDialog
 from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
 
 
@@ -312,7 +313,11 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         start_tab_hbox = ShortHBox(self.start_tab_combo)
         self.start_tab_combo.connect("changed", self._on_start_tab_changed)
 
+        reconfigure = Gtk.Button(label="Reconfigure Steam / DayZ…")
+        reconfigure.connect("clicked", self._on_reconfigure)
+
         pref_rows = [
+            [LeftLabel("Steam / DayZ folder"), reconfigure],
             [LeftLabel(strings.options.client), client_hbox],
             [LeftLabel(strings.options.window_size), self.fullscreen_toggle],
             [LeftLabel(strings.options.distance), self.distance_toggle],
@@ -370,6 +375,21 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         self.add(box)
 
         self.connect("key-press-event", self._on_keypress)
+
+    def _on_reconfigure(self, button: Gtk.Button) -> None:
+        prefs = self.controller.get_prefs()
+        if SteamPathDialog(self.get_toplevel(), prefs.paths.config).save():
+            dialog = Gtk.MessageDialog(
+                transient_for=self.get_toplevel(),
+                modal=True,
+                buttons=Gtk.ButtonsType.OK,
+                text="Steam / DayZ folder saved",
+            )
+            dialog.format_secondary_text(
+                "Restart DZGUI to apply the new folder to all components."
+            )
+            dialog.run()
+            dialog.destroy()
 
     def get_client_name(self) -> str:
         model = self.client_combo.get_model()
