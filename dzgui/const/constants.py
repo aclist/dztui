@@ -36,7 +36,7 @@ HEX_GREEN = "#32CD32"
 HEX_RED = "#FF0000"
 HEX_ORANGE = "#FFAC1C"
 
-# FIXME: normalize icon names
+# TODO: normalize icon names
 CALCULATOR = "accessories-calculator-symbolic"
 CARET_DOWN = "go-down-symbolic"
 CARET_UP = "go-up-symbolic"
