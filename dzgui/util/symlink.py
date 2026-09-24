@@ -2,7 +2,12 @@ import logging
 from pathlib import Path
 
 from dzgui.api.mods import get_local_mod_path, get_local_mod_ids, _hash
-from dzgui.const.constants import APPID_DAYZ, APPID_DAYZ_EXP, APP_NAME, DAYZ_COMMUNITY_ROOT
+from dzgui.const.constants import (
+    APPID_DAYZ,
+    APPID_DAYZ_EXP,
+    APP_NAME,
+    DAYZ_COMMUNITY_ROOT,
+)
 from dzgui.const.enum import Preferences
 from dzgui.config.query import lookup
 
@@ -19,6 +24,7 @@ def expunge_link(file: Path) -> None:
         file.unlink()
     if str(file.stem)[:2] == "@C":
         file.unlink()
+
 
 def rebuild_symlinks(config: Path) -> None:
     # TODO: pass direct path as argument
@@ -63,10 +69,9 @@ def symlink_mission(steam_path: Path, target: str) -> str:
     stem = path.name
     parent = path.parent
     source = dayz_path.joinpath(DAYZ_COMMUNITY_ROOT)
-    try:
-        source.symlink_to(parent)
-    except Exception:
-        return ""
+    if source.exists():
+        source.unlink()
+    source.symlink_to(parent)
     return f"{DAYZ_COMMUNITY_ROOT}/{stem}"
 
 
