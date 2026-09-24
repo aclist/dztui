@@ -21,6 +21,7 @@ from dzgui.util.format import format_exception
 from dzgui.util.strings import dialog_header
 from dzgui.util.symlink import rebuild_symlinks
 from dzgui.views.components.buttons import ClipboardButton
+from dzgui.views.dialogs.steam_path import SteamPathDialog
 
 
 import gi
@@ -112,6 +113,9 @@ class BootDialog(ColorAwareApp, Gtk.Dialog):  # type: ignore
         self.exit_button = Gtk.Button(label="Exit", halign=Gtk.Align.CENTER)
         self.exit_button.connect("clicked", lambda _: sys.exit(1))
         self.button_hbox.add(self.copy_button)
+        self.reconfigure_button = Gtk.Button(label="Reconfigure")
+        self.reconfigure_button.connect("clicked", self._on_reconfigure)
+        self.button_hbox.add(self.reconfigure_button)
         self.button_hbox.add(self.exit_button)
 
         self.error_box.add(self.error_label)
@@ -139,9 +143,20 @@ class BootDialog(ColorAwareApp, Gtk.Dialog):  # type: ignore
         ]
         self.results: list[Any] = []
         self.failed = False
-        self.steps = iter(steps)
+        self.boot_steps = steps
+        self.steps = iter(self.boot_steps)
 
         GLib.timeout_add(100, self.pulse_spinner)
+
+    def _on_reconfigure(self, button: Gtk.Button) -> None:
+        if not SteamPathDialog(self, self.xdg.config).save():
+            return
+        self.failed = False
+        self.results.clear()
+        self.store.clear()
+        self.steps = iter(self.boot_steps)
+        self.error_box.hide()
+        self.iter_step()
 
     def _on_keypress(self, widget: Self, event: Gdk.EventKey) -> None:
         if event.keyval == Gdk.KEY_Escape:

@@ -431,6 +431,29 @@ def get_app_path(folders_path: Path, appid: int) -> Path:
             if Path(app_path).exists():
                 break
 
+    if app_path is not None and Path(app_path).exists():
+        return Path(app_path)
+
+    # Steam's library index can lag behind an installed app's manifest.
+    # Check each registered library before declaring the app missing or moved.
+    for library in folders["libraryfolders"].values():
+        root = Path(library["path"])
+        manifest = root / "steamapps" / f"appmanifest_{appid}.acf"
+        try:
+            with manifest.open() as f:
+                state = vdf.load(f)["AppState"]
+            install_dir = Path(state["installdir"])
+            if (
+                str(state["appid"]) == str(appid)
+                and not install_dir.is_absolute()
+                and ".." not in install_dir.parts
+                and install_dir.parts
+                and (root / "steamapps" / "common" / install_dir).is_dir()
+            ):
+                return root
+        except (OSError, ValueError, SyntaxError, KeyError, TypeError):
+            continue
+
     if app_path is None:
         raise AppNotInstalledError(
             f"Failed to find a libraryfolder for the appid {appid}"
