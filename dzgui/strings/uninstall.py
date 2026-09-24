@@ -30,7 +30,8 @@ path_remove_prefix = "The following path will be removed:"
 not_installed = "It looks like DZGUI was not previously set up; nothing to uninstall."
 standalone_uninstall = (
     "It looks like you are running the standalone version of DZGUI.\n"
-    "To finalize the uninstall process, you can remove the 'dzgui' file."
+    "To finalize the uninstall process, invoke './dzgui self remove',\n"
+    "then remove the 'dzgui' file."
 )
 system_uninstall = (
     "It looks like DZGUI was installed via your system package manager or directly from source code.\n"
