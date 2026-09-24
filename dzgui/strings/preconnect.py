@@ -11,8 +11,6 @@ mods = "Mods"
 total_mods = "Total mods: "
 up_to_date = "All mods are up to date."
 all_updated = "All mods updated."
-"If you recently installed {build} or moved it to a different drive, "
-"restart Steam to allow these changes to synchronize, then try again."
 required_space = " Need to download {0} MiB of mod updates."
 
 placeholder_no_mods = "This server has no mods."
@@ -36,6 +34,7 @@ steam_not_running = "'{0}' is set as the default Steam client, but it is either 
 use_desktop_mode = "Use Desktop Mode to download mods on Steam Deck."
 version_mismatch = "Local client version '{0}' does not match remote version '{1}'."
 version_missing = "Remote server is running the build '{0}', but it is not installed."
+no_errors = "No errors."
 
 
 # Warnings
