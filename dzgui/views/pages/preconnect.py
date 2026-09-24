@@ -176,8 +176,7 @@ class PreConnectionAssistant(Gtk.Box):
 
         self.error_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.error_tree = MaskedTree(ERROR)
-        # TODO: strings
-        self.error_placeholder = Placeholder("No errors.")
+        self.error_placeholder = Placeholder(preconnect.no_errors)
         self.error_box.add(self.error_tree)
         self.error_box.add(self.error_placeholder)
         self.error_frame = HeadingFrame.new_with_widget_and_label(

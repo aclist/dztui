@@ -252,7 +252,6 @@ class ServerTreeView(ContextMixin, TreeView):  # type: ignore
                 case Gdk.KEY_c:
                     self.controller.menu_action(ContextMenu.COPY_SERVER_IP, self)
                 case Gdk.KEY_r:
-                    # TODO: unimplemented, needs threading
                     self.controller.menu_action(ContextMenu.REFRESH_PLAYERS, self)
         else:
             match event.keyval:
