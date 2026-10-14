@@ -15,7 +15,7 @@ class ClientCombo(Gtk.ComboBox):
         super().__init__()
 
         self.client_store = Gtk.ListStore(str, str)
-        clients = (
+        self.clients = (
             (
                 options.steam_combo,
                 STEAM_CMD,
@@ -29,13 +29,20 @@ class ClientCombo(Gtk.ComboBox):
                 FLATPAK_SANDBOX,
             ),
         )
-        for client in clients:
+        for client in self.clients:
             self.client_store.append(client)
         self.set_model(self.client_store)
         renderer_text = Gtk.CellRendererText()
         self.pack_start(renderer_text, True)
         self.add_attribute(renderer_text, "text", 0)
         self.set_active(0)
+
+    def get_client_human_readable(self, cmd: str) -> str:
+        for client in self.clients:
+            human, command = client
+            if command == cmd:
+                return human
+        raise TypeError("Not a valid Steam client selection")
 
 class ErrorPopover(Gtk.Popover):
     def __init__(self, relative_to: Gtk.Widget, position: Gtk.PositionType) -> None:

@@ -541,8 +541,8 @@ class Controller(GObject.GObject):
     def update_status(self) -> None:
         self.mediator.preconnect.mark_finished()
 
-    def get_steam_client_name(self) -> str:
-        return self.mediator.options.get_client_name()
+    def get_steam_client_name(self, cmd: str) -> str:
+        return self.mediator.options.get_client_name(cmd)
 
     def present_window(self) -> None:
         self.mediator.window.present_with_time(Gdk.CURRENT_TIME)
