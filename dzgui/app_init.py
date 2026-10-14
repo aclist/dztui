@@ -15,7 +15,7 @@ from dzgui.init.migrate import (
     migrate_cols_file,
 )
 from dzgui.init.flock import lock_acquire
-from dzgui.init.prereqs import has_steam_client
+from dzgui.init.prereqs import has_any_client
 from dzgui.strings import boot
 
 from dzgui.util.deck import is_steam_deck, is_game_mode
@@ -136,7 +136,7 @@ def load_gui(version: str, is_debug: bool) -> None:
         # TODO: sudo escalation dialog
         # count = get_map_count()
         # TODO: move into module
-        if has_steam_client() is False:
+        if has_any_client() is False:
             EarlyAlertDialog(init.requires_steam)
 
     bootwin = BootWindow(XDG, version)
