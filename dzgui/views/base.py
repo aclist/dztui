@@ -46,10 +46,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(APP_NAME)
 
-# TODO: drop
-# https://bugzilla.gnome.org/show_bug.cgi?id=708676
-warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
-
 
 class OuterWindow(Gtk.ApplicationWindow):
     def __init__(self, app: Gtk.Application) -> None:
