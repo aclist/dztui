@@ -1,6 +1,5 @@
 import logging
 import signal
-import warnings
 
 from typing import TYPE_CHECKING, Literal, Self
 
@@ -46,10 +45,6 @@ if TYPE_CHECKING:
     from dzgui.config.userprefs import UserPrefs
 
 logger = logging.getLogger(APP_NAME)
-
-# TODO: drop
-# https://bugzilla.gnome.org/show_bug.cgi?id=708676
-warnings.filterwarnings("ignore", ".*g_value_get_int", Warning)
 
 
 class OuterWindow(Gtk.ApplicationWindow):
@@ -344,8 +339,6 @@ try:
     theme = Gtk.IconTheme.get_default()
     icons = theme.list_icons(None)
     if STEAM_ICON not in icons:
-        logger.warn(strings.steam_icon_missing)
-        warnings.warn(strings.steam_icon_missing, stacklevel=2)
+        logger.warning(strings.steam_icon_missing)
 except Exception as e:
     logger.warning(e)
-    warnings.warn(strings.gtk_theme_missing, stacklevel=2)

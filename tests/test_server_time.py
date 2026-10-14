@@ -14,7 +14,11 @@ from dzgui.views.dialogs.calc import (
 
 
 class DummyEmitter:
-    pass
+    def __init__(self) -> None:
+        pass
+
+    def connect(self, _, __) -> None:
+        pass
 
 
 @pytest.fixture(params=[("05:00", 10.0), ("15:30", 5.0)])
