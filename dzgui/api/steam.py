@@ -6,6 +6,7 @@ import subprocess
 import vdf  # type: ignore
 
 from pathlib import Path
+from requests.exceptions import HTTPError
 from typing import Any, Union
 from warnings import deprecated
 
@@ -32,6 +33,7 @@ from dzgui.const.endpoints import (
     UNSUB_ENDPOINT,
 )
 from dzgui.strings import wizard
+from dzgui.strings.errors import api_validation_error, workshop_endpoint_error
 from dzgui.util.bash import concat_bash_args
 
 logger = logging.getLogger(APP_NAME)
@@ -262,6 +264,16 @@ def find_user_id_32(path: Path) -> int:
     return int(uid) & 0xFFFFFFFF
 
 
+class SteamAPIKeyError(Exception):
+    def __init__(self, msg=None):
+        super().__init__(msg or api_validation_error)
+
+
+class SteamWorkshopEndpointError(Exception):
+    def __init__(self, msg=None):
+        super().__init__(msg or workshop_endpoint_error)
+
+
 def update_workshop(key: str, mod: int, endpoint: str) -> None:
     payload: dict[str, Union[int, str]] = {
         "publishedfileid": mod,
@@ -273,8 +285,19 @@ def update_workshop(key: str, mod: int, endpoint: str) -> None:
     try:
         res = requests.post(endpoint, params=payload, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
+    except HTTPError as e:
+        logger.critical(e)
+        match res.status_code:
+            case 403:
+                raise SteamAPIKeyError()
+            case 404:
+                raise SteamWorkshopEndpointError()
+            case _:
+                # TODO: apply redaction filter
+                raise e
     except Exception as e:
         logger.critical(e)
+        raise e
 
 
 def subscribe(key: str, mod: int) -> None:

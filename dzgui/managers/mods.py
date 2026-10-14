@@ -122,7 +122,11 @@ class ModManager:
     def unsub_atomic_mod(self, mod: str) -> None:
         config_man = self.controller.get_config_man()
         key = config_man.lookup(Preferences.STEAM)
-        unsubscribe(key, int(mod))
+        try:
+            unsubscribe(key, int(mod))
+        except Exception as e:
+            logger.critical(e)
+            return
 
         steam_path = Path(self.path)
         app_path = PeFile.get_nested_app_path(steam_path, APPID_DAYZ)

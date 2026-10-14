@@ -48,7 +48,7 @@ from dzgui.strings.dialogs import (
 )
 from dzgui.strings import kb
 from dzgui.strings.server_mods import checkmark, resync
-from dzgui.util.format import format_mib
+from dzgui.util.format import format_exception, format_mib
 from dzgui.util.strings import dialog, server_timeout
 from dzgui.util.symlink import rebuild_symlinks
 from dzgui.views.dialogs.generic import ExceptionDialog
@@ -300,6 +300,11 @@ class ConnectionManager:
         dialog = ServerDetailsDialog(self.controller, details)
         dialog.run()
 
+    def _workshop_timeout(self, msg: str) -> None:
+        dialog = ExceptionDialog(self.controller, msg)
+        dialog.show_all()
+        dialog.run()
+
     def _server_timeout(self) -> None:
         dialog = ExceptionDialog(self.controller, server_timeout)
         dialog.set_details_buffer(kb.DZG_006)
@@ -351,8 +356,14 @@ class ConnectionManager:
         for title, mod, stamp, size in self.missing_mods:
             if self.controller.is_cancel_pending():
                 return
-            subscribe(key, int(mod))
-            time.sleep(API_RATE_LIMIT)
+            try:
+                subscribe(key, int(mod))
+                time.sleep(API_RATE_LIMIT)
+            except Exception as e:
+                msg = format_exception(e)
+                func = StoredFunc(self._workshop_timeout, msg)
+                self.thread_man.set_cleanup_func(func, destroy_first=True)
+                return
 
         self.thread_man.update_dialog(waiting_for_directories)
         for title, mod, stamp, size in self.missing_mods:

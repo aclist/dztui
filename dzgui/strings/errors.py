@@ -4,3 +4,4 @@ api_validation_error = (
 
 api_popover = "API key validation failed."
 dayz_not_found = "Could not find a valid DayZ installation."
+workshop_endpoint_error = "Steam Workshop service unavailable, try again later."
