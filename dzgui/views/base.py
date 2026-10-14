@@ -339,6 +339,6 @@ try:
     theme = Gtk.IconTheme.get_default()
     icons = theme.list_icons(None)
     if STEAM_ICON not in icons:
-        logger.warn(strings.steam_icon_missing)
+        logger.warning(strings.steam_icon_missing)
 except Exception as e:
     logger.warning(e)
