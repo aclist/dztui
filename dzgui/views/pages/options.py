@@ -76,7 +76,7 @@ class SubmitField(Gtk.Box):
             self.button = Gtk.Button(label=options.save_button)
 
         self.button.connect("clicked", self._on_save_clicked)
-        self.entry.connect("insert-text", self._on_text_typed)
+        self.entry.connect("changed", self._on_text_typed)
         self.entry.connect("activate", self._on_field_activated)
         self.entry.get_property("buffer").connect("deleted-text", self._on_text_deleted)
 
@@ -113,13 +113,9 @@ class SubmitField(Gtk.Box):
     def _on_text_typed(
         self,
         entry: Gtk.Entry,
-        text: str,
-        length: int,
-        pos: int,
     ) -> None:
 
-        buffer = entry.get_property("buffer")
-        text = buffer.get_text() + text
+        text = entry.get_text()
         state = self._is_valid_text(text)
         self.button.set_sensitive(state)
 
