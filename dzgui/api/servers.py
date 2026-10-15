@@ -346,7 +346,7 @@ def get_details(record: Record) -> Details | None:
                 dlc = strings.dlc_none
             case 2:
                 dlc = strings.dlc_frostline
-            case 3:
+            case 4:
                 dlc = strings.dlc_badlands
             case _:
                 dlc = strings.unspecified
