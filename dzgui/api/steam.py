@@ -265,12 +265,12 @@ def find_user_id_32(path: Path) -> int:
 
 
 class SteamAPIKeyError(Exception):
-    def __init__(self, msg=None):
+    def __init__(self, msg: str | None = None):
         super().__init__(msg or api_validation_error)
 
 
 class SteamWorkshopEndpointError(Exception):
-    def __init__(self, msg=None):
+    def __init__(self, msg: str | None = None):
         super().__init__(msg or workshop_endpoint_error)
 
 
