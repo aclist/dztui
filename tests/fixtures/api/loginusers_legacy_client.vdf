@@ -9,6 +9,6 @@
 		"SkipOfflineModeWarning"		"0"
 		"AllowAutoLogin"		"1"
 		"MostRecent"		"1"
-		"Timestamp"		"0"
+		"timestamp"		"0"
 	}
 }
