@@ -22,11 +22,12 @@ class FilterManager:
             strings.filter_night: True,
             strings.filter_full: show_full,
             strings.filter_official: True,
-            strings.filter_nonascii: False,
+            strings.filter_modded: True,
             strings.filter_lowpop: True,
             strings.filter_unofficial: True,
+            strings.filter_unmodded: True,
             strings.filter_duplicate: False,
-            strings.filter_modded: True,
+            strings.filter_nonascii: False,
         }
 
         # TODO: strings
@@ -43,6 +44,7 @@ class FilterManager:
             strings.filter_unofficial: "Third-party servers",
             strings.filter_duplicate: "Duplicates of existing servers (usually spoofed)",
             strings.filter_modded: "Servers with one or more mods",
+            strings.filter_unmodded: "Servers with no mods",
         }
 
         self.active_keyword = ""
