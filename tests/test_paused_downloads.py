@@ -8,7 +8,7 @@ from dzgui.api.steam import is_dayz_downloading
     "file_list, expect",
     [
         (["state_221100_1111.patch"], True),
-        (["state_736_1111.patch"], False),
+        (["state_730_1111.patch"], False),
         (["state_1024020_1111.patch"], True),
         (["221100"], False),
         (["221100", "state_221100_1111.patch"], True),
