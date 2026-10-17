@@ -156,6 +156,7 @@ filter_duplicate = "Duplicate"
 filter_official = "Official"
 filter_unofficial = "Unofficial"
 filter_modded = "Modded"
+filter_unmodded = "Unmodded"
 
 # maps
 all_maps = "All maps"
