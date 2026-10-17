@@ -14,6 +14,7 @@ from dzgui.api.shortcuts import Shortcuts
 from dzgui.api.steam import (
     connect,
     connect_debug,
+    is_dayz_downloading,
     get_app_allows_downloads,
     get_app_name,
     get_needs_update,
@@ -84,6 +85,7 @@ class Prerequisites:
     available_space: float
     passworded: bool
     dayz_running: bool
+    download_paused: bool
     steam_proc: SteamProcess
     mods: list[list[str]]
     game_mode: bool
@@ -169,6 +171,7 @@ class ConnectionManager:
                     free_mib = format_mib(free)
 
         dayz_running = is_dayz_running()
+        download_paused = is_dayz_downloading(steam_path, self.appid)
 
         running_app = get_running_app()
         if running_app is not None:
@@ -210,6 +213,7 @@ class ConnectionManager:
             available_space=free_mib,
             passworded=info.password_protected,
             dayz_running=dayz_running,
+            download_paused=download_paused,
             steam_proc=steam_proc,
             mods=remote_mods,
             game_mode=game_mode,

@@ -279,6 +279,8 @@ class PreConnectionAssistant(Gtk.Box):
             warnings.append(preconnect.protected_server)
         if prereqs.dayz_running is True:
             warnings.append(preconnect.dayz_running)
+        if len(prereqs.mods) > 0 and prereqs.download_paused:
+            warnings.append(preconnect.downloads_paused)
 
         allows_dl, running_app = prereqs.allows_downloads
         if len(prereqs.mods) > 0 and allows_dl is False:
