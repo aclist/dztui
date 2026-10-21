@@ -11,11 +11,8 @@ from dzgui.api.steam import get_steam_paths
 from dzgui.const.constants import (
     APP_NAME,
     APP_NAME_LOWER,
-    FLATPAK_RUN_CMD,
-    FLATPAK_STEAM_PATH,
     HERO_PATH,
     LEGACY_CONFIG_PATH,
-    STEAM_CMD,
 )
 from dzgui.const.boilerplate import config_boilerplate
 from dzgui.const.endpoints import STEAM_API_SETUP
