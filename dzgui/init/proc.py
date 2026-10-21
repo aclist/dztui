@@ -12,6 +12,7 @@ from dzgui.const.constants import (
     FLATPAK_CMD,
     FLATPAK_RUN_CMD,
     FLATPAK_SANDBOX,
+    FLATPAK_STEAM_PATH,
 )
 
 logger = logging.getLogger(APP_NAME)
