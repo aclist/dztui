@@ -255,16 +255,28 @@ class PeFileError(Exception):
 
     pass
 
+
 def parse_version_number(data: BinaryIO) -> FileVersion:
     # https://learn.microsoft.com/en-us/windows/win32/api/verrsrc/ns-verrsrc-vs_fixedfileinfo
-    minor = struct.unpack("<L", data.read(4))[0] >> 16 & 0xFFFF
-    major = struct.unpack("<L", data.read(4))[0] >> 0 & 0xFFFF
-    build = struct.unpack("<L", data.read(4))[0] >> 0 & 0xFFFF
-    # NOTE: 0-pad revision number
-    revision = str(struct.unpack("<L", data.read(4))[0] >> 16 & 0xFFFF)
-    offset = 3 - len(revision)
-    padded = "0" * offset + revision
-    return FileVersion(major, minor, build, padded)
+    """
+    Note: structure differs from standard VS_FIXEDFILEINFO
+    Major: lower 16 bits of first DWORD
+    Minor: upper 16 bits of first DWORD
+    Build: lower 16 bits of third DWORD
+    Revision: upper 16 bits of second DWORD, zero-padded
+    Lower 16 bits of revision DWORD appear unused.
+    """
+    major_minor = struct.unpack("<I", data.read(4))[0]
+    revision_pair = struct.unpack("<I", data.read(4))[0]
+    build_dword = struct.unpack("<I", data.read(4))[0]
+
+    major = major_minor & 0xFFFF
+    minor = (major_minor >> 16) & 0xFFFF
+    build = build_dword & 0xFFFF
+    revision = (revision_pair >> 16) & 0xFFFF
+    revision = f"{revision:03d}"
+
+    return FileVersion(major, minor, build, revision)
 
 
 def seek_to_hex(address: str, data: BinaryIO) -> None:

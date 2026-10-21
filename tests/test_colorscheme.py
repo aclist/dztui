@@ -10,7 +10,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gio, GLib  # noqa
 
 
-class TestWidget(ColorAwareApp, Gtk.Button):
+class DummyWidget(ColorAwareApp, Gtk.Button):
     def __init__(self) -> None:
         super().__init__()
 
@@ -22,11 +22,10 @@ class TestWidget(ColorAwareApp, Gtk.Button):
 
 
 @pytest.fixture
-def widget() -> TestWidget:
-    return TestWidget()
+def widget() -> DummyWidget:
+    return DummyWidget()
 
 
-@pytest.mark.integration
 @pytest.mark.parametrize("key, expect", [("default", False), ("prefer-dark", True)])
 def test_light_mode(widget, key: str, expect: bool) -> None:
     local_pref = subprocess.run(

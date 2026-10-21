@@ -1,13 +1,14 @@
 import logging
 import os
 import psutil
+import re
 import requests
 import subprocess
 import vdf  # type: ignore
 
 from pathlib import Path
 from requests.exceptions import HTTPError
-from typing import Any, Union
+from typing import Any, Generator, Union
 from warnings import deprecated
 
 from dzgui.api.acf import ACF
@@ -20,6 +21,7 @@ from dzgui.const.constants import (
     DAYZ_LAUNCHER,
     DEBIAN_STEAM_PATH,
     DEFAULT_STEAM_PATH,
+    DOWNLOADS_PATH,
     FLATPAK_STEAM_PATH,
     LIBRARYFOLDERS_PATH,
     UBUNTU_STEAM_PATH,
@@ -245,9 +247,9 @@ def find_user_id(path: Path) -> str | None:
             last_user = str(next(iter(users)))
             if len(users) == 1:
                 return last_user
-            last_stamp = int(users[last_user]["Timestamp"])
+            last_stamp = int(users[last_user]["timestamp"])
             for user in users:
-                stamp = int(users[user]["Timestamp"])
+                stamp = int(users[user]["timestamp"])
                 if stamp > last_stamp:
                     last_stamp = stamp
                     last_user = user
@@ -437,6 +439,22 @@ def is_dayz_running() -> bool:
             logger.warning(e)
             continue
     return any(s in item for sublist in procs for item in sublist for s in substring)
+
+
+def get_pending_downloads(steam_path: Path, appid: int) -> Generator[Path, None, None]:
+    root_path = get_app_path(steam_path, appid)
+    downloads_dir = root_path / DOWNLOADS_PATH
+    files = downloads_dir.iterdir()
+    return files
+
+
+def is_dayz_downloading(steam_path: Path, appid: int) -> bool:
+    files = get_pending_downloads(steam_path, appid)
+    reg = re.compile(rf"^state_(?:{APPID_DAYZ_EXP}|{APPID_DAYZ})_.*\.patch$")
+    pending = [f for f in files if reg.match(f.name)]
+    if len(pending) > 0:
+        return True
+    return False
 
 
 def get_app_path(folders_path: Path, appid: int) -> Path:

@@ -8,7 +8,7 @@
 		"WantsOfflineMode"		"0"
 		"SkipOfflineModeWarning"		"0"
 		"AutoLogin"		"1"
-		"Timestamp"		"1787904411"
+		"timestamp"		"1787904411"
 	}
 	"1"
 	{
@@ -18,6 +18,6 @@
 		"WantsOfflineMode"		"0"
 		"SkipOfflineModeWarning"		"0"
 		"AutoLogin"		"1"
-		"Timestamp"		"1787904647"
+		"timestamp"		"1787904647"
 	}
 }

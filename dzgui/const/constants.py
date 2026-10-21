@@ -15,6 +15,7 @@ DAYZ_BINARY = "DayZ_x64.exe"
 DAYZ_LAUNCHER = "DayZLauncher.exe"
 
 LIBRARYFOLDERS_PATH = "steamapps/libraryfolders.vdf"
+DOWNLOADS_PATH = "steamapps/downloading"
 WORKSHOP_PATH = "steamapps/workshop/content/" + str(APPID_DAYZ)
 
 STEAM_CMD = "steam"
