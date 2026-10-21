@@ -11,12 +11,16 @@ from dzgui.api.steam import get_steam_paths
 from dzgui.const.constants import (
     APP_NAME,
     APP_NAME_LOWER,
+    FLATPAK_RUN_CMD,
+    FLATPAK_STEAM_PATH,
     HERO_PATH,
     LEGACY_CONFIG_PATH,
+    STEAM_CMD,
 )
 from dzgui.const.boilerplate import config_boilerplate
 from dzgui.const.endpoints import STEAM_API_SETUP
 from dzgui.config import freedesktop
+from dzgui.init.proc import path_to_steam_cmd
 from dzgui.init.migrate import migrate_legacy_conf
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings import wizard
@@ -499,7 +503,9 @@ class Assistant(Gtk.Assistant):
                     self.config_values = self.page_migration.migrated_conf
                     return self.get_final_page()
             case SteamPathPage():
-                self.config_values["default_steam_path"] = page.get_path_from_radio()
+                path = page.get_path_from_radio()
+                self.config_values["default_steam_path"] = path
+                self.config_values["client"] = path_to_steam_cmd(path)
             case SteamValidationPage():
                 self.config_values["steam_api"] = page.get_api_key()
             case PreferencesPage():
@@ -507,7 +513,6 @@ class Assistant(Gtk.Assistant):
                 name, use_miles, client = self.page_prefs.get_prefs()
                 self.config_values["name"] = name
                 self.config_values["use_miles"] = use_miles
-                self.config_values["client"] = client
                 self.page_shortcuts.set_steam_path(
                     self.config_values["default_steam_path"]
                 )

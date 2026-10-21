@@ -3,6 +3,8 @@ import subprocess
 import shutil
 import logging
 
+from pathlib import Path
+
 from dzgui.const.constants import (
     APP_NAME,
     STEAM_CMD,
@@ -29,8 +31,6 @@ def is_steam_running(cmd: str) -> bool:
         raise TypeError("Not a valid Steam client selection")
 
 
-# CHORE: test alternate clients
-# TODO: has_flatpak_steam
 def is_flatpak_steam_running() -> bool:
     if has_cmd(FLATPAK_CMD) is False:
         return False
@@ -54,3 +54,8 @@ def has_cmd(cmd: str) -> bool:
     if shutil.which(cmd) is not None:
         return True
     return False
+
+
+def path_to_steam_cmd(path: Path) -> str:
+    cmd = FLATPAK_RUN_CMD if FLATPAK_STEAM_PATH in path else STEAM_CMD
+    return cmd
