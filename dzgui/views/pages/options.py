@@ -25,7 +25,7 @@ from dzgui.views.components.eventbox import InfoEventBox
 from dzgui.views.components.labels import LeftLabel
 from dzgui.views.components.buttons import SpinnerButton, WebButton
 from dzgui.views.components.frame import HeadingFrame
-from dzgui.views.components.misc import ClientCombo, ErrorPopover
+from dzgui.views.components.misc import ErrorPopover
 from dzgui.views.dialogs.generic import ExceptionDialog
 from dzgui.views.mixins.scrollable_mixin import ScrollableMixin
 
@@ -281,11 +281,6 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
             Preferences.WINDOW,
         )
 
-        self.client_combo = ClientCombo()
-        self.client_combo.connect("changed", self._on_client_changed)
-
-        client_hbox = ShortHBox(self.client_combo)
-
         self.distance_toggle = ToggleField(
             self.controller, strings.options.km, strings.options.mi, Preferences.DIST
         )
@@ -309,7 +304,6 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         self.start_tab_combo.connect("changed", self._on_start_tab_changed)
 
         pref_rows = [
-            [LeftLabel(strings.options.client), client_hbox],
             [LeftLabel(strings.options.window_size), self.fullscreen_toggle],
             [LeftLabel(strings.options.distance), self.distance_toggle],
             [LeftLabel(options.start_tab), start_tab_hbox],
@@ -367,17 +361,11 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
 
         self.connect("key-press-event", self._on_keypress)
 
-    def get_client_name(self, cmd: str) -> str:
-        return self.client_combo.get_client_human_readable(cmd)
-
     def block_text_entry(self) -> None:
         self.steam_box.block_text_entry()
-        # self.steam_entry.set_position(-1)
-        # self.steam_entry.set_can_focus(False)
 
     def unblock_text_entry(self) -> None:
         self.steam_box.unblock_text_entry()
-        # self.steam_entry.set_can_focus(True)
 
     def _on_developers_clicked(self, button: Gtk.Button) -> None:
         self.controller.show_developers_page()
@@ -411,13 +399,6 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         enum = combo.get_model()[_iter][1]
         index = enum.value
         self.controller.update_config(Preferences.START_TAB, index)
-
-    def _on_client_changed(self, combo: Gtk.ComboBoxText) -> None:
-        _iter = combo.get_active_iter()
-        if _iter is None:
-            raise ValueError(f"No active iterator set on {combo}")
-        real_cmd = combo.get_model()[_iter][1]
-        self.controller.update_config(Preferences.CLIENT, real_cmd)
 
     def populate_settings(self) -> None:
         prefs = self.controller.get_prefs()
@@ -463,10 +444,6 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
 
         self.dayz_version_label.set_text(dayz_version)
         self.dayz_exp_version_label.set_text(dayz_exp_version)
-
-        # TODO: bicolumn list store with no cell renderer on index 1, use raw command names
-        active_combo = query.get_client_index(config["client"])
-        self.client_combo.set_active(active_combo)
 
         start_tab = self.controller.query_config(Preferences.START_TAB)
         self.start_tab_combo.set_active(start_tab)

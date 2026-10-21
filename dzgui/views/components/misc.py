@@ -1,10 +1,11 @@
+from typing import Self
+from warnings import deprecated
+
 from dzgui.const.constants import ERROR, FLATPAK_RUN_CMD, FLATPAK_SANDBOX, STEAM_CMD
+from dzgui.init.prereqs import has_steam_client, has_flatpak_client
 from dzgui.strings import options
 from dzgui.views.components.box import HBox
 from dzgui.views.components.buttons import Icon
-
-from typing import Self
-from dzgui.init.prereqs import has_steam_client, has_flatpak_client
 
 import gi
 
@@ -12,6 +13,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk  # noqa
 
 
+@deprecated("Client choice is determined at setup time")
 class ClientCombo(Gtk.ComboBox):
     def __init__(self) -> None:
         super().__init__()

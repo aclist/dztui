@@ -6,9 +6,6 @@ from typing import Any, TYPE_CHECKING
 
 from dzgui.const.constants import (
     APP_NAME,
-    FLATPAK_RUN_CMD,
-    FLATPAK_SANDBOX,
-    STEAM_CMD,
     WINDOW_DEFAULT_X,
     WINDOW_DEFAULT_Y,
 )
@@ -128,15 +125,6 @@ class ConfigManager:
 
     def enum_to_key(self, enum: Preferences) -> str:
         return str(enum.dict["key"])
-
-    def get_client_index(self, client: str) -> int:
-        if client == STEAM_CMD:
-            return 0
-        if client == FLATPAK_RUN_CMD:
-            return 1
-        if client == FLATPAK_SANDBOX:
-            return 2
-        return 0
 
     def toggle_config(self, key: Preferences) -> None:
         try:
