@@ -245,9 +245,9 @@ def find_user_id(path: Path) -> str | None:
             last_user = str(next(iter(users)))
             if len(users) == 1:
                 return last_user
-            last_stamp = int(users[last_user]["Timestamp"])
+            last_stamp = int(users[last_user]["timestamp"])
             for user in users:
-                stamp = int(users[user]["Timestamp"])
+                stamp = int(users[user]["timestamp"])
                 if stamp > last_stamp:
                     last_stamp = stamp
                     last_user = user
