@@ -47,3 +47,7 @@ running_app = (
     "Either stop the game first, or update your global Steam settings or the game's local settings.\n"
     "Otherwise, mods may be queued for download but never update."
 )
+downloads_paused = (
+    "It looks like DayZ may have a pending update on Steam that was paused.\n"
+    "To enqueue mods for download, unpause any pending DayZ update and allow it to complete."
+)
