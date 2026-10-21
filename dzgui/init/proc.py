@@ -57,6 +57,6 @@ def has_cmd(cmd: str) -> bool:
     return False
 
 
-def path_to_steam_cmd(path: Path) -> str:
+def path_to_steam_cmd(path: str) -> str:
     cmd = FLATPAK_RUN_CMD if FLATPAK_STEAM_PATH in path else STEAM_CMD
     return cmd
