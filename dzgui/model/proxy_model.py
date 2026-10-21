@@ -243,6 +243,8 @@ class ProxyModelManager:
                 rows = [row for row in rows if (row[4] / row[5] * 100) > 30]
             case strings.filter_modded:
                 rows = [row for row in rows if not row[11]]
+            case strings.filter_unmodded:
+                rows = [row for row in rows if row[11]]
         return rows
 
     def filter_toggle_on(self, filters: tuple[str]) -> list:
