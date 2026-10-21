@@ -38,7 +38,7 @@ def is_flatpak_steam_running() -> bool:
     return False
 
 
-def get_steam_procs() -> list[str]:
+def get_steam_procs() -> list[list[str]]:
     return [
         p.cmdline()
         for p in psutil.process_iter(["pid", "name"])
