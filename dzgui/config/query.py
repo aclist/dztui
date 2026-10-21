@@ -4,8 +4,6 @@ from pathlib import Path
 from dzgui.util._json import read_json
 
 from dzgui.const.enum import Preferences
-from dzgui.const.constants import STEAM_CMD, FLATPAK_RUN_CMD, FLATPAK_SANDBOX
-
 
 class ConfigFileError(Exception):
     pass
@@ -40,23 +38,5 @@ def get_favorites(path: Path) -> list[str]:
     return list(conf["ip_list"])
 
 
-# def is_in_favs(record: str, path: Path) -> bool:
-#    favs = get_favorites(path)
-#    if record in favs:
-#        return True
-#    return False
-
-
 def enum_to_key(enum: Preferences) -> str:
     return str(enum.dict["key"])
-
-
-def get_client_index(client: str) -> int:
-    if client == STEAM_CMD:
-        return 0
-    elif client == FLATPAK_RUN_CMD:
-        return 1
-    elif client == FLATPAK_SANDBOX:
-        return 2
-    else:
-        return 0

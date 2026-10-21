@@ -17,6 +17,7 @@ from dzgui.const.constants import (
 from dzgui.const.boilerplate import config_boilerplate
 from dzgui.const.endpoints import STEAM_API_SETUP
 from dzgui.config import freedesktop
+from dzgui.init.proc import path_to_steam_cmd
 from dzgui.init.migrate import migrate_legacy_conf
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings import wizard
@@ -25,7 +26,6 @@ from dzgui.util.open_links import open_link_by_url
 from dzgui.util.css import add_class, load_css
 from dzgui.views.components.buttons import WebButton
 from dzgui.views.components.entry import APIEntry
-from dzgui.views.components.misc import ClientCombo
 from dzgui.views.mixins.colorscheme import ColorAwareApp
 
 import gi
@@ -384,26 +384,17 @@ class PreferencesPage(EnumeratedWizardPage):
         self.dist_box.add(self.radio_km)
         self.dist_box.add(self.radio_miles)
 
-        client_label = Gtk.Label(label=wizard.label_client, halign=Gtk.Align.START)
-        self.client_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        self.client_combo = ClientCombo()
-        self.client_box.add(client_label)
-        self.client_box.add(self.client_combo)
-
         outer_box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL, halign=Gtk.Align.CENTER, spacing=10
         )
-        for el in self.name_box, self.client_box, self.dist_box:
+        for el in self.name_box, self.dist_box:
             outer_box.add(el)
         self.add_start(outer_box)
 
-    def get_prefs(self) -> tuple[str, bool, str]:
+    def get_prefs(self) -> tuple[str, bool]:
         name = self.name_entry.get_text().strip()
         use_miles = self.radio_miles.get_active()
-        model = self.client_combo.get_model()
-        ind = self.client_combo.get_active()
-        client = model[ind][1]
-        return name, use_miles, client
+        return name, use_miles
 
     def _on_entry_changed(self, entry: Gtk.Entry) -> None:
         text = entry.get_text()
@@ -499,15 +490,16 @@ class Assistant(Gtk.Assistant):
                     self.config_values = self.page_migration.migrated_conf
                     return self.get_final_page()
             case SteamPathPage():
-                self.config_values["default_steam_path"] = page.get_path_from_radio()
+                path = page.get_path_from_radio()
+                self.config_values["default_steam_path"] = path
+                self.config_values["client"] = path_to_steam_cmd(path)
             case SteamValidationPage():
                 self.config_values["steam_api"] = page.get_api_key()
             case PreferencesPage():
                 # NOTE: collects config values before advancing to last page
-                name, use_miles, client = self.page_prefs.get_prefs()
+                name, use_miles = self.page_prefs.get_prefs()
                 self.config_values["name"] = name
                 self.config_values["use_miles"] = use_miles
-                self.config_values["client"] = client
                 self.page_shortcuts.set_steam_path(
                     self.config_values["default_steam_path"]
                 )

@@ -12,7 +12,7 @@ from typing import Any, Generator, Union
 from warnings import deprecated
 
 from dzgui.api.acf import ACF
-from dzgui.init.prereqs import has_steam_client
+from dzgui.init.prereqs import has_any_client
 from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
@@ -61,7 +61,7 @@ class VDFLoadError(Exception):
 
 def get_steam_paths() -> list[tuple[Path, str]]:
     paths = []
-    if has_steam_client():
+    if has_any_client():
         HOME = Path.home()
         env = os.environ.get("XDG_DATA_HOME")
         if env is not None:
@@ -267,12 +267,12 @@ def find_user_id_32(path: Path) -> int:
 
 
 class SteamAPIKeyError(Exception):
-    def __init__(self, msg: str | None = None):
+    def __init__(self, msg: str | None = None) -> None:
         super().__init__(msg or api_validation_error)
 
 
 class SteamWorkshopEndpointError(Exception):
-    def __init__(self, msg: str | None = None):
+    def __init__(self, msg: str | None = None) -> None:
         super().__init__(msg or workshop_endpoint_error)
 
 
