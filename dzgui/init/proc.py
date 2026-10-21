@@ -3,8 +3,6 @@ import subprocess
 import shutil
 import logging
 
-from pathlib import Path
-
 from dzgui.const.constants import (
     APP_NAME,
     STEAM_CMD,
