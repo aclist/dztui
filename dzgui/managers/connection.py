@@ -185,7 +185,8 @@ class ConnectionManager:
             allows_downloads = (True, "")
 
         client = self.controller.query_config(Preferences.CLIENT)
-        client_name = self.controller.get_steam_client_name(client)
+        # TODO: add test
+        client_name = client.split()[0].capitalize()
         running = is_steam_running(client)
         steam_proc = SteamProcess(client_name, running)
         self.client = client
