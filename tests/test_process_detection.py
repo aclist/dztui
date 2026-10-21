@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from dzgui.const.constants import (
     FLATPAK_APPID,
+    FLATPAK_ROOT_PATH,
     FLATPAK_RUN_CMD,
     FLATPAK_SANDBOX,
     STEAM_CMD,
@@ -45,16 +46,30 @@ class TestSteamDetection(unittest.TestCase):
 
     def test_native_steam(self):
         with patch.object(proc, "has_cmd", return_value=True):
-            for running in (True, False):
+            for output, expected in (
+                (
+                    [
+                        [FLATPAK_ROOT_PATH],
+                        "/home/user/.local/share/Steam/ubuntu12_64/steamwebhelper",
+                    ],
+                    True,
+                ),
+                ([[FLATPAK_ROOT_PATH]], False),
+                ([[FLATPAK_ROOT_PATH], ["steam-runtime-launcher-service"]], False),
+                ([["/home/user/.local/share/Steam/ubuntu12_64/steamwebhelper"]], True),
+                (
+                    [
+                        ["/home/user/.local/share/Steam/ubuntu12_64/steamwebhelper"],
+                        "steam-runtime-launcher-service",
+                    ],
+                    True,
+                ),
+            ):
                 with (
-                    self.subTest(running=running),
-                    patch.object(proc, "is_running", return_value=running),
+                    self.subTest(running=output),
+                    patch.object(proc, "get_steam_procs", return_value=output),
                 ):
-                    self.assertEqual(proc.is_steam_running(STEAM_CMD), running)
-
-    def test_native_steam_while_flatpak_is_running(self):
-        with patch.object(proc, "is_flatpak_steam_running", return_value=True):
-            self.assertEqual(proc.is_steam_running(STEAM_CMD), False)
+                    self.assertEqual(proc.is_native_steam_running(), expected)
 
     def test_invalid_client(self):
         with self.assertRaises(TypeError):
