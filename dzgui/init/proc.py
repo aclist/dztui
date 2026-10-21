@@ -38,12 +38,25 @@ def is_flatpak_steam_running() -> bool:
     return False
 
 
+def get_steam_procs() -> list[str]:
+    return [
+        p.cmdline()
+        for p in psutil.process_iter(["pid", "name"])
+        if STEAM_CMD in p.info["name"]
+    ]
+
+
 def is_native_steam_running() -> bool:
     if has_cmd(STEAM_CMD) is False:
         return False
-    procs = [p.cmdline() for p in psutil.process_iter(["pid", "name"]) if STEAM_CMD in p.info["name"]]
-    steam_procs = [p for p in procs if not any(FLATPAK_ROOT_PATH in sub for sub in p)]
-    return bool(steam_procs)
+    substrings = [FLATPAK_ROOT_PATH, "steam-runtime-launcher-service"]
+    steam_procs = get_steam_procs()
+    native_steam_procs = [
+        proc
+        for proc in steam_procs
+        if not any(sub in item for item in proc for sub in substrings)
+    ]
+    return bool(native_steam_procs)
 
 
 def has_cmd(cmd: str) -> bool:
