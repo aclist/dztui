@@ -332,13 +332,4 @@ class App(ColorAwareApp, Gtk.Application):  # type: ignore
     ) -> None:
         self.win.halt_proc_and_quit()
 
-
 MainController = Controller()
-
-try:
-    theme = Gtk.IconTheme.get_default()
-    icons = theme.list_icons(None)
-    if STEAM_ICON not in icons:
-        logger.warning(strings.steam_icon_missing)
-except Exception as e:
-    logger.warning(e)

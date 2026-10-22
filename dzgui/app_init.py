@@ -1,10 +1,13 @@
 import logging
 import os
 import shutil
+
+from pathlib import Path
 from typing import TYPE_CHECKING
+from warnings import deprecated
 
 
-from dzgui.const.constants import APP_NAME
+from dzgui.const.constants import APP_NAME, STEAM_ICON, STEAM_ICONS_PATH
 from dzgui.const.enum import Preferences
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
@@ -23,7 +26,7 @@ from dzgui.util.dirs import make_parents
 from dzgui.util.localize import set_locale
 from dzgui.util.map_count import test_map_count
 from dzgui.util.redact import RedactionFilter, REDACTION_PATTERNS
-from dzgui.util.strings import init
+from dzgui.util.strings import init, steam_icon_missing
 
 from dzgui.views.base import App
 from dzgui.views.dialogs.boot import BootWindow
@@ -96,6 +99,28 @@ def copy_bare_configs(config: "Path", resolution: "Path") -> tuple[bool, bool]:
     return (config_changed, state_changed)
 
 
+@deprecated("Currently unused")
+def load_steam_icon(config: Path) -> None:
+    import gi
+
+    gi.require_version("Gtk", "3.0")
+    from gi.repository import Gtk  # noqa
+
+    default = lookup(config, Preferences.DEFAULT)
+    icon_path = Path(default).joinpath(STEAM_ICONS_PATH)
+    try:
+        theme = Gtk.IconTheme.get_default()
+        paths = theme.get_search_path()
+        theme.set_search_path(paths + [str(icon_path)])
+        paths = theme.get_search_path()
+        icons = theme.list_icons(None)
+        if STEAM_ICON not in icons:
+            logger.warning(steam_icon_missing)
+    except Exception as e:
+        print(e)
+        logger.warning(e)
+
+
 def load_gui(version: str, is_debug: bool) -> None:
     lock = lock_acquire()  # noqa
 
@@ -143,6 +168,7 @@ def load_gui(version: str, is_debug: bool) -> None:
     local_coords, latest_release = bootwin.get_results()
 
     use_miles = lookup(XDG.config, Preferences.DIST)
+
     prefs = UserPrefs(
         is_steam_deck=_is_steam_deck,
         is_game_mode=_is_game_mode,

@@ -88,6 +88,7 @@ DEFAULT_STEAM_PATH = ".local/share/Steam"
 FLATPAK_STEAM_PATH = ".var/app/com.valvesoftware.Steam/data/Steam"
 UBUNTU_STEAM_PATH = ".steam/steam"
 DEBIAN_STEAM_PATH = ".steam/debian-installation"
+STEAM_ICONS_PATH = "public"
 
 LOG_FILTERS = ("CRITICAL", "WARNING", "INFO", "DEBUG")
 
