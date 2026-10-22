@@ -92,6 +92,7 @@ class ServerModelManager:
         job = Servers.query_api
         params = Servers.params
         servers = []
+
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(job, key, APPID_DAYZ, param) for param in params]
             for future in as_completed(futures):
@@ -413,6 +414,8 @@ class ServerModelManager:
     def _cleanup_on_failure(self, show_dialog: bool = True) -> None:
         # TODO: disable map, keyword, and filter widgets if model is None
         # signal driven (servers_empty, servers_failed_to_load)
+
+        self.emitter.emit("servers_timed_out")
 
         if self.preserve_on_fail is False:
             self.tv.set_model(None)
