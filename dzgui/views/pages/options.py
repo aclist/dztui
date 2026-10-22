@@ -266,7 +266,6 @@ class FlatpakToggleField(ToggleField):
 
     def _on_radio_toggled(self, button: Gtk.RadioButton, context: Preferences) -> None:
         cmd = FLATPAK_RUN_CMD if self.radio1.get_active() else FLATPAK_SANDBOX
-        print(context)
         self.controller.update_config(context, cmd)
 
 
