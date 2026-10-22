@@ -70,7 +70,8 @@ checkbox_steam_shortcut = (
     (
         "This creates a standalone copy of DZGUI and adds it to Steam. "
         "You <b>must restart Steam</b> for the shortcut to appear. This will not replace or update existing shortcuts. "
-        "If you update DZGUI when it is launched via Steam, updates will be applied to the Steam version."
+        "If you update DZGUI when it is launched via Steam, updates will be applied to the Steam version. "
+        "Not available if you selected the Flatpak client as your Steam default."
     ),
 )
 checkbox_start_menu = (

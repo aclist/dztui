@@ -12,6 +12,7 @@ from dzgui.const.constants import (
     APP_NAME,
     APP_NAME_LOWER,
     HERO_PATH,
+    FLATPAK_STEAM_PATH,
     LEGACY_CONFIG_PATH,
 )
 from dzgui.const.boilerplate import config_boilerplate
@@ -624,6 +625,12 @@ class ShortcutCreationPage(OptionalPageMixin, EnumeratedWizardPage):  # type: ig
         self.add_start(self.checks_area)
         self.show_all()
         self.connect("map", self._on_map)
+        self.connect("map", self._toggle_checkbox)
+
+    def _toggle_checkbox(self, page: "EnumeratedWizardPage") -> None:
+        if FLATPAK_STEAM_PATH in self.steam_path:
+            self.steam_checkbox.set_active(False)
+            self.steam_checkbox.set_sensitive(False)
 
     def _on_start_menu_toggled(self, button: Gtk.CheckButton) -> None:
         state = button.get_active()
