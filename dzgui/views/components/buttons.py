@@ -65,6 +65,7 @@ class IconButton(Gtk.Button):
         self.set_image(self.icon)
         self.set_image_position(position)
         self.set_focus_on_click(False)
+        self.set_always_show_image(True)
 
     def swap_icon(self, icon: str) -> None:
         start = self.icon.get_margin_start()
