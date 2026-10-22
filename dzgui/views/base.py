@@ -7,12 +7,11 @@ from dzgui.const.constants import (
     APP_NAME,
     APP_NAME_LOWER,
     GTK_APP_ID,
-    STEAM_ICON,
 )
 from dzgui.const.enum import NotebookPage
 from dzgui.controllers.emitter import Emitter
 from dzgui.controllers.mc import Controller
-from dzgui.util import css, strings
+from dzgui.util import css
 from dzgui.util.keys import is_ctrl_mask
 from dzgui.views.components.connect_panel import ConnectPanel
 from dzgui.views.components.crumbs import Breadcrumbs
