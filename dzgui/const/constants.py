@@ -89,6 +89,7 @@ FLATPAK_ROOT_PATH = ".var/app/com.valvesoftware.Steam"
 FLATPAK_STEAM_PATH = FLATPAK_ROOT_PATH + "/data/Steam"
 UBUNTU_STEAM_PATH = ".steam/steam"
 DEBIAN_STEAM_PATH = ".steam/debian-installation"
+STEAM_ICONS_PATH = "public"
 
 LOG_FILTERS = ("CRITICAL", "WARNING", "INFO", "DEBUG")
 

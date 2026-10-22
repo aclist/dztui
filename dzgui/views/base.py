@@ -7,12 +7,11 @@ from dzgui.const.constants import (
     APP_NAME,
     APP_NAME_LOWER,
     GTK_APP_ID,
-    STEAM_ICON,
 )
 from dzgui.const.enum import NotebookPage
 from dzgui.controllers.emitter import Emitter
 from dzgui.controllers.mc import Controller
-from dzgui.util import css, strings
+from dzgui.util import css
 from dzgui.util.keys import is_ctrl_mask
 from dzgui.views.components.connect_panel import ConnectPanel
 from dzgui.views.components.crumbs import Breadcrumbs
@@ -332,13 +331,4 @@ class App(ColorAwareApp, Gtk.Application):  # type: ignore
     ) -> None:
         self.win.halt_proc_and_quit()
 
-
 MainController = Controller()
-
-try:
-    theme = Gtk.IconTheme.get_default()
-    icons = theme.list_icons(None)
-    if STEAM_ICON not in icons:
-        logger.warning(strings.steam_icon_missing)
-except Exception as e:
-    logger.warning(e)
