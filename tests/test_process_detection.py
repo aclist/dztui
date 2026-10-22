@@ -6,7 +6,6 @@ from dzgui.const.constants import (
     FLATPAK_ROOT_PATH,
     FLATPAK_RUN_CMD,
     FLATPAK_SANDBOX,
-    STEAM_CMD,
 )
 from dzgui.init import proc
 
