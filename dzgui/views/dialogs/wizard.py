@@ -628,7 +628,7 @@ class ShortcutCreationPage(OptionalPageMixin, EnumeratedWizardPage):  # type: ig
         self.connect("map", self._toggle_checkbox)
 
     def _toggle_checkbox(self, page: "EnumeratedWizardPage") -> None:
-        if FLATPAK_STEAM_PATH in self.steam_path:
+        if FLATPAK_STEAM_PATH in str(self.steam_path):
             self.steam_checkbox.set_active(False)
             self.steam_checkbox.set_sensitive(False)
 
