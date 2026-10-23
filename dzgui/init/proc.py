@@ -28,7 +28,6 @@ def is_steam_running(cmd: str) -> bool:
 
 
 def is_sandboxed() -> bool:
-    logger.debug("Inside Flatpak sandbox")
     return bool(os.environ.get("FLATPAK_ID"))
 
 
