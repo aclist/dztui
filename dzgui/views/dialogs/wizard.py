@@ -429,7 +429,6 @@ class FlatpakOverridePage(EnumeratedWizardPage):
         self.xdg_paths = xdg_paths
         self.page_type = Gtk.AssistantPageType.INTRO
 
-
         store = Gtk.ListStore(str)
         for path in xdg_paths.values():
             store.append((str(path),))
@@ -437,15 +436,22 @@ class FlatpakOverridePage(EnumeratedWizardPage):
         tree.set_halign(Gtk.Align.CENTER)
 
         self.authorize_button = Gtk.Button(
-            label="Grant permissions", halign=Gtk.Align.CENTER
+            label=wizard.button_flatpak, halign=Gtk.Align.CENTER
         )
         self.authorize_button.connect("clicked", self._on_authorize)
 
-        for el in tree, self.authorize_button:
+        self.notice = NotificationFrame(wizard.overrides_applied)
+        self.connect("map", self._on_map)
+
+        for el in tree, self.authorize_button, self.notice:
             self.add_start(el)
+
+    def _on_map(self, page: "EnumeratedWizardPage") -> None:
+        self.notice.hide()
 
     def _on_authorize(self, button: Gtk.Button) -> None:
         apply_overrides(self.xdg_paths)
+        self.notice.show()
         EMITTER.emit("step_complete")
 
 

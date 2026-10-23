@@ -90,6 +90,8 @@ blurb_flatpak = (
     "permission to read from and write to the following locations."
 )
 tree_column = "Paths"
+overrides_applied = "Overrides applied."
+button_flatpak = "Grant permissions"
 
 ### Completion page
 heading_completion = "Setup complete"
