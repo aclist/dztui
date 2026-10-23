@@ -111,6 +111,7 @@ class Shortcuts:
         for img in ("_hero", "p", "_logo"):
             filename = str(self.bpid) + img
             dest = grid_path.joinpath(filename).with_suffix(".png")
+            make_parents(dest)
             b = images.joinpath(img).with_suffix(".png").read_bytes()
             dest.write_bytes(b)
 
