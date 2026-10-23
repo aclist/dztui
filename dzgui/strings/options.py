@@ -17,3 +17,10 @@ fullscreen_eventbox = "This option is not available on Steam Deck."
 save_button = "Save"
 
 api_failed = "API validation failed"
+
+flatpak_label = "Flatpak client"
+flatpak_standard = "Standard"
+flatpak_container = "Containerized (flatpak-spawn --host)"
+flatpak_info = (
+    "Containerized mode is used on certain distributions. May have side effects."
+)
