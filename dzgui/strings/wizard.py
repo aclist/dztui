@@ -82,6 +82,15 @@ checkbox_start_menu = (
 )
 checkbox_desktop_shortcut = ("Add a desktop shortcut", "Depends on the option above.")
 
+### Flatpak page
+heading_flatpak = "Flatpak sandbox overrides"
+blurb_flatpak = (
+    "You chose to add a shortcut directly to Flatpak Steam. "
+    "To launch DZGUI from Flatpak's sandbox, you must grant "
+    "permission to read from and write to the following locations."
+)
+tree_column = "Paths"
+
 ### Completion page
 heading_completion = "Setup complete"
 blurb_completion = "Configuration completed successfully. Click 'Close' to close this dialog and launch DZGUI."
