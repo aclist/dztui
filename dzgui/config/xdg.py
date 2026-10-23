@@ -62,7 +62,7 @@ def get_xdg_paths() -> dict:
     resolved_paths = {}
     for path in xdg_paths:
         real_path = os.environ.get(path)
-        if is_sandboxed():
+        if real_path is not None and is_sandboxed():
             search_string = FLATPAK_ROOT_PATH + "/"
             real_path = real_path.replace(search_string, "")
         if real_path is not None and is_writeable(real_path):

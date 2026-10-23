@@ -543,7 +543,7 @@ class Assistant(Gtk.Assistant):
                     sp = page.migrated_conf["default_steam_path"]
                     self.page_shortcuts.set_steam_path(sp)
                     self.config_values = self.page_migration.migrated_conf
-                    return self.get_shortcuts_page()
+                    return self.get_shortcut_page()
             case SteamPathPage():
                 path = page.get_path_from_radio()
                 self.config_values["default_steam_path"] = path
@@ -568,7 +568,7 @@ class Assistant(Gtk.Assistant):
                 raise AttributeError("Trying to advance a non-canonical page")
         return index + 1
 
-    def needs_flatpak_override(self) -> None:
+    def needs_flatpak_override(self) -> bool:
         if (
             self.page_shortcuts.is_steam_checkbox_active()
             and FLATPAK_ROOT_PATH in self.config_values["default_steam_path"]
@@ -701,7 +701,7 @@ class ShortcutCreationPage(OptionalPageMixin, EnumeratedWizardPage):  # type: ig
     def set_steam_path(self, path: Path) -> None:
         self.steam_path = path
 
-    def is_steam_checkbox_active(self) -> None:
+    def is_steam_checkbox_active(self) -> bool:
         return self.steam_checkbox.get_active()
 
     def create_shortcuts(self) -> None:
