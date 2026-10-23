@@ -3,6 +3,8 @@ title_intro = "Welcome"
 blurb_intro = """
 This wizard will help you set up some common config options before launching the application.
 """
+error_sandbox = "Setup cannot be run from inside Flatpak sandbox.\nPlease launch the application directly."
+welcome = "Welcome to {0}!"
 
 ### SteamPathPage
 heading_steam_path = "Steam path"

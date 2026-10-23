@@ -198,6 +198,7 @@ def load_to_menu(client: str, appid: int, name: str, mods: list[str]) -> int:
     """Loads to the menu screen with the selected mods; used for AFK/pre-joining"""
     concat = concat_mods(mods)
     client_args = concat_bash_args(client)
+    logger.debug(f"Setting client arguments to: {client_args}")
     params = [
         "-applaunch",
         str(appid),
