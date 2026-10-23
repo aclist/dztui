@@ -23,11 +23,13 @@ from dzgui.init.migrate import migrate_legacy_conf
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings import wizard
 from dzgui.util._json import write_json
+from dzgui.util.flatpak import apply_overrides
 from dzgui.util.open_links import open_link_by_url
 from dzgui.util.css import add_class, load_css
 from dzgui.views.components.buttons import WebButton
 from dzgui.views.components.entry import APIEntry
 from dzgui.views.mixins.colorscheme import ColorAwareApp
+from dzgui.views.trees.tree_simple import SimpleTree
 
 import gi
 
@@ -418,39 +420,32 @@ class PreferencesPage(EnumeratedWizardPage):
 
 
 class FlatpakOverridePage(EnumeratedWizardPage):
-    def __init__(self, xdg: "Xdg") -> None:
-        # TODO: strings
+    def __init__(self, xdg_paths: dict[str, str]) -> None:
         super().__init__(
             enum=PageNum.FLATPAK,
-            heading="Flatpak overrides",
-            description="Enable overrides",
+            heading=wizard.heading_flatpak,
+            description=wizard.blurb_flatpak,
         )
-        self.xdg = xdg
+        self.xdg_paths = xdg_paths
         self.page_type = Gtk.AssistantPageType.INTRO
 
-        # TODO: labels, blurbs
-        # You chose to add a DZGUI shortcut directly to Steam.
-        # Your Steam client selection is Flatpak Steam.
-        # To launch DZGUI from Flatpak's sandbox, you must
-        # grant permission for the sandbox to read from and write to the
-        # following locations.
 
-        # Click below to whitelist these paths and enable Steam to register the DZGUI application.
+        store = Gtk.ListStore(str)
+        for path in xdg_paths.values():
+            store.append((str(path),))
+        tree = SimpleTree(store, wizard.tree_column)
+        tree.set_halign(Gtk.Align.CENTER)
 
-        # XDG.config, XDG.share, XDG.state, /tmp?
-
-        self.label = Gtk.Label(label="Whitelist")
         self.authorize_button = Gtk.Button(
             label="Grant permissions", halign=Gtk.Align.CENTER
         )
         self.authorize_button.connect("clicked", self._on_authorize)
 
-        for el in self.label, self.authorize_button:
+        for el in tree, self.authorize_button:
             self.add_start(el)
 
     def _on_authorize(self, button: Gtk.Button) -> None:
-        # TODO: apply flatpak overrides via module
-        print(self.xdg)
+        apply_overrides(self.xdg_paths)
         EMITTER.emit("step_complete")
 
 
@@ -467,7 +462,7 @@ class CompletionPage(EnumeratedWizardPage):
 
 
 class Assistant(Gtk.Assistant):
-    def __init__(self, is_deck: bool, XDG: "Xdg"):
+    def __init__(self, is_deck: bool, XDG: "Xdg", xdg_paths: dict[str, str]):
         super().__init__()
         if is_deck:
             # NOTE: deemed to be "safe" dimensions that exclude taskbar size
@@ -486,7 +481,7 @@ class Assistant(Gtk.Assistant):
         self.page_api = SteamValidationPage()
         self.page_prefs = PreferencesPage()
         self.page_shortcuts = ShortcutCreationPage(XDG.shortcut)
-        self.page_flatpak = FlatpakOverridePage(XDG)
+        self.page_flatpak = FlatpakOverridePage(xdg_paths)
         self.page_completion = CompletionPage()
 
         self.set_forward_page_func(self._advance_page)
@@ -772,10 +767,10 @@ class SteamPathPage(EnumeratedWizardPage):
 
 
 class SetupWizard(ColorAwareApp, Gtk.Application):  # type: ignore
-    def __init__(self, is_deck: bool, XDG: "Xdg") -> None:
+    def __init__(self, is_deck: bool, XDG: "Xdg", xdg_paths: dict[str, str]) -> None:
         super().__init__()
         GLib.set_prgname(APP_NAME)
-        self.win = Window(is_deck, XDG)
+        self.win = Window(is_deck, XDG, xdg_paths)
         Gtk.main()
 
     def is_setup_complete(self) -> int:
@@ -783,9 +778,9 @@ class SetupWizard(ColorAwareApp, Gtk.Application):  # type: ignore
 
 
 class Window(Gtk.Window):
-    def __init__(self, is_deck: bool, XDG: "Xdg") -> None:
+    def __init__(self, is_deck: bool, XDG: "Xdg", xdg_paths: dict[str, str]) -> None:
         super().__init__(title=APP_NAME, icon_name=APP_NAME)
-        self.assistant = Assistant(is_deck, XDG)
+        self.assistant = Assistant(is_deck, XDG, xdg_paths)
 
 
 class Emitter(GObject.GObject):
