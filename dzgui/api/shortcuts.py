@@ -158,7 +158,8 @@ class Shortcuts:
         NEW_ENTRY["DevkitGameID"] = ""
         NEW_ENTRY["DevkitOverrideAppID"] = 0
         NEW_ENTRY["LastPlayTime"] = 0
-        NEW_ENTRY["FlatpakAppID"] = ""
+        NEW_ENTRY["FlatpakAppID"] = GTK_APP_ID
+
         NEW_ENTRY["sortas"] = ""
         NEW_ENTRY["tags"] = {}
         return NEW_ENTRY
