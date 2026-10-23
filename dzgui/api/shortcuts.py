@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Any
 
 from dzgui.api.steam import find_user_id_32
-from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, IMAGES_PATH
-from dzgui.util.dirs import copy_dzgui_to_xdg_data
+from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, GTK_APP_ID, IMAGES_PATH
+from dzgui.util.dirs import copy_dzgui_to_xdg_data, make_parents
 from dzgui.util.strings import unknown
 
 logger = logging.getLogger(APP_NAME)
@@ -75,6 +75,8 @@ class Shortcuts:
                 shortcuts = vdf.binary_load(f)
             self.shortcuts = shortcuts
             logger.debug("Loaded shortcuts file")
+        except FileNotFoundError:
+            self.shortcuts = {"shortcuts": {}}
         except Exception as e:
             logger.critical(e)
             raise e
@@ -172,6 +174,9 @@ class Shortcuts:
         try:
             backup = self.shortcuts_path.with_suffix(".vdf.bak")
             shutil.copy(self.shortcuts_path, backup)
+        except Exception as e:
+            logger.critical(e)
+        try:
             with open(self.shortcuts_path, "wb") as f:
                 vdf.binary_dump(self.shortcuts, f)
         except Exception as e:
