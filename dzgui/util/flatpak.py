@@ -12,7 +12,8 @@ def apply_overrides(xdg: dict[str, str]) -> None:
         args = [
             "flatpak",
             "--user",
-            "override" f"--own-name={GTK_APP_ID}",
+            "override",
+            f"--own-name={GTK_APP_ID}",
             FLATPAK_APPID,
         ]
         subprocess.run([*args], capture_output=True)
@@ -21,7 +22,8 @@ def apply_overrides(xdg: dict[str, str]) -> None:
             args = [
                 "flatpak",
                 "--user",
-                "override" f"--filesystem={path}",
+                "override",
+                f"--filesystem={path}",
                 FLATPAK_APPID,
             ]
             subprocess.run([*args], capture_output=True)
