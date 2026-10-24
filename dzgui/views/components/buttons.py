@@ -163,18 +163,24 @@ class RefreshButton(IconTextButton):
         self.set_tooltip_text(atomic_buttons.refresh_tooltip)
 
         self.connect("clicked", self._on_refresh_clicked)
-        emitter.connect("servers_loaded", self.start_decrement)
+        emitter.connect("servers_loaded", self._on_load)
+        emitter.connect("servers_timed_out", self._on_timeout)
+
+    def _on_timeout(self, emitter: "Emitter") -> None:
+        self.is_clicked = True
+        self.start_decrement()
+
+    def _on_load(self, emitter: "Emitter", tab: "ServerTab") -> None:
+        self.start_decrement()
 
     def _on_refresh_clicked(self, button: Self) -> None:
         """Spawned in a thread"""
-        if self.controller.get_active_treeview().is_loaded() is False:
-            return
         self.is_clicked = True
         self.controller.refresh_tree()
         # TODO: get server tab enum
         # if LAN tab, reload existing entries in place
 
-    def start_decrement(self, emitter: "Emitter", tab: "ServerTab") -> None:
+    def start_decrement(self) -> None:
         if self.is_clicked is False:
             return
         if self.loading:
