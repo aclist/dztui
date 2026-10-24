@@ -1,3 +1,4 @@
+import pytest
 import unittest
 from unittest.mock import patch
 
@@ -6,9 +7,10 @@ from dzgui.const.constants import (
     FLATPAK_ROOT_PATH,
     FLATPAK_RUN_CMD,
     FLATPAK_SANDBOX,
-    STEAM_CMD,
 )
 from dzgui.init import proc
+
+pytestmark = pytest.mark.flatpak
 
 
 class TestSteamDetection(unittest.TestCase):

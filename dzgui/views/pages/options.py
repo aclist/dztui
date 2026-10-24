@@ -9,6 +9,9 @@ from dzgui.const.constants import (
     APPID_DAYZ_EXP,
     APPNAME_DAYZ,
     APPNAME_DAYZ_EXP_HUMAN,
+    FLATPAK_RUN_CMD,
+    FLATPAK_SANDBOX,
+    FLATPAK_STEAM_PATH,
     NO_EXPAND,
     NO_FILL,
     NO_PADDING,
@@ -246,6 +249,26 @@ class ToggleField(Gtk.Box):
             el.set_sensitive(state)
 
 
+class FlatpakToggleField(ToggleField):
+    def __init__(
+        self,
+        controller: "Controller",
+    ) -> None:
+        super().__init__(
+            controller,
+            first_option=options.flatpak_standard,
+            second_option=options.flatpak_container,
+            context=Preferences.CLIENT,
+        )
+        self.add(InfoEventBox(options.flatpak_info, self.controller))
+        self.controller = controller
+        self.radio1.connect("toggled", self._on_radio_toggled, Preferences.CLIENT)
+
+    def _on_radio_toggled(self, button: Gtk.RadioButton, context: Preferences) -> None:
+        cmd = FLATPAK_RUN_CMD if self.radio1.get_active() else FLATPAK_SANDBOX
+        self.controller.update_config(context, cmd)
+
+
 class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
     def __init__(self, controller: "Controller"):
         super().__init__(
@@ -274,6 +297,7 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
         self.player_box.set_halign(Gtk.Align.START)
         self.player_box.get_children()[0].set_width_chars(30)  # type: ignore
 
+        self.flatpak_toggle = FlatpakToggleField(self.controller)
         self.fullscreen_toggle = ToggleField(
             self.controller,
             strings.options.last_used,
@@ -309,6 +333,12 @@ class Options(ScrollableMixin, Gtk.ScrolledWindow):  # type: ignore
             [LeftLabel(options.start_tab), start_tab_hbox],
             [LeftLabel(strings.options.name), self.player_box],
         ]
+        default = self.controller.query_config(Preferences.DEFAULT)
+        if FLATPAK_STEAM_PATH in default:
+            pref_rows.insert(
+                0,
+                [LeftLabel(options.flatpak_label), self.flatpak_toggle],
+            )
 
         self.dayz_version_label = Gtk.Label(label=strings.null)
         self.dayz_exp_version_label = Gtk.Label(label=strings.null)

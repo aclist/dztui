@@ -148,7 +148,7 @@ def load_gui(version: str, is_debug: bool) -> None:
         migrate_cols_file(XDG.columns)
         copy_state_files(xdg_paths["XDG_STATE_HOME"])
         # TODO: add logging inside wizard
-        wizard = SetupWizard(_is_steam_deck, XDG)
+        wizard = SetupWizard(_is_steam_deck, XDG, xdg_paths)
 
         if not wizard.is_setup_complete():
             return

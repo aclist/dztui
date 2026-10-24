@@ -3,6 +3,8 @@ title_intro = "Welcome"
 blurb_intro = """
 This wizard will help you set up some common config options before launching the application.
 """
+error_sandbox = "Setup cannot be run from inside Flatpak sandbox.\nPlease launch the application directly."
+welcome = "Welcome to {0}!"
 
 ### SteamPathPage
 heading_steam_path = "Steam path"
@@ -70,7 +72,8 @@ checkbox_steam_shortcut = (
     (
         "This creates a standalone copy of DZGUI and adds it to Steam. "
         "You <b>must restart Steam</b> for the shortcut to appear. This will not replace or update existing shortcuts. "
-        "If you update DZGUI when it is launched via Steam, updates will be applied to the Steam version."
+        "If you update DZGUI when it is launched via Steam, updates will be applied to the Steam version. "
+        "Not available if you selected the Flatpak client as your Steam default."
     ),
 )
 checkbox_start_menu = (
@@ -78,6 +81,17 @@ checkbox_start_menu = (
     "Depends on local window manager settings. Will work on Steam Deck.",
 )
 checkbox_desktop_shortcut = ("Add a desktop shortcut", "Depends on the option above.")
+
+### Flatpak page
+heading_flatpak = "Flatpak sandbox overrides"
+blurb_flatpak = (
+    "You chose to add a shortcut directly to Flatpak Steam. "
+    "To launch DZGUI from Flatpak's sandbox, you must grant "
+    "permission to read from and write to the following locations."
+)
+tree_column = "Paths"
+overrides_applied = "Overrides applied."
+button_flatpak = "Grant permissions"
 
 ### Completion page
 heading_completion = "Setup complete"

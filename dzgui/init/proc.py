@@ -1,7 +1,8 @@
-import psutil
-import subprocess
-import shutil
 import logging
+import os
+import psutil
+import shutil
+import subprocess
 
 from dzgui.const.constants import (
     APP_NAME,
@@ -26,7 +27,13 @@ def is_steam_running(cmd: str) -> bool:
         raise TypeError("Not a valid Steam client selection")
 
 
+def is_sandboxed() -> bool:
+    return bool(os.environ.get("FLATPAK_ID"))
+
+
 def is_flatpak_steam_running() -> bool:
+    if is_sandboxed():
+        return True
     if has_cmd(FLATPAK_CMD) is False:
         return False
     proc = subprocess.check_output(
