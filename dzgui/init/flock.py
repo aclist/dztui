@@ -5,8 +5,9 @@ import sys
 from pathlib import Path
 from typing import TextIO
 
-from dzgui.views.dialogs.early_alert import EarlyAlertDialog
+from dzgui.const.constants import LOCK_FILE
 from dzgui.util.strings import cannot_acquire_lock
+from dzgui.views.dialogs.early_alert import EarlyAlertDialog
 
 
 def lock_release(lock: TextIO) -> None:
@@ -15,7 +16,7 @@ def lock_release(lock: TextIO) -> None:
 
 
 def lock_acquire() -> TextIO:
-    lockfile = Path("/tmp/dzgui.flock")
+    lockfile = Path(LOCK_FILE)
     lock = open(lockfile, "w")
     try:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
