@@ -17,7 +17,7 @@ DZGUI follows a specific set of guidelines, enumerated below:
 - Provide a free and open-source tool under GPL
 - Do not use undocumented, third-party servers to aggregate data; no central "DZGUI" server
 - All connections go to Steam and DayZ servers directly; the tool should function in perpetuity without intermediary endpoints
-- Target Linux desktop and Steam deck specifically; not a cross-platform tool
+- Target Linux desktop and Steam Deck specifically; not a cross-platform tool
 
 ## Setup and usage
 
