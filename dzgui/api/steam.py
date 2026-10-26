@@ -26,8 +26,9 @@ from dzgui.const.constants import (
     FLATPAK_CMD,
     FLATPAK_STEAM_PATH,
     LIBRARYFOLDERS_PATH,
-    UBUNTU_STEAM_PATH,
     REQUEST_TIMEOUT,
+    STEAM_CMD,
+    UBUNTU_STEAM_PATH,
     VDF_PATH,
 )
 from dzgui.const.endpoints import (
@@ -85,6 +86,8 @@ def get_steam_paths() -> list[tuple[Path, str]]:
 
         for path in DEFAULT_PATH, FLATPAK_PATH, UBUNTU_PATH, DEBIAN_PATH:
             if path is FLATPAK_PATH and has_cmd(FLATPAK_CMD) is False:
+                continue
+            if path is not FLATPAK_PATH and has_cmd(STEAM_CMD) is False:
                 continue
             if path.joinpath(VDF_PATH).is_file():
                 paths.append((path, human[path]))

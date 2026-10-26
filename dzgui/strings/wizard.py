@@ -19,7 +19,7 @@ desc_flatpak_path = (
 desc_ubuntu_path = "This is the default Steam path on <b>Ubuntu-based systems</b>."
 desc_debian_path = "This is the default Steam path on <b>Debian-based systems</b>."
 no_valid_paths = (
-    "No valid Steam paths found on system. Please install Steam to continue."
+    "No valid Steam path or Steam command found on system. Please install Steam to continue."
 )
 button_scan = "Scan for Steam"
 
