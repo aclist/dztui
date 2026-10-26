@@ -1,7 +1,7 @@
 import configparser
 import pytest
 
-from dzgui.const.constants import FLATPAK_APPID, GTK_APP_ID
+from dzgui.const.constants import FLATPAK_APPID, GTK_APP_ID, TMP_PATH
 from dzgui.config.xdg import get_xdg_paths
 from dzgui.util.flatpak import apply_overrides
 
@@ -38,6 +38,8 @@ def test_session_bus(override, config) -> None:
 
 
 def test_paths(override, xdg_paths, config) -> None:
-    expect = xdg_paths
+    expect: list[str] = []
+    expect.append(TMP_PATH)
+    expect.extend([*xdg_paths.values()])
     paths = config[PATHS_KEY][PATHS_SUBKEY].split(";")
-    assert all(str(path) in paths for path in expect.values())
+    assert all(str(path) in paths for path in expect)
