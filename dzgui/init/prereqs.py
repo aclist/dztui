@@ -9,7 +9,7 @@ logger = logging.getLogger(APP_NAME)
 
 
 def has_flatpak_client() -> bool:
-    if is_sandboxed:
+    if is_sandboxed():
         return True
     try:
         res = subprocess.run(
