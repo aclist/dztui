@@ -35,6 +35,8 @@ Geolocation records from [DB-IP](https://db-ip.com) under [CC 4.0 license](https
 Executable versions of DZGUI published as release binaries ship with various runtime dependencies and the Python interpreter built in.
 Users wishing to review the licenses to these components can inspect the `LICENSE` file located in the release tarball.
 
+Steam and the Steam logo are trademarks and/or registered trademarks of Valve Corporation in the U.S. and/or other countries.
+
 ## Disclaimer
 
 DZGUI is beta-quality software and is provided as-is.
