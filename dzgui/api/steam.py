@@ -13,7 +13,7 @@ from warnings import deprecated
 
 from dzgui.api.acf import ACF
 from dzgui.init.prereqs import has_any_client
-from dzgui.init.proc import has_cmd
+from dzgui.init.prereqs import has_flatpak_client, has_steam_client
 from dzgui.const.constants import (
     APPID_DAYZ,
     APPID_DAYZ_EXP,
@@ -23,11 +23,9 @@ from dzgui.const.constants import (
     DEBIAN_STEAM_PATH,
     DEFAULT_STEAM_PATH,
     DOWNLOADS_PATH,
-    FLATPAK_CMD,
     FLATPAK_STEAM_PATH,
     LIBRARYFOLDERS_PATH,
     REQUEST_TIMEOUT,
-    STEAM_CMD,
     UBUNTU_STEAM_PATH,
     VDF_PATH,
 )
@@ -85,9 +83,9 @@ def get_steam_paths() -> list[tuple[Path, str]]:
         }
 
         for path in DEFAULT_PATH, FLATPAK_PATH, UBUNTU_PATH, DEBIAN_PATH:
-            if path is FLATPAK_PATH and has_cmd(FLATPAK_CMD) is False:
+            if path is FLATPAK_PATH and has_flatpak_client() is False:
                 continue
-            if path is not FLATPAK_PATH and has_cmd(STEAM_CMD) is False:
+            if path is not FLATPAK_PATH and has_steam_client() is False:
                 continue
             if path.joinpath(VDF_PATH).is_file():
                 paths.append((path, human[path]))
