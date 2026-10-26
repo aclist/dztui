@@ -173,11 +173,12 @@ class Shortcuts:
         self.save_shortcuts()
 
     def save_shortcuts(self) -> None:
-        try:
-            backup = self.shortcuts_path.with_suffix(".vdf.bak")
-            shutil.copy(self.shortcuts_path, backup)
-        except Exception as e:
-            logger.critical(e)
+        if self.shortcuts_path.is_file():
+            try:
+                backup = self.shortcuts_path.with_suffix(".vdf.bak")
+                shutil.copy(self.shortcuts_path, backup)
+            except Exception as e:
+                logger.critical(e)
         try:
             with open(self.shortcuts_path, "wb") as f:
                 vdf.binary_dump(self.shortcuts, f)
