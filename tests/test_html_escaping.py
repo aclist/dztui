@@ -1,3 +1,5 @@
+import pytest
+
 from dzgui.api.servers import Details
 from dzgui.views.dialogs.servers import ServerDetailsDialog
 
@@ -21,6 +23,7 @@ class MockController:
         return None
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_html_escaping() -> None:
     name = "Test server"
     desc = "<Server description> Game & mods"
@@ -31,5 +34,7 @@ def test_html_escaping() -> None:
     controller = MockController()
     dialog = ServerDetailsDialog(controller, details)
     dialog.destroy()
+    while Gtk.events_pending():
+        Gtk.main_iteration()
 
     assert dialog.description.get_text() == desc

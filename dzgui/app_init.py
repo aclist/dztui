@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 
-from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, STEAM_ICON, ICONS_PATH
+from dzgui.const.constants import APP_NAME, APP_NAME_LOWER,  FLATPAK_ROOT_PATH, ICONS_PATH
 from dzgui.const.enum import Preferences
 from dzgui.config.query import lookup
 from dzgui.config.userprefs import UserPrefs
@@ -18,7 +18,7 @@ from dzgui.init.migrate import (
     migrate_cols_file,
 )
 from dzgui.init.flock import lock_acquire
-from dzgui.init.prereqs import has_any_client
+from dzgui.init.prereqs import has_flatpak_client, has_steam_client
 from dzgui.strings import boot
 
 from dzgui.util.deck import is_steam_deck, is_game_mode
@@ -142,7 +142,7 @@ def load_gui(version: str, is_debug: bool) -> None:
         migrate_cols_file(XDG.columns)
         copy_state_files(xdg_paths["XDG_STATE_HOME"])
         # TODO: add logging inside wizard
-        wizard = SetupWizard(_is_steam_deck, XDG)
+        wizard = SetupWizard(_is_steam_deck, XDG, xdg_paths)
 
         if not wizard.is_setup_complete():
             return
@@ -155,7 +155,11 @@ def load_gui(version: str, is_debug: bool) -> None:
         # TODO: sudo escalation dialog
         # count = get_map_count()
         # TODO: move into module
-        if has_any_client() is False:
+        if FLATPAK_ROOT_PATH in lookup(XDG.config, Preferences.DEFAULT):
+            has_client = has_flatpak_client()
+        else:
+            has_client = has_steam_client()
+        if has_client is False:
             EarlyAlertDialog(init.requires_steam)
 
     bootwin = BootWindow(XDG, version)

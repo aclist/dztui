@@ -3,6 +3,8 @@ title_intro = "Welcome"
 blurb_intro = """
 This wizard will help you set up some common config options before launching the application.
 """
+error_sandbox = "Setup cannot be run from inside Flatpak sandbox.\nPlease launch the application directly."
+welcome = "Welcome to {0}!"
 
 ### SteamPathPage
 heading_steam_path = "Steam path"
@@ -17,7 +19,7 @@ desc_flatpak_path = (
 desc_ubuntu_path = "This is the default Steam path on <b>Ubuntu-based systems</b>."
 desc_debian_path = "This is the default Steam path on <b>Debian-based systems</b>."
 no_valid_paths = (
-    "No valid Steam paths found on system. Please install Steam to continue."
+    "No valid Steam path or Steam command found on system. Please install Steam to continue."
 )
 button_scan = "Scan for Steam"
 
@@ -79,6 +81,17 @@ checkbox_start_menu = (
     "Depends on local window manager settings. Will work on Steam Deck.",
 )
 checkbox_desktop_shortcut = ("Add a desktop shortcut", "Depends on the option above.")
+
+### Flatpak page
+heading_flatpak = "Flatpak sandbox overrides"
+blurb_flatpak = (
+    "You chose to add a shortcut directly to Flatpak Steam. "
+    "To launch DZGUI from Flatpak's sandbox, you must grant "
+    "permission to read from and write to the following locations."
+)
+tree_column = "Paths"
+overrides_applied = "Overrides applied."
+button_flatpak = "Grant permissions"
 
 ### Completion page
 heading_completion = "Setup complete"

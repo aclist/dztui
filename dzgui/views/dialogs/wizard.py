@@ -12,22 +12,24 @@ from dzgui.const.constants import (
     APP_NAME,
     APP_NAME_LOWER,
     HERO_PATH,
-    FLATPAK_STEAM_PATH,
+    FLATPAK_ROOT_PATH,
     LEGACY_CONFIG_PATH,
 )
 from dzgui.const.boilerplate import config_boilerplate
 from dzgui.const.endpoints import STEAM_API_SETUP
 from dzgui.config import freedesktop
-from dzgui.init.proc import path_to_steam_cmd
+from dzgui.init.proc import is_sandboxed, path_to_steam_cmd
 from dzgui.init.migrate import migrate_legacy_conf
 from dzgui.managers.threading import call_on_thread, StoredFunc, ThreadingManager
 from dzgui.strings import wizard
 from dzgui.util._json import write_json
+from dzgui.util.flatpak import apply_overrides
 from dzgui.util.open_links import open_link_by_url
 from dzgui.util.css import add_class, load_css
 from dzgui.views.components.buttons import WebButton
 from dzgui.views.components.entry import APIEntry
 from dzgui.views.mixins.colorscheme import ColorAwareApp
+from dzgui.views.trees.tree_simple import SimpleTree
 
 import gi
 
@@ -45,7 +47,8 @@ class PageNum(Enum):
     STEAM_API = 4
     USER_PREFS = 5
     SHORTCUTS = 6
-    FINAL = 7
+    FLATPAK = 7
+    FINAL = 8
 
 
 class OptionalPageMixin:
@@ -144,7 +147,7 @@ class NotificationFrame(Gtk.Frame):
             margin_start=50,
             margin_end=50,
         )
-        wrapped = textwrap.fill(label, width=80)
+        wrapped = textwrap.fill(label, width=60)
         self.label = Gtk.Label(
             label=wrapped,
             justify=Gtk.Justification.CENTER,
@@ -158,7 +161,7 @@ class NotificationFrame(Gtk.Frame):
             add_class(self, "error-frame")
 
     def set_text(self, text: str) -> None:
-        wrapped = textwrap.fill(text, width=80)
+        wrapped = textwrap.fill(text, width=60)
         self.label.set_markup(wrapped)
 
 
@@ -243,11 +246,22 @@ class IntroductionPage(EnumeratedWizardPage):
     def __init__(self) -> None:
         super().__init__(
             enum=PageNum.INTRO,
-            heading=f"Welcome to {APP_NAME}!",
+            heading=wizard.welcome.format(APP_NAME),
             description=wizard.blurb_intro,
         )
         self.page_type = Gtk.AssistantPageType.INTRO
         self.set_title(wizard.title_intro)
+
+        self.error_box = NotificationFrame(wizard.error_sandbox, error=True)
+        self.add_start(self.error_box)
+
+        self.connect("map", self._on_map)
+
+    def _on_map(self, page: "EnumeratedWizardPage") -> None:
+        self.error_box.hide()
+        if is_sandboxed():
+            self.error_box.show()
+            EMITTER.emit("step_pending")
 
 
 class Heading(Gtk.Label):
@@ -405,6 +419,42 @@ class PreferencesPage(EnumeratedWizardPage):
         EMITTER.emit("step_complete")
 
 
+class FlatpakOverridePage(EnumeratedWizardPage):
+    def __init__(self, xdg_paths: dict[str, str]) -> None:
+        super().__init__(
+            enum=PageNum.FLATPAK,
+            heading=wizard.heading_flatpak,
+            description=wizard.blurb_flatpak,
+        )
+        self.xdg_paths = xdg_paths
+        self.page_type = Gtk.AssistantPageType.INTRO
+
+        store = Gtk.ListStore(str)
+        for path in xdg_paths.values():
+            store.append((str(path),))
+        tree = SimpleTree(store, wizard.tree_column)
+        tree.set_halign(Gtk.Align.CENTER)
+
+        self.authorize_button = Gtk.Button(
+            label=wizard.button_flatpak, halign=Gtk.Align.CENTER
+        )
+        self.authorize_button.connect("clicked", self._on_authorize)
+
+        self.notice = NotificationFrame(wizard.overrides_applied)
+        self.connect("map", self._on_map)
+
+        for el in tree, self.authorize_button, self.notice:
+            self.add_start(el)
+
+    def _on_map(self, page: "EnumeratedWizardPage") -> None:
+        self.notice.hide()
+
+    def _on_authorize(self, button: Gtk.Button) -> None:
+        apply_overrides(self.xdg_paths)
+        self.notice.show()
+        EMITTER.emit("step_complete")
+
+
 class CompletionPage(EnumeratedWizardPage):
     def __init__(self) -> None:
         super().__init__(
@@ -418,7 +468,7 @@ class CompletionPage(EnumeratedWizardPage):
 
 
 class Assistant(Gtk.Assistant):
-    def __init__(self, is_deck: bool, XDG: "Xdg"):
+    def __init__(self, is_deck: bool, XDG: "Xdg", xdg_paths: dict[str, str]):
         super().__init__()
         if is_deck:
             # NOTE: deemed to be "safe" dimensions that exclude taskbar size
@@ -437,6 +487,7 @@ class Assistant(Gtk.Assistant):
         self.page_api = SteamValidationPage()
         self.page_prefs = PreferencesPage()
         self.page_shortcuts = ShortcutCreationPage(XDG.shortcut)
+        self.page_flatpak = FlatpakOverridePage(xdg_paths)
         self.page_completion = CompletionPage()
 
         self.set_forward_page_func(self._advance_page)
@@ -456,6 +507,7 @@ class Assistant(Gtk.Assistant):
             self.page_api,
             self.page_prefs,
             self.page_shortcuts,
+            self.page_flatpak,
             self.page_completion,
         ):
             # NOTE: skip config migration page if no legacy config file
@@ -476,7 +528,10 @@ class Assistant(Gtk.Assistant):
     def write_config(self, config: dict[str, Any]) -> None:
         write_json(config, self.config_path)
 
-    def get_final_page(self) -> int:
+    def get_completion_page(self) -> int:
+        return self.pages[self.page_completion]
+
+    def get_shortcut_page(self) -> int:
         return self.pages[self.page_shortcuts]
 
     def _advance_page(self, index: int) -> int:
@@ -489,7 +544,7 @@ class Assistant(Gtk.Assistant):
                     sp = page.migrated_conf["default_steam_path"]
                     self.page_shortcuts.set_steam_path(sp)
                     self.config_values = self.page_migration.migrated_conf
-                    return self.get_final_page()
+                    return self.get_shortcut_page()
             case SteamPathPage():
                 path = page.get_path_from_radio()
                 self.config_values["default_steam_path"] = path
@@ -506,9 +561,21 @@ class Assistant(Gtk.Assistant):
                 )
             case ShortcutCreationPage():
                 page.create_shortcuts()
+                if not self.needs_flatpak_override():
+                    return self.get_completion_page()
+            case FlatpakOverridePage():
+                pass
             case _:
                 raise AttributeError("Trying to advance a non-canonical page")
         return index + 1
+
+    def needs_flatpak_override(self) -> bool:
+        if (
+            self.page_shortcuts.is_steam_checkbox_active()
+            and FLATPAK_ROOT_PATH in self.config_values["default_steam_path"]
+        ):
+            return True
+        return False
 
     def is_setup_complete(self) -> bool:
         return self.setup_complete
@@ -625,12 +692,6 @@ class ShortcutCreationPage(OptionalPageMixin, EnumeratedWizardPage):  # type: ig
         self.add_start(self.checks_area)
         self.show_all()
         self.connect("map", self._on_map)
-        self.connect("map", self._toggle_checkbox)
-
-    def _toggle_checkbox(self, page: "EnumeratedWizardPage") -> None:
-        if FLATPAK_STEAM_PATH in str(self.steam_path):
-            self.steam_checkbox.set_active(False)
-            self.steam_checkbox.set_sensitive(False)
 
     def _on_start_menu_toggled(self, button: Gtk.CheckButton) -> None:
         state = button.get_active()
@@ -640,6 +701,9 @@ class ShortcutCreationPage(OptionalPageMixin, EnumeratedWizardPage):  # type: ig
 
     def set_steam_path(self, path: Path) -> None:
         self.steam_path = path
+
+    def is_steam_checkbox_active(self) -> bool:
+        return self.steam_checkbox.get_active()
 
     def create_shortcuts(self) -> None:
         # NOTE: best-effort, permissive even on failure (page is already marked as complete)
@@ -709,10 +773,10 @@ class SteamPathPage(EnumeratedWizardPage):
 
 
 class SetupWizard(ColorAwareApp, Gtk.Application):  # type: ignore
-    def __init__(self, is_deck: bool, XDG: "Xdg") -> None:
+    def __init__(self, is_deck: bool, XDG: "Xdg", xdg_paths: dict[str, str]) -> None:
         super().__init__()
         GLib.set_prgname(APP_NAME)
-        self.win = Window(is_deck, XDG)
+        self.win = Window(is_deck, XDG, xdg_paths)
         Gtk.main()
 
     def is_setup_complete(self) -> int:
@@ -720,9 +784,9 @@ class SetupWizard(ColorAwareApp, Gtk.Application):  # type: ignore
 
 
 class Window(Gtk.Window):
-    def __init__(self, is_deck: bool, XDG: "Xdg") -> None:
+    def __init__(self, is_deck: bool, XDG: "Xdg", xdg_paths: dict[str, str]) -> None:
         super().__init__(title=APP_NAME, icon_name=APP_NAME)
-        self.assistant = Assistant(is_deck, XDG)
+        self.assistant = Assistant(is_deck, XDG, xdg_paths)
 
 
 class Emitter(GObject.GObject):
