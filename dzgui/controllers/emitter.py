@@ -111,6 +111,10 @@ class Emitter(GObject.GObject):
     def check_toggled(self, label: str, state: bool) -> None:
         pass
 
+    @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=())
+    def servers_timed_out(self) -> None:
+        pass
+
     @GObject.Signal(flags=GObject.SignalFlags.RUN_LAST, arg_types=(object,))
     def servers_loaded(self, tag: "ServerTab") -> None:
         pass
