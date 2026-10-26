@@ -14,6 +14,7 @@ from dzgui.const.constants import (
     HERO_PATH,
     FLATPAK_ROOT_PATH,
     LEGACY_CONFIG_PATH,
+    TMP_PATH
 )
 from dzgui.const.boilerplate import config_boilerplate
 from dzgui.const.endpoints import STEAM_API_SETUP
@@ -432,6 +433,7 @@ class FlatpakOverridePage(EnumeratedWizardPage):
         store = Gtk.ListStore(str)
         for path in xdg_paths.values():
             store.append((str(path),))
+            store.append((TMP_PATH,))
         tree = SimpleTree(store, wizard.tree_column)
         tree.set_halign(Gtk.Align.CENTER)
 
