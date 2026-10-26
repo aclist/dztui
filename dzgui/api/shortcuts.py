@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from dzgui.api.steam import find_user_id_32
-from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, GTK_APP_ID, IMAGES_PATH
+from dzgui.const.constants import APP_NAME, APP_NAME_LOWER, IMAGES_PATH
 from dzgui.util.dirs import copy_dzgui_to_xdg_data, make_parents
 from dzgui.util.strings import unknown
 
@@ -158,7 +158,7 @@ class Shortcuts:
         NEW_ENTRY["DevkitGameID"] = ""
         NEW_ENTRY["DevkitOverrideAppID"] = 0
         NEW_ENTRY["LastPlayTime"] = 0
-        NEW_ENTRY["FlatpakAppID"] = GTK_APP_ID
+        NEW_ENTRY["FlatpakAppID"] = ""
 
         NEW_ENTRY["sortas"] = ""
         NEW_ENTRY["tags"] = {}

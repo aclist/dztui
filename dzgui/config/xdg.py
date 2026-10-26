@@ -3,7 +3,13 @@ import os
 from pathlib import Path
 from dataclasses import dataclass
 
-from dzgui.const.constants import APP_NAME_LOWER, DEBUG_LOG, SYSTEM_LOG
+from dzgui.const.constants import (
+    APP_NAME_LOWER,
+    DEBUG_LOG,
+    FLATPAK_ROOT_PATH,
+    SYSTEM_LOG,
+)
+from dzgui.init.proc import is_sandboxed
 
 
 @dataclass
@@ -53,10 +59,12 @@ def get_xdg_paths() -> dict:
         "XDG_DATA_HOME": home / ".local" / "share",
         "XDG_CACHE_HOME": home / ".cache",
     }
-
     resolved_paths = {}
     for path in xdg_paths:
         real_path = os.environ.get(path)
+        if real_path is not None and is_sandboxed():
+            search_string = FLATPAK_ROOT_PATH + "/"
+            real_path = real_path.replace(search_string, "")
         if real_path is not None and is_writeable(real_path):
             new_path = Path(real_path)
         else:

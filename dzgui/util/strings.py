@@ -297,7 +297,7 @@ class Options:
 init = Init(
     is_steam_running="Is Steam running? DZGUI must be run on top of Steam.",
     is_dayz_running="Is DayZ already running? DZGUI cannot launch DayZ if another process is using it.",
-    requires_steam="DZGUI requires that Steam or Flatpak Steam be installed on the system.",
+    requires_steam="Your chosen client (Steam/Flatpak Steam) must be installed on the system.",
 )
 
 mod_panel = ModPanelStrings(
