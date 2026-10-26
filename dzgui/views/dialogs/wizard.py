@@ -433,7 +433,8 @@ class FlatpakOverridePage(EnumeratedWizardPage):
         store = Gtk.ListStore(str)
         for path in xdg_paths.values():
             store.append((str(path),))
-            store.append((TMP_PATH,))
+        store.append((TMP_PATH,))
+
         tree = SimpleTree(store, wizard.tree_column)
         tree.set_halign(Gtk.Align.CENTER)
 
