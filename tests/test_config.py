@@ -36,7 +36,6 @@ def keys():
 
 # TODO: use a static fixture instead of system config
 @pytest.fixture
-@pytest.mark.realconfig
 def config():
     paths = get_xdg_paths()
     xdg = parse_filepaths(paths)
