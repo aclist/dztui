@@ -50,6 +50,7 @@ class ModSelectionPanel(Gtk.Box):
             ModButton.SELECT_ALL,
             ModButton.UNSELECT_ALL,
             ModButton.UNSUB_SELECTED,
+            ModButton.VALIDATE,
         )
         for button in buttons:
             b = EnumeratedModButton(button)
@@ -114,3 +115,5 @@ class ModSelectionPanel(Gtk.Box):
                 self.swap_sensitive(False)
             case ModButton.SELECT_STALE:
                 self.controller.select_colorized()
+            case ModButton.VALIDATE:
+                self.controller.validate_mods()

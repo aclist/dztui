@@ -102,6 +102,16 @@ class Controller(GObject.GObject):
         except AttributeError:
             logger.critical(f"{attr} is not a valid AppNavigation attribute.")
 
+    def validate_mods(
+        self, treeview: Union["ModTreeView", "OfflineModTreeView", None] = None
+    ) -> None:
+        if treeview is None:
+            view = self.mediator.modtreeview
+        else:
+            view = treeview
+        mod_man = view.get_mod_man()
+        mod_man.validate_mods()
+
     def get_prefs(self) -> UserPrefs:
         return self.prefs
 

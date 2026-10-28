@@ -157,6 +157,7 @@ class ContextMenu(EnumWithAttrs):
     COPY_SERVER_IP = {"label": strings.copy_ip}
     COPY_SERVER_NAME = {"label": strings.copy_name}
     UNSUB_MOD = {"label": strings.unsub_mod}
+    VALIDATE_MOD = {"label": strings.validate_mod}
     OPEN_WORKSHOP = {"label": strings.open_workshop}
     REFRESH_PLAYERS = {"label": strings.refresh_players}
     REMOVE_HISTORY = {"label": strings.remove_history}
@@ -172,7 +173,7 @@ class ContextMenuGroup(Enum):
     """
 
     SERVER_MOD = (ContextMenu.OPEN_WORKSHOP,)
-    MOD = (ContextMenu.OPEN_WORKSHOP, ContextMenu.UNSUB_MOD)
+    MOD = (ContextMenu.OPEN_WORKSHOP, ContextMenu.UNSUB_MOD, ContextMenu.VALIDATE_MOD)
     MOD_OFFLINE = (None,)
     LOG = (ContextMenu.COPY_LOG_CLIPBOARD,)
     SERVER_BROWSER = (
@@ -245,6 +246,10 @@ class ModButton(EnumWithAttrs):
     SELECT_STALE = {
         "label": strings.mod_panel.select_stale,
         "tooltip": strings.mod_panel.select_stale_tooltip,
+    }
+    VALIDATE = {
+        "label": strings.mod_panel.validate,
+        "tooltip": strings.mod_panel.validate_tooltip,
     }
 
 

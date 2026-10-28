@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from dzgui.api.steam import unsubscribe
+from dzgui.api.steam import unsubscribe, validate_mod
 from dzgui.api.mods import (
     get_delimited_mods,
     find_stale_mods,
@@ -85,7 +85,7 @@ class ModManager:
         total_mods = len(self.store)
         self.emitter.emit("mods_updated", msg, total_mods)
 
-    def unsub_mods(self) -> None:
+    def get_selected_mods(self) -> list[tuple[str, Gtk.TreeIter]]:
         sel = self.treeview.get_selection()
         model, pathlist = sel.get_selected_rows()
         # NOTE: reverse when multiple selection
@@ -96,6 +96,15 @@ class ModManager:
                 continue
             mod, _iter = res
             mods.append((mod, _iter))
+        return mods
+
+    def validate_mods(self) -> None:
+        mods = self.get_selected_mods()
+        self.thread_man.set_job_count(len(mods))
+        self.validate_all_mods(mods)
+
+    def unsub_mods(self) -> None:
+        mods = self.get_selected_mods()
         self.thread_man.set_job_count(len(mods))
         self.unsub_all_mods(mods)
 
@@ -108,6 +117,21 @@ class ModManager:
         tree_iter = model.get_iter(tree_path)
         mod = model.get_value(tree_iter, 2)
         return mod, tree_iter
+
+    def validate_atomic_mod(self, mod: str) -> None:
+        # NOTE: propagation to dayz exp will happen during
+        # subsequent symlink phase on connect
+        client = self.controller.query_config(Preferences.CLIENT)
+        validate_mod(client, mod)
+
+    @call_on_thread(dialogs.validating_mods)
+    def validate_all_mods(self, mods: list[tuple[str, Gtk.TreeIter]]) -> None:
+        for mod, _iter in mods:
+            self.validate_atomic_mod(mod)
+            self.thread_man.increment_dialog()
+            time.sleep(API_RATE_LIMIT)
+        func = StoredFunc(lambda: None)
+        self.thread_man.set_cleanup_func(func)
 
     @call_on_thread(dialogs.deleting_mods)
     def unsub_all_mods(self, mods: list[tuple[str, Gtk.TreeIter]]) -> None:

@@ -18,6 +18,7 @@ COORDS_API = "http://ip-api.com/json"
 # steam URIs
 WORKSHOP = "steam://url/CommunityFilePage/"
 OPEN_URL = "steam://openurl/"
+VALIDATE = "steam://validate/"
 
 # user facing
 GITHUB_PAGES = "https://aclist.github.io/dzgui/index"
