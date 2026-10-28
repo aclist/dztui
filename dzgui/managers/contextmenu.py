@@ -75,10 +75,14 @@ class ContextMenuManager:
 
         if isinstance(self.treeview, (ModTreeView, OfflineModTreeView)):
             match action:
-                case ContextMenu.UNSUB_MOD:
-                    self.controller.unsub_mods(self.treeview)
                 case ContextMenu.OPEN_WORKSHOP:
                     self.open_mod_page()
+                case ContextMenu.UNSUB_MOD:
+                    self.controller.unsub_mods(self.treeview)
+                case ContextMenu.VALIDATE_MOD:
+                    self.controller.validate_mods(self.treeview)
+                case _:
+                    pass
 
         if isinstance(self.treeview, LogTreeView):
             match action:

@@ -9,6 +9,7 @@ update_success = "Updated successfully. Please exit and relaunch."
 load_error_lan = "Failed to find any servers on your network.\nCheck the server query port or your firewall settings."
 fetching_mods = "Fetching mod metadata"
 deleting_mods = "Unsubscribing mods"
+validating_mods = "Validating mods"
 scanning_mods = "Scanning mods"
 parsing_mods = "Parsing mods"
 

@@ -31,6 +31,7 @@ show_details = "Show server details"
 refresh_players = "Refresh player count"
 open_workshop = "Open in Steam Workshop"
 unsub_mod = "Unsubscribe mod"
+validate_mod = "Validate mod"
 copy_name = "Copy name to clipboard"
 copy_ip = "Copy IP to clipboard"
 copy_log = "Copy record(s) to clipboard"
@@ -200,6 +201,8 @@ class ModPanelStrings:
     clear_highlights: str
     select_stale: str
     select_stale_tooltip: str
+    validate: str
+    validate_tooltip: str
 
 
 @dataclass(slots=True, frozen=True)
@@ -319,6 +322,8 @@ mod_panel = ModPanelStrings(
     clear_highlights="Clears highlights and reverts the table to a default state",
     select_stale="Select stale",
     select_stale_tooltip="Only selects highlighted stale mods",
+    validate="Validate selected",
+    validate_tooltip="Validates selected mods and updates them if necessary",
 )
 
 

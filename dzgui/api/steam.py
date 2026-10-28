@@ -12,6 +12,7 @@ from typing import Any, Generator, Union
 from warnings import deprecated
 
 from dzgui.api.acf import ACF
+from dzgui.const.endpoints import VALIDATE
 from dzgui.init.prereqs import has_any_client
 from dzgui.init.prereqs import has_flatpak_client, has_steam_client
 from dzgui.const.constants import (
@@ -316,10 +317,9 @@ def unsubscribe(key: str, mod: int) -> None:
     update_workshop(key, mod, UNSUB_ENDPOINT)
 
 
-@deprecated("Use subscribe()")
-def enqueue_mod(client: str, mod: str, appid: int) -> None:
+def validate_mod(client: str, mod: str) -> None:
     client_args = concat_bash_args(client)
-    subprocess.Popen([*client_args, "+workshop_download_item", str(appid), mod])
+    subprocess.Popen([*client_args, "+workshop_download_item", str(APPID_DAYZ), mod])
 
 
 @deprecated("Cf. https://github.com/ValveSoftware/steam-for-linux/issues/9672")
@@ -500,3 +500,10 @@ def get_app_name(appid: int) -> str | None:
     except Exception as e:
         logger.debug(e)
         return None
+
+
+@deprecated("Currently unused")
+def validate_dayz(client: str) -> None:
+    client_args = concat_bash_args(client)
+    uri = VALIDATE + str(APPID_DAYZ)
+    subprocess.Popen([*client_args, uri])
