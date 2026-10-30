@@ -22,7 +22,7 @@ class Xdg:
     version: Path
     system: Path
     debug: Path
-    ips: Path
+    db: Path
     filters: Path
     shortcut: Path
 
@@ -88,7 +88,7 @@ def parse_filepaths(xdg: dict) -> Xdg:
     resolution = state / "dzg.res.json"
     history = state / "dzg.history"
     versions = state / "dzg.versions"
-    ips = state / "ips.csv"
+    db = state / "ips.db"
     filters = state / "dzg.filters.json"
 
     shortcut = share / APP_NAME_LOWER
@@ -102,7 +102,7 @@ def parse_filepaths(xdg: dict) -> Xdg:
         versions,
         system,
         debug,
-        ips,
+        db,
         filters,
         shortcut,
     )

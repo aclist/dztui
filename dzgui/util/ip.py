@@ -1,4 +1,5 @@
 import a2s
+from ipaddress import ip_address
 import requests
 import shutil
 import subprocess
@@ -7,6 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from dzgui.api.servers import Record
+from dzgui.config.ipdb import read_from_table
 from dzgui.const.constants import REQUEST_TIMEOUT
 from dzgui.const.endpoints import IP_ECHO
 
@@ -33,54 +35,21 @@ def ip2list(ip: str) -> list:
     return [int(digit) for digit in ip.split(".")]
 
 
-# TODO: tests
-def is_reserved(digits: list) -> bool:
-    reserved = [0, 10, 127]
-
-    if digits[0] in reserved:
-        return True
-    if digits[0] == 192 and digits[1] == 168:
-        return True
-    return False
+def is_usable(ip: str) -> bool:
+    address = ip_address(ip)
+    if address.is_reserved or address.is_private:
+        return False
+    return True
 
 
-def get_coords(ips: "Path", ip: str) -> Coords:
-    split = ip2list(ip)
-
-    if is_reserved(split):
+def get_coords(db_path: "Path", ip: str) -> Coords:
+    if not is_usable(ip):
         raise ReservedIPError(f"{ip} is a reserved IP address.")
-
-    prefix = f"^{split[0]}.{split[1]}."
-
-    if shutil.which("rg") is not None:
-        args = ["/usr/bin/rg", prefix, str(ips)]
-    else:
-        args = ["/usr/bin/grep", "-E", prefix, str(ips)]
-    proc = subprocess.run(args, capture_output=True, text=True)
-
-    if proc.returncode != 0:
-        raise GeolocationError("Failed to split records")
-
-    ip_list = proc.stdout.splitlines()
-
-    for address in ip_list:
-        fields = address.split(",")
-        upper = fields[1]
-
-        upper_digits = ip2list(upper)
-        if ip == upper:
-            return Coords(float(fields[-2]), float(fields[-1]))
-
-        if split[2] > upper_digits[2]:
-            continue
-
-        if split[2] == upper_digits[2]:
-            if split[3] > upper_digits[3]:
-                continue
-
-        if split[2] <= upper_digits[2]:
-            return Coords(float(fields[-2]), float(fields[-1]))
-    raise GeolocationError("No matching records found")
+    try:
+        lat, lon = read_from_table(db_path, ip)
+        return Coords(lat, lon)
+    except Exception:
+        raise GeolocationError("No matching records found")
 
 
 def get_local_ip() -> str:
