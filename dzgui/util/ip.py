@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from dzgui.api.servers import Record
+from dzgui.config.ipdb import read_from_table
 from dzgui.const.constants import REQUEST_TIMEOUT
 from dzgui.const.endpoints import IP_ECHO
 

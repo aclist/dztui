@@ -80,8 +80,9 @@ class CalcDist:
         if local is None:
             return None
         try:
-            remote = get_coords(prefs.paths.ips, remote_ip)
-        except Exception:
+            remote = get_coords(prefs.paths.db, remote_ip)
+        except Exception as e:
+            logger.critical(e)
             return None
 
         haversine = Haversine(local.lat, local.lon, remote.lat, remote.lon)

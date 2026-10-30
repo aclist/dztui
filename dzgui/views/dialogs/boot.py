@@ -132,9 +132,9 @@ class BootDialog(ColorAwareApp, Gtk.Dialog):  # type: ignore
                 preboot.signatures,
                 False,
             ),
-            (StoredFunc(get_ipdb, self.xdg.ips), preboot.geo, False),
+            (StoredFunc(get_ipdb, self.xdg.db), preboot.geo, False),
             # TODO: handle IP DB failure and use coords fallback
-            (StoredFunc(get_local_coords, self.xdg.ips), preboot.coords, True),
+            (StoredFunc(get_local_coords, self.xdg.db), preboot.coords, True),
             (StoredFunc(check_updates, self.version), preboot.updates, True),
         ]
         self.results: list[Any] = []
