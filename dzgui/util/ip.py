@@ -1,4 +1,5 @@
 import a2s
+from ipaddress import ip_address
 import requests
 import shutil
 import subprocess
@@ -34,15 +35,11 @@ def ip2list(ip: str) -> list:
     return [int(digit) for digit in ip.split(".")]
 
 
-# TODO: tests
-def is_reserved(digits: list) -> bool:
-    reserved = [0, 10, 127]
-
-    if digits[0] in reserved:
-        return True
-    if digits[0] == 192 and digits[1] == 168:
-        return True
-    return False
+def is_usable(ip: str) -> bool:
+    address = ip_address(ip)
+    if address.is_reserved or address.is_private:
+        return False
+    return True
 
 
 def get_coords(ips: "Path", ip: str) -> Coords:
