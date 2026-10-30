@@ -3,6 +3,9 @@ import logging
 import re
 import requests
 import shutil
+import socket
+import sqlite3
+import time
 
 from pathlib import Path
 
@@ -22,15 +25,16 @@ def find_download_url(url: str) -> str | None:
     return str(urls[0])
 
 
-def get_ipdb(ips_path: Path) -> None:
+def get_ipdb(db_path: Path) -> None:
     try:
         url = find_download_url(DB_IP)
         if url is None:
             return
 
+        ips_path = db_path.with_suffix(".csv")
+        month_file = db_path.parent / ".month"
         date = find_date(url)
-        month_file = ips_path.parent / ".month"
-        if ips_path.exists() and month_file.exists():
+        if db_path.exists() and month_file.exists():
             old_date = month_file.read_text().rstrip("\n")
             if old_date == date:
                 logger.info(f"IP DB date matches: {date}")
@@ -44,6 +48,9 @@ def get_ipdb(ips_path: Path) -> None:
 
         logger.info("Stripping IPv6 records")
         strip_ipv6(ips_path)
+
+        create_table(db_path, ips_path)
+        ips_path.unlink()
 
         with open(month_file, "w") as f:
             f.write(date)
@@ -108,3 +115,95 @@ def strip_ipv6(path: Path) -> None:
             out.write(merged)
     path.unlink()
     alt_path.rename(path)
+
+
+def ip_to_int(ip: str) -> int:
+    return int.from_bytes(socket.inet_aton(ip), "big")
+
+
+def marshal_rows(ip_file: Path) -> list[tuple[int, int, str, str]]:
+    YIELD = 0.003
+    SLEEP = 0.001
+    with open(ip_file, "r") as f:
+        rows: list[tuple[int, int, str, str]] = []
+        # NOTE: yield to GIL periodically to reduce load on spinner
+        last_yield = time.monotonic()
+        for row in f:
+            start, end, lat, lon = row.rstrip("\n").split(",")
+            int_start = ip_to_int(start)
+            int_end = ip_to_int(end)
+            rows.append((int_start, int_end, lat, lon))
+
+            now = time.monotonic()
+            if (now - last_yield) >= YIELD:
+                time.sleep(SLEEP)
+                last_yield = time.monotonic()
+    return rows
+
+
+def create_table(db_file: Path, ip_file: Path) -> None:
+    create = """
+    CREATE TABLE IF NOT EXISTS ips (
+    start_range INTEGER PRIMARY KEY,
+    end_range INTEGER,
+    latitude REAL,
+    longitude REAL
+    ) WITHOUT ROWID;
+    """
+    insert = """
+        INSERT INTO ips
+        (start_range, end_range, latitude, longitude)
+        values(?, ?, ?, ?)
+    """
+
+    if db_file.exists():
+        db_file.unlink()
+
+    conn = sqlite3.connect(":memory:")
+    c = conn.cursor()
+
+    try:
+        c.execute(create)
+        rows = marshal_rows(ip_file)
+        c.executemany(insert, rows)
+        logger.info(f"Inserted {len(rows)} IP records into database")
+        conn.commit()
+        with sqlite3.connect(db_file) as dest:
+            conn.backup(dest)
+        logger.info(f"Serialized IP records to database: '{db_file}'")
+        conn.close()
+    except Exception as e:
+        logger.critical(e)
+
+
+def read_from_table(db_path: Path, ip: str) -> tuple[float, float]:
+    if not db_path.exists():
+        raise FileNotFoundError(f"No file found at the location '{db_path}")
+
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+
+    int_ip = ip_to_int(ip)
+
+    query = """
+    SELECT end_range, latitude, longitude
+    FROM ips
+    WHERE start_range <= ?
+    ORDER BY start_range DESC
+    LIMIT 1
+    """
+    index = """
+    CREATE INDEX IF NOT EXISTS start_index
+    ON ips(start_range);
+    """
+    try:
+        c.execute(index)
+        conn.commit()
+        c.execute(query, (int_ip,))
+        row = c.fetchone()
+        end, lat, lon = row
+        conn.close()
+        return lat, lon
+    except Exception as e:
+        logger.critical(e)
+        raise e
